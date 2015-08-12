@@ -5,7 +5,11 @@
 //#define MICROBIT_DBG
 
 #include "mbed.h"
+
+#ifndef NO_BLE
 #include "ble/BLE.h"
+#endif
+
 #include "ble/services/DeviceInformationService.h"
 
 //error number enumeration

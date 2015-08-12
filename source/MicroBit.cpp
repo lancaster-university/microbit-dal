@@ -24,7 +24,6 @@ void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t r
     uBit.ble->startAdvertising(); // restart advertising!
 }
 
-
 /**
   * Constructor. 
   * Create a representation of a MicroBit device as a global singleton.
@@ -88,6 +87,7 @@ void MicroBit::init()
     // Seed our random number generator
     seedRandom();
 
+#ifndef NO_BLE
     // Start the BLE stack.        
     ble = new BLEDevice();
     
@@ -108,6 +108,12 @@ void MicroBit::init()
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(1000));
     ble->startAdvertising();  
+#else
+    ble = NULL;
+    ble_firmware_update_service = NULL;
+    ble_device_information_service = NULL;
+    ble_event_service = NULL;
+#endif
 
     // Start refreshing the Matrix Display
     systemTicker.attach(this, &MicroBit::systemTick, MICROBIT_DISPLAY_REFRESH_PERIOD);     

@@ -54,7 +54,8 @@ int main()
     uBit.init();
     
     uBit.sleep(100);
-    
+
+#ifndef NO_BLE
     // Test if we need to enter BLE pairing mode...
     int i=0;
     while (uBit.buttonA.isPressed() && uBit.buttonB.isPressed() && i<10)
@@ -65,6 +66,7 @@ int main()
         if (i == 10 && uBit.ble_firmware_update_service != NULL)
             uBit.ble_firmware_update_service->pair();
     }
+#endif
         
     app_main();
     
