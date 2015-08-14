@@ -8,7 +8,7 @@ MicroBit        uBit;
 InterruptIn     resetButton(MICROBIT_PIN_BUTTON_RESET);
 
 void
-onResetButtonPressed()
+reset()
 {
     NVIC_SystemReset();
 }
@@ -17,7 +17,7 @@ int main()
 {    
     // Bring up soft reset button.
     resetButton.mode(PullUp);
-    resetButton.fall(onResetButtonPressed);
+    resetButton.fall(reset);
     
 #ifdef MICROBIT_DBG
     pc.baud(115200);

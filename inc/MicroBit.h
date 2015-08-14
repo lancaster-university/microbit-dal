@@ -21,6 +21,9 @@
   */
 void panic(int statusCode);
 
+void reset(int statusCode);
+
+
 #include "MicroBitMalloc.h"
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
@@ -186,6 +189,16 @@ class MicroBit
       * @endcode
       */
     void init();
+
+    /**
+      * Will reset the micro:bit when called.
+      *
+      * Example:
+      * @code 
+      * uBit.reset();
+      * @endcode
+      */
+    void reset();
 
     /**
       * Delay for the given amount of time.

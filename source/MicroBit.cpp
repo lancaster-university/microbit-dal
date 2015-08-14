@@ -120,6 +120,19 @@ void MicroBit::init()
 }
 
 /**
+  * Will reset the micro:bit when called.
+  *
+  * Example:
+  * @code 
+  * uBit.reset();
+  * @endcode
+  */
+void MicroBit::reset()
+{
+  reset();
+}
+
+/**
   * Delay for the given amount of time.
   * If the scheduler is running, this will deschedule the current fiber and perform
   * a power efficent, concurrent sleep operation.
