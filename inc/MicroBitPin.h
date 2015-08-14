@@ -61,7 +61,6 @@ class MicroBitPin : public MicroBitComponent
       */
       
     void *pin;                  // The mBed object looking after this pin at any point in time (may change!).
-    PinName name;               // mBed pin name of this pin.
     PinCapability capability;
    
     /**
@@ -71,6 +70,7 @@ class MicroBitPin : public MicroBitComponent
     void disconnect();
     
     public:
+    PinName name;               // mBed pin name of this pin.
     
     /**
       * Constructor. 
