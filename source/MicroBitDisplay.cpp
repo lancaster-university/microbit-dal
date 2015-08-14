@@ -232,8 +232,10 @@ MicroBitDisplay::animationUpdate()
             this->updateAnimateImage();
             
         if(animationMode == ANIMATION_MODE_PRINT_CHARACTER)
+        {
+            animationMode = ANIMATION_MODE_NONE;
             this->sendEvent(MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
-            
+        }
     }
 }
 
