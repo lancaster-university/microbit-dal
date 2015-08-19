@@ -658,13 +658,10 @@ void MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int st
   * @endcode
   */  
 void MicroBitDisplay::setBrightness(int b)
-{   
+{  
     //sanitise the brightness level
-    if(b < 0)
-        b = 0;
-    
-    if (b > 255)
-        b = 255;
+    if(b < 0 || b > 255)
+        return;
 
     this->brightness = b;
 }
