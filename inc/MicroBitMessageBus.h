@@ -2,6 +2,7 @@
 #define MICROBIT_MESSAGE_BUS_H
 
 #include "mbed.h"
+#include "MicroBitComponent.h"
 #include "MicroBitEvent.h"
 
 // Enumeration of core components.
@@ -42,6 +43,18 @@ struct MicroBitMessageBusCache
 	MicroBitListener *ptr;
 };
 	
+struct MicroBitEventQueueItem
+{
+    MicroBitEvent evt;
+    MicroBitEventQueueItem *next;
+
+    /**
+      * Constructor. 
+      * Creates a new MicroBitEventQueueItem.
+      * @param evt The event that is to be queued.
+      */
+    MicroBitEventQueueItem(MicroBitEvent &evt);
+};
 
 /**
   * Class definition for the MicroBitMessageBus.
@@ -61,7 +74,7 @@ struct MicroBitMessageBusCache
   * 1) Maintain a low RAM footprint where possible
   * 2) Make few assumptions about the underlying platform, but allow optimizations where possible.
   */
-class MicroBitMessageBus
+class MicroBitMessageBus : public MicroBitComponent
 {
     public:
 
@@ -91,7 +104,7 @@ class MicroBitMessageBus
 
 	/**
 	  * Send the given event to all regstered recipients, using a cached entry to minimize lookups.
-	  * This is particularly useful for soptimizing ensors that frequently send to the same channel.
+	  * This is particularly useful for optimizing sensors that frequently send to the same channel.
 	  *
 	  * @param evt The event to send. This structure is assumed to be heap allocated, and will 
 	  * be automatically freed once all recipients have been notified.
@@ -131,9 +144,17 @@ class MicroBitMessageBus
 
 	private:
 	
-	MicroBitListener *listeners;		// Chain of active listeners.
-	int seq;							// Sequence number. Used to invalidate cache entries.
+	MicroBitListener            *listeners;		    // Chain of active listeners.
+    MicroBitEventQueueItem      *evt_queue_head;    // Head of queued events to be processed.
+    MicroBitEventQueueItem      *evt_queue_tail;    // Tail of queued events to be processed.
+	int seq;        							    // Sequence number. Used to invalidate cache entries.
+            
 	void listen(int id, int value, void* handler, void* arg);
+    void queueEvent(MicroBitEvent &evt);
+    MicroBitEventQueueItem* dequeueEvent();
+
+    virtual void idleTick();
+    virtual int isIdleCallbackNeeded();
 };
 
 #endif

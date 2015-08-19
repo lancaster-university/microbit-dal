@@ -84,6 +84,7 @@ void MicroBit::init()
     //add the compass and accelerometer to the idle array
     addIdleComponent(&uBit.accelerometer);
     addIdleComponent(&uBit.compass);
+    addIdleComponent(&uBit.MessageBus);
 
     // Seed our random number generator
     seedRandom();
