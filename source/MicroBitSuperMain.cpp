@@ -8,7 +8,7 @@ MicroBit        uBit;
 InterruptIn     resetButton(MICROBIT_PIN_BUTTON_RESET);
 
 void
-onResetButtonPressed()
+reset()
 {
     NVIC_SystemReset();
 }
@@ -17,7 +17,7 @@ int main()
 {    
     // Bring up soft reset button.
     resetButton.mode(PullUp);
-    resetButton.fall(onResetButtonPressed);
+    resetButton.fall(reset);
     
 #ifdef MICROBIT_DBG
     pc.baud(115200);
@@ -54,7 +54,8 @@ int main()
     uBit.init();
     
     uBit.sleep(100);
-    
+
+#ifndef NO_BLE
     // Test if we need to enter BLE pairing mode...
     int i=0;
     while (uBit.buttonA.isPressed() && uBit.buttonB.isPressed() && i<10)
@@ -65,6 +66,7 @@ int main()
         if (i == 10 && uBit.ble_firmware_update_service != NULL)
             uBit.ble_firmware_update_service->pair();
     }
+#endif
         
     app_main();
     

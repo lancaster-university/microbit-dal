@@ -5,7 +5,11 @@
 //#define MICROBIT_DBG
 
 #include "mbed.h"
+
+#ifndef NO_BLE
 #include "ble/BLE.h"
+#endif
+
 #include "ble/services/DeviceInformationService.h"
 
 //error number enumeration
@@ -16,6 +20,9 @@
   * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
   */
 void panic(int statusCode);
+
+void reset(int statusCode);
+
 
 #include "MicroBitMalloc.h"
 #include "MicroBitCompat.h"
@@ -182,6 +189,16 @@ class MicroBit
       * @endcode
       */
     void init();
+
+    /**
+      * Will reset the micro:bit when called.
+      *
+      * Example:
+      * @code 
+      * uBit.reset();
+      * @endcode
+      */
+    void reset();
 
     /**
       * Delay for the given amount of time.

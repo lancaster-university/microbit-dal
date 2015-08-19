@@ -80,6 +80,9 @@ public:
     */
     int getReferences();
 
+    T* operator->() {
+        return object;
+    }
 };
 
 /**
