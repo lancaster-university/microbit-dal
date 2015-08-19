@@ -4,9 +4,11 @@
     .text
     .align 2
     
-@ Export our context switching subroutine as a C function for use in mBed
+@ Export our context switching subroutine as a C function for use in mbed
     .global swap_context
     .global save_context
+    .global save_register_context
+    .global restore_register_context
     
 @ R0 Contains a pointer to the TCB of the fibre being scheduled out.
 @ R1 Contains a pointer to the TCB of the fibre being scheduled in.
@@ -183,5 +185,84 @@ store_stack1:
     LDR     R4, [R0, #16]
      
     @ Return to caller (scheduler).        
+    BX      LR
+
+@ R0 Contains a pointer to the TCB of the fibre to snapshot
+
+save_register_context:
+
+    @ Write our core registers into the TCB   
+    @ First, store the general registers
+
+    STR     R0, [R0,#0]
+    STR     R1, [R0,#4]
+    STR     R2, [R0,#8]
+    STR     R3, [R0,#12]
+    STR     R4, [R0,#16]
+    STR     R5, [R0,#20]
+    STR     R6, [R0,#24]
+    STR     R7, [R0,#28]
+ 
+    @ Now the high general purpose registers 
+    MOV     R4, R8
+    STR     R4, [R0,#32]
+    MOV     R4, R9
+    STR     R4, [R0,#36]
+    MOV     R4, R10
+    STR     R4, [R0,#40]
+    MOV     R4, R11
+    STR     R4, [R0,#44]
+    MOV     R4, R12
+    STR     R4, [R0,#48]
+    
+    @ Now the Stack Pointer and Link Register.
+    @ As this context is only intended for use with a fiber scheduler,
+    @ we don't need the PC.
+    MOV     R4, SP
+    STR     R4, [R0,#52]
+    MOV     R4, LR
+    STR     R4, [R0,#56] 
+ 
+    @ Restore scratch registers.
+    LDR     R4, [R0, #16]
+     
+    @ Return to caller (scheduler).        
+    BX      LR
+
+
+restore_register_context:
+
+    @
+    @ Now page in the new context.
+    @ Update all registers except the PC. We can also safely ignore the STATUS register, as we're just a fiber scheduler.
+    @
+    LDR     R4, [R0, #56]
+    MOV     LR, R4
+    LDR     R4, [R0, #52]
+    MOV     SP, R4
+
+    @ High registers... 
+    LDR     R4, [R0, #48]
+    MOV     R12, R4
+    LDR     R4, [R0, #44]
+    MOV     R11, R4
+    LDR     R4, [R0, #40]
+    MOV     R10, R4
+    LDR     R4, [R0, #36]
+    MOV     R9, R4
+    LDR     R4, [R0, #32]
+    MOV     R8, R4
+    
+    @ Low registers... 
+    LDR     R7, [R0, #28]
+    LDR     R6, [R0, #24]
+    LDR     R5, [R0, #20]
+    LDR     R4, [R0, #16]
+    LDR     R3, [R0, #12]
+    LDR     R2, [R0, #8]
+    LDR     R0, [R0, #0]
+    LDR     R1, [R0, #4]
+     
+    @ Return to caller (normally the scheduler).        
     BX      LR
 

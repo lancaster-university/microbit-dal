@@ -1,5 +1,5 @@
 /**
-  * The MicroBit Fiber scheduler.
+ * The MicroBit Fiber scheduler.
   *
   * This lightweight, non-preemptive scheduler provides a simple threading mechanism for two main purposes:
   *
@@ -19,6 +19,7 @@
  */
  
 Fiber *currentFiber = NULL;                 // The context in which the current fiber is executing.
+Fiber *forkedFiber = NULL;                  // The context in which a newly created child fiber is executing.
 Fiber *runQueue = NULL;                     // The list of runnable fibers.
 Fiber *sleepQueue = NULL;                   // The list of blocked fibers waiting on a fiber_sleep() operation.
 Fiber *waitQueue = NULL;                    // The list of blocked fibers waiting on an event.
@@ -66,6 +67,12 @@ void queue_fiber(Fiber *f, Fiber **queue)
   */
 void dequeue_fiber(Fiber *f)
 {
+
+    // If this fiber is already dequeued, nothing the there's nothing to do.
+    if (f->queue == NULL)
+        return;
+
+    // Remove this fiber fromm whichever queue it is on.    
     __disable_irq();
     
     if (f->prev != NULL)
@@ -84,6 +91,46 @@ void dequeue_fiber(Fiber *f)
 
 }
 
+/**
+  * Allocates a fiber from the fiber pool if availiable. Otherwise, allocates a new one from the heap.
+  */ 
+Fiber *getFiberContext()
+{
+    Fiber *f;
+    
+    __disable_irq();
+        
+    if (fiberPool != NULL)
+    {
+        f = fiberPool;
+        dequeue_fiber(f);
+        
+        // dequeue_fiber() exits with irqs enabled, so no need to do this again!
+    }
+    else
+    {
+        __enable_irq();
+        
+        f = new Fiber();
+        
+        if (f == NULL)
+            return NULL;
+
+        f->stack_bottom = (uint32_t) malloc(FIBER_STACK_SIZE);
+        f->stack_top = f->stack_bottom + FIBER_STACK_SIZE;
+    
+        if (f->stack_bottom == NULL)
+        {
+            delete f;
+            return NULL;
+        }
+    }    
+    
+    f->flags = 0;
+
+    return f;
+}
+
 
 /**
   * Initialises the Fiber scheduler. 
@@ -97,6 +144,7 @@ void scheduler_init()
     currentFiber = new Fiber();
     currentFiber->stack_bottom = (uint32_t) malloc(FIBER_STACK_SIZE);
     currentFiber->stack_top = ((uint32_t) currentFiber->stack_bottom) + FIBER_STACK_SIZE;
+    currentFiber->flags = 0;
     
     // Add ourselves to the run queue.
     queue_fiber(currentFiber, &runQueue);
@@ -185,14 +233,31 @@ void scheduler_event(MicroBitEvent evt)
   */
 void fiber_sleep(unsigned long t)
 {
-    // Calculate and store the time we want to wake up.
-    currentFiber->context = ticks + t;
+    Fiber *f = currentFiber;
+
+    // Sleep is a blocking call, so if we're in a fork on block context,
+    // it's time to spawn a new fiber...
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
+    {
+
+        // Allocate a TCB from the new fiber. This will come from the tread pool if availiable,
+        // else a new one will be allocated on the heap.
+        forkedFiber = getFiberContext();
     
-    // Remove ourselve from the run queue
-    dequeue_fiber(currentFiber);
+        // If we're out of memory, there's nothing we can do. 
+        // keep running in the context of the current thread as a best effort.
+        if (forkedFiber != NULL)
+                f = forkedFiber;
+    }
+
+    // Calculate and store the time we want to wake up.
+    f->context = ticks + t;
+    
+    // Remove fiber from the run queue
+    dequeue_fiber(f);
         
-    // Add ourselves to the sleep queue. We maintain strict ordering here to reduce lookup times.
-    queue_fiber(currentFiber, &sleepQueue);
+    // Add fiber to the sleep queue. We maintain strict ordering here to reduce lookup times.
+    queue_fiber(f, &sleepQueue);
     
     // Finally, enter the scheduler.
     schedule();
@@ -211,53 +276,143 @@ void fiber_sleep(unsigned long t)
   */
 void fiber_wait_for_event(uint16_t id, uint16_t value)
 {
+    Fiber *f = currentFiber;
+
+    // Sleep is a blocking call, so if we'r ein a fork on block context,
+    // it's time to spawn a new fiber...
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
+    {
+        // Allocate a TCB from the new fiber. This will come from the tread pool if availiable,
+        // else a new one will be allocated on the heap.
+        forkedFiber = getFiberContext();
+    
+        // If we're out of memory, there's nothing we can do. 
+        // keep running in the context of the current thread as a best effort.
+        if (forkedFiber != NULL)
+                f = forkedFiber;
+    }
+
     // Encode the event data in the context field. It's handy having a 32 bit core. :-)
-    currentFiber->context = value << 16 | id;
+    f->context = value << 16 | id;
     
     // Remove ourselve from the run queue
-    dequeue_fiber(currentFiber);
+    dequeue_fiber(f);
         
     // Add ourselves to the sleep queue. We maintain strict ordering here to reduce lookup times.
-    queue_fiber(currentFiber, &waitQueue);
+    queue_fiber(f, &waitQueue);
     
     // Finally, enter the scheduler.
     schedule();
 }
 
-
-Fiber *getFiberContext()
+/**
+  * Executes the given function asynchronously.  
+  * 
+  * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
+  * that complete very quickly, bringing unecessary RAM overhead.
+  *
+  * This function takes a snapshot of the current processor context, then attempts to optimistically call the given function directly. 
+  * We only create an additional fiber if that function performs a block operation. 
+  *
+  * @param entry_fn The function to execute.
+  */
+void fork_on_block(void (*entry_fn)(void))
 {
-    Fiber *f;
-    
-    __disable_irq();
-        
-    if (fiberPool != NULL)
-    {
-        f = fiberPool;
-        dequeue_fiber(f);
-        
-        // dequeue_fiber() exits with irqs enablesd, so no need to do this again!
-    }
-    else
-    {
-        __enable_irq();
-        
-        f = new Fiber();
-        
-        if (f == NULL)
-            return NULL;
+    // Validate our parameters.
+    if (entry_fn == NULL)
+        return;
 
-        f->stack_bottom = (uint32_t) malloc(FIBER_STACK_SIZE);
-        f->stack_top = f->stack_bottom + FIBER_STACK_SIZE;
-    
-        if (f->stack_bottom == NULL)
-        {
-            delete f;
-            return NULL;
-        }
-    }    
-    
-    return f;
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
+    {
+        // If we attempt a fork on block whilst already in  fork n block context,
+        // simply launch a fiber to deal with the request and we're done.
+        create_fiber(entry_fn);
+        return;
+    }
+                    
+    // Snapshot current context, but also update the Link Register to
+    // refer to our calling function.
+    save_register_context(&currentFiber->tcb);
+
+    // If we're here, there are three possibilities:
+    // 1) We're about to attempt to execute the user code
+    // 2) We've already tried to execute the code, it blocked, and we've backtracked. 
+
+    // If we're returning from the user function and we forked another fiber then cleanup and exit.
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_PARENT)
+    {
+        currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
+        currentFiber->flags &= ~MICROBIT_FIBER_FLAG_PARENT;
+        return;
+    }
+
+    // Otherwise, we're here for the first time. Enter FORK ON BLOCK mode, and
+    // execute the function directly. If the code tries to block, we detect this and
+    // spawn a thread to deal with it.
+    currentFiber->flags |= MICROBIT_FIBER_FLAG_FOB;
+    entry_fn();    
+    currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
+
+    // If this is is an exiting fiber that for spawned to handle a blocking call, recycle it.
+    // The fiber will then re-enter the scheduler, so no need for further cleanup.
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_CHILD)
+        release_fiber();
+}
+
+/**
+  * Executes the given parameterized function asynchronously.  
+  * 
+  * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
+  * that complete very quickly, bringing unecessary RAM overhead.
+  *
+  * This function takes a snapshot of the current processor context, then attempt to optimistically call the given function directly. 
+  * We only create an additional fiber if that function performs a block operation. 
+  *
+  * @param entry_fn The function to execute.
+  * @param param an untyped parameter passed into the entry_fn anf completion_fn.
+  */
+void fork_on_block(void (*entry_fn)(void *), void *param)
+{
+    // Validate our parameters.
+    if (entry_fn == NULL)
+        return;
+
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
+    {
+        // If we attempt a fork on block whilst already in  fork n block context,
+        // simply launch a fiber to deal with the request and we're done.
+        create_fiber(entry_fn, param);
+        return;
+    }
+                    
+    // Snapshot current context, but also update the Link Register to
+    // refer to our calling function.
+    save_register_context(&currentFiber->tcb);
+
+    // If we're here, there are three possibilities:
+    // 1) We're about to attempt to execute the user code
+    // 2) We've already tried to execute the code, it blocked, and we've backtracked. 
+
+    // If we're returning from the user function and we forked another fiber then cleanup and exit.
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_PARENT)
+    {
+        currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
+        currentFiber->flags &= ~MICROBIT_FIBER_FLAG_PARENT;
+        return;
+    }
+
+    // Otherwise, we're here for the first time. Enter FORK ON BLOCK mode, and
+    // execute the function directly. If the code tries to block, we detect this and
+    // spawn a thread to deal with it.
+    currentFiber->flags |= MICROBIT_FIBER_FLAG_FOB;
+    entry_fn(param);    
+    currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
+
+    // If this is is an exiting fiber that for spawned to handle a blocking call, recycle it.
+    // The fiber will then re-enter the scheduler, so no need for further cleanup.
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_CHILD)
+        release_fiber();
+
 }
 
 void launch_new_fiber()
@@ -412,15 +567,70 @@ void release_fiber(void)
 }
 
 /**
+  * Resizes the stack allocation of the current fiber if necessary to hold the system stack.
+  *
+  * If the stack allocaiton is large enough to hold the current system stack, then this function does nothing.
+  * Otherwise, the the current allocation of the fiber is freed, and a larger block is allocated.
+  */
+void verify_stack_size(Fiber *f)
+{
+    // Ensure the stack buffer is large enough to hold the stack Reallocate if necessary.
+    uint32_t stackDepth;
+    uint32_t bufferSize;
+
+    // Calculate the stack depth.
+    stackDepth = CORTEX_M0_STACK_BASE - ((uint32_t) __get_MSP());
+    bufferSize = f->stack_top - f->stack_bottom;
+
+    // If we're too small, increase our buffer exponentially.
+    if (bufferSize < stackDepth)
+    {
+        while (bufferSize < stackDepth)
+            bufferSize = bufferSize << 1;
+
+        free((void *)f->stack_bottom);
+        f->stack_bottom = (uint32_t) malloc(bufferSize);
+        f->stack_top = f->stack_bottom + bufferSize;
+    }
+}
+
+/**
   * Calls the Fiber scheduler.
   * The calling Fiber will likely be blocked, and control given to another waiting fiber.
   * Call this to yield control of the processor when you have nothing more to do.
   */
 void schedule()
 {
-    // Just round robin for now!
+    // First, take a reference to the currently running fiber;
     Fiber *oldFiber = currentFiber;
 
+    // First, see if we're in Fork on Block context. If so, we simply want to store the full context
+    // of the currently running thread in a nrely created fiber, and restore the context of the
+    // currently running fiber.
+
+    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
+    {
+        // Ensure the stack allocation of the new fiber is large enough 
+        verify_stack_size(forkedFiber);
+
+        // Record that the fibers have a parent/child relationship
+        currentFiber->flags |= MICROBIT_FIBER_FLAG_PARENT;
+        forkedFiber->flags |= MICROBIT_FIBER_FLAG_CHILD;
+
+        // Store the full context of this fiber.    
+        save_context(&forkedFiber->tcb, forkedFiber->stack_top);
+        
+        // We may now be either the newly created thread, or the one that created it.
+        // if the FORK_ON_BLOCK flag is still set, we're the old thread, so
+        // restore the current fiber to its stored context, and we're done.
+        // if we're the new thread, we must have been unblocked by the scheduler, so simply return.
+        if (currentFiber->flags & MICROBIT_FIBER_FLAG_PARENT)
+            restore_register_context(&currentFiber->tcb);
+        else
+            return; 
+    }
+
+    // We're in a normal scheduling context, so perform a round robin algorithm across runnable fibers.
     // OK - if we've nothing to do, then run the IDLE task (power saving sleep)
     if (runQueue == NULL || fiber_flags & MICROBIT_FLAG_DATA_READ)
         currentFiber = idle;
@@ -437,24 +647,8 @@ void schedule()
     // Don't bother with the overhead of switching if there's only one fiber on the runqueue!
     if (currentFiber != oldFiber)        
     {
-        // Ensure the stack buffer is large enough to hold the stack Reallocate if necessary.
-        uint32_t stackDepth;
-        uint32_t bufferSize;
-        
-        // Calculate the stack depth.
-        stackDepth = CORTEX_M0_STACK_BASE - ((uint32_t) __get_MSP());
-        bufferSize = oldFiber->stack_top - oldFiber->stack_bottom;
-        
-        // If we're too small, increase our buffer exponentially.
-        if (bufferSize < stackDepth)
-        {
-            while (bufferSize < stackDepth)
-                bufferSize = bufferSize << 1;
-                    
-            free((void *)oldFiber->stack_bottom);
-            oldFiber->stack_bottom = (uint32_t) malloc(bufferSize);
-            oldFiber->stack_top = oldFiber->stack_bottom + bufferSize;
-        }
+        // Ensure the stack allocation of the fiber being scheduled out is large enough 
+        verify_stack_size(oldFiber);
 
         // Schedule in the new fiber.
         swap_context(&oldFiber->tcb, &currentFiber->tcb, oldFiber->stack_top, currentFiber->stack_top);

@@ -14,9 +14,9 @@
 #include "MicroBitMessageBus.h"
 
 // Typical stack size of each fiber. 
-// A physical stack of anything less than 512 will likely hit overflow issues during ISR/mBed calls.
+// A physical stack of anything less than 1024 will likely hit overflow issues during ISR/mBed calls.
 // However, as we're running a co=operative fiber scheduler, the size of the stack at the point of
-// context switching is normally *very* small (circa 12 bytes!). Also, as we're likely to have many short lived threads
+// context switching is normally *very* small (circa 64 bytes!). Also, as we're likely to have many short lived threads
 // being used, be actually perform a stack duplication on context switch, which keeps the RAM footprint of a fiber 
 // down to a minimum, without constraining what can be done insode a fiber context.
 //
@@ -27,7 +27,11 @@
 #define FIBER_TICK_PERIOD_MS    6
 #define CORTEX_M0_STACK_BASE    (0x20004000 - 4)
 
-#define MICROBIT_FLAG_DATA_READ 0x01 
+#define MICROBIT_FLAG_DATA_READ 	    0x01 
+
+#define MICROBIT_FIBER_FLAG_FOB             0x01 
+#define MICROBIT_FIBER_FLAG_PARENT          0x02 
+#define MICROBIT_FIBER_FLAG_CHILD           0x04 
 
 /**
   *  Thread Context for an ARM Cortex M0 core.
@@ -65,6 +69,7 @@ struct Fiber
     uint32_t stack_top, stack_bottom;   // Address of this Fiber's stack. Stack is heap allocated, and full descending.
     Cortex_M0_TCB tcb;                  // Thread context when last scheduled out.
     uint32_t context;                   // Context specific information. 
+    uint32_t flags;                     // Information about this fiber.
     Fiber **queue;                      // The queue this fiber is stored on.
     Fiber *next, *prev;                 // Position of this Fiber on the run queues.
 };
@@ -167,6 +172,41 @@ void scheduler_tick();
   */
 void fiber_wait_for_event(uint16_t id, uint16_t value);
 
+/**
+  * Executes the given function asynchronously.  
+  * 
+  * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
+  * that complete very quickly, bringing unecessary RAM overhead.
+  *
+  * This function takes a snapshot of the current processor context, then attempts to optimistically call the given function directly. 
+  * We only create an additional fiber if that function performs a block operation. 
+  *
+  * @param entry_fn The function to execute.
+  */
+void fork_on_block(void (*entry_fn)(void));
+
+/**
+  * Executes the given function asynchronously.  
+  * 
+  * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
+  * that complete very quickly, bringing unecessary RAM. overhead 
+  *
+  * This function takes a snapshot of the current fiber context, then attempt to optimistically call the given function directly. 
+  * We only create an additional fiber if that function performs a block operation. 
+  *
+  * @param entry_fn The function to execute.
+  * @param param an untyped parameter passed into the entry_fn anf completion_fn.
+  */
+void fork_on_block(void (*entry_fn)(void *), void *param);
+
+/**
+  * Resizes the stack allocation of the current fiber if necessary to hold the system stack.
+  *
+  * If the stack allocaiton is large enough to hold the current system stack, then this function does nothing.
+  * Otherwise, the the current allocation of the fiber is freed, and a larger block is allocated.
+  */
+inline void verify_stack_size(Fiber *f);
+
 
 /**
   * Event callback. Called from the message bus whenever an event is raised. 
@@ -201,11 +241,22 @@ void dequeue_fiber(Fiber *f);
 void idle_task();
 
 /**
-  * Assembler Ccontext switch routing.
+  * Determines if the processor is executing in interrupt context.
+  * @return true if any the processor is currently executing any interrupt service routine. False otherwise.
+  */
+inline int inInterruptContext()
+{
+    return (((int)__get_IPSR()) & 0x003F) > 0;
+}
+
+/**
+  * Assembler Context switch routing.
   * Defined in CortexContextSwitch.s
   */
 extern "C" void swap_context(Cortex_M0_TCB *from, Cortex_M0_TCB *to, uint32_t from_stack, uint32_t to_stack);
 extern "C" void save_context(Cortex_M0_TCB *tcb, uint32_t stack);
+extern "C" void save_register_context(Cortex_M0_TCB *tcb);
+extern "C" void restore_register_context(Cortex_M0_TCB *tcb);
 
 /**
   * Time since power on. Measured in milliseconds.
