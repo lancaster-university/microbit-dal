@@ -83,6 +83,10 @@ public:
     T* operator->() {
         return object;
     }
+
+    T* get() {
+        return object;
+    }
 };
 
 /**
