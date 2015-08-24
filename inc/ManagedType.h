@@ -87,6 +87,14 @@ public:
     T* get() {
         return object;
     }
+
+    bool operator!=(const ManagedType<T>& x) {
+        return !(this == x);
+    }
+
+    bool operator==(const ManagedType<T>& x) {
+        return this->object == x.object;
+    }
 };
 
 /**
