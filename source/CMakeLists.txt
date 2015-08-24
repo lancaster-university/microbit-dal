@@ -30,14 +30,13 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
 )
 
 if(CMAKE_COMPILER_IS_GNUCC)
-  set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
-      "CortexContextSwitch.s.gcc"
-  )
-else()
-  set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
-      "CortexContextSwitch.s"
-  )
+  file(REMOVE "CortexContextSwitch.s")
+  file(RENAME "CortexContextSwitch.s.gcc" "CortexContextSwitch.s")
 endif()
+
+set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
+    "CortexContextSwitch.s"
+)
 
 add_library(microbit-dal
     ${YOTTA_AUTO_MICROBIT-DAL_CPP_FILES}
