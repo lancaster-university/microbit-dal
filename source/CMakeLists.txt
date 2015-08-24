@@ -31,7 +31,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
 
 if(CMAKE_COMPILER_IS_GNUCC)
   file(REMOVE "CortexContextSwitch.s")
-  file(RENAME "CortexContextSwitch.s.gcc" "CortexContextSwitch.s")
+  configure_file("CortexContextSwitch.s.gcc" "CortexContextSwitch.s" COPYONLY)
 endif()
 
 set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
