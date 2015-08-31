@@ -13,7 +13,6 @@
 #define MICROBIT_DFU_HISTOGRAM_WIDTH        5
 #define MICROBIT_DFU_HISTOGRAM_HEIGHT       5
 
-
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitDFUServiceUUID[];
 extern const uint8_t  MicroBitDFUServiceControlCharacteristicUUID[];
@@ -81,13 +80,10 @@ class MicroBitDFUService
 
     // memory for our 8 bit control characteristics.
     uint8_t             controlByte;
-    
-    // Opcodes can be issued here to control the MicroBitDFU Service, as defined above.
-    WriteOnlyGattCharacteristic<uint8_t> microBitDFUServiceControlCharacteristic;
 
-    // Read/Write characteristic to enable unlocking and discovery of the MicroBit's flashcode.
-    GattCharacteristic  microBitDFUServiceFlashCodeCharacteristic;
-    
+    GattAttribute::Handle_t microBitDFUServiceControlCharacteristicHandle;
+    GattAttribute::Handle_t microBitDFUServiceFlashCodeCharacteristicHandle;
+
     // Displays the device's ID code as a histogram on the LED matrix display.
     void showNameHistogram();
     

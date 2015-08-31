@@ -11,24 +11,16 @@
 #define MICROBIT_FIBER_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitMessageBus.h"
 
-// Typical stack size of each fiber. 
-// A physical stack of anything less than 1024 will likely hit overflow issues during ISR/mBed calls.
-// However, as we're running a co=operative fiber scheduler, the size of the stack at the point of
-// context switching is normally *very* small (circa 64 bytes!). Also, as we're likely to have many short lived threads
-// being used, be actually perform a stack duplication on context switch, which keeps the RAM footprint of a fiber 
-// down to a minimum, without constraining what can be done insode a fiber context.
-//
 // TODO: Consider a split mode scheduler, that monitors used stack size, and maintains a dedicated, persistent
-// stack for any long lived fibers with large stacks.
-//
-#define FIBER_STACK_SIZE        64
-#define FIBER_TICK_PERIOD_MS    6
-#define CORTEX_M0_STACK_BASE    (0x20004000 - 4)
+// stack for any long lived fibers with large stack
 
-#define MICROBIT_FLAG_DATA_READ 	    0x01 
+// Fiber Scheduler Flags
+#define MICROBIT_FLAG_DATA_READY 	        0x01 
 
+// Fiber Flags
 #define MICROBIT_FIBER_FLAG_FOB             0x01 
 #define MICROBIT_FIBER_FLAG_PARENT          0x02 
 #define MICROBIT_FIBER_FLAG_CHILD           0x04 
@@ -39,7 +31,6 @@
   * This is probably overkill, but the ARMCC compiler uses a lot register optimisation
   * in its calling conventions, so better safe than sorry. :-)
   * 
-  * TODO: Check with ARM guys to see is they have suggestions to optimize this context block
   */
 struct Cortex_M0_TCB
 {
@@ -58,6 +49,7 @@ struct Cortex_M0_TCB
     uint32_t R12;
     uint32_t SP;
     uint32_t LR;
+    uint32_t stack_base;                
 };
 
 /**
@@ -66,8 +58,9 @@ struct Cortex_M0_TCB
 
 struct Fiber
 {
-    uint32_t stack_top, stack_bottom;   // Address of this Fiber's stack. Stack is heap allocated, and full descending.
     Cortex_M0_TCB tcb;                  // Thread context when last scheduled out.
+    uint32_t stack_bottom;              // The start sddress of this Fiber's stack. Stack is heap allocated, and full descending.
+    uint32_t stack_top;                 // The end address of this Fiber's stack.
     uint32_t context;                   // Context specific information. 
     uint32_t flags;                     // Information about this fiber.
     Fiber **queue;                      // The queue this fiber is stored on.
@@ -88,17 +81,18 @@ void scheduler_init();
   * Any fiber reaching the end of its entry function will return here  for recycling.
   */
 void release_fiber(void);
-
-/**
-  * Exit point for parameterised fibers.
-  * A wrapper around release_fiber() to enable transparent operaiton.
-  */
 void release_fiber(void *param);
 
 /**
  * Launches a fiber
-  */
-void launch_new_fiber() 
+ */
+void launch_new_fiber(void (*ep)(void), void (*cp)(void))
+#ifdef __GCC__
+    __attribute__((naked))
+#endif
+;
+
+void launch_new_fiber_param(void (*ep)(void *), void (*cp)(void *), void *pm)
 #ifdef __GCC__
     __attribute__((naked))
 #endif
@@ -113,14 +107,7 @@ void launch_new_fiber()
   */
 Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void) = release_fiber);
 
-/**
- * Launches a paramaterised fiber
-  */
-void launch_new_fiber_param() 
-#ifdef __GCC__
-    __attribute__((naked))
-#endif
-;
+
 /**
  * Creates a new parameterised Fiber, and launches it.
   *
@@ -173,7 +160,7 @@ void scheduler_tick();
 void fiber_wait_for_event(uint16_t id, uint16_t value);
 
 /**
-  * Executes the given function asynchronously.  
+  * Executes the given function asynchronously if necessary.
   * 
   * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
   * that complete very quickly, bringing unecessary RAM overhead.
@@ -183,10 +170,10 @@ void fiber_wait_for_event(uint16_t id, uint16_t value);
   *
   * @param entry_fn The function to execute.
   */
-void fork_on_block(void (*entry_fn)(void));
+void invoke(void (*entry_fn)(void));
 
 /**
-  * Executes the given function asynchronously.  
+  * Executes the given function asynchronously if necessary.
   * 
   * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
   * that complete very quickly, bringing unecessary RAM. overhead 
@@ -197,16 +184,18 @@ void fork_on_block(void (*entry_fn)(void));
   * @param entry_fn The function to execute.
   * @param param an untyped parameter passed into the entry_fn anf completion_fn.
   */
-void fork_on_block(void (*entry_fn)(void *), void *param);
+void invoke(void (*entry_fn)(void *), void *param);
 
 /**
   * Resizes the stack allocation of the current fiber if necessary to hold the system stack.
   *
   * If the stack allocaiton is large enough to hold the current system stack, then this function does nothing.
   * Otherwise, the the current allocation of the fiber is freed, and a larger block is allocated.
+  *
+  * @param f The fiber context to verify.
+  * @return The stack depth of the given fiber.
   */
 inline void verify_stack_size(Fiber *f);
-
 
 /**
   * Event callback. Called from the message bus whenever an event is raised. 
@@ -215,6 +204,11 @@ inline void verify_stack_size(Fiber *f);
   */
 void scheduler_event(MicroBitEvent evt);
 
+/**
+  * Determines if any fibers are waiting to be scheduled.
+  * @return The number of fibers currently on the run queue
+  */
+int scheduler_runqueue_empty();
 
 /**
   * Utility function to add the currenty running fiber to the given queue. 

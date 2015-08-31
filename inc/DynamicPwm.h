@@ -70,10 +70,10 @@ class DynamicPwm : public PwmOut
       * Example:
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate();
-      * pwm->free();
+      * pwm->release();
       * @endcode
       */
-    void free();
+    void release();
     
     /**
       * Retreives the pin name associated with this DynamicPwm instance.

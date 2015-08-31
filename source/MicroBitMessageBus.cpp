@@ -9,9 +9,9 @@
 /**
   * Constructor. 
   * Create a new MicroBitEventQueueItem.
-  * @param evt The event that is to be queued.
+  * @param evt The event to be queued.
   */
-MicroBitEventQueueItem::MicroBitEventQueueItem(MicroBitEvent &evt)
+MicroBitEventQueueItem::MicroBitEventQueueItem(MicroBitEvent evt)
 {
     this->evt = evt;
 	this->next = NULL;
@@ -54,14 +54,13 @@ MicroBitMessageBus::MicroBitMessageBus()
 	this->listeners = NULL;
     this->evt_queue_head = NULL;
     this->evt_queue_tail = NULL;
-	this->seq = 0;
 }
 
 /**
   * Invokes a callback on a given MicroBitListener
   *
   * Internal wrapper function, used to enable
-  * parameterized callbacks through the fiber scheduler.
+  * parameterised callbacks through the fiber scheduler.
   */
 void async_callback(void *param)
 {
@@ -122,19 +121,26 @@ MicroBitEventQueueItem* MicroBitMessageBus::dequeueEvent()
 /**
   * Periodic callback from MicroBit.
   * Process at least one event from the event queue, if it is not empty.
+  * We then continue processing events until something appears on the runqueue.
   */  
 void MicroBitMessageBus::idleTick()
 {
     MicroBitEventQueueItem *item = this->dequeueEvent();
 
-    // Whilst there are events to process, pull them off the queue and process them.
-    while (item != NULL)
+    // Whilst there are events to process and we have no useful other work to do, pull them off the queue and process them.
+    while (item)
     {
         // send the event.
-        this->send(item->evt);
+        this->process(item->evt);
 
         // Free the queue item.
         delete item;
+
+        // If we have created some useful work to do, we stop processing.
+        // This helps to minimise the number of blocked fibers we create at any point in time, therefore
+        // also reducing the RAM footprint. 
+        if(!scheduler_runqueue_empty())
+            break;
 
         // Pull the next event to process, if there is one.
         item = this->dequeueEvent();
@@ -151,68 +157,45 @@ int MicroBitMessageBus::isIdleCallbackNeeded()
 }
 
 /**
-  * Send the given event to all regstered recipients.
+  * Queues the given event to be sent to all registered recipients.
   *
-  * @param The event to send. This structure is assumed to be heap allocated, and will 
-  * be automatically freed once all recipients have been notified.
-  */
-void MicroBitMessageBus::send(MicroBitEvent &evt)
-{
-	this->send(evt, NULL);
-}
-
-/**
-  * Send the given event to all registered recipients, using a cached entry to minimize lookups.
-  * This is particularly useful for optimizing sensors that frequently send to the same channel. 
+  * @param The event to send. 
   *
-  * @param evt The event to send. This structure is assumed to be heap allocated, and will 
-  * be automatically freed once all recipients have been notified.
-  * @param c Cache entry to reduce lookups for commonly used channels.
-  *
-  * TODO: For now, this is unbuffered. We should consider scheduling events here, and operating
-  * a different thread that empties the queue. This would perhaps provide greater opportunities
-  * for aggregation.
+  * n.b. THIS IS NOW WRAPPED BY THE MicroBitEvent CLASS FOR CONVENIENCE...
   *
   * Example:
   * @code 
-  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,ticks,NULL);
+  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,ticks,false);
   * evt.fire();
   * //OR YOU CAN DO THIS...  
-  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,ticks,NULL,true);
+  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN);
   * @endcode
-  *
-  * @note THIS IS NOW WRAPPED BY THE MicroBitEvent CLASS FOR CONVENIENCE...
   */
-void MicroBitMessageBus::send(MicroBitEvent &evt, MicroBitMessageBusCache *c)
+void MicroBitMessageBus::send(MicroBitEvent evt)
+{
+    // We simply queue processing of the event until we're scheduled in normal thread context.
+    // We do this to avoid the possibility of executing event handler code in IRQ context, which may bring
+    // hidden race conditions to kids code. Queuing all events ensures causal ordering (total ordering in fact).
+
+    this->queueEvent(evt);
+    return;
+}
+
+/*
+ * Deliver the given event to all registered event handlers.
+ * Event handlers are called using the invoke() mechanism provided by the fier scheduler
+ * This will attempt to call the event handler directly, but spawn a fiber should that
+ * event handler attempt a blocking operation.
+ * @param evt The event to be delivered.
+ */
+void MicroBitMessageBus::process(MicroBitEvent evt)
 {
 	MicroBitListener *l;
-	MicroBitListener *start;
-
-    // Firstly, determine if we're operating in interrupt context...
-    // If so, we queue processing of the event until we're scheduled in normal thread context.
-    // We do this to avoid executing event handler code in IRQ context, which may bring
-    // hidden race condition to kids code. 
-
-    if (inInterruptContext())
-    {
-        this->queueEvent(evt);
-        return;
-    }
 
 	// Find the start of the sublist where we'll send this event.
-	// Ideally, we'll have a valid, cached entry. Use it if we do.
-	if ( c != NULL && c->seq == this->seq)
-	{
-		l = c->ptr;
-	}
-	else
-	{
-		l = listeners;
-		while (l != NULL && l->id != evt.source)
-			l = l->next;
-	}
-
-	start = l;
+    l = listeners;
+    while (l != NULL && l->id != evt.source)
+        l = l->next;
 
 	// Now, send the event to all listeners registered for this event.
 	while (l != NULL && l->id == evt.source)
@@ -220,7 +203,7 @@ void MicroBitMessageBus::send(MicroBitEvent &evt, MicroBitMessageBusCache *c)
 		if(l->value ==  MICROBIT_EVT_ANY || l->value == evt.value)
 		{
 			l->evt = evt;
-			fork_on_block(async_callback, (void *)l);
+			invoke(async_callback, (void *)l);
 		}
 
 		l = l->next;
@@ -231,24 +214,20 @@ void MicroBitMessageBus::send(MicroBitEvent &evt, MicroBitMessageBusCache *c)
 	while (l != NULL && l->id == MICROBIT_ID_ANY)
 	{
 		l->evt = evt;
-		fork_on_block(async_callback, (void *)l);
+		invoke(async_callback, (void *)l);
 		
 		l = l->next;	
 	}
 
-	// If we were given a cached entry that's now invalid, update it.
-	if ( c != NULL && c->seq != this->seq)
-	{
-		c->ptr = start;
-		c->seq = this->seq;
-	}
-	
+    // Finally, forward the event to any other internal subsystems that may be interested.
+    // We *could* do this through the message bus of course, but this saves additional RAM,
+    // and procssor time (as we know these are non-blocking calls).
+
 	// Wake up any fibers that are blocked on this event
 	if (uBit.flags & MICROBIT_FLAG_SCHEDULER_RUNNING)
         scheduler_event(evt);  
  
-	
-	// Finally, see if this event needs to be propogated through our BLE interface 
+	// See if this event needs to be propogated through our BLE interface 
 	if (uBit.ble_event_service)
     	uBit.ble_event_service->onMicroBitEvent(evt);
 }
@@ -332,8 +311,6 @@ void MicroBitMessageBus::listen(int id, int value, void* handler, void* arg)
 		l = l->next;
 	}
 
-
-
 	//add at front of list
 	if (p == listeners && (id < p->id || (p->id == id && p->value > value)))
 	{
@@ -348,9 +325,5 @@ void MicroBitMessageBus::listen(int id, int value, void* handler, void* arg)
 		newListener->next = p->next;
 		p->next = newListener;
 	}
-
-	// Increase our sequence number and we're done.
-	// This will lazily invalidate any cached entries to the listener list.
-	this->seq++;
 }
 

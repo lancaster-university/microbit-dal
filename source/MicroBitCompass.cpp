@@ -1,4 +1,4 @@
-#include "inc/MicroBit.h"
+#include "MicroBit.h"
 
 /**
   * Constructor. 

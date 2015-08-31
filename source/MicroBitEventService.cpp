@@ -15,12 +15,14 @@
   * @param _ble The instance of a BLE device that we're running on.
   */
 MicroBitEventService::MicroBitEventService(BLEDevice &_ble) : 
-        ble(_ble), 
-        microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent),
-        GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY),
-        clientEventCharacteristic(MicroBitEventServiceClientEventCharacteristicUUID, (uint8_t *)&clientEventBuffer, 0, sizeof(EventServiceEvent),
-        GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE)
+        ble(_ble) 
 {
+    GattCharacteristic  microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent), 
+    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
+
+    GattCharacteristic  clientEventCharacteristic(MicroBitEventServiceClientEventCharacteristicUUID, (uint8_t *)&clientEventBuffer, 0, sizeof(EventServiceEvent),
+    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
+
     clientEventBuffer.type = 0x00;
     clientEventBuffer.reason = 0x00;
     
@@ -31,6 +33,9 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble) :
     GattService         service(MicroBitEventServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
     ble.addService(service);
+
+    microBitEventCharacteristicHandle = microBitEventCharacteristic.getValueHandle();
+    clientEventCharacteristicHandle = clientEventCharacteristic.getValueHandle();
 
     ble.onDataWritten(this, &MicroBitEventService::onDataWritten);
 }
@@ -44,7 +49,7 @@ void MicroBitEventService::onDataWritten(const GattWriteCallbackParams *params)
     int len = params->len; 
     EventServiceEvent *e = (EventServiceEvent *)params->data;
     
-    if (params->handle == clientEventCharacteristic.getValueHandle()) {
+    if (params->handle == clientEventCharacteristicHandle) {
     
         // Read and fire all events...
         while (len >= 4)
@@ -67,7 +72,7 @@ void MicroBitEventService::onMicroBitEvent(MicroBitEvent evt)
         e->type = evt.source;
         e->reason = evt.value;
         
-        ble.updateCharacteristicValue(microBitEventCharacteristic.getValueAttribute().getHandle(), (const uint8_t *)e, sizeof(EventServiceEvent));
+        ble.updateCharacteristicValue(microBitEventCharacteristicHandle, (const uint8_t *)e, sizeof(EventServiceEvent));
     }
 }
 

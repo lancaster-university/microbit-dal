@@ -1,3 +1,4 @@
+#include "MicroBitHeapAllocator.h"
 #include "DynamicPwm.h"
 
 
@@ -126,12 +127,11 @@ DynamicPwm* DynamicPwm::allocate(PinName pin, PwmPersistence persistence, int pe
   * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate();
-  * pwm->free();
+  * pwm->release();
   * @endcode
   */
-void DynamicPwm::free()
+void DynamicPwm::release()
 {
-    
     //free the pwm instance.
     NRF_GPIOTE->CONFIG[(uint8_t) _pwm.pwm] = 0;
     pwmout_free(&_pwm); 

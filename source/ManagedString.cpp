@@ -1,5 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
+#include "mbed.h"
+#include "MicroBitHeapAllocator.h"
 #include "MicroBitCompat.h"
 #include "ManagedString.h"
 

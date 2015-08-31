@@ -18,6 +18,10 @@ swap_context
     ; Write our core registers into the TCB   
     ; First, store the general registers
 
+    ; Skip this is we're given a NULL parameter for the TCB
+    CMP     R0, #0
+    BEQ     store_context_complete     
+
     STR     R0, [R0,#0]
     STR     R1, [R0,#4]
     STR     R2, [R0,#8]
@@ -47,16 +51,15 @@ swap_context
     MOV     R4, LR
     STR     R4, [R0,#56] 
  
-    ; Finally, Copy the stack. We do this to reduce RAM footprint, as stackis usually very small at the point
-    ; of sceduling, but we need a lot of capacity for interrupt handling and other functions.
+store_context_complete     
+    ; Finally, Copy the stack. We do this to reduce RAM footprint, as stack is usually very small at the point
+    ; of scheduling, but we need a lot of capacity for interrupt handling and other functions.
 
-    MOVS    R7, #0x20           ;    Load R8 with top of System Stack space.
-    LSLS    R7, #24
-    MOVS    R4, #0x40          
-    LSLS    R4, #8
-    ORRS    R7, R4
-    MOV     R4, R7
-    
+    ; Skip this is we're given a NULL parameter for the stack.
+    CMP     R2, #0
+    BEQ     store_stack_complete     
+
+    LDR     R4, [R0,#60]         ; Load R4 with the fiber's defined stack_base. 
 store_stack
     SUBS    R4, #4
     SUBS    R2, #4
@@ -66,7 +69,9 @@ store_stack
    
     CMP     R4, R6
     BNE     store_stack
- 
+
+store_stack_complete 
+
     ;
     ; Now page in the new context.
     ; Update all registers except the PC. We can also safely ignore the STATUS register, as we're just a fiber scheduler.
@@ -79,9 +84,12 @@ store_stack
     ; Copy the stack in.
     ; n.b. we do this after setting the SP to make comparisons easier.
 
-    MOV     R4, R7          ;    Load R4 with top of System Stack space.
-     
+    ; Skip this is we're given a NULL parameter for the stack.
+    CMP     R3, #0
+    BEQ     restore_stack_complete     
 
+    LDR     R4, [R1,#60]         ; Load R4 with the fiber's defined stack_base. 
+     
 restore_stack
     SUBS    R4, #4
     SUBS    R3, #4
@@ -92,6 +100,7 @@ restore_stack
     CMP     R4, R6
     BNE     restore_stack
     
+restore_stack_complete
     LDR     R4, [R1, #48]
     MOV     R12, R4
     LDR     R4, [R1, #44]
@@ -114,8 +123,6 @@ restore_stack
      
     ; Return to caller (scheduler).        
     BX      LR
-
-
 
 
 ; R0 Contains a pointer to the TCB of the fibre to snapshot
@@ -158,13 +165,8 @@ save_context
     ; Finally, Copy the stack. We do this to reduce RAM footprint, as stackis usually very small at the point
     ; of sceduling, but we need a lot of capacity for interrupt handling and other functions.
 
-    MOVS    R5, #0x20           ;    Load R8 with top of System Stack space.
-    LSLS    R5, #24
-    MOVS    R4, #0x40          
-    LSLS    R4, #8
-    ORRS    R5, R4
-    MOV     R4, R5
-    
+    LDR     R4, [R0,#60]         ; Load R4 with the fiber's defined stack_base. 
+
 store_stack1
     SUBS    R4, #4
     SUBS    R1, #4
@@ -186,8 +188,7 @@ store_stack1
     BX      LR
         
 
-; R0 Contains a pointer to the TCB of the fibre to snapshot
-
+; R0 Contains a pointer to the TCB of the fiber to snapshot
 save_register_context
 
     ; Write our core registers into the TCB   

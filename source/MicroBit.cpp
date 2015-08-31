@@ -1,12 +1,15 @@
 #include "MicroBit.h"
 
 char MICROBIT_BLE_DEVICE_NAME[] = "BBC MicroBit [xxxxx]";
+
+#if defined (MICROBIT_BLE_ENABLED) && defined (MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
 const char MICROBIT_BLE_MANUFACTURER[] = "The Cast of W1A";
 const char MICROBIT_BLE_MODEL[] = "Microbit SB2";
 const char MICROBIT_BLE_SERIAL[] = "SN1";
 const char MICROBIT_BLE_HARDWARE_VERSION[] = "0.2";
 const char MICROBIT_BLE_FIRMWARE_VERSION[] = "1.1";
 const char MICROBIT_BLE_SOFTWARE_VERSION[] = "1.0";
+#endif
 
 /**
   * custom function for panic for malloc & new due to scoping issue.
@@ -21,7 +24,7 @@ void panic(int statusCode)
   */
 void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
-    uBit.ble->startAdvertising(); // restart advertising!
+    uBit.ble->startAdvertising(); 
 }
 
 /**
@@ -46,7 +49,9 @@ void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t r
 MicroBit::MicroBit() : 
     flags(0x00),
     i2c(MICROBIT_PIN_SDA, MICROBIT_PIN_SCL),
+#ifndef MICROBIT_DBG
     serial(USBTX, USBRX),
+#endif    
     MessageBus(),
     display(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_WIDTH, MICROBIT_DISPLAY_HEIGHT),
     buttonA(MICROBIT_ID_BUTTON_A,MICROBIT_PIN_BUTTON_A),
@@ -88,20 +93,35 @@ void MicroBit::init()
     // Seed our random number generator
     seedRandom();
 
-#ifndef NO_BLE
+#ifdef MICROBIT_BLE_ENABLED
     // Start the BLE stack.        
-    ble = new BLEDevice();
     
+    ble = new BLEDevice();
     ble->init();
     ble->onDisconnection(bleDisconnectionCallback);
- 
-    // Add our auxiliary services.
+
+    // Bring up any configured auxiliary services.
+
+#ifdef MICROBIT_BLE_DFU_SERVICE
     ble_firmware_update_service = new MicroBitDFUService(*ble);
-    ble_device_information_service = new DeviceInformationService(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, MICROBIT_BLE_SERIAL, MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
-    ble_event_service = new MicroBitEventService(*ble);
-    
+
     // Compute our auto-generated MicroBit device name.
     ble_firmware_update_service->getName(MICROBIT_BLE_DEVICE_NAME+14);
+#endif
+
+#ifdef MICROBIT_BLE_DEVICE_INFORMATION_SERVICE
+
+#ifdef OLD
+    ble_device_information_service = new DeviceInformationService(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, MICROBIT_BLE_SERIAL, MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+#endif
+
+    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, MICROBIT_BLE_SERIAL, MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+
+#endif
+
+#ifdef MICROBIT_BLE_EVENT_SERVICE
+    ble_event_service = new MicroBitEventService(*ble);
+#endif    
     
     // Setup advertising.
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
@@ -109,12 +129,7 @@ void MicroBit::init()
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(1000));
     ble->startAdvertising();  
-#else
-    ble = NULL;
-    ble_firmware_update_service = NULL;
-    ble_device_information_service = NULL;
-    ble_event_service = NULL;
-#endif
+#endif    
 
     // Start refreshing the Matrix Display
     systemTicker.attach(this, &MicroBit::systemTick, MICROBIT_DISPLAY_REFRESH_PERIOD);     
@@ -239,7 +254,7 @@ void MicroBit::systemTick()
     for(int i = 0; i < MICROBIT_IDLE_COMPONENTS; i++)
         if(idleThreadComponents[i] != NULL && idleThreadComponents[i]->isIdleCallbackNeeded())
         {
-            fiber_flags |= MICROBIT_FLAG_DATA_READ;
+            fiber_flags |= MICROBIT_FLAG_DATA_READY;
             break;
         }
         
@@ -259,7 +274,7 @@ void MicroBit::systemTasks()
         if(idleThreadComponents[i] != NULL)
             idleThreadComponents[i]->idleTick();
     
-    fiber_flags &= ~MICROBIT_FLAG_DATA_READ;
+    fiber_flags &= ~MICROBIT_FLAG_DATA_READY;
 }
 
 /**

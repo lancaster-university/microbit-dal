@@ -1,6 +1,4 @@
-#include "inc/MicroBit.h"
-#include "inc/MicroBitButton.h"
-#include "inc/MicroBitMessageBus.h"
+#include "MicroBit.h"
 
 /**
   * Constructor. 

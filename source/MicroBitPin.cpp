@@ -1,5 +1,5 @@
 #include "MicroBit.h"
-#include "inc/MicroBitPin.h"
+#include "MicroBitPin.h"
 
 /**
   * Constructor. 
@@ -49,7 +49,7 @@ void MicroBitPin::disconnect()
     if (status & IO_STATUS_ANALOG_OUT)
     {
         if(((DynamicPwm *)pin)->getPinName() == name)
-            ((DynamicPwm *)pin)->free(); 
+            ((DynamicPwm *)pin)->release(); 
     }   
 
     if (status & IO_STATUS_TOUCH_IN)

@@ -1,4 +1,4 @@
-#include "inc/MicroBit.h"
+#include "MicroBit.h"
 
 void
 onMultiButtonEvent(MicroBitEvent evt)
@@ -8,7 +8,7 @@ onMultiButtonEvent(MicroBitEvent evt)
 
 /**
   * Constructor. 
-  * Create a representation of a vurtual button, that generates events based upon the combination
+  * Create a representation of a virtual button, that generates events based upon the combination
   * of two given buttons.
   * @param id the ID of the new MultiButton object.
   * @param button1 the ID of the first button to integrate.

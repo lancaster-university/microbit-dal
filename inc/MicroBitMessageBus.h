@@ -37,12 +37,6 @@ struct MicroBitListener
 	MicroBitListener(uint16_t id, uint16_t value, void *handler, void* arg);
 };
 
-struct MicroBitMessageBusCache
-{
-	int seq;
-	MicroBitListener *ptr;
-};
-	
 struct MicroBitEventQueueItem
 {
     MicroBitEvent evt;
@@ -53,7 +47,7 @@ struct MicroBitEventQueueItem
       * Creates a new MicroBitEventQueueItem.
       * @param evt The event that is to be queued.
       */
-    MicroBitEventQueueItem(MicroBitEvent &evt);
+    MicroBitEventQueueItem(MicroBitEvent evt);
 };
 
 /**
@@ -85,12 +79,11 @@ class MicroBitMessageBus : public MicroBitComponent
     MicroBitMessageBus();    
 
 	/**
-	  * Send the given event to all regstered recipients.
+	  * Queues the given event to be sent to all registered recipients.
 	  *
-	  * @param The event to send. This structure is assumed to be heap allocated, and will 
-	  * be automatically freed once all recipients have been notified.
+	  * @param The event to send. 
 	  *
-	  * THIS IS NOW WRAPPED BY THE MicroBitEvent CLASS FOR CONVENIENCE...
+	  * n.b. THIS IS NOW WRAPPED BY THE MicroBitEvent CLASS FOR CONVENIENCE...
 	  *
 	  * Example:
       * @code 
@@ -100,17 +93,18 @@ class MicroBitMessageBus : public MicroBitComponent
 	  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN);
       * @endcode
 	  */
-	void send(MicroBitEvent &evt);
+	void send(MicroBitEvent evt);
 
 	/**
-	  * Send the given event to all regstered recipients, using a cached entry to minimize lookups.
-	  * This is particularly useful for optimizing sensors that frequently send to the same channel.
+      * Internal function, used to deliver the given event to all relevant recipients.
+      * Normally, this is called once an event has been removed from the event queue.
+      *
+      * IT IS RECOMMENDED THAT ALL EXTERNAL CODE USE THE send() FUNCTIONS INSTEAD OF THIS FUNCTION.
 	  *
-	  * @param evt The event to send. This structure is assumed to be heap allocated, and will 
-	  * be automatically freed once all recipients have been notified.
-	  * @param c Cache entry to reduce lookups for commonly used channels.
+	  * @param evt The event to send. 
+	  * @param c The cache entry to reduce lookups for commonly used channels.
 	  */
-	void send(MicroBitEvent &evt, MicroBitMessageBusCache *c);
+	void process(MicroBitEvent evt);
 
 	/**
 	  * Register a listener function.

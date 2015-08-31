@@ -49,9 +49,8 @@ class MicroBitEventService
     EventServiceEvent   clientEventBuffer;
     EventServiceEvent   microBitEventBuffer;
 
-    // BLE GATT Characteristics for sending and receiving events to an attached device
-    GattCharacteristic  microBitEventCharacteristic; 
-    GattCharacteristic  clientEventCharacteristic;
+    GattAttribute::Handle_t microBitEventCharacteristicHandle;
+    GattAttribute::Handle_t clientEventCharacteristicHandle;
 };
 
 

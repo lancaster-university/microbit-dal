@@ -1,30 +1,16 @@
 #ifndef MICROBIT_H
 #define MICROBIT_H
 
-// DEBUG. Enable this to get debug message routed through the USB serial interface.
-//#define MICROBIT_DBG
-
 #include "mbed.h"
+#include "MicroBitConfig.h"
+#include "MicroBitPanic.h"
 
-#ifndef NO_BLE
 #include "ble/BLE.h"
-#endif
-
 #include "ble/services/DeviceInformationService.h"
 
-//error number enumeration
 #include "ErrorNo.h"
 
-/**
-  * Displays "=(" and an accompanying status code 
-  * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-  */
-void panic(int statusCode);
-
-void reset(int statusCode);
-
-
-#include "MicroBitMalloc.h"
+#include "MicroBitHeapAllocator.h"
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
 #include "ManagedType.h"
@@ -55,11 +41,10 @@ void reset(int statusCode);
 #define MICROBIT_FLAG_DISPLAY_RUNNING           0x00000004
 #define MICROBIT_FLAG_COMPASS_RUNNING           0x00000008
 
-
 // Random number generator
 #define NRF51822_RNG_ADDRESS            0x4000D000
 
-#define MICROBIT_IO_PINS                20            // TODO: Need to change for live, currently 3 for test
+#define MICROBIT_IO_PINS                20            
 
 // Enumeration of core components.
 #define MICROBIT_ID_BUTTON_A            1
@@ -73,7 +58,7 @@ void reset(int statusCode);
 #define MICROBIT_ID_IO_P0               7           //P0 is the left most pad (ANALOG/DIGITAL) 
 #define MICROBIT_ID_IO_P1               8           //P1 is the middle pad (ANALOG/DIGITAL) 
 #define MICROBIT_ID_IO_P2               9           //P2 is the right most pad (ANALOG/DIGITAL) 
-#define MICROBIT_ID_IO_P3               10           //COL1 (ANALOG/DIGITAL) 
+#define MICROBIT_ID_IO_P3               10          //COL1 (ANALOG/DIGITAL) 
 #define MICROBIT_ID_IO_P4               11          //BTN_A        
 #define MICROBIT_ID_IO_P5               12          //COL2 (ANALOG/DIGITAL) 
 #define MICROBIT_ID_IO_P6               13          //ROW2
@@ -93,14 +78,10 @@ void reset(int statusCode);
 #define MICROBIT_ID_BUTTON_AB           26          // Button A+B multibutton
 
 // mBed pin assignments of core components.
-//TODO: When platform is built for MB2 - pins will be defined by default, these will change...
 #define MICROBIT_PIN_SDA                P0_30
 #define MICROBIT_PIN_SCL                P0_0
 
-#define MICROBIT_SYSTEM_COMPONENTS      10
-#define MICROBIT_IDLE_COMPONENTS        6
-
-#ifdef MICROBIT_DEBUG
+#ifdef MICROBIT_DBG
 extern Serial pc;
 #endif
 
@@ -128,7 +109,9 @@ class MicroBit
     MicroBitI2C             i2c;  
     
     // Serial Interface
+#ifndef MICROBIT_DBG
     MicroBitSerial          serial;   
+#endif    
 
     // Array of components which are iterated during a system tick
     MicroBitComponent*      systemTickComponents[MICROBIT_SYSTEM_COMPONENTS];
@@ -151,10 +134,9 @@ class MicroBit
     MicroBitIO              io;
     
     // Bluetooth related member variables.
-    BLEDevice                   *ble;
-    DeviceInformationService    *ble_device_information_service;
-    MicroBitDFUService          *ble_firmware_update_service;
-    MicroBitEventService        *ble_event_service;
+    BLEDevice               *ble;
+    MicroBitDFUService      *ble_firmware_update_service;
+    MicroBitEventService    *ble_event_service;
 
     
     /**
@@ -284,8 +266,15 @@ class MicroBit
 
 // Definition of the global instance of the MicroBit class.
 // Using this as a variation on the singleton pattern, just to make
-// code integration a little bit easier for 3rd parties.
+// code integration a little bit easier for third parties.
 extern MicroBit uBit;
+
+//
+// BLE callback when an active GATT session with another device is terminated.
+// Used to reset state and restart advertising ourselves.
+//
+void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason);
+extern char MICROBIT_BLE_DEVICE_NAME[];
 
 // Entry point for application programs. Called after the super-main function
 // has initialized the device and runtime environment.
