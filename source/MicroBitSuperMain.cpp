@@ -1,6 +1,6 @@
 #include "MicroBit.h"
 
-#ifdef MICROBIT_DBG
+#if CONFIG_ENABLED(MICROBIT_DBG)
 Serial pc(USBTX, USBRX);
 #endif
 
@@ -13,13 +13,14 @@ reset()
     NVIC_SystemReset();
 }
 
+
 int main()
 {    
     // Bring up soft reset button.
     resetButton.mode(PullUp);
     resetButton.fall(reset);
     
-#ifdef MICROBIT_DBG
+#if CONFIG_ENABLED(MICROBIT_DBG)
     pc.baud(115200);
 
     // For diagnostics. Gives time to open the console window. :-) 
@@ -42,7 +43,7 @@ int main()
     // Provide time for all threaded initialisers to complete.
     uBit.sleep(100);
 
-#ifdef MICROBIT_BLE_BLUEZONE  
+#if CONFIG_ENABLED(MICROBIT_BLE_BLUEZONE)
     // Test if we need to enter BLE pairing mode...
     int i=0;
     while (uBit.buttonA.isPressed() && uBit.buttonB.isPressed() && i<10)

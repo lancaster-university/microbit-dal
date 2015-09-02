@@ -81,7 +81,7 @@
 #define MICROBIT_PIN_SDA                P0_30
 #define MICROBIT_PIN_SCL                P0_0
 
-#ifdef MICROBIT_DBG
+#if CONFIG_ENABLED(MICROBIT_DBG)
 extern Serial pc;
 #endif
 
@@ -109,7 +109,7 @@ class MicroBit
     MicroBitI2C             i2c;  
     
     // Serial Interface
-#ifndef MICROBIT_DBG
+#if CONFIG_DISABLED(MICROBIT_DBG)
     MicroBitSerial          serial;   
 #endif    
 

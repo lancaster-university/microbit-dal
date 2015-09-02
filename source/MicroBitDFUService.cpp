@@ -152,7 +152,7 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
             
                 if (authenticated)
                 {
-#ifdef MICROBIT_DBG
+#if CONFIG_ENABLED(MICROBIT_DBG)
                     pc.printf("  ACTIVATING BOOTLOADER.\n");
 #endif
                     bootloader_start();    
@@ -175,7 +175,7 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
             memcpy(&lockCode, params->data, 4);
             if (lockCode == NRF_FICR->DEVICEID[0])
             {
-#ifdef MICROBIT_DBG
+#if CONFIG_ENABLED(MICROBIT_DBG)
                 pc.printf("MicroBitDFU: FLASHCODE AUTHENTICATED\n");                
 #endif
                 authenticated = true;

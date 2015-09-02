@@ -51,7 +51,7 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
     this->greyscaleBitMsk = 0x01;
     this->timingCount = 0;
     
-    this->setBrightness(MICROBIT_DEFAULT_BRIGHTNESS);
+    this->setBrightness(MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS);
 
     this->mode = DISPLAY_MODE_BLACK_AND_WHITE;
     this->animationMode = ANIMATION_MODE_NONE;
@@ -149,11 +149,11 @@ void MicroBitDisplay::render()
     nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); 
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
-    if(brightness != MICROBIT_DISPLAY_MAX_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MIN_BRIGHTNESS)
-        renderTimer.attach(this, &MicroBitDisplay::renderFinish, (((float)brightness) / ((float)MICROBIT_DISPLAY_MAX_BRIGHTNESS)) * (float)MICROBIT_DISPLAY_REFRESH_PERIOD);
+    if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
+        renderTimer.attach(this, &MicroBitDisplay::renderFinish, (((float)brightness) / ((float)MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * (float)MICROBIT_DISPLAY_REFRESH_PERIOD);
     
     //this will take around 23us to execute
-    if(brightness <= MICROBIT_DISPLAY_MIN_BRIGHTNESS)
+    if(brightness <= MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
         renderFinish();
 }
 

@@ -26,7 +26,7 @@
 #ifndef MICROBIT_HEAP_ALLOCTOR_H
 #define MICROBIT_HEAP_ALLOCTOR_H
 
-#include "Microbit.h"
+#include "mbed.h"
 #include <new> 
 
 // The number of heap segments created.
@@ -78,8 +78,10 @@ inline void operator delete(void *ptr) throw()
     microbit_free(ptr);
 }
 
+
 // Macros to override overrides the 'malloc' and 'delete' functions globally, and redirects calls 
 // to the micro:bit theap allocator.  
+
 #define malloc(X) microbit_malloc( X ) 
 #define free(X) microbit_free( X ) 
 

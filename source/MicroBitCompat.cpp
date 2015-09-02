@@ -1,7 +1,7 @@
 /**
   * Compatibility / portability funcitons and constants for the MicroBit DAL.
   */
-#include "MicroBit.h"
+#include "mbed.h"
 
 
 /**
@@ -59,3 +59,4 @@ void itoa(int n, char *s)
     // Flip the order.
     string_reverse(s);
 }
+

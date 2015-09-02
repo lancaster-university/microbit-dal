@@ -118,7 +118,7 @@ void MicroBitAccelerometer::update()
     // We ignore the LSB bits for now, as they're just noise...
     // TODO: Revist this when we have working samples to see if additional resolution is needed.
 
-#ifdef USE_ACCEL_LSB
+#if CONFIG_ENABLED(USE_ACCEL_LSB)
     // Add in LSB values.
     sample.x += (data[1] / 64);
     sample.y += (data[3] / 64);

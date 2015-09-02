@@ -32,10 +32,24 @@ struct HeapDefinition
 
 // Create the necessary heap definitions.
 // We use two heaps by default: one for SoftDevice reuse, and one to run inside the mbed heap.
-HeapDefinition heap[MICROBIT_HEAP_COUNT] = {NULL}; 
+HeapDefinition heap[MICROBIT_HEAP_COUNT] = { NULL }; 
 
+// Scans the status of the heap definition table, and returns the number of INITIALISED heaps.
+int microbit_active_heaps()
+{
+    int heapCount = 0;
 
-#if defined(MICROBIT_DBG) && defined(MICROBIT_HEAP_DBG)
+    for (int i=0; i < MICROBIT_HEAP_COUNT; i++)
+    {
+        if(heap[i].heap_start != NULL)
+            heapCount++;
+    }
+
+    return heapCount;
+}
+
+#if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
+
 // Internal diagnostics function.
 // Diplays a usage summary about a given heap...
 void microbit_heap_print(HeapDefinition &heap)
@@ -52,12 +66,12 @@ void microbit_heap_print(HeapDefinition &heap)
         return;
     }
 
-	// Disable IRQ temporarily to ensure no race conditions!
-    __disable_irq();
-
     pc.printf("heap_start : %p\n", heap.heap_start);
     pc.printf("heap_end   : %p\n", heap.heap_end);
     pc.printf("heap_size  : %d\n", (int)heap.heap_end - (int)heap.heap_start);
+
+	// Disable IRQ temporarily to ensure no race conditions!
+    __disable_irq();
 
 	block = heap.heap_start;
 	while (block < heap.heap_end)
@@ -77,6 +91,10 @@ void microbit_heap_print(HeapDefinition &heap)
 
 		block += blockSize;
     }
+
+	// Enable Interrupts
+    __enable_irq();
+
     pc.printf("\n");
 
     pc.printf("mb_total_free : %d\n", totalFreeBlock*4);
@@ -107,13 +125,13 @@ void microbit_initialise_heap(HeapDefinition &heap)
 int
 microbit_create_sd_heap(HeapDefinition &heap)
 {
-#if !defined(MICROBIT_HEAP_REUSE_SD)
+#if CONFIG_DISABLED(MICROBIT_HEAP_REUSE_SD)
     // We're not configure to use memory of this sort.
     return 0;
 #endif
 
     // OK, see how much of the RAM assigned to Soft Device we can reclaim.
-#ifdef MICROBIT_BLE_ENABLED 
+#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
     heap.heap_start = (uint32_t *)MICROBIT_HEAP_BASE_BLE_ENABLED;
     heap.heap_end = (uint32_t *)MICROBIT_HEAP_SD_LIMIT;
 #else    
@@ -129,9 +147,14 @@ int
 microbit_create_nested_heap(HeapDefinition &heap)
 {
 	uint32_t mb_heap_max;
+    void *p;
+  
+    // Ensure we're configured to use this heap at all. If not, we can safely return.
+    if (MICROBIT_HEAP_SIZE <= 0)
+       return 0;
 
 	// Snapshot something at the top of the main heap.
-	void *p = native_malloc(sizeof(uint32_t));
+	p = native_malloc(sizeof(uint32_t));
 
 	// Compute the size left in our heap, taking care to ensure it lands on a word boundary.
 	mb_heap_max = (uint32_t) (((float)(MICROBIT_HEAP_END - (uint32_t)p)) * MICROBIT_HEAP_SIZE);
@@ -181,7 +204,7 @@ microbit_heap_init()
 	// Enable Interrupts
     __enable_irq();
 
-#if defined(MICROBIT_DBG) && defined(MICROBIT_HEAP_DBG)
+#if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     microbit_heap_print();
 #endif    
     return r;
@@ -293,7 +316,7 @@ void *microbit_malloc(size_t size)
             p = microbit_malloc(size, heap[i]);
             if (p != NULL)
             {
-#ifdef MICROBIT_HEAP_DBG
+#if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
                 pc.printf("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
 #endif    
                 return p;
@@ -307,18 +330,22 @@ void *microbit_malloc(size_t size)
     p = native_malloc(size);
     if (p!= NULL)
     {
-#ifdef MICROBIT_HEAP_DBG
-        pc.printf("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
+#if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
+        // Keep everything trasparent if we've not been initialised yet
+        if (microbit_active_heaps())
+            pc.printf("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
 #endif    
         return p;
     }
 
     // We're totally out of options (and memory!).
-#ifdef MICROBIT_HEAP_DBG
+#if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
+    // Keep everything trasparent if we've not been initialised yet
+    if (microbit_active_heaps())
         pc.printf("microbit_malloc: OUT OF MEMORY\n");
 #endif    
     
-#ifdef MICROBIT_PANIC_HEAP_FULL 
+#if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
     panic(MICROBIT_OOM);
 #endif        
 
@@ -334,8 +361,9 @@ void microbit_free(void *mem)
 	uint32_t	*memory = (uint32_t *)mem;
 	uint32_t	*cb = memory-1;
 
-#ifdef MICROBIT_HEAP_DBG
-    pc.printf("microbit_free:   %p\n", mem);
+#if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
+    if (microbit_active_heaps())
+        pc.printf("microbit_free:   %p\n", mem);
 #endif    
     // Sanity check.
 	if (memory == NULL)

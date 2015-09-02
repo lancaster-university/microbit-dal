@@ -1,5 +1,5 @@
-#ifndef MICROBIT_FONT
-#define MICROBIT_FONT
+#ifndef MICROBIT_FONT_H
+#define MICROBIT_FONT_H
 
 #include "mbed.h"
 

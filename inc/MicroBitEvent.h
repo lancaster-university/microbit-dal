@@ -1,5 +1,5 @@
-#ifndef MICROBIT_EVENT
-#define MICROBIT_EVENT
+#ifndef MICROBIT_EVENT_H
+#define MICROBIT_EVENT_H
 
 #include "MicroBit.h"
 

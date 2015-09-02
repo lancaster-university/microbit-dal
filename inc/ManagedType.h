@@ -1,5 +1,5 @@
-#ifndef MICROBIT_MANAGED_TYPE
-#define MICROBIT_MANAGED_TYPE
+#ifndef MICROBIT_MANAGED_TYPE_H
+#define MICROBIT_MANAGED_TYPE_H
 
 /**
   * Class definition for a Generic Managed Type.

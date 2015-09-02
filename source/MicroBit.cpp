@@ -2,7 +2,7 @@
 
 char MICROBIT_BLE_DEVICE_NAME[] = "BBC MicroBit [xxxxx]";
 
-#if defined (MICROBIT_BLE_ENABLED) && defined (MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
+#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED) && CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
 const char MICROBIT_BLE_MANUFACTURER[] = "The Cast of W1A";
 const char MICROBIT_BLE_MODEL[] = "Microbit SB2";
 const char MICROBIT_BLE_SERIAL[] = "SN1";
@@ -49,7 +49,7 @@ void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t r
 MicroBit::MicroBit() : 
     flags(0x00),
     i2c(MICROBIT_PIN_SDA, MICROBIT_PIN_SCL),
-#ifndef MICROBIT_DBG
+#if CONFIG_DISABLED(MICROBIT_DBG)
     serial(USBTX, USBRX),
 #endif    
     MessageBus(),
@@ -93,7 +93,7 @@ void MicroBit::init()
     // Seed our random number generator
     seedRandom();
 
-#ifdef MICROBIT_BLE_ENABLED
+#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
     // Start the BLE stack.        
     
     ble = new BLEDevice();
@@ -102,24 +102,18 @@ void MicroBit::init()
 
     // Bring up any configured auxiliary services.
 
-#ifdef MICROBIT_BLE_DFU_SERVICE
+#if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     ble_firmware_update_service = new MicroBitDFUService(*ble);
 
     // Compute our auto-generated MicroBit device name.
     ble_firmware_update_service->getName(MICROBIT_BLE_DEVICE_NAME+14);
 #endif
 
-#ifdef MICROBIT_BLE_DEVICE_INFORMATION_SERVICE
-
-#ifdef OLD
-    ble_device_information_service = new DeviceInformationService(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, MICROBIT_BLE_SERIAL, MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
-#endif
-
+#if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
     DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, MICROBIT_BLE_SERIAL, MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
-
 #endif
 
-#ifdef MICROBIT_BLE_EVENT_SERVICE
+#if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
     ble_event_service = new MicroBitEventService(*ble);
 #endif    
     
