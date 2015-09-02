@@ -27,11 +27,15 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "DynamicPwm.cpp"
     "MicroBitPin.cpp"
     "MicroBitSerial.cpp"
+    "MicroBitHeapAllocator.cpp"
 )
 
 if(CMAKE_COMPILER_IS_GNUCC)
   file(REMOVE "CortexContextSwitch.s")
   configure_file("CortexContextSwitch.s.gcc" "CortexContextSwitch.s" COPYONLY)
+else()
+  file(REMOVE "CortexContextSwitch.s")
+  configure_file("CortexContextSwitch.s.armcc" "CortexContextSwitch.s" COPYONLY)
 endif()
 
 set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
