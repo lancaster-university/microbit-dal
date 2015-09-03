@@ -30,6 +30,10 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitHeapAllocator.cpp"
 )
 
+if (YOTTA_CFG_MICROBIT_CONFIGFILE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${YOTTA_FORCE_INCLUDE_FLAG} \"${YOTTA_CFG_MICROBIT_CONFIGFILE}\"")
+endif ()
+
 if(CMAKE_COMPILER_IS_GNUCC)
   file(REMOVE "CortexContextSwitch.s")
   configure_file("CortexContextSwitch.s.gcc" "CortexContextSwitch.s" COPYONLY)
