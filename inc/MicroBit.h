@@ -5,9 +5,6 @@
 #include "MicroBitConfig.h"
 #include "MicroBitPanic.h"
 
-#include "ble/BLE.h"
-#include "ble/services/DeviceInformationService.h"
-
 #include "ErrorNo.h"
 
 #include "MicroBitHeapAllocator.h"
@@ -31,8 +28,11 @@
 #include "MicroBitCompass.h"
 #include "MicroBitAccelerometer.h"
 
+#include "ble/BLE.h"
+#include "ble/services/DeviceInformationService.h"
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
+#include "MicroBitLEDService.h"
 #include "ExternalEvents.h"
 
 // MicroBit::flags values
@@ -137,7 +137,7 @@ class MicroBit
     BLEDevice               *ble;
     MicroBitDFUService      *ble_firmware_update_service;
     MicroBitEventService    *ble_event_service;
-
+    MicroBitLEDService      *ble_led_service;
     
     /**
       * Constructor. 

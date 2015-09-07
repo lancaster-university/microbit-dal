@@ -136,9 +136,23 @@
 // This enables the standard BLE device information service.
 // Set '1' to enable. 
 #ifndef MICROBIT_BLE_DEVICE_INFORMATION_SERVICE
-#define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE     1
+#define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE     0
 #endif
 
+
+// Enable/Disable BLE Service: MicroBitLEDService
+// This enables the control and the LED matrix display via BLE.
+// Set '1' to enable. 
+#ifndef MICROBIT_BLE_LED_SERVICE
+#define MICROBIT_BLE_LED_SERVICE     1
+#endif
+
+
+// Defines the maximum length strong that can be written to the
+// display over BLE.
+#ifndef MICROBIT_BLE_MAXIMUM_SCROLLTEXT
+#define MICROBIT_BLE_MAXIMUM_SCROLLTEXT     20
+#endif
 //
 // Accelerometer options
 //
