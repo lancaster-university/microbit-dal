@@ -14,12 +14,10 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitButton.cpp"
     "MicroBitMessageBus.cpp"
     "MicroBitCompass.cpp"
-    "MicroBitEventService.cpp"
     "MicroBitEvent.cpp"
     "MicroBitFiber.cpp"
     "ManagedString.cpp"
     "MicroBitAccelerometer.cpp"
-    "MicroBitDFUService.cpp"
     "MicroBitIO.cpp"
     "MicroBitCompat.cpp"
     "MicroBitImage.cpp"
@@ -28,6 +26,8 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitPin.cpp"
     "MicroBitSerial.cpp"
     "MicroBitHeapAllocator.cpp"
+    "ble-services/MicroBitDFUService.cpp"
+    "ble-services/MicroBitEventService.cpp"
 )
 
 if (YOTTA_CFG_MICROBIT_CONFIGFILE)
@@ -35,15 +35,15 @@ if (YOTTA_CFG_MICROBIT_CONFIGFILE)
 endif ()
 
 if(CMAKE_COMPILER_IS_GNUCC)
-  file(REMOVE "CortexContextSwitch.s")
-  configure_file("CortexContextSwitch.s.gcc" "CortexContextSwitch.s" COPYONLY)
+  file(REMOVE "asm/CortexContextSwitch.s")
+  configure_file("asm/CortexContextSwitch.s.gcc" "asm/CortexContextSwitch.s" COPYONLY)
 else()
-  file(REMOVE "CortexContextSwitch.s")
-  configure_file("CortexContextSwitch.s.armcc" "CortexContextSwitch.s" COPYONLY)
+  file(REMOVE "asm/CortexContextSwitch.s")
+  configure_file("asm/CortexContextSwitch.s.armcc" "asm/CortexContextSwitch.s" COPYONLY)
 endif()
 
 set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
-    "CortexContextSwitch.s"
+    "asm/CortexContextSwitch.s"
 )
 
 add_library(microbit-dal
