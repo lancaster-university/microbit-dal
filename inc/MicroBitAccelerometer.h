@@ -32,12 +32,31 @@
   */
 #define MMA8653_WHOAMI_VAL      0x5A
 
+#define MMA8653_SAMPLE_RANGES   3
+#define MMA8653_SAMPLE_RATES    8
+
+
 struct MMA8653Sample
 {
     int16_t         x;
     int16_t         y;
     int16_t         z;
 };
+
+struct MMA8653SampleRateConfig
+{
+    uint32_t        sample_period;
+    uint8_t         ctrl_reg1;
+};
+
+struct MMA8653SampleRangeConfig
+{
+    uint8_t         sample_range;
+    uint8_t         xyz_data_cfg;
+};
+
+extern const MMA8653SampleRangeConfig MMA8653SampleRange[];
+extern const MMA8653SampleRateConfig MMA8653SampleRate[];
 
 /**
   * Class definition for MicroBit Accelerometer.
@@ -52,8 +71,9 @@ class MicroBitAccelerometer : public MicroBitComponent
       * Used to track asynchronous events in the event bus.
       */
     
-    //if you are adding status here - don't it's in MicroBitComponent!!!
     uint16_t        address;       // I2C address of this accelerometer.
+    uint16_t        samplePeriod;  // The time between samples, in milliseconds.
+    uint8_t         sampleRange;   // The sample range of the accelerometer in g.
     MMA8653Sample   sample;        // The last sample read.
     DigitalIn       int1;          // Data ready interrupt.
     
@@ -73,12 +93,47 @@ class MicroBitAccelerometer : public MicroBitComponent
     MicroBitAccelerometer(uint16_t id, uint16_t address);
     
     /**
+     * Configures the accelerometer for G range and sample rate defined
+     * in this object. The nearest values are chosen to those defined
+     * that are supported by the hardware. The instance variables are then
+     * updated to reflect reality.
+     */
+    void configure();
+
+    /**
       * Reads the acceleration data from the accelerometer, and stores it in our buffer.
       * This is called by the tick() member function, if the interrupt is set!
       */
     void update();
     
-    
+    /**
+      * Attempts to set the sample rate of the accelerometer to the specified value (in ms).
+      * n.b. the requested rate may not be possible on the hardware. In this case, the
+      * nearest lower rate is chosen.
+      * @param period the requested time between samples, in milliseconds.
+      */
+    void setPeriod(int period);
+
+    /**
+      * Reads the currently configured sample rate of the accelerometer. 
+      * @return The time between samples, in milliseconds.
+      */
+    int getPeriod();
+
+    /**
+     * Attempts to set the sample range of the accelerometer to the specified value (in g).
+     * n.b. the requested range may not be possible on the hardware. In this case, the
+     * nearest lower rate is chosen.
+     * @param range The requested sample range of samples, in g.
+     */
+    void setRange(int range);
+
+    /**
+     * Reads the currently configured sample range of the accelerometer. 
+     * @return The sample range, in g.
+     */
+    int getRange();
+
     /**
       * Attempts to determine the 8 bit ID from the accelerometer. 
       * @return the 8 bit ID returned by the accelerometer
