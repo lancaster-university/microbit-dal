@@ -4,10 +4,6 @@
 #include "mbed.h"
 #include "MicroBitConfig.h"
 #include "MicroBitPanic.h"
-
-#include "ble/BLE.h"
-#include "ble/services/DeviceInformationService.h"
-
 #include "ErrorNo.h"
 
 #include "MicroBitHeapAllocator.h"
@@ -15,9 +11,10 @@
 #include "MicroBitFiber.h"
 #include "ManagedType.h"
 #include "ManagedString.h"
+
+#include "MicroBitEvent.h"
 #include "MicroBitFont.h"
 #include "MicroBitImage.h"
-#include "MicroBitEvent.h"
 #include "MicroBitMessageBus.h"
 #include "DynamicPwm.h"
 #include "MicroBitComponent.h"
@@ -31,6 +28,8 @@
 #include "MicroBitCompass.h"
 #include "MicroBitAccelerometer.h"
 
+#include "ble/BLE.h"
+#include "ble/services/DeviceInformationService.h"
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
 #include "ExternalEvents.h"

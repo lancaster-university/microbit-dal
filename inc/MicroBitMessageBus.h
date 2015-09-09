@@ -2,6 +2,8 @@
 #define MICROBIT_MESSAGE_BUS_H
 
 #include "mbed.h"
+#include "MemberFunctionCallback.h"
+#include "MicroBitListener.h"
 #include "MicroBitComponent.h"
 #include "MicroBitEvent.h"
 
@@ -10,33 +12,9 @@
 #define MICROBIT_ID_ANY					0
 #define MICROBIT_EVT_ANY				0
 
-struct MicroBitListener
-{
-	uint16_t		id;				// The ID of the component that this listener is interested in. 
-	uint16_t 		value;			// Value this listener is interested in receiving. 
-	void* 			cb;				// Callback function associated with this listener. Either (*cb)(MicroBitEvent) or (*cb)(MicroBitEvent, void*) depending on whether cb_arg is NULL.
-	void*			cb_arg;			// Argument to be passed to the caller. This is assumed to be a pointer, so passing in NULL means that the function doesn't take an argument.
-	MicroBitEvent 	evt;
-	
-	MicroBitListener *next;
-
-	/**
-	  * Constructor. 
-	  * Create a new Message Bus Listener.
-	  * @param id The ID of the component you want to listen to.
-	  * @param value The event ID you would like to listen to from that component
-	  * @param handler A function pointer to call when the event is detected.
-	  */
-	MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent));
-	
-	/**
-	  * Alternative constructor where we register a value to be passed to the
-	  * callback. If arg == NULL, the function takes no extra arguemnt.
-	  * Otherwise, the function is understood to take an extra argument.
-	  */
-	MicroBitListener(uint16_t id, uint16_t value, void *handler, void* arg);
-};
-
+/**
+  * Enclosing class to hold a chain of events.
+  */
 struct MicroBitEventQueueItem
 {
     MicroBitEvent evt;
@@ -49,6 +27,7 @@ struct MicroBitEventQueueItem
       */
     MicroBitEventQueueItem(MicroBitEvent evt);
 };
+
 
 /**
   * Class definition for the MicroBitMessageBus.
@@ -136,20 +115,63 @@ class MicroBitMessageBus : public MicroBitComponent
 	  */
 	void listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg);
 
+	/**
+	  * Register a listener function.
+      *
+      * As above, but allows callbacks into member functions within a C++ object.
+      * This one is a bit more complex, but hey, that's C++ for you!
+	  */
+    template <typename T>
+	void listen(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent));
+
 	private:
-	
+
+    /**
+     * Add the given MicroBitListener to the list of event handlers, unconditionally.
+     * @param listener The MicroBitListener to validate.
+     * @return 1 if the listener is valid, 0 otherwise.
+     */
+    int add(MicroBitListener *newListener);
+
 	MicroBitListener            *listeners;		    // Chain of active listeners.
     MicroBitEventQueueItem      *evt_queue_head;    // Head of queued events to be processed.
     MicroBitEventQueueItem      *evt_queue_tail;    // Tail of queued events to be processed.
-	int seq;        							    // Sequence number. Used to invalidate cache entries.
             
-	void listen(int id, int value, void* handler, void* arg);
     void queueEvent(MicroBitEvent &evt);
     MicroBitEventQueueItem* dequeueEvent();
 
     virtual void idleTick();
     virtual int isIdleCallbackNeeded();
 };
+
+/**
+  * A registrationt function to allow C++ member funcitons (methods) to be registered as an event
+  * listener.
+  *
+  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
+  * Use MICROBIT_ID_ANY to receive events from all components.
+  *
+  * @param value The value of messages to listen for. Events with any other values will be filtered. 
+  * Use MICROBIT_EVT_ANY to receive events of any value.
+  *
+  * @param object The object on which the method should be invoked.
+  * @param hander The method to call when an event is received.
+  */
+template <typename T>
+void MicroBitMessageBus::listen(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent))
+{
+	if (object == NULL || handler == NULL)
+		return;
+
+	MicroBitListener *newListener = new MicroBitListener(id, value, object, handler);
+
+    if(!add(newListener))
+    {
+        delete newListener->cb_method;
+        delete newListener;
+        return;
+    }
+}
 
 #endif
 

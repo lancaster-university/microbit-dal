@@ -28,6 +28,8 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitPin.cpp"
     "MicroBitSerial.cpp"
     "MicroBitHeapAllocator.cpp"
+    "MicroBitListener.cpp"
+    "MemberFunctionCallback.cpp"
 )
 
 if (YOTTA_CFG_MICROBIT_CONFIGFILE)
