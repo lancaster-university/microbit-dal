@@ -245,10 +245,7 @@ void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent
 	MicroBitListener *newListener = new MicroBitListener(id, value, handler);
 
     if(!add(newListener))
-    {
         delete newListener;
-        return;
-    }
 }
 
 void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg) 
@@ -259,10 +256,63 @@ void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent
 	MicroBitListener *newListener = new MicroBitListener(id, value, handler, arg);
 
     if(!add(newListener))
-    {
         delete newListener;
-        return;
-    }
+}
+
+/**
+ * Unregister a listener function.
+ * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
+ * 
+ * @param id The Event ID used to register the listener.
+ * @param value The Event VALUE used to register the listener.
+ * @param handler The function used to register the listener.
+ *
+ *
+ * Example:
+ * @code 
+ * void onButtonBClick()
+ * {
+ * 	//do something
+ * }
+ *
+ * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+ * @endcode
+ */
+void MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent))
+{
+	if (handler == NULL)
+		return;
+
+	MicroBitListener listener(id, value, handler);
+    remove(&listener);
+}
+
+/**
+ * Unregister a listener function.
+ * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
+ * 
+ * @param id The Event ID used to register the listener.
+ * @param value The Event VALUE used to register the listener.
+ * @param handler The function used to register the listener.
+ *
+ *
+ * Example:
+ * @code 
+ * void onButtonBClick(void *arg)
+ * {
+ * 	//do something
+ * }
+ *
+ * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+ * @endcode
+ */
+void MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg)
+{
+	if (handler == NULL)
+		return;
+
+	MicroBitListener listener(id, value, handler, arg);
+    remove(&listener);
 }
 
 
@@ -280,7 +330,6 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
 	if (newListener == NULL)
 		return 0;
 
-    methodCallback = newListener->flags & MESSAGE_BUS_LISTENER_METHOD;
 
 	l = listeners;
 
@@ -291,6 +340,8 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
     // If we have a callback to a method, check the cb_method class. Otherwise, the cb function point is sufficient.
     while (l != NULL)
     {
+        methodCallback = (newListener->flags & MESSAGE_BUS_LISTENER_METHOD) && (l->flags & MESSAGE_BUS_LISTENER_METHOD);
+
         if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb))
             return 0;
 
@@ -342,5 +393,54 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
 	}
 
     return 1;
+}
+
+/**
+  * Remove a MicroBitListener from the list that matches the given listener.
+  * @param listener The MicroBitListener to validate.
+  * @return The number of listeners removed from the list.
+  */
+int MicroBitMessageBus::remove(MicroBitListener *listener)
+{
+	MicroBitListener *l, *p;
+    int removed = 0;
+
+	//handler can't be NULL!
+	if (listener == NULL)
+		return 0;
+
+	l = listeners;
+	p = NULL;
+
+    // Walk this list of event handlers. Delete any that match the given listener.
+    while (l != NULL)
+    {
+        if (l->id == listener->id && l->value == listener->value && ((listener->flags & MESSAGE_BUS_LISTENER_METHOD) == (l->flags & MESSAGE_BUS_LISTENER_METHOD)))
+        {
+            if(((listener->flags & MESSAGE_BUS_LISTENER_METHOD) && (*l->cb_method == *listener->cb_method)) || 
+              ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
+            {
+                // Found a match. Remove from the list.
+                if (p == NULL)
+                    listeners = l->next;
+                else 
+                    p->next = l->next;
+
+                // delete the listener.
+                MicroBitListener *t = l;
+                l = l->next;
+
+                delete t;
+                removed++;
+
+                continue;
+            }
+        }
+
+        p = l;
+        l = l->next;
+    }
+
+    return removed;
 }
 

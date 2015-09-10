@@ -43,3 +43,11 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(
 	this->next = NULL;
 }
 
+/**
+ * Destructor. Ensures all resources used by this listener are freed.
+ */
+MicroBitListener::~MicroBitListener()
+{
+    if(this->flags & MESSAGE_BUS_LISTENER_METHOD)
+        delete cb_method;
+}

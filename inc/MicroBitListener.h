@@ -54,6 +54,11 @@ struct MicroBitListener
      */
     template <typename T> 
     MicroBitListener(uint16_t id, uint16_t value, T* object, void (T::*method)(MicroBitEvent));
+
+    /**
+      * Destructor. Ensures all resources used by this listener are freed.
+      */
+    ~MicroBitListener();
 };
 
 /**

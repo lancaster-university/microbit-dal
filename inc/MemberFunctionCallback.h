@@ -53,7 +53,7 @@ template <typename T>
 MemberFunctionCallback::MemberFunctionCallback(T* object, void (T::*method)(MicroBitEvent e))
 {
     this->object = object;
-    memclr(this->method, sizeof(method));
+    memclr(this->method, sizeof(this->method));
     memcpy(this->method, &method, sizeof(method));
     invoke = &MemberFunctionCallback::methodCall<T>;
 }

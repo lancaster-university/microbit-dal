@@ -110,20 +110,116 @@ class MicroBitMessageBus : public MicroBitComponent
 	/**
 	  * Register a listener function.
 	  * 
-	  * Same as above, except the listener function is passed an extra argument in addition to the
-	  * MicroBitEvent, when called.
+	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
+	  * Use MICROBIT_ID_ANY to receive events from all components.
+	  *
+	  * @param value The value of messages to listen for. Events with any other values will be filtered. 
+	  * Use MICROBIT_EVT_ANY to receive events of any value.
+	  *
+	  * @param hander The function to call when an event is received.
+	  * 
+      * Example:
+      * @code 
+      * void onButtonBClick(void *arg)
+      * {
+      * 	//do something
+      * }
+      * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); // call function when ever a click event is detected.
+      * @endcode
 	  */
 	void listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg);
 
 	/**
 	  * Register a listener function.
+	  * 
+	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
+	  * Use MICROBIT_ID_ANY to receive events from all components.
+	  *
+	  * @param value The value of messages to listen for. Events with any other values will be filtered. 
+	  * Use MICROBIT_EVT_ANY to receive events of any value.
+	  *
+	  * @param hander The function to call when an event is received.
+	  * 
+      * Example:
+      * @code 
+      * void SomeClass::onButtonBClick()
+      * {
+      * 	//do something
+      * }
       *
-      * As above, but allows callbacks into member functions within a C++ object.
-      * This one is a bit more complex, but hey, that's C++ for you!
+      * SomeClass s = new SomeClass();
+      * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick); 
+      * @endcode
 	  */
     template <typename T>
 	void listen(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent));
 
+
+	/**
+	  * Unregister a listener function.
+      * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
+	  * 
+	  * @param id The Event ID used to register the listener.
+	  * @param value The Event VALUE used to register the listener.
+	  * @param handler The function used to register the listener.
+      *
+	  *
+      * Example:
+      * @code 
+      * void onButtonBClick()
+      * {
+      * 	//do something
+      * }
+      *
+      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+      * @endcode
+	  */
+	void ignore(int id, int value, void (*handler)(MicroBitEvent));
+	
+	/**
+	  * Unregister a listener function.
+      * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
+	  * 
+	  * @param id The Event ID used to register the listener.
+	  * @param value The Event VALUE used to register the listener.
+	  * @param handler The function used to register the listener.
+      *
+	  *
+      * Example:
+      * @code 
+      * void onButtonBClick(void *arg)
+      * {
+      * 	//do something
+      * }
+      *
+      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+      * @endcode
+	  */
+	void ignore(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg);
+
+	/**
+	  * Unregister a listener function.
+      * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
+	  * 
+	  * @param id The Event ID used to register the listener.
+	  * @param value The Event VALUE used to register the listener.
+	  * @param handler The function used to register the listener.
+      *
+	  *
+      * Example:
+      * @code 
+      * 
+      * void SomeClass::onButtonBClick()
+      * {
+      * 	//do something
+      * }
+      *
+      * SomeClass s = new SomeClass();
+      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick); 
+      * @endcode
+	  */
+    template <typename T>
+	void ignore(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent));
 	private:
 
     /**
@@ -132,6 +228,7 @@ class MicroBitMessageBus : public MicroBitComponent
      * @return 1 if the listener is valid, 0 otherwise.
      */
     int add(MicroBitListener *newListener);
+    int remove(MicroBitListener *newListener);
 
 	MicroBitListener            *listeners;		    // Chain of active listeners.
     MicroBitEventQueueItem      *evt_queue_head;    // Head of queued events to be processed.
@@ -166,12 +263,38 @@ void MicroBitMessageBus::listen(uint16_t id, uint16_t value, T* object, void (T:
 	MicroBitListener *newListener = new MicroBitListener(id, value, object, handler);
 
     if(!add(newListener))
-    {
-        delete newListener->cb_method;
         delete newListener;
-        return;
-    }
 }
+
+/**
+ * Unregister a listener function.
+ * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
+ * 
+ * @param id The Event ID used to register the listener.
+ * @param value The Event VALUE used to register the listener.
+ * @param handler The function used to register the listener.
+ *
+ *
+ * Example:
+ * @code 
+ * void onButtonBClick(void *arg)
+ * {
+ * 	//do something
+ * }
+ *
+ * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+ * @endcode
+ */
+template <typename T>
+void MicroBitMessageBus::ignore(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent))
+{
+	if (handler == NULL)
+		return;
+
+	MicroBitListener listener(id, value, object, handler);
+    remove(&listener);
+}
+
 
 #endif
 
