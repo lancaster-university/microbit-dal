@@ -10,6 +10,12 @@ D3. Simplify the IO Pin Service, possible to expose the edge connector pins only
 
 D5. Generic Attribute Service: profile design doc/report doesn’t show it and it’s mandatory (issue with Bluetooth Developer Studio). 
 
+D9. DFU services uses a different base UUID to the other custom services. Is this deliberate?
+
+D10. Characteristics in the DFU service use a different base UUID to the parent service. Is this deliberate?
+
+D11. What are the data types for DFU Control and DFU Flash Code? Assumed uint8 and array of uint8.
+
 
 CLOSED:
 
@@ -24,6 +30,8 @@ D6. Device Information Service: All characteristics are optional. Which ones do 
 D7. Why does LED Matrix State support “Write Without Response”? I think this should be plain “Write” so that no further writes are made until there’s been an ACK back from the previous one. Changed.
 
 D8. MicroBit Requirements supports Write. This is (ironically and puntastically) wrong. Client should not be able to modify the requirements the MicroBit has. Changed.
+
+D12. Microbit DFU service not in the profile design. Added. Needs descriptions and data types confirming.
 
 
 Profile Testing
