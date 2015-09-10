@@ -1,4 +1,4 @@
-BLE Issues
+# micro:bit BLE - Issue Tracker
 ----------
 
 Profile Design
@@ -7,17 +7,17 @@ Profile Design
 OPEN:
 D1. Lose the System LED State characteristic since it cannot be controlled from the BLE MCU.
 
-D2. Lose the Scrolling State characteristic ñ complexity and memory constraints
+D2. Lose the Scrolling State characteristic ‚Äì complexity and memory constraints
 
 D3. Simplify the IO Pin Service, possible to expose the edge connector pins only. Possibly drop it to save memory and use the event service to transport pin values in either direction. Needs further thought.
 
-D4. Generic Access Service: Peripheral Privacy Flag is optional and I donít think we need it. Ditto Reconnection Address, ditto Peripheral Preferred Connection Parameters.
+D4. Generic Access Service: Peripheral Privacy Flag is optional and I don‚Äôt think we need it. Ditto Reconnection Address, ditto Peripheral Preferred Connection Parameters.
 
-D5. Generic Attribute Service: profile design doc/report doesnít show it and itís mandatory (issue with Bluetooth Developer Studio). 
+D5. Generic Attribute Service: profile design doc/report doesn‚Äôt show it and it‚Äôs mandatory (issue with Bluetooth Developer Studio). 
 
 D6. Device Information Service: All characteristics are optional. Which ones do we really want/need? Save a little memory.....
 
-D7. Why does LED Matrix State support ìWrite Without Responseî? I think this should be plain ìWriteî so that no further writes are made until thereís been an ACK back from the previous one.
+D7. Why does LED Matrix State support ‚ÄúWrite Without Response‚Äù? I think this should be plain ‚ÄúWrite‚Äù so that no further writes are made until there‚Äôs been an ACK back from the previous one.
 
 D8. MicroBit Requirements supports Write. This is (ironically and puntastically) wrong. Client should not be able to modify the requirements the MicroBit has.
 
