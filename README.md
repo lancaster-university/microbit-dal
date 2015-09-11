@@ -48,19 +48,6 @@ Then you should **try** to build using the following command:
 yt build
 ```
 
-For GCC, you will have to swap the CortexContextSwitch.s file with the file CortexContextSwitch.s.gcc which will be located in `/yotta_modules/microbit-dal/source`. For an example of how to do this, look below:
-
-```
-#first rename the existing one
-mv yotta_modules/microbit-dal/source/CortexContextSwitch.s yotta_modules/microbit-dal/source/CortexContextSwitch.s.armcc
-
-#then rename gcc version so that it is included by cmake
-mv yotta_modules/microbit-dal/source/CortexContextSwitch.s.gcc yotta_modules/microbit-dal/source/CortexContextSwitch.s
-```
-
-This is a temporary measure until Yotta supports assembly preprocessing for armcc.
-
-
 **NOTE:
 To build the final hex files for the micro:bit, you will need to install the srec which can be installed via brew (`brew install srecord`), or you can install it manually from [here](http://srecord.sourceforge.net/).**
 
