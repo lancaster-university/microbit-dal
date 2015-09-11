@@ -8,18 +8,6 @@
 
 /**
   * Constructor. 
-  * Create a new MicroBitEventQueueItem.
-  * @param evt The event to be queued.
-  */
-MicroBitEventQueueItem::MicroBitEventQueueItem(MicroBitEvent evt)
-{
-    this->evt = evt;
-	this->next = NULL;
-}
-
-
-/**
-  * Constructor. 
   * Create a new Message Bus.
   */
 MicroBitMessageBus::MicroBitMessageBus()
@@ -27,6 +15,18 @@ MicroBitMessageBus::MicroBitMessageBus()
 	this->listeners = NULL;
     this->evt_queue_head = NULL;
     this->evt_queue_tail = NULL;
+    this->nonce_val = 0;
+}
+
+/**
+ * Returns a 'nonce' for use with the NONCE_ID channel of the message bus.
+ */
+uint16_t MicroBitMessageBus::nonce()
+{
+    // In the global scheme of things, a terrible nonce generator. 
+    // However, for our purposes, this is simple and adequate for local use.
+    // This would be a bad idea if our events were networked though - can you think why?
+    return nonce_val++;
 }
 
 /**
@@ -39,20 +39,60 @@ void async_callback(void *param)
 {
 	MicroBitListener *listener = (MicroBitListener *)param;
 
+    // OK, now we need to decide how to behave depending on our configuration.
+    // If this a fiber f already active within this listener then check our
+    // configuration to determine the correct course of action. 
+    //
+
+    if (listener->flags & MESSAGE_BUS_LISTENER_BUSY)
+    {
+        // Drop this event, if that's how we've been configured.
+        if (listener->flags & MESSAGE_BUS_LISTENER_DROP_IF_BUSY)
+            return;
+
+        // Queue this event up for later, if that's how we've been configured.
+        if (listener->flags & MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY)
+        {
+            listener->queue(listener->evt);
+            return;
+        }
+    }
+
     // Determine the calling convention for the callback, and invoke... 
     // C++ is really bad at this! Especially as the ARM compiler is yet to support C++ 11 :-/
 
-    // Firstly, check for a method callback into an object.
-    if (listener->flags & MESSAGE_BUS_LISTENER_METHOD)
-        listener->cb_method->fire(listener->evt);
+    // Record that we have a fiber going into this listener...
+    listener->flags |= MESSAGE_BUS_LISTENER_BUSY;
 
-    // Now a parameterised C function
-    else if (listener->flags & MESSAGE_BUS_LISTENER_PARAMETERISED)
-		listener->cb_param(listener->evt, listener->cb_arg);
-    
-    // We must have a plain C function
-	else
-		listener->cb(listener->evt);
+    while (1)
+    {
+        // Firstly, check for a method callback into an object.
+        if (listener->flags & MESSAGE_BUS_LISTENER_METHOD)
+            listener->cb_method->fire(listener->evt);
+
+        // Now a parameterised C function
+        else if (listener->flags & MESSAGE_BUS_LISTENER_PARAMETERISED)
+            listener->cb_param(listener->evt, listener->cb_arg);
+
+        // We must have a plain C function
+        else
+            listener->cb(listener->evt);
+
+        // If there are more events to process, dequeue te next one and process it.
+        if ((listener->flags & MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY) && listener->evt_queue)
+        {
+            MicroBitEventQueueItem *item = listener->evt_queue;
+
+            listener->evt = item->evt;
+            listener->evt_queue = listener->evt_queue->next;
+            delete item;
+        }
+        else
+            break;
+    }
+
+    // The fiber of exiting... clear our state.
+    listener->flags &= ~MESSAGE_BUS_LISTENER_BUSY;
 }
 
 
@@ -176,31 +216,25 @@ void MicroBitMessageBus::process(MicroBitEvent evt)
 {
 	MicroBitListener *l;
 
-	// Find the start of the sublist where we'll send this event.
     l = listeners;
-    while (l != NULL && l->id != evt.source)
-        l = l->next;
-
-	// Now, send the event to all listeners registered for this event.
-	while (l != NULL && l->id == evt.source)
-	{
-		if(l->value ==  MICROBIT_EVT_ANY || l->value == evt.value)
-		{
+    while (l != NULL)
+    {
+	    if((l->id == evt.source || l->id == MICROBIT_ID_ANY) && (l->value == evt.value || l->value == MICROBIT_EVT_ANY))
+        {
 			l->evt = evt;
-			invoke(async_callback, (void *)l);
+
+            // OK, if this handler has regisitered itself as non-blocking, we just execute it directly... 
+            // This is normally only done for trusted system components.
+            // Otherwise, we invoke it in a 'fork on block' context, that will automatically create a fiber
+            // should the event handler attempt a blocking operation, but doesn't have the overhead
+            // of creating a fiber needlessly. (cool huh?)
+            if (l->flags & MESSAGE_BUS_LISTENER_NONBLOCKING)
+                async_callback(l);
+            else
+			    invoke(async_callback, l);
 		}
 
 		l = l->next;
-	}
-
-	// Next, send to any listeners registered for ALL event sources.
-	l = listeners;
-	while (l != NULL && l->id == MICROBIT_ID_ANY)
-	{
-		l->evt = evt;
-		invoke(async_callback, (void *)l);
-		
-		l = l->next;	
 	}
 
     // Finally, forward the event to any other internal subsystems that may be interested.
@@ -237,23 +271,23 @@ void MicroBitMessageBus::process(MicroBitEvent evt)
   * @endcode
   */
 
-void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent)) 
+void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags) 
 {
 	if (handler == NULL)
 		return;
 
-	MicroBitListener *newListener = new MicroBitListener(id, value, handler);
+	MicroBitListener *newListener = new MicroBitListener(id, value, handler, flags);
 
     if(!add(newListener))
         delete newListener;
 }
 
-void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg) 
+void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg, uint16_t flags) 
 {
 	if (handler == NULL)
 		return;
 
-	MicroBitListener *newListener = new MicroBitListener(id, value, handler, arg);
+	MicroBitListener *newListener = new MicroBitListener(id, value, handler, arg, flags);
 
     if(!add(newListener))
         delete newListener;

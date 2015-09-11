@@ -1,7 +1,7 @@
 #ifndef MICROBIT_EVENT_H
 #define MICROBIT_EVENT_H
 
-#include "MicroBit.h"
+#include "mbed.h"
 
 /**
   * Class definition for a MicrobitEvent
@@ -43,7 +43,21 @@ class MicroBitEvent
     void fire();
 };
 
+/**
+  * Enclosing class to hold a chain of events.
+  */
+struct MicroBitEventQueueItem
+{
+    MicroBitEvent evt;
+    MicroBitEventQueueItem *next;
 
+    /**
+      * Constructor. 
+      * Creates a new MicroBitEventQueueItem.
+      * @param evt The event that is to be queued.
+      */
+    MicroBitEventQueueItem(MicroBitEvent evt);
+};
 
 #endif
 

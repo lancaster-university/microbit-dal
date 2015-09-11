@@ -1,6 +1,4 @@
-#include "MicroBitHeapAllocator.h"
-#include "DynamicPwm.h"
-
+#include "MicroBit.h"
 
 DynamicPwm* DynamicPwm::pwms[NO_PWMS] = { NULL };
 

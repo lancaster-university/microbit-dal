@@ -44,3 +44,15 @@ void MicroBitEvent::fire()
 {
     uBit.MessageBus.send(*this);
 }
+
+/**
+  * Constructor. 
+  * Create a new MicroBitEventQueueItem.
+  * @param evt The event to be queued.
+  */
+MicroBitEventQueueItem::MicroBitEventQueueItem(MicroBitEvent evt)
+{
+    this->evt = evt;
+	this->next = NULL;
+}
+

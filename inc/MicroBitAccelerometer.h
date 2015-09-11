@@ -2,6 +2,7 @@
 #define MICROBIT_ACCELEROMETER_H
 
 #include "mbed.h"
+#include "MicroBitComponent.h"
 
 /**
   * Relevant pin assignments

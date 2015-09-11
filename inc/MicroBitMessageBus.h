@@ -2,32 +2,14 @@
 #define MICROBIT_MESSAGE_BUS_H
 
 #include "mbed.h"
-#include "MemberFunctionCallback.h"
-#include "MicroBitListener.h"
 #include "MicroBitComponent.h"
 #include "MicroBitEvent.h"
+#include "MicroBitListener.h"
 
 // Enumeration of core components.
 #define MICROBIT_CONTROL_BUS_ID         0
 #define MICROBIT_ID_ANY					0
 #define MICROBIT_EVT_ANY				0
-
-/**
-  * Enclosing class to hold a chain of events.
-  */
-struct MicroBitEventQueueItem
-{
-    MicroBitEvent evt;
-    MicroBitEventQueueItem *next;
-
-    /**
-      * Constructor. 
-      * Creates a new MicroBitEventQueueItem.
-      * @param evt The event that is to be queued.
-      */
-    MicroBitEventQueueItem(MicroBitEvent evt);
-};
-
 
 /**
   * Class definition for the MicroBitMessageBus.
@@ -105,7 +87,7 @@ class MicroBitMessageBus : public MicroBitComponent
       * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); // call function when ever a click event is detected.
       * @endcode
 	  */
-	void listen(int id, int value, void (*handler)(MicroBitEvent));
+	void listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
 	
 	/**
 	  * Register a listener function.
@@ -127,7 +109,7 @@ class MicroBitMessageBus : public MicroBitComponent
       * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); // call function when ever a click event is detected.
       * @endcode
 	  */
-	void listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg);
+	void listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg, uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
 
 	/**
 	  * Register a listener function.
@@ -152,7 +134,7 @@ class MicroBitMessageBus : public MicroBitComponent
       * @endcode
 	  */
     template <typename T>
-	void listen(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent));
+	void listen(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent), uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
 
 
 	/**
@@ -220,6 +202,12 @@ class MicroBitMessageBus : public MicroBitComponent
 	  */
     template <typename T>
 	void ignore(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent));
+
+    /**
+      * Returns a 'nonce' for use with the NONCE_ID channel of the message bus.
+      */
+    uint16_t nonce();
+
 	private:
 
     /**
@@ -233,6 +221,7 @@ class MicroBitMessageBus : public MicroBitComponent
 	MicroBitListener            *listeners;		    // Chain of active listeners.
     MicroBitEventQueueItem      *evt_queue_head;    // Head of queued events to be processed.
     MicroBitEventQueueItem      *evt_queue_tail;    // Tail of queued events to be processed.
+    uint16_t                    nonce_val;          // The last nonce issued.
             
     void queueEvent(MicroBitEvent &evt);
     MicroBitEventQueueItem* dequeueEvent();
@@ -255,12 +244,12 @@ class MicroBitMessageBus : public MicroBitComponent
   * @param hander The method to call when an event is received.
   */
 template <typename T>
-void MicroBitMessageBus::listen(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent))
+void MicroBitMessageBus::listen(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent), uint16_t flags)
 {
 	if (object == NULL || handler == NULL)
 		return;
 
-	MicroBitListener *newListener = new MicroBitListener(id, value, object, handler);
+	MicroBitListener *newListener = new MicroBitListener(id, value, object, handler, flags);
 
     if(!add(newListener))
         delete newListener;

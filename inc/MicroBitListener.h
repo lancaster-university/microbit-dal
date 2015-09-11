@@ -3,12 +3,16 @@
 
 #include "mbed.h"
 #include "MicroBitEvent.h"
+#include "MemberFunctionCallback.h"
 
 // MessageBusListener flags...
 #define MESSAGE_BUS_LISTENER_PARAMETERISED          0x0001
 #define MESSAGE_BUS_LISTENER_METHOD                 0x0002
-#define MESSAGE_BUS_LISTENER_REENTRANT              0x0004
-#define MESSAGE_BUS_LISTENER_BUSY                   0x0008
+#define MESSAGE_BUS_LISTENER_BUSY                   0x0004
+#define MESSAGE_BUS_LISTENER_REENTRANT              0x0008
+#define MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY          0x0010
+#define MESSAGE_BUS_LISTENER_DROP_IF_BUSY           0x0020
+#define MESSAGE_BUS_LISTENER_NONBLOCKING            0x0040
 
 struct MicroBitListener
 {
@@ -25,7 +29,8 @@ struct MicroBitListener
 
 	void*			cb_arg;			// Optional argument to be passed to the caller. 
 
-	MicroBitEvent 	evt;
+	MicroBitEvent 	            evt;
+	MicroBitEventQueueItem 	    *evt_queue;
 	
 	MicroBitListener *next;
 
@@ -36,13 +41,13 @@ struct MicroBitListener
 	  * @param value The event ID you would like to listen to from that component
 	  * @param handler A function pointer to call when the event is detected.
 	  */
-	MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent));
+	MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent), uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
 	
 	/**
 	  * Alternative constructor where we register a value to be passed to the
 	  * callback. 
 	  */
-    MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent, void *), void* arg);
+    MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent, void *), void* arg, uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
 
     /**
      * Constructor. 
@@ -53,12 +58,18 @@ struct MicroBitListener
      * @param object The method within the C++ object to call.
      */
     template <typename T> 
-    MicroBitListener(uint16_t id, uint16_t value, T* object, void (T::*method)(MicroBitEvent));
+    MicroBitListener(uint16_t id, uint16_t value, T* object, void (T::*method)(MicroBitEvent), uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
 
     /**
       * Destructor. Ensures all resources used by this listener are freed.
       */
     ~MicroBitListener();
+
+    /**
+     * Queues and event up to be processed.
+     * @param e The event to queue
+     */
+    void queue(MicroBitEvent e);
 };
 
 /**
@@ -71,13 +82,13 @@ struct MicroBitListener
   */
 
 template <typename T>
-MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, T* object, void (T::*method)(MicroBitEvent))
+MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, T* object, void (T::*method)(MicroBitEvent), uint16_t flags)
 {
 	this->id = id;
 	this->value = value;
     this->cb_method = new MemberFunctionCallback(object, method);
 	this->cb_arg = NULL;
-    this->flags = MESSAGE_BUS_LISTENER_METHOD;
+    this->flags = flags | MESSAGE_BUS_LISTENER_METHOD;
 	this->next = NULL;
 }
 

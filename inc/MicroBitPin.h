@@ -1,8 +1,8 @@
 #ifndef MICROBIT_PIN_H
 #define MICROBIT_PIN_H
 
-#include "MicroBitComponent.h"
 #include "mbed.h"
+#include "MicroBitComponent.h"
                                                      // Status Field flags...
 #define IO_STATUS_DIGITAL_IN             0x01        // Pin is configured as a digital input, with no pull up.
 #define IO_STATUS_DIGITAL_OUT            0x02        // Pin is configured as a digital output
