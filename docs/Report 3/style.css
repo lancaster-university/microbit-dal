@@ -262,16 +262,6 @@ p
 	float:left;
 }
 
-.mandatory_property {
-	width: 935px;
-	font-size: 12px;
-  line-height: 33px;
-  height: 33px;
-	float:left;
-	font-weight:bold;
-	color:#ff0000;
-}
-
 .characteristic_field {
   float:left;
   width:1280px;

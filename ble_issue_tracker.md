@@ -4,9 +4,11 @@
 Profile Design
 --------------
 
-OPEN:
+### OPEN:
 
 D3. Simplify the IO Pin Service, possible to expose the edge connector pins only. Possibly drop it to save memory and use the event service to transport pin values in either direction. Needs further thought.
+
+* Update: Removed all pin characteristics except for pin 0, pin 1 and pin 2.
 
 D5. Generic Attribute Service: profile design doc/report doesn’t show it and it’s mandatory (issue with Bluetooth Developer Studio). 
 
@@ -17,7 +19,7 @@ D10. Characteristics in the DFU service use a different base UUID to the parent 
 D11. What are the data types for DFU Control and DFU Flash Code? Assumed uint8 and array of uint8.
 
 
-CLOSED:
+### CLOSED:
 
 D1. Lose the System LED State characteristic since it cannot be controlled from the BLE MCU.DONE.
 
@@ -37,7 +39,7 @@ D12. Microbit DFU service not in the profile design. Added. Needs descriptions a
 Profile Testing
 ---------------
 
-OPEN:
+### OPEN:
 T1. Client Event characteristic should have the WRITE property and currently does not.
 
 T2. MicroBit Event characteristic should have the READ property and currently does not.
@@ -52,4 +54,4 @@ T6. Device Name in advertising packets includes the flash code so anyone could p
 
 T7. Generic Access Service: Device Name and Appearance are mandatory and so need values
 
-CLOSED:
+### CLOSED:
