@@ -60,10 +60,10 @@ class MicroBitMessageBus : public MicroBitComponent
       * Internal function, used to deliver the given event to all relevant recipients.
       * Normally, this is called once an event has been removed from the event queue.
       *
-      * IT IS RECOMMENDED THAT ALL EXTERNAL CODE USE THE send() FUNCTIONS INSTEAD OF THIS FUNCTION.
+      * IT IS RECOMMENDED THAT ALL EXTERNAL CODE USE THE send() FUNCTIONS INSTEAD OF THIS FUNCTION,
+      * or the constructors provided by MicroBitEvent.
 	  *
 	  * @param evt The event to send. 
-	  * @param c The cache entry to reduce lookups for commonly used channels.
 	  */
 	void process(MicroBitEvent evt);
 

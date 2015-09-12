@@ -189,8 +189,9 @@ int MicroBitMessageBus::isIdleCallbackNeeded()
   *
   * Example:
   * @code 
-  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,ticks,false);
+  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,ticks,CREATE_ONLY);
   * evt.fire();
+  *
   * //OR YOU CAN DO THIS...  
   * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN);
   * @endcode

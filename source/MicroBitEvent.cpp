@@ -17,14 +17,14 @@
   * MicrobitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK,true); // auto fire
   * @endcode
   */
-MicroBitEvent::MicroBitEvent(uint16_t source, uint16_t value, bool fire)
+MicroBitEvent::MicroBitEvent(uint16_t source, uint16_t value, MicroBitEventLaunchMode mode)
 {
     this->source = source;
     this->value = value;
     this->timestamp = ticks;
     
-    if(fire)
-        this->fire();
+    if(mode != CREATE_ONLY)
+        this->fire(mode);
 }    
 
 /**
@@ -40,10 +40,23 @@ MicroBitEvent::MicroBitEvent()
 /**
   * Fires the represented event onto the message bus.
   */
+void MicroBitEvent::fire(MicroBitEventLaunchMode mode)
+{
+    if (mode == CREATE_AND_QUEUE)
+        uBit.MessageBus.send(*this);
+
+    else if (mode == CREATE_AND_FIRE)
+        uBit.MessageBus.process(*this);
+}
+
+/**
+  * Fires the represented event onto the message bus.
+  */
 void MicroBitEvent::fire()
 {
-    uBit.MessageBus.send(*this);
+    fire(MICROBIT_EVENT_DEFAULT_LAUNCH_MODE);
 }
+
 
 /**
   * Constructor. 
