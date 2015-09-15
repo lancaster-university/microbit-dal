@@ -77,6 +77,19 @@
 #define FIBER_TICK_PERIOD_MS            6
 #endif
 
+//
+// Message Bus:
+// Default behaviour for event handlers, if not specified in the listen() call
+// 
+// Permissable values are:
+//   MESSAGE_BUS_LISTENER_REENTRANT
+//   MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY
+//   MESSAGE_BUS_LISTENER_DROP_IF_BUSY
+//   MESSAGE_BUS_LISTENER_NONBLOCKING
+
+#ifndef MESSAGE_BUS_LISTENER_DEFAULT_FLAGS
+#define MESSAGE_BUS_LISTENER_DEFAULT_FLAGS          MESSAGE_BUS_LISTENER_REENTRANT
+#endif
 
 //
 // Core micro:bit services

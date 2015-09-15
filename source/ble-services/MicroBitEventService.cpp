@@ -5,9 +5,7 @@
   
 #include "MicroBit.h"
 #include "ble/UUID.h"
-
 #include "ExternalEvents.h"
-#include "MicroBitEventService.h"
 
 /**
   * Constructor. 

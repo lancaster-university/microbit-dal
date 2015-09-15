@@ -2,6 +2,8 @@
 #define MICROBIT_BUTTON_H
 
 #include "mbed.h"
+#include "MicroBitComponent.h"
+#include "MicroBitEvent.h"
 
 //TODO: When platform is built for MB2 - pins will be defined by default, these will change...
 #define MICROBIT_PIN_BUTTON_A                   P0_17

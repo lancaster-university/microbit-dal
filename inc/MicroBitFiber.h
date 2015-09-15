@@ -12,7 +12,7 @@
 
 #include "mbed.h"
 #include "MicroBitConfig.h"
-#include "MicroBitMessageBus.h"
+#include "MicroBitEvent.h"
 
 // TODO: Consider a split mode scheduler, that monitors used stack size, and maintains a dedicated, persistent
 // stack for any long lived fibers with large stack

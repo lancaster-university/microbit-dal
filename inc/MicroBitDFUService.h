@@ -1,8 +1,8 @@
 #ifndef MICROBIT_DFU_SERVICE_H
 #define MICROBIT_DFU_SERVICE_H
 
-#include "MicroBit.h"
-
+#include "mbed.h"
+#include "ble/BLE.h"
 // MicroBit ControlPoint OpCodes
 
 // Requests transfer to the Nordic DFU bootloader.
