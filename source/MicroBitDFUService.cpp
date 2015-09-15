@@ -234,7 +234,7 @@ void MicroBitDFUService::releaseFlashCode()
 {
     flashCode = NRF_FICR->DEVICEID[0];
 
-    ble.updateCharacteristicValue(microBitDFUServiceFlashCodeCharacteristicHandle, (uint8_t *)&flashCode, sizeof(uint32_t));
+    ble.gattServer().notify(microBitDFUServiceFlashCodeCharacteristicHandle,(uint8_t *)&flashCode, sizeof(uint32_t));
 }
 
 /**
