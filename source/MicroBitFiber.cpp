@@ -212,8 +212,8 @@ void scheduler_event(MicroBitEvent evt)
         t = f->next;        
     
         // extract the event data this fiber is blocked on.    
-        uint16_t id = f->context & 0xFF;
-        uint16_t value = (f->context & 0xFF00) >> 16;
+        uint16_t id = f->context & 0xFFFF;
+        uint16_t value = (f->context & 0xFFFF0000) >> 16;
         
         if ((id == MICROBIT_ID_ANY || id == evt.source) && (value == MICROBIT_EVT_ANY || value == evt.value))
         {

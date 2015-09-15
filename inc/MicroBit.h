@@ -2,35 +2,37 @@
 #define MICROBIT_H
 
 #include "mbed.h"
-#include "MicroBitConfig.h"
+
+#include "MicroBitConfig.h"  
+#include "MicroBitHeapAllocator.h"
 #include "MicroBitPanic.h"
+#include "ErrorNo.h"
+#include "MicroBitCompat.h"
+#include "MicroBitComponent.h"
+#include "ManagedType.h"
+#include "ManagedString.h"
+#include "MicroBitImage.h"	
+#include "MicroBitFont.h"
+#include "MicroBitEvent.h"
+#include "DynamicPwm.h"
+#include "MicroBitI2C.h"
+#include "MESEvents.h"
+
+#include "MicroBitButton.h"
+#include "MicroBitPin.h"
+#include "MicroBitCompass.h"
+#include "MicroBitAccelerometer.h"
+#include "MicroBitMultiButton.h"
+
+#include "MicroBitSerial.h"
+#include "MicroBitIO.h"
+#include "MicroBitDisplay.h"
+
+#include "MicroBitFiber.h"
+#include "MicroBitMessageBus.h"
 
 #include "ble/BLE.h"
 #include "ble/services/DeviceInformationService.h"
-
-#include "ErrorNo.h"
-
-#include "MicroBitHeapAllocator.h"
-#include "MicroBitCompat.h"
-#include "MicroBitFiber.h"
-#include "ManagedType.h"
-#include "ManagedString.h"
-#include "MicroBitFont.h"
-#include "MicroBitImage.h"
-#include "MicroBitEvent.h"
-#include "MicroBitMessageBus.h"
-#include "DynamicPwm.h"
-#include "MicroBitComponent.h"
-#include "MicroBitI2C.h"
-#include "MicroBitSerial.h"
-#include "MicroBitButton.h"
-#include "MicroBitMultiButton.h"
-#include "MicroBitDisplay.h"
-#include "MicroBitPin.h"
-#include "MicroBitIO.h"
-#include "MicroBitCompass.h"
-#include "MicroBitAccelerometer.h"
-
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
 #include "ExternalEvents.h"
@@ -44,38 +46,6 @@
 // Random number generator
 #define NRF51822_RNG_ADDRESS            0x4000D000
 
-#define MICROBIT_IO_PINS                20            
-
-// Enumeration of core components.
-#define MICROBIT_ID_BUTTON_A            1
-#define MICROBIT_ID_BUTTON_B            2
-#define MICROBIT_ID_BUTTON_RESET        3
-#define MICROBIT_ID_ACCELEROMETER       4
-#define MICROBIT_ID_COMPASS             5
-#define MICROBIT_ID_DISPLAY             6
-
-//EDGE connector events
-#define MICROBIT_ID_IO_P0               7           //P0 is the left most pad (ANALOG/DIGITAL) 
-#define MICROBIT_ID_IO_P1               8           //P1 is the middle pad (ANALOG/DIGITAL) 
-#define MICROBIT_ID_IO_P2               9           //P2 is the right most pad (ANALOG/DIGITAL) 
-#define MICROBIT_ID_IO_P3               10          //COL1 (ANALOG/DIGITAL) 
-#define MICROBIT_ID_IO_P4               11          //BTN_A        
-#define MICROBIT_ID_IO_P5               12          //COL2 (ANALOG/DIGITAL) 
-#define MICROBIT_ID_IO_P6               13          //ROW2
-#define MICROBIT_ID_IO_P7               14          //ROW1       
-#define MICROBIT_ID_IO_P8               15          //PIN 18
-#define MICROBIT_ID_IO_P9               16          //ROW3                  
-#define MICROBIT_ID_IO_P10              17          //COL3 (ANALOG/DIGITAL) 
-#define MICROBIT_ID_IO_P11              18          //BTN_B
-#define MICROBIT_ID_IO_P12              19          //PIN 20
-#define MICROBIT_ID_IO_P13              20          //SCK
-#define MICROBIT_ID_IO_P14              21          //MISO
-#define MICROBIT_ID_IO_P15              22          //MOSI
-#define MICROBIT_ID_IO_P16              23          //PIN 16
-#define MICROBIT_ID_IO_P19              24          //SCL
-#define MICROBIT_ID_IO_P20              25          //SDA
-
-#define MICROBIT_ID_BUTTON_AB           26          // Button A+B multibutton
 
 // mBed pin assignments of core components.
 #define MICROBIT_PIN_SDA                P0_30

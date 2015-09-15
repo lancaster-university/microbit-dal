@@ -2,6 +2,7 @@
 #define MICROBIT_IO_H
 
 #include "mbed.h"
+#include "MicroBitComponent.h"
 #include "MicroBitPin.h"
 
 /**
@@ -37,15 +38,13 @@ class MicroBitIO
       * Constructor. 
       * Create a representation of all given I/O pins on the edge connector
       */
-    MicroBitIO(int MICROBIT_ID_IO_P0, int MICROBIT_ID_IO_P1, int MICROBIT_ID_IO_P2,
-               int MICROBIT_ID_IO_P3, int MICROBIT_ID_IO_P4, int MICROBIT_ID_IO_P5,
-               int MICROBIT_ID_IO_P6, int MICROBIT_ID_IO_P7, int MICROBIT_ID_IO_P8,
-               int MICROBIT_ID_IO_P9, int MICROBIT_ID_IO_P10,int MICROBIT_ID_IO_P11,
-               int MICROBIT_ID_IO_P12,int MICROBIT_ID_IO_P13,int MICROBIT_ID_IO_P14,
-               int MICROBIT_ID_IO_P15,int MICROBIT_ID_IO_P16,int MICROBIT_ID_IO_P19,
-               int MICROBIT_ID_IO_P20);
-    
-    
+    MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
+               int ID_P3, int ID_P4, int ID_P5,
+               int ID_P6, int ID_P7, int ID_P8,
+               int ID_P9, int ID_P10,int ID_P11,
+               int ID_P12,int ID_P13,int ID_P14,
+               int ID_P15,int ID_P16,int ID_P19,
+               int ID_P20);
 };
 
 #endif

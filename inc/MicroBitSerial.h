@@ -1,9 +1,9 @@
-#include "MicroBit.h"
 #ifndef MICROBIT_SERIAL_H
 #define MICROBIT_SERIAL_H
 
-#include "MicroBitComponent.h"
 #include "mbed.h"
+#include "ManagedString.h"
+#include "MicroBitImage.h"
 
 #define MICROBIT_SERIAL_DEFAULT_BAUD_RATE 115200
 #define MICROBIT_SERIAL_BUFFER_SIZE 20
