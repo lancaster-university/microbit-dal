@@ -341,12 +341,13 @@ void MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent
  * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
  * @endcode
  */
-void MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg)
+void MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent, void*))
 {
 	if (handler == NULL)
 		return;
 
-	MicroBitListener listener(id, value, handler, arg);
+    // The remove function is not comparing the [arg] anyhow.
+	MicroBitListener listener(id, value, handler, NULL);
     remove(&listener);
 }
 

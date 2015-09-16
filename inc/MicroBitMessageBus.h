@@ -177,7 +177,7 @@ class MicroBitMessageBus : public MicroBitComponent
       * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
       * @endcode
 	  */
-	void ignore(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg);
+	void ignore(int id, int value, void (*handler)(MicroBitEvent, void*));
 
 	/**
 	  * Unregister a listener function.
