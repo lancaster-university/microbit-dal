@@ -54,4 +54,5 @@ T6. Device Name in advertising packets includes the flash code so anyone could p
 
 T7. Generic Access Service: Device Name and Appearance are mandatory and so need values
 
+T8. Review advertising parameters: Advertising frequency seems quite low. This will make the discovery process slower and overall, both the pairing and FOTA processes a little slower. Are all three advertising channels in use or not? Thinking of a class room or event it would be best to use all three.  
 ### CLOSED:
