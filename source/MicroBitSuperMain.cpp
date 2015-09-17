@@ -7,18 +7,11 @@ Serial pc(USBTX, USBRX);
 MicroBit        uBit;
 InterruptIn     resetButton(MICROBIT_PIN_BUTTON_RESET);
 
-void
-reset()
-{
-    NVIC_SystemReset();
-}
-
-
 int main()
 {    
     // Bring up soft reset button.
     resetButton.mode(PullUp);
-    resetButton.fall(reset);
+    resetButton.fall(microbit_reset);
     
 #if CONFIG_ENABLED(MICROBIT_DBG)
     pc.baud(115200);

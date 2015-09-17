@@ -20,6 +20,16 @@ void panic(int statusCode)
 }
 
 /**
+  * Perform a hard reset of the micro:bit.
+  */
+void
+microbit_reset()
+{
+    NVIC_SystemReset();
+}
+
+
+/**
   * Callback when a BLE GATT disconnect occurs.
   */
 void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
@@ -139,7 +149,7 @@ void MicroBit::init()
   */
 void MicroBit::reset()
 {
-  reset();
+  microbit_reset();
 }
 
 /**
