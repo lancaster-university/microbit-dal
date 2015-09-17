@@ -136,7 +136,16 @@ ManagedType<T>::ManagedType(const ManagedType<T> &t)
 template<typename T>
 ManagedType<T>::~ManagedType()
 {
-    if (--(*ref) == 0)
+    // Special case - we were created using a default constructor, and never assigned a value.
+    if (*ref == 0)
+    {
+        // Simply destroy our reference counter and we're done.
+        free(ref);
+    }
+
+    // Normal case - we have a valid piece of data. 
+    // Decrement our reference counter and free all allocated memory if we're deleting the last reference.
+    else if (--(*ref) == 0)
     {
         delete object;
         free(ref);
@@ -152,7 +161,14 @@ ManagedType<T>& ManagedType<T>::operator = (const ManagedType<T>&t)
     if (this == &t)
         return *this;
 
-    if (--(*ref) == 0)
+    // Special case - we were created using a default constructor, and never assigned a value.
+    if (*ref == 0)
+    {
+        // Simply destroy our reference counter, as we're about to adopt another.
+        free(ref);
+    }
+
+    else if (--(*ref) == 0)
     {
         delete object;
         free(ref);
