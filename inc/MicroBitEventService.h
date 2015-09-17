@@ -1,7 +1,7 @@
 #ifndef MICROBIT_EVENT_SERVICE_H
 #define MICROBIT_EVENT_SERVICE_H
 
-#include "MicroBit.h"
+#include "MicroBitEvent.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitEventServiceUUID[];

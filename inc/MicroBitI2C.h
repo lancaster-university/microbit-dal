@@ -1,8 +1,6 @@
-#include "MicroBit.h"
 #ifndef MICROBIT_I2C_H
 #define MICROBIT_I2C_H
 
-#include "MicroBitComponent.h"
 #include "mbed.h"
 
 #define MICROBIT_I2C_MAX_RETRIES 9

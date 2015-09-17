@@ -26,6 +26,8 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitPin.cpp"
     "MicroBitSerial.cpp"
     "MicroBitHeapAllocator.cpp"
+    "MicroBitListener.cpp"
+    "MemberFunctionCallback.cpp"
     "ble-services/MicroBitDFUService.cpp"
     "ble-services/MicroBitEventService.cpp"
     "ble-services/MicroBitLEDService.cpp"

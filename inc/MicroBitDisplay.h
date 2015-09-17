@@ -63,7 +63,10 @@
 #define MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS    -255
 
 #include "mbed.h"
-#include "MicroBit.h"
+#include "ManagedString.h"
+#include "MicroBitComponent.h"
+#include "MicroBitImage.h"
+#include "MicroBitFont.h"
 
 enum AnimationMode {
     ANIMATION_MODE_NONE,
@@ -102,6 +105,7 @@ class MicroBitDisplay : public MicroBitComponent
     uint8_t mode;
     uint8_t greyscaleBitMsk;
     uint8_t timingCount;
+    uint16_t nonce;
     Timeout renderTimer;
 
     MicroBitFont font;
@@ -217,7 +221,7 @@ class MicroBitDisplay : public MicroBitComponent
       * Broadcasts an event onto the shared MessageBus
       * @param eventCode The ID of the event that has occurred.
       */
-    void sendEvent(uint16_t eventcode);
+    void sendAnimationCompleteEvent();
 
 
 public:

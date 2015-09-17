@@ -8,6 +8,8 @@
 #ifndef MICROBIT_MATRIX_MAPS_H
 #define MICROBIT_MATRIX_MAPS_H
 
+#include "mbed.h"
+#include "MicroBitDisplay.h"
 /**
   * Provides the mapping from Matrix ROW/COL to a linear X/Y buffer. 
   * It's arranged such that matrixMap[col, row] provides the [x,y] screen co-ord.     

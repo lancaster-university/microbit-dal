@@ -3,11 +3,10 @@
   *
   * A MicroBitDisplay represents the LED matrix array on the MicroBit device.
   */
+#include "mbed.h"
 #include "MicroBit.h"
 #include "MicroBitMatrixMaps.h"
-#include <new>
 #include "nrf_gpio.h"
-#include "mbed.h"
 
 const float timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {0.000010, 0.000047, 0.000094, 0.000187, 0.000375, 0.000750, 0.001500, 0.003000};
 
@@ -234,7 +233,7 @@ MicroBitDisplay::animationUpdate()
         if(animationMode == ANIMATION_MODE_PRINT_CHARACTER)
         {
             animationMode = ANIMATION_MODE_NONE;
-            this->sendEvent(MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+            this->sendAnimationCompleteEvent();
         }
     }
 }
@@ -243,9 +242,13 @@ MicroBitDisplay::animationUpdate()
   * Broadcasts an event onto the shared MessageBus
   * @param eventCode The ID of the event that has occurred.
   */
-void MicroBitDisplay::sendEvent(uint16_t eventCode)
+void MicroBitDisplay::sendAnimationCompleteEvent()
 {
-    MicroBitEvent evt(id,eventCode);
+    // Signal that we've completed an animation.
+    MicroBitEvent evt1(id,MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+
+    // Wake up any fibers that were blocked on the animation (if any).
+    MicroBitEvent evt2(MICROBIT_ID_ALERT, nonce);
 }
 
 /**
@@ -266,7 +269,7 @@ void MicroBitDisplay::updateScrollText()
         if (scrollingChar > scrollingText.length())
         {
             animationMode = ANIMATION_MODE_NONE;
-            this->sendEvent(MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+            this->sendAnimationCompleteEvent();
             return;
         }
         scrollingChar++;
@@ -284,7 +287,8 @@ void MicroBitDisplay::updatePrintText()
     if (printingChar > printingText.length())
     {
         animationMode = ANIMATION_MODE_NONE;   
-        this->sendEvent(MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+
+        this->sendAnimationCompleteEvent();
         return;
     }
     
@@ -302,7 +306,8 @@ void MicroBitDisplay::updateScrollImage()
     if ((image.paste(scrollingImage, scrollingImagePosition, 0, 0) == 0) && scrollingImageRendered)
     {
         animationMode = ANIMATION_MODE_NONE;  
-        this->sendEvent(MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);     
+        this->sendAnimationCompleteEvent();     
+
         return;
     }
 
@@ -321,7 +326,7 @@ void MicroBitDisplay::updateAnimateImage()
     if (scrollingImagePosition <= -scrollingImage.getWidth() + (MICROBIT_DISPLAY_WIDTH + scrollingImageStride) && scrollingImageRendered)
     {
         animationMode = ANIMATION_MODE_NONE;  
-        this->sendEvent(MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);     
+        this->sendAnimationCompleteEvent();     
         return;
     }
     
@@ -349,7 +354,7 @@ void MicroBitDisplay::resetAnimation(uint16_t delay)
     if (animationMode != ANIMATION_MODE_NONE)
     {
         animationMode = ANIMATION_MODE_NONE;
-        this->sendEvent(MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        this->sendAnimationCompleteEvent();
     }
     
     // Clear the display and setup the animation timers.
@@ -406,7 +411,8 @@ void MicroBitDisplay::print(char c, int delay)
     animationMode = ANIMATION_MODE_PRINT_CHARACTER;
     
     // Wait for completion.
-    fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    nonce = uBit.MessageBus.nonce();
+    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
 }
 
 /**
@@ -432,7 +438,8 @@ void MicroBitDisplay::print(ManagedString s, int delay)
     this->printAsync(s, delay);
     
     // Wait for completion.
-    fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    nonce = uBit.MessageBus.nonce();
+    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
 }
 
 /**
@@ -459,7 +466,8 @@ void MicroBitDisplay::print(MicroBitImage i, int x, int y, int alpha, int delay)
     animationMode = ANIMATION_MODE_PRINT_CHARACTER;
     
     // Wait for completion.
-    fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    nonce = uBit.MessageBus.nonce();
+    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
 }
 
 /**
@@ -542,7 +550,8 @@ void MicroBitDisplay::scroll(ManagedString s, int delay)
     this->scrollAsync(s, delay);
     
     // Wait for completion.
-    fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    nonce = uBit.MessageBus.nonce();
+    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
 }
 
 /**
@@ -569,7 +578,8 @@ void MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
     this->scrollAsync(image, delay, stride);
     
     // Wait for completion.
-    fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    nonce = uBit.MessageBus.nonce();
+    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
 }
 
 /**
@@ -603,7 +613,7 @@ void MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, i
     if (animationMode != ANIMATION_MODE_NONE)
     {
         animationMode = ANIMATION_MODE_NONE;
-        this->sendEvent(MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        this->sendAnimationCompleteEvent();
     }
             
     this->animationDelay = delay;
@@ -646,7 +656,8 @@ void MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int st
     this->animateAsync(image, delay, stride, startingPosition);
     
     // Wait for completion.
-    fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    nonce = uBit.MessageBus.nonce();
+    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
 }
 
 
