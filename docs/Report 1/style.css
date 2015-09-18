@@ -42,25 +42,25 @@ p
 }
 
 .date {
-	width: 240px;
+  width: 100px;
   line-height: 79px;
   height: 79px;
-	float:left;
+  float:left;
 }
 
 .heading_title {
-	width: 800px;
+  width: 980px;
   line-height: 79px;
   height: 79px;
-	float:left;
-	text-align:center;	
+  float:left;
+  text-align:center;	
 }
 
 .icon {
-	width: 240px;
+  width: 200px;
   line-height: 79px;
-	height: 79;
-	float:left;
+  height: 79;
+  float:left;
 }
 
 .section_hdg {
@@ -96,19 +96,19 @@ p
 }
 
 .profile_label {
-	width: 300px;
-	font-size: 14px;
-	font-weight:bold;
+  width: 300px;
+  font-size: 14px;
+  font-weight:bold;
   line-height: 33px;
   height: 33px;
-	float:left;
+  float:left;
 }
 
 .profile_value {
-	font-size: 14px;
+  font-size: 14px;
   line-height: 33px;
   height: 33px;
-	float:left;
+  float:left;
 }
 
 .services_section_hdg {
@@ -141,13 +141,24 @@ p
   border-color: #FFFFFF;
 }
 
-.service_hdg_text {
-	font-size: 18px;
-	font-weight:bold;
-	color:#ffffff;
-	float:left;
-  width:1270px;
+.service_hdg_text1 {
+  font-size: 18px;
+  font-weight:bold;
+  color:#ffffff;
+  float:left;
+  width:800px;
   padding-left: 10px;
+  height:33px;
+  line-height: 33px;
+  background-color: #339933
+}
+
+.service_hdg_text2 {
+  font-size: 18px;
+  font-weight:bold;
+  color:#ffffff;
+  float:left;
+  width:470px;
   height:33px;
   line-height: 33px;
   background-color: #339933

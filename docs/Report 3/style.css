@@ -42,25 +42,25 @@ p
 }
 
 .date {
-	width: 240px;
+  width: 100px;
   line-height: 79px;
   height: 79px;
-	float:left;
+  float:left;
 }
 
 .heading_title {
-	width: 800px;
+  width: 980px;
   line-height: 79px;
   height: 79px;
-	float:left;
-	text-align:center;	
+  float:left;
+  text-align:center;	
 }
 
 .icon {
-	width: 240px;
+  width: 200px;
   line-height: 79px;
-	height: 79;
-	float:left;
+  height: 79;
+  float:left;
 }
 
 .section_hdg {
@@ -442,4 +442,14 @@ p
 .align_right
 {
    text-align: right;
+}
+
+.mandatory_property {
+	width: 935px;
+	font-size: 12px;
+  line-height: 33px;
+  height: 33px;
+	float:left;
+	font-weight:bold;
+	color:#ff0000;
 }
