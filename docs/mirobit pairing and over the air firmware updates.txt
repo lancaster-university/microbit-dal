@@ -108,9 +108,9 @@ k) Client reconnects to micro:bit and proceeds with FOTA per the Nordic document
 
 UUIDs
 -----
-MicroBit DFU Service      : D8AF991C-7144-43D7-954B-99512F95F99C
-  Control Characteristic  : 97109547-E63A-442A-BF89-9D730413DC2F
-  FlashCode Characteristic: 947B6934-64D1-4FAD-9BD0-CC9D6E9F3EA3
-
+MicroBit DFU Service      : E95D93B0-251D-470A-A062-FA1922DFA9A8
+  Control Characteristic  : E95D93B1-251D-470A-A062-FA1922DFA9A8
+  FlashCode Characteristic: E95D93B2-251D-470A-A062-FA1922DFA9A8
+  
 Nordic DFU Service        : 00001530-1212-EFDE-1523-785FEABCD123
 
