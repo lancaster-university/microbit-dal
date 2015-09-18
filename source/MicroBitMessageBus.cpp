@@ -104,16 +104,27 @@ void async_callback(void *param)
   */
 void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
 {
-    MicroBitEventQueueItem *item = new MicroBitEventQueueItem(evt);
+    int processingComplete;
 
-    __disable_irq();
-   
-    if (evt_queue_tail == NULL)
-        evt_queue_head = evt_queue_tail = item;
-    else 
-        evt_queue_tail->next = item;
+    // Firstly, process all handler regsitered as URGENT. These pre-empt the queue, and are useful for fast, high priority services.
+    processingComplete = this->process(evt, MESSAGE_BUS_LISTENER_URGENT);
 
-    __enable_irq();
+    pc.printf("QueueEvent: Queueing: %d\n", !processingComplete);
+
+    if (!processingComplete)
+    {
+        // We need to queue this event for later processing...
+        MicroBitEventQueueItem *item = new MicroBitEventQueueItem(evt);
+
+        __disable_irq();
+
+        if (evt_queue_tail == NULL)
+            evt_queue_head = evt_queue_tail = item;
+        else 
+            evt_queue_tail->next = item;
+
+        __enable_irq();
+    }
 }
 
 /**
@@ -154,7 +165,7 @@ void MicroBitMessageBus::idleTick()
     // Whilst there are events to process and we have no useful other work to do, pull them off the queue and process them.
     while (item)
     {
-        // send the event.
+        // send the event to all standard event listeners.
         this->process(item->evt);
 
         // Free the queue item.
@@ -212,43 +223,43 @@ void MicroBitMessageBus::send(MicroBitEvent evt)
  * This will attempt to call the event handler directly, but spawn a fiber should that
  * event handler attempt a blocking operation.
  * @param evt The event to be delivered.
+ * @param mask The type of listeners to process (optional). Matches MicroBitListener flags. If not defined, all standard listeners will be processed.
+ * @return The 1 if all matching listeners were processed, 0 if further processing is required.
  */
-void MicroBitMessageBus::process(MicroBitEvent evt)
+int MicroBitMessageBus::process(MicroBitEvent &evt, uint32_t mask)
 {
 	MicroBitListener *l;
+    int complete = 1;
 
     l = listeners;
     while (l != NULL)
     {
 	    if((l->id == evt.source || l->id == MICROBIT_ID_ANY) && (l->value == evt.value || l->value == MICROBIT_EVT_ANY))
         {
-			l->evt = evt;
+            if(l->flags & mask) 
+            {
+                l->evt = evt;
 
-            // OK, if this handler has regisitered itself as non-blocking, we just execute it directly... 
-            // This is normally only done for trusted system components.
-            // Otherwise, we invoke it in a 'fork on block' context, that will automatically create a fiber
-            // should the event handler attempt a blocking operation, but doesn't have the overhead
-            // of creating a fiber needlessly. (cool huh?)
-            if (l->flags & MESSAGE_BUS_LISTENER_NONBLOCKING)
-                async_callback(l);
+                // OK, if this handler has regisitered itself as non-blocking, we just execute it directly... 
+                // This is normally only done for trusted system components.
+                // Otherwise, we invoke it in a 'fork on block' context, that will automatically create a fiber
+                // should the event handler attempt a blocking operation, but doesn't have the overhead
+                // of creating a fiber needlessly. (cool huh?)
+                if (l->flags & MESSAGE_BUS_LISTENER_NONBLOCKING)
+                    async_callback(l);
+                else
+                    invoke(async_callback, l);
+            }
             else
-			    invoke(async_callback, l);
+            {
+                complete = 0;
+            }
 		}
 
 		l = l->next;
 	}
 
-    // Finally, forward the event to any other internal subsystems that may be interested.
-    // We *could* do this through the message bus of course, but this saves additional RAM,
-    // and procssor time (as we know these are non-blocking calls).
-
-	// Wake up any fibers that are blocked on this event
-	if (uBit.flags & MICROBIT_FLAG_SCHEDULER_RUNNING)
-        scheduler_event(evt);  
- 
-	// See if this event needs to be propogated through our BLE interface 
-	if (uBit.ble_event_service)
-    	uBit.ble_event_service->onMicroBitEvent(evt);
+    return complete;
 }
 
 /**

@@ -64,8 +64,10 @@ class MicroBitMessageBus : public MicroBitComponent
       * or the constructors provided by MicroBitEvent.
 	  *
 	  * @param evt The event to send. 
+      * @param mask The type of listeners to process (optional). Matches MicroBitListener flags. If not defined, all standard listeners will be processed.
+      * @return The 1 if all matching listeners were processed, 0 if further processing is required.
 	  */
-	void process(MicroBitEvent evt);
+	int process(MicroBitEvent &evt, uint32_t mask = MESSAGE_BUS_LISTENER_REENTRANT | MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY |  MESSAGE_BUS_LISTENER_DROP_IF_BUSY |  MESSAGE_BUS_LISTENER_NONBLOCKING);
 
 	/**
 	  * Register a listener function.
