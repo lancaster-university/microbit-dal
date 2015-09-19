@@ -226,6 +226,15 @@ void scheduler_event(MicroBitEvent evt)
     }
 }
 
+/**
+  * Allow the idle thread to run within the current thread's stack frame.
+  * This is useful to prevent paging of the thread's stack to the heap.
+  */
+void fiber_allow_run_idle_within()
+{
+    currentFiber->flags |= MICROBIT_FIBER_FLAG_RUN_IDLE_WITHIN;
+}
+
 
 /**
   * Blocks the calling thread for the given period of time.
@@ -622,6 +631,29 @@ void schedule()
         // Otherwise, just pick the head of the run queue.
         currentFiber = runQueue;
         
+    if (currentFiber == idle && oldFiber->flags & MICROBIT_FIBER_FLAG_RUN_IDLE_WITHIN)
+    {
+        // Run the idle task right here using the old fiber's stack.
+        // Keep idling while the runqueue is empty, or there is data to process.
+        do
+        {
+            uBit.systemTasks();
+
+            if(scheduler_runqueue_empty())
+            {
+                if (uBit.ble)
+                    uBit.ble->waitForEvent();
+                else
+                    __WFI();
+            }
+        }
+        while (runQueue == NULL || fiber_flags & MICROBIT_FLAG_DATA_READY);
+
+        // Switch to a non-idle fiber.
+        // If this fiber is the same as the old one then there'll be no switching at all.
+        currentFiber = runQueue;
+    }
+
     // Swap to the context of the chosen fiber, and we're done.
     // Don't bother with the overhead of switching if there's only one fiber on the runqueue!
     if (currentFiber != oldFiber)        

@@ -24,6 +24,7 @@
 #define MICROBIT_FIBER_FLAG_FOB             0x01 
 #define MICROBIT_FIBER_FLAG_PARENT          0x02 
 #define MICROBIT_FIBER_FLAG_CHILD           0x04 
+#define MICROBIT_FIBER_FLAG_RUN_IDLE_WITHIN 0x08
 
 /**
   *  Thread Context for an ARM Cortex M0 core.
@@ -117,6 +118,12 @@ Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void) = releas
   * @return The new Fiber.
   */
 Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)(void *) = release_fiber);
+
+/**
+  * Allow the idle thread to run within the current thread's stack frame.
+  * This is useful to prevent paging of the thread's stack to the heap.
+  */
+void fiber_allow_run_idle_within();
 
 
 
