@@ -15,7 +15,7 @@
  */
 Fiber *currentFiber = NULL;                 // The context in which the current fiber is executing.
 Fiber *forkedFiber = NULL;                  // The context in which a newly created child fiber is executing.
-Fiber *idle = NULL;                         // IDLE task - performs a power efficient sleep, and system maintenance tasks.
+Fiber *idleFiber = NULL;                         // IDLE task - performs a power efficient sleep, and system maintenance tasks.
 
 /*
  * Scheduler state.
@@ -159,9 +159,9 @@ void scheduler_init()
 
     // Create the IDLE fiber.
     // Configure the fiber to directly enter the idle task.
-    idle = getFiberContext();
-    idle->tcb.SP = CORTEX_M0_STACK_BASE - 0x04;    
-    idle->tcb.LR = (uint32_t) &idle_task;
+    idleFiber = getFiberContext();
+    idleFiber->tcb.SP = CORTEX_M0_STACK_BASE - 0x04;    
+    idleFiber->tcb.LR = (uint32_t) &idle_task;
     
     // Flag that we now have a scheduler running
     uBit.flags |= MICROBIT_FLAG_SCHEDULER_RUNNING;
@@ -224,15 +224,6 @@ void scheduler_event(MicroBitEvent evt)
         
         f = t;
     }
-}
-
-/**
-  * Allow the idle thread to run within the current thread's stack frame.
-  * This is useful to prevent paging of the thread's stack to the heap.
-  */
-void fiber_allow_run_idle_within()
-{
-    currentFiber->flags |= MICROBIT_FIBER_FLAG_RUN_IDLE_WITHIN;
 }
 
 
@@ -621,7 +612,7 @@ void schedule()
     // We're in a normal scheduling context, so perform a round robin algorithm across runnable fibers.
     // OK - if we've nothing to do, then run the IDLE task (power saving sleep)
     if (runQueue == NULL || fiber_flags & MICROBIT_FLAG_DATA_READY)
-        currentFiber = idle;
+        currentFiber = idleFiber;
 
     else if (currentFiber->queue == &runQueue)
         // If the current fiber is on the run queue, round robin.
@@ -631,21 +622,18 @@ void schedule()
         // Otherwise, just pick the head of the run queue.
         currentFiber = runQueue;
         
-    if (currentFiber == idle && oldFiber->flags & MICROBIT_FIBER_FLAG_RUN_IDLE_WITHIN)
+    if (currentFiber == idleFiber && oldFiber->flags & MICROBIT_FIBER_FLAG_DO_NOT_PAGE)
     {
         // Run the idle task right here using the old fiber's stack.
         // Keep idling while the runqueue is empty, or there is data to process.
+
+        // Run in the context of the original fiber, to preserve state of flags...
+        // as we are running on top of this fiber's stack.
+        currentFiber = oldFiber;
+
         do
         {
-            uBit.systemTasks();
-
-            if(scheduler_runqueue_empty())
-            {
-                if (uBit.ble)
-                    uBit.ble->waitForEvent();
-                else
-                    __WFI();
-            }
+            idle();
         }
         while (runQueue == NULL || fiber_flags & MICROBIT_FLAG_DATA_READY);
 
@@ -659,13 +647,13 @@ void schedule()
     if (currentFiber != oldFiber)        
     {
         // Special case for the idle task, as we don't maintain a stack context (just to save memory).
-        if (currentFiber == idle)
+        if (currentFiber == idleFiber)
         {
-            idle->tcb.SP = CORTEX_M0_STACK_BASE - 0x04;    
-            idle->tcb.LR = (uint32_t) &idle_task;
+            idleFiber->tcb.SP = CORTEX_M0_STACK_BASE - 0x04;    
+            idleFiber->tcb.LR = (uint32_t) &idle_task;
         }
 
-        if (oldFiber == idle)
+        if (oldFiber == idleFiber)
         {
             // Just swap in the new fiber, and discard changes to stack and register context.
             swap_context(NULL, &currentFiber->tcb, NULL, currentFiber->stack_top);
@@ -681,6 +669,25 @@ void schedule()
     }
 }
 
+
+/**
+  * Set of tasks to perform when idle.
+  * Service any background tasks that are required, and attmept power efficient sleep.
+  */
+void idle()
+{
+    // Service background tasks
+    uBit.systemTasks();
+
+    // If the above did create any useful work, enter power efficient sleep.
+    if(scheduler_runqueue_empty())
+    {
+        if (uBit.ble)
+            uBit.ble->waitForEvent();
+        else
+            __WFI();
+    }
+}
 /**
   * IDLE task.
   * Only scheduled for execution when the runqueue is empty.
@@ -690,16 +697,7 @@ void idle_task()
 {
     while(1)
     {
-        uBit.systemTasks();
-
-        if(scheduler_runqueue_empty())
-        {
-            if (uBit.ble)
-                uBit.ble->waitForEvent();
-            else
-                __WFI();
-        }
-
+        idle();
         schedule();
     }
 }

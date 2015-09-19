@@ -24,7 +24,7 @@
 #define MICROBIT_FIBER_FLAG_FOB             0x01 
 #define MICROBIT_FIBER_FLAG_PARENT          0x02 
 #define MICROBIT_FIBER_FLAG_CHILD           0x04 
-#define MICROBIT_FIBER_FLAG_RUN_IDLE_WITHIN 0x08
+#define MICROBIT_FIBER_FLAG_DO_NOT_PAGE     0x08
 
 /**
   *  Thread Context for an ARM Cortex M0 core.
@@ -68,6 +68,7 @@ struct Fiber
     Fiber *next, *prev;                 // Position of this Fiber on the run queues.
 };
 
+extern Fiber *currentFiber;
 
 /**
   * Initialises the Fiber scheduler. 
@@ -118,13 +119,6 @@ Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void) = releas
   * @return The new Fiber.
   */
 Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)(void *) = release_fiber);
-
-/**
-  * Allow the idle thread to run within the current thread's stack frame.
-  * This is useful to prevent paging of the thread's stack to the heap.
-  */
-void fiber_allow_run_idle_within();
-
 
 
 /**
@@ -235,9 +229,14 @@ void queue_fiber(Fiber *f, Fiber **queue);
 void dequeue_fiber(Fiber *f);
 
 /**
+  * Set of tasks to perform when idle.
+  * Service any background tasks that are required, and attmept power efficient sleep.
+  */
+void idle();
+
+/**
   * IDLE task.
-  * Only scheduled for execution when the runqueue is empty.
-  * Performs a procressor sleep operation, then returns to the scheduler - most likely after a timer interrupt.
+  * Only scheduled for execution when the runqueue is empty. Typically calls idle().
   */
 void idle_task();
 

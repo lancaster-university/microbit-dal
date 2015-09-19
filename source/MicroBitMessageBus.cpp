@@ -229,7 +229,7 @@ void MicroBitMessageBus::process(MicroBitEvent evt)
             // Otherwise, we invoke it in a 'fork on block' context, that will automatically create a fiber
             // should the event handler attempt a blocking operation, but doesn't have the overhead
             // of creating a fiber needlessly. (cool huh?)
-            if (l->flags & MESSAGE_BUS_LISTENER_NONBLOCKING)
+            if (l->flags & MESSAGE_BUS_LISTENER_NONBLOCKING || currentFiber->flags & MICROBIT_FIBER_FLAG_DO_NOT_PAGE)
                 async_callback(l);
             else
 			    invoke(async_callback, l);
