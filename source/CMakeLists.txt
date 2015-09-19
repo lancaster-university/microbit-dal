@@ -32,6 +32,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "ble-services/MicroBitEventService.cpp"
     "ble-services/MicroBitLEDService.cpp"
     "ble-services/MicroBitAccelerometerService.cpp"
+    "ble-services/MicroBitMagnetometerService.cpp"
 )
 
 if (YOTTA_CFG_MICROBIT_CONFIGFILE)
