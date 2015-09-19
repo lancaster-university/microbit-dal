@@ -42,8 +42,8 @@ MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble) :
     ble.updateCharacteristicValue(accelerometerPeriodCharacteristicHandle, (const uint8_t *)&accelerometerPeriodCharacteristicBuffer, sizeof(accelerometerPeriodCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitAccelerometerService::onDataWritten);
+    uBit.MessageBus.listen(MICROBIT_ID_ACCELEROMETER, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE, this, &MicroBitAccelerometerService::accelerometerUpdate, MESSAGE_BUS_LISTENER_NONBLOCKING | MESSAGE_BUS_LISTENER_URGENT);
 }
-
 
 /**
   * Callback. Invoked when any of our attributes are written via BLE.
@@ -57,6 +57,17 @@ void MicroBitAccelerometerService::onDataWritten(const GattWriteCallbackParams *
     }
 }
 
+/**
+  * Accelerometer update callback
+  */
+void MicroBitAccelerometerService::accelerometerUpdate(MicroBitEvent e)
+{
+    accelerometerDataCharacteristicBuffer[0] = uBit.accelerometer.getX();
+    accelerometerDataCharacteristicBuffer[1] = uBit.accelerometer.getY();
+    accelerometerDataCharacteristicBuffer[2] = uBit.accelerometer.getZ();
+
+    ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
+}
 
 const uint8_t  MicroBitAccelerometerServiceUUID[] = {
     0xe9,0x5d,0x07,0x53,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8

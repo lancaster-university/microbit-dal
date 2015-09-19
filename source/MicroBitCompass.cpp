@@ -32,8 +32,9 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address) : average(), sam
     // Enable automatic reset after each sample;
     writeCommand(MAG_CTRL_REG2, 0xA0);
     
-    // Select 10Hz update rate, with oversampling. Also enables the device.
-    writeCommand(MAG_CTRL_REG1, 0x61);    
+    // Select 10Hz update rate, with oversampling, and enable the device.
+    this->samplePeriod = 100;
+    this->configure();
     
     //fetch our previous average values
     average.x = read16(MAG_OFF_X_MSB);
@@ -174,6 +175,11 @@ void MicroBitCompass::idleTick()
                 eventStartTime = 0;
                 calibrateEnd();
             }
+        } 
+        else
+        {
+            // Indicate that a new sample is available
+            MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
         }
     }
 }
@@ -219,6 +225,56 @@ int MicroBitCompass::getZ()
 {
     return sample.z;
 }
+
+/**
+ * Configures the compass for the sample rate defined
+ * in this object. The nearest values are chosen to those defined
+ * that are supported by the hardware. The instance variables are then
+ * updated to reflect reality.
+ */
+void MicroBitCompass::configure()
+{
+    const MAG3110SampleRateConfig  *actualSampleRate;
+
+    // First find the nearest sample rate to that specified.
+    actualSampleRate = &MAG3110SampleRate[MAG3110_SAMPLE_RATES-1];
+    for (int i=MAG3110_SAMPLE_RATES-1; i>=0; i--)
+    {
+        if(MAG3110SampleRate[i].sample_period < this->samplePeriod * 1000)
+            break;
+
+        actualSampleRate = &MAG3110SampleRate[i];
+    }
+
+    // OK, we have the correct data. Update our local state.
+    this->samplePeriod = actualSampleRate->sample_period / 1000;
+
+    // Bring the device online, with the requested sample frequency.
+    writeCommand(MAG_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
+}
+
+
+/**
+ * Attempts to set the sample rate of the compass to the specified value (in ms).
+ * n.b. the requested rate may not be possible on the hardware. In this case, the
+ * nearest lower rate is chosen.
+ * @param period the requested time between samples, in milliseconds.
+ */
+void MicroBitCompass::setPeriod(int period)
+{
+    this->samplePeriod = period;
+    this->configure();
+}
+
+/**
+ * Reads the currently configured sample rate of the compass. 
+ * @return The time between samples, in milliseconds.
+ */
+int MicroBitCompass::getPeriod()
+{
+    return (int)samplePeriod;
+}
+
 
 /**
   * Attempts to determine the 8 bit ID from the magnetometer. 
@@ -333,6 +389,21 @@ void MicroBitCompass::clearCalibration()
   */
 int MicroBitCompass::isIdleCallbackNeeded()
 {
-    //Active HI
+    // The MAG3110 raises an interrupt line when data is ready, which we sample here.
+    // The interrupt line is active HI, so simply return the state of the pin.
     return int1;
 }
+
+const MAG3110SampleRateConfig MAG3110SampleRate[MAG3110_SAMPLE_RATES] = {
+    {12500,      0x00},        // 80 Hz
+    {25000,      0x20},        // 40 Hz
+    {50000,      0x40},        // 20 Hz
+    {100000,     0x60},        // 10 hz 
+    {200000,     0x80},        // 5 hz 
+    {400000,     0x81},        // 2.5 hz 
+    {800000,     0x82},        // 1.25 hz 
+    {1600000,    0xb0},        // 0.63 hz 
+    {3200000,    0xd0},        // 0.31 hz 
+    {6400000,    0xf0},        // 0.16 hz 
+    {12800000,   0xf1}         // 0.08 hz 
+};

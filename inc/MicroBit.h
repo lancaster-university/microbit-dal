@@ -36,6 +36,7 @@
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
 #include "MicroBitLEDService.h"
+#include "MicroBitAccelerometerService.h"
 #include "ExternalEvents.h"
 
 // MicroBit::flags values
@@ -105,10 +106,11 @@ class MicroBit
     MicroBitIO              io;
     
     // Bluetooth related member variables.
-    BLEDevice               *ble;
-    MicroBitDFUService      *ble_firmware_update_service;
-    MicroBitEventService    *ble_event_service;
-    MicroBitLEDService      *ble_led_service;
+    BLEDevice                       *ble;
+    MicroBitDFUService              *ble_firmware_update_service;
+    MicroBitEventService            *ble_event_service;
+    MicroBitLEDService              *ble_led_service;
+    MicroBitAccelerometerService    *ble_accelerometer_service;
     
     /**
       * Constructor. 

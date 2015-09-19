@@ -24,12 +24,18 @@ class MicroBitAccelerometerService
       */
     MicroBitAccelerometerService(BLEDevice &_ble);  
     
+
+    private:
+
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
       */
     void onDataWritten(const GattWriteCallbackParams *params);
 
-    private:
+    /**
+     * Accelerometer update callback
+     */
+    void accelerometerUpdate(MicroBitEvent e);
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;

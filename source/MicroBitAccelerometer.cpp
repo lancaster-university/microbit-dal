@@ -174,7 +174,8 @@ void MicroBitAccelerometer::update()
     sample.y *= this->sampleRange;
     sample.z *= this->sampleRange;
 
-    //TODO: Issue an event.
+    // Indicate that a new sample is available
+    MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
 };
 
 /**
@@ -263,7 +264,7 @@ int MicroBitAccelerometer::getZ()
 {
     return sample.z;
 }
-
+  
 
 /**
   * periodic callback from MicroBit clock.

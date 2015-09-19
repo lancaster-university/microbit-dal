@@ -36,12 +36,26 @@
 #define MAG_CTRL_REG1 0x10
 #define MAG_CTRL_REG2 0x11
 
+/**
+  * Configuration options
+  */
+struct MAG3110SampleRateConfig
+{
+    uint32_t        sample_period;
+    uint8_t         ctrl_reg1;
+};
+
+extern const MAG3110SampleRateConfig MAG3110SampleRate[];
+
+#define MAG3110_SAMPLE_RATES                    11 
+
 /*
  * Compass events
  */
 #define MICROBIT_COMPASS_EVT_CAL_REQUIRED       1
 #define MICROBIT_COMPASS_EVT_CAL_START          2
 #define MICROBIT_COMPASS_EVT_CAL_END            3
+#define MICROBIT_COMPASS_EVT_DATA_UPDATE        4
 
 /*
  * Status Bits
@@ -85,9 +99,9 @@ class MicroBitCompass : public MicroBitComponent
       * Used to track asynchronous events in the event bus.
       */
       
-    uint16_t address;                   // I2C address of the magnetmometer.  
-
-    unsigned long eventStartTime;       // used to store the current system clock when async calibration has started
+    uint16_t            address;                  // I2C address of the magnetmometer.  
+    uint16_t            samplePeriod;             // The time between samples, in millseconds.
+    unsigned long       eventStartTime;           // used to store the current system clock when async calibration has started
 
     public:
     
@@ -116,7 +130,29 @@ class MicroBitCompass : public MicroBitComponent
       * @endcode
       */
     MicroBitCompass(uint16_t id, uint16_t address);
-    
+   
+    /**
+     * Configures the compass for the sample rate defined
+     * in this object. The nearest values are chosen to those defined
+     * that are supported by the hardware. The instance variables are then
+     * updated to reflect reality.
+     */
+    void configure();
+
+    /**
+     * Attempts to set the sample rate of the compass to the specified value (in ms).
+     * n.b. the requested rate may not be possible on the hardware. In this case, the
+     * nearest lower rate is chosen.
+     * @param period the requested time between samples, in milliseconds.
+     */
+    void setPeriod(int period);
+
+    /**
+      * Reads the currently configured sample rate of the compass. 
+      * @return The time between samples, in milliseconds.
+      */
+    int getPeriod();
+
     /**
       * Gets the current heading of the device, relative to magnetic north.
       * @return the current heading, in degrees.

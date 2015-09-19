@@ -160,6 +160,12 @@
 #define MICROBIT_BLE_LED_SERVICE     1
 #endif
 
+// Enable/Disable BLE Service: MicroBitAccelerometerService
+// This enables live access to the on board 3 axis accelerometer.
+// Set '1' to enable. 
+#ifndef MICROBIT_BLE_ACCELEROMETER_SERVICE
+#define MICROBIT_BLE_ACCELEROMETER_SERVICE     1
+#endif
 
 // Defines the maximum length strong that can be written to the
 // display over BLE.
