@@ -54,4 +54,8 @@ T6. Device Name in advertising packets includes the flash code so anyone could p
 
 T7. Generic Access Service: Device Name and Appearance are mandatory and so need values
 
+T8. Review advertising parameters: Advertising frequency seems quite low. This will make the discovery process slower and overall, both the pairing and FOTA processes a little slower. Are all three advertising channels in use or not? Thinking of a class room or event it would be best to use all three.  
+
+T9. Consider using directed advertising and white listing so that only the paired peer device can (re)connect to the micro:bit. I believe we are currently performing undirected advertising.... basically broadcasting. Directed advertising will address ADV packets to the paired peer device only. As things stand it seems to me that if some other person in the classroom just decides to connect to a micro:bit that is not theirs, they’ve effectively blocked all other use of the device.... a simple DOS attack.
+
 ### CLOSED:
