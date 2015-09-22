@@ -40,7 +40,7 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address) : average(), sam
     average.x = read16(MAG_OFF_X_MSB);
     average.y = read16(MAG_OFF_Y_MSB);
     average.z = read16(MAG_OFF_Z_MSB);
-    
+
     if(average.x == 0 && average.y == 0 && average.z == 0)
         status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
     
@@ -132,6 +132,7 @@ int MicroBitCompass::heading()
 {
     if(status & MICROBIT_COMPASS_STATUS_CALIBRATING)
         return MICROBIT_COMPASS_IS_CALIBRATING;    
+
     else if(!(status & MICROBIT_COMPASS_STATUS_CALIBRATED))
     {
         MicroBitEvent(id, MICROBIT_COMPASS_EVT_CAL_REQUIRED);
@@ -337,7 +338,7 @@ void MicroBitCompass::calibrateEnd()
     
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATING;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;
-    
+   
     //Store x, y and z values in persistent storage on the MAG3110
     writeCommand(MAG_OFF_X_LSB, (uint8_t)average.x);
     writeCommand(MAG_OFF_X_MSB, (uint8_t)(average.x >> 8));

@@ -38,6 +38,8 @@
 #include "MicroBitLEDService.h"
 #include "MicroBitAccelerometerService.h"
 #include "MicroBitMagnetometerService.h"
+#include "MicroBitButtonService.h"
+#include "MicroBitIOPinService.h"
 #include "ExternalEvents.h"
 
 // MicroBit::flags values
@@ -113,6 +115,8 @@ class MicroBit
     MicroBitLEDService              *ble_led_service;
     MicroBitAccelerometerService    *ble_accelerometer_service;
     MicroBitMagnetometerService     *ble_magnetometer_service;
+    MicroBitButtonService           *ble_button_service;
+    MicroBitIOPinService            *ble_io_pin_service;
     
     /**
       * Constructor. 

@@ -42,7 +42,7 @@ class MicroBitMagnetometerService
     BLEDevice           &ble;
 
     // memory for our 8 bit control characteristics.
-    uint16_t            magnetometerDataCharacteristicBuffer[3];
+    int16_t             magnetometerDataCharacteristicBuffer[3];
     uint16_t            magnetometerBearingCharacteristicBuffer;
     uint16_t            magnetometerPeriodCharacteristicBuffer;
 

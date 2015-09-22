@@ -171,7 +171,20 @@
 // This enables live access to the on board 3 axis magnetometer.
 // Set '1' to enable. 
 #ifndef MICROBIT_BLE_MAGNETOMETER_SERVICE
-#define MICROBIT_BLE_MAGNETOMETER_SERVICE     1
+#define MICROBIT_BLE_MAGNETOMETER_SERVICE       1
+#endif
+
+// Enable/Disable BLE Service: MicroBitButtonService
+// This enables live access to the two micro:bit buttons.
+// Set '1' to enable. 
+#ifndef MICROBIT_BLE_BUTTON_SERVICE
+#define MICROBIT_BLE_BUTTON_SERVICE             1
+#endif
+
+// This enables live access to the two micro:bit buttons.
+// Set '1' to enable. 
+#ifndef MICROBIT_BLE_IO_PIN_SERVICE
+#define MICROBIT_BLE_IO_PIN_SERVICE             1
 #endif
 
 // Defines the maximum length strong that can be written to the

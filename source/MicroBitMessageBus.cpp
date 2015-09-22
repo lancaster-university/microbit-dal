@@ -109,8 +109,6 @@ void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
     // Firstly, process all handler regsitered as URGENT. These pre-empt the queue, and are useful for fast, high priority services.
     processingComplete = this->process(evt, MESSAGE_BUS_LISTENER_URGENT);
 
-    pc.printf("QueueEvent: Queueing: %d\n", !processingComplete);
-
     if (!processingComplete)
     {
         // We need to queue this event for later processing...

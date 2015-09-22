@@ -129,6 +129,14 @@ void MicroBit::init()
     ble_magnetometer_service = new MicroBitMagnetometerService(*ble);
 #endif
 
+#if CONFIG_ENABLED(MICROBIT_BLE_BUTTON_SERVICE) 
+    ble_button_service = new MicroBitButtonService(*ble);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_IO_PIN_SERVICE) 
+    ble_io_pin_service = new MicroBitIOPinService(*ble);
+#endif
+
     // Setup advertising.
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)MICROBIT_BLE_DEVICE_NAME, sizeof(MICROBIT_BLE_DEVICE_NAME));
