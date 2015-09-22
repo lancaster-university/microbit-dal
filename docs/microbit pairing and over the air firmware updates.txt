@@ -25,8 +25,8 @@ Whilst the Nordic DFU service may not be visible to GATT clients most of the tim
 
 Flashing the micro:bit OTA involves rebooting the micro:bit in a special way which results in the Nordic boot loader being entered and this brings up the Nordic DFU service instead of the MicroBit DFU service.
 
-The MicroBit DFU Service
-------------------------
+The MicroBit DFU Control Service
+--------------------------------
 This service has two characteristics:
 
   ControlPoint (unsigned 32 bits)
