@@ -187,6 +187,12 @@
 #define MICROBIT_BLE_IO_PIN_SERVICE             1
 #endif
 
+// This enables live access to the die temperature sensors on the micro:bit.
+// Set '1' to enable. 
+#ifndef MICROBIT_BLE_TEMPERATURE_SERVICE
+#define MICROBIT_BLE_TEMPERATURE_SERVICE        1
+#endif
+
 // Defines the maximum length strong that can be written to the
 // display over BLE.
 #ifndef MICROBIT_BLE_MAXIMUM_SCROLLTEXT

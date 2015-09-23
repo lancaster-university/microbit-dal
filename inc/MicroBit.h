@@ -40,6 +40,7 @@
 #include "MicroBitMagnetometerService.h"
 #include "MicroBitButtonService.h"
 #include "MicroBitIOPinService.h"
+#include "MicroBitTemperatureService.h"
 #include "ExternalEvents.h"
 
 // MicroBit::flags values
@@ -117,6 +118,7 @@ class MicroBit
     MicroBitMagnetometerService     *ble_magnetometer_service;
     MicroBitButtonService           *ble_button_service;
     MicroBitIOPinService            *ble_io_pin_service;
+    MicroBitTemperatureService      *ble_temperature_service;
     
     /**
       * Constructor. 

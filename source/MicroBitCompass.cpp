@@ -28,6 +28,8 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address) : average(), sam
     
     //initialise eventStartTime to 0
     this->eventStartTime = 0;
+    this->temperatureSampleTime = 0;
+    this->temperature = 0;
     
     // Enable automatic reset after each sample;
     writeCommand(MAG_CTRL_REG2, 0xA0);
@@ -183,6 +185,20 @@ void MicroBitCompass::idleTick()
             MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
         }
     }
+
+    // Update the temperature value if needed
+    if (temperatureSampleTime == 0 || temperatureSampleTime > ticks)
+    {
+        uint8_t data;
+
+        readCommand(MAG_DIE_TEMP, &data, 1);    
+        temperature = data;
+
+        temperatureSampleTime = ticks + MICROBIT_COMPASS_TEMPERATURE_SENSE_PERIOD;
+
+        // Indicate that a new sample is available
+        MicroBitEvent e(id, MICROBIT_COMPASS_EVT_TEMPERATURE_UPDATE);
+    }
 }
 
 /**
@@ -292,6 +308,15 @@ int MicroBitCompass::whoAmI()
 
     readCommand(MAG_WHOAMI, &data, 1);    
     return (int)data;
+}
+
+/**
+ * Reads the currently die temperature of the compass. 
+ * @return The temperature, in degrees celsius.
+ */
+int MicroBitCompass::getTemperature()
+{
+    return temperature;
 }
 
 /**
