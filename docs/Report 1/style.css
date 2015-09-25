@@ -87,7 +87,6 @@ p
 .profile_item {
   float:left;
   width:1265px;
-  height:33px;
   border-width: 1px;
   border-style: solid;
   border-color: #FFFFFF;
@@ -105,10 +104,17 @@ p
 }
 
 .profile_value {
-  font-size: 14px;
-  line-height: 33px;
-  height: 33px;
-  float:left;
+	font-size: 14px;
+    line-height: 33px;
+    height: 33px;
+	float:left;
+}
+
+.text_block {
+	font-size: 14px;
+	float:left;
+	padding-top: 5px;
+	padding-bottom: 5px;
 }
 
 .services_section_hdg {
