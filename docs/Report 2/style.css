@@ -87,7 +87,6 @@ p
 .profile_item {
   float:left;
   width:1265px;
-  height:33px;
   border-width: 1px;
   border-style: solid;
   border-color: #FFFFFF;
@@ -106,9 +105,16 @@ p
 
 .profile_value {
 	font-size: 14px;
-  line-height: 33px;
-  height: 33px;
+    line-height: 33px;
+    height: 33px;
 	float:left;
+}
+
+.text_block {
+	font-size: 14px;
+	float:left;
+	padding-top: 5px;
+	padding-bottom: 5px;
 }
 
 .services_section_hdg {
@@ -156,7 +162,6 @@ p
 .service_item {
   float:left;
   width:1265px;
-  height:33px;
   border-width: 1px;
   border-style: solid;
   border-color: #FFFFFF;
@@ -226,7 +231,6 @@ p
 .characteristic_item {
   float:left;
   width:1280px;
-  height:33px;
   border-width: 1px;
   border-style: solid;
   border-color: #FFFFFF;
@@ -245,13 +249,21 @@ p
   background-color: #F5F6CE
 }
 .characteristic_label {
-	width: 300px;
-	font-size: 12px;
-	font-weight:bold;
+  width: 300px;
+  font-size: 12px;
+  font-weight:bold;
   line-height: 33px;
   height: 33px;
-	float:left;
+  float:left;
   padding-left: 45px;
+}
+
+.char_text_block {
+	font-size: 14px;
+	float:left;
+	padding-top: 5px;
+	padding-bottom: 5px;
+    padding-left: 45px;
 }
 
 .characteristic_value {
