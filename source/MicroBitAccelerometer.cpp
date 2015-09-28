@@ -144,7 +144,6 @@ int MicroBitAccelerometer::whoAmI()
 void MicroBitAccelerometer::update()
 {
     int8_t data[6];
-    static int count=0;
 
     readCommand(MMA8653_OUT_X_MSB, (uint8_t *)data, 6);
 

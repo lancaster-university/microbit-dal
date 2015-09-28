@@ -36,8 +36,6 @@
 #define MAG_CTRL_REG1 0x10
 #define MAG_CTRL_REG2 0x11
 
-#define MICROBIT_COMPASS_TEMPERATURE_SENSE_PERIOD 1000
-
 /**
   * Configuration options
   */
@@ -58,7 +56,7 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
 #define MICROBIT_COMPASS_EVT_CAL_START          2
 #define MICROBIT_COMPASS_EVT_CAL_END            3
 #define MICROBIT_COMPASS_EVT_DATA_UPDATE        4
-#define MICROBIT_COMPASS_EVT_TEMPERATURE_UPDATE 5
+#define MICROBIT_COMPASS_EVT_CONFIG_NEEDED      5
 
 /*
  * Status Bits
@@ -80,7 +78,6 @@ struct CompassSample
     int16_t         x;
     int16_t         y;
     int16_t         z;
-    int16_t         temperature;
     
     CompassSample()
     {
@@ -106,16 +103,14 @@ class MicroBitCompass : public MicroBitComponent
     uint16_t            address;                  // I2C address of the magnetmometer.  
     uint16_t            samplePeriod;             // The time between samples, in millseconds.
     unsigned long       eventStartTime;           // used to store the current system clock when async calibration has started
-    unsigned long       temperatureSampleTime;    // used to store the current system clock when async calibration has started
-    uint8_t             temperature;              // the current die temperture of the compass chip.
 
-    public:
-    
     CompassSample       minSample;      // Calibration sample.
     CompassSample       maxSample;      // Calibration sample.
     CompassSample       average;        // Centre point of sample data.
     CompassSample       sample;         // The latest sample data recorded.
     DigitalIn           int1;           // Data ready interrupt.
+
+    public:
             
     /**
       * Constructor. 
@@ -218,7 +213,7 @@ class MicroBitCompass : public MicroBitComponent
       * Reads the currently die temperature of the compass. 
       * @return The temperature, in degrees celsius.
       */
-    int getTemperature();
+    int readTemperature();
 
     /**
       * Perform the asynchronous calibration of the compass.
@@ -305,7 +300,7 @@ class MicroBitCompass : public MicroBitComponent
       * @param reg The based address of the 16 bit register to access.
       * @return The register value, interpreted as a 8 bi signed value.
       */
-    int16_t read8(uint8_t reg);
+    uint8_t read8(uint8_t reg);
 };
 
 #endif

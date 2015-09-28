@@ -18,6 +18,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitFiber.cpp"
     "ManagedString.cpp"
     "MicroBitAccelerometer.cpp"
+    "MicroBitThermometer.cpp"
     "MicroBitIO.cpp"
     "MicroBitCompat.cpp"
     "MicroBitImage.cpp"

@@ -32,7 +32,6 @@ MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble) :
     
     matrixCharacteristic.setReadAuthorizationCallback(this, &MicroBitLEDService::onDataRead);
             
-
     GattCharacteristic *characteristics[] = {&matrixCharacteristic, &textCharacteristic, &scrollingSpeedCharacteristic};
     GattService         service(MicroBitLEDServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
@@ -42,12 +41,10 @@ MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble) :
     textCharacteristicHandle = textCharacteristic.getValueHandle();
     scrollingSpeedCharacteristicHandle = scrollingSpeedCharacteristic.getValueHandle();
 
-    ble.updateCharacteristicValue(scrollingSpeedCharacteristicHandle, (const uint8_t *)&scrollingSpeedCharacteristicBuffer, sizeof(scrollingSpeedCharacteristicBuffer));
-    ble.updateCharacteristicValue(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
+    ble.gattServer().write(scrollingSpeedCharacteristicHandle, (const uint8_t *)&scrollingSpeedCharacteristicBuffer, sizeof(scrollingSpeedCharacteristicBuffer));
+    ble.gattServer().write(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitLEDService::onDataWritten);
-    
-
 }
 
 
@@ -111,7 +108,7 @@ void MicroBitLEDService::onDataRead(GattReadAuthCallbackParams *params)
             }
         }
 
-        ble.updateCharacteristicValue(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
+        ble.gattServer().write(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
     }
 }
 

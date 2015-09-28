@@ -23,16 +23,11 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address) : average(), sam
     this->id = id;
     this->address = address;
     
-    //we presume it's calibrated until the average values are read.
+    //we presume the device calibrated until the average values are read.
     this->status = 0x01;
     
     //initialise eventStartTime to 0
     this->eventStartTime = 0;
-    this->temperatureSampleTime = 0;
-    this->temperature = 0;
-    
-    // Enable automatic reset after each sample;
-    writeCommand(MAG_CTRL_REG2, 0xA0);
     
     // Select 10Hz update rate, with oversampling, and enable the device.
     this->samplePeriod = 100;
@@ -109,9 +104,9 @@ int16_t MicroBitCompass::read16(uint8_t reg)
   * @param reg The based address of the 16 bit register to access.
   * @return The register value, interpreted as a 8 bi signed value.
   */
-int16_t MicroBitCompass::read8(uint8_t reg)
+uint8_t MicroBitCompass::read8(uint8_t reg)
 {
-    int8_t data;
+    uint8_t data;
 
     data = 0;
     readCommand(reg, (uint8_t*) &data, 1);
@@ -186,19 +181,6 @@ void MicroBitCompass::idleTick()
         }
     }
 
-    // Update the temperature value if needed
-    if (temperatureSampleTime == 0 || temperatureSampleTime > ticks)
-    {
-        uint8_t data;
-
-        readCommand(MAG_DIE_TEMP, &data, 1);    
-        temperature = data;
-
-        temperatureSampleTime = ticks + MICROBIT_COMPASS_TEMPERATURE_SENSE_PERIOD;
-
-        // Indicate that a new sample is available
-        MicroBitEvent e(id, MICROBIT_COMPASS_EVT_TEMPERATURE_UPDATE);
-    }
 }
 
 /**
@@ -253,7 +235,14 @@ void MicroBitCompass::configure()
 {
     const MAG3110SampleRateConfig  *actualSampleRate;
 
-    // First find the nearest sample rate to that specified.
+    // First, take the device offline, so it can be configured.
+    writeCommand(MAG_CTRL_REG1, 0x00);
+
+    // Wait for the part to enter standby mode...    
+    while(this->read8(MAG_SYSMOD) & 0x03)
+        uBit.sleep(100);
+
+    // Find the nearest sample rate to that specified.
     actualSampleRate = &MAG3110SampleRate[MAG3110_SAMPLE_RATES-1];
     for (int i=MAG3110_SAMPLE_RATES-1; i>=0; i--)
     {
@@ -266,10 +255,12 @@ void MicroBitCompass::configure()
     // OK, we have the correct data. Update our local state.
     this->samplePeriod = actualSampleRate->sample_period / 1000;
 
+    // Enable automatic reset after each sample;
+    writeCommand(MAG_CTRL_REG2, 0xA0);
+    
     // Bring the device online, with the requested sample frequency.
     writeCommand(MAG_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
 }
-
 
 /**
  * Attempts to set the sample rate of the compass to the specified value (in ms).
@@ -314,8 +305,11 @@ int MicroBitCompass::whoAmI()
  * Reads the currently die temperature of the compass. 
  * @return The temperature, in degrees celsius.
  */
-int MicroBitCompass::getTemperature()
+int MicroBitCompass::readTemperature()
 {
+    int8_t temperature;
+    readCommand(MAG_DIE_TEMP, (uint8_t *)&temperature, 1);    
+
     return temperature;
 }
 
@@ -423,13 +417,13 @@ int MicroBitCompass::isIdleCallbackNeeded()
 const MAG3110SampleRateConfig MAG3110SampleRate[MAG3110_SAMPLE_RATES] = {
     {12500,      0x00},        // 80 Hz
     {25000,      0x20},        // 40 Hz
-    {50000,      0x40},        // 20 Hz
+    {50000,      0x40},        // 20 Hz  
     {100000,     0x60},        // 10 hz 
     {200000,     0x80},        // 5 hz 
-    {400000,     0x81},        // 2.5 hz 
-    {800000,     0x82},        // 1.25 hz 
+    {400000,     0x88},        // 2.5 hz 
+    {800000,     0x90},        // 1.25 hz 
     {1600000,    0xb0},        // 0.63 hz 
     {3200000,    0xd0},        // 0.31 hz 
     {6400000,    0xf0},        // 0.16 hz 
-    {12800000,   0xf1}         // 0.08 hz 
+    {12800000,   0xf8}         // 0.08 hz 
 };

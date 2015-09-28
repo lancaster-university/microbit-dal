@@ -42,7 +42,7 @@ class MicroBitAccelerometerService
 
     // memory for our 8 bit control characteristics.
     uint16_t            accelerometerDataCharacteristicBuffer[3];
-    uint8_t             accelerometerPeriodCharacteristicBuffer;
+    uint16_t            accelerometerPeriodCharacteristicBuffer;
 
     // Handles to access each characteristic when they are held by Soft Device.
     GattAttribute::Handle_t accelerometerDataCharacteristicHandle;

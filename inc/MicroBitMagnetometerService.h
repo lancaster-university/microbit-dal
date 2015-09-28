@@ -38,6 +38,13 @@ class MicroBitMagnetometerService
      */
     void magnetometerUpdate(MicroBitEvent e);
 
+    /**
+     * Sample Period Change Needed callback.
+     * Reconfiguring the magnetometer can to a REALLY long time (sometimes even seconds to complete)
+     * So we do this in the background when necessary, through this event handler. 
+     */
+    void samplePeriodUpdateNeeded(MicroBitEvent e);
+
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
 

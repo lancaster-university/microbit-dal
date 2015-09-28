@@ -22,6 +22,7 @@
 #include "MicroBitPin.h"
 #include "MicroBitCompass.h"
 #include "MicroBitAccelerometer.h"
+#include "MicroBitThermometer.h"
 #include "MicroBitMultiButton.h"
 
 #include "MicroBitSerial.h"
@@ -105,6 +106,7 @@ class MicroBit
     MicroBitMultiButton     buttonAB;    
     MicroBitAccelerometer   accelerometer;
     MicroBitCompass         compass;
+    MicroBitThermometer     thermometer;
 
     //An object of available IO pins on the device
     MicroBitIO              io;

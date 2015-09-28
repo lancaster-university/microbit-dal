@@ -206,6 +206,13 @@ class MicroBitMessageBus : public MicroBitComponent
 	void ignore(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent));
 
     /**
+      * Returns the microBitListener with the given position in our list.
+      * @param n The position in the list to return.
+      * @return the MicroBitListener at postion n in the list, or NULL if the position is invalid.
+      */
+    MicroBitListener *elementAt(int n);
+
+    /**
       * Returns a 'nonce' for use with the NONCE_ID channel of the message bus.
       */
     uint16_t nonce();

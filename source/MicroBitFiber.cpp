@@ -226,7 +226,6 @@ void scheduler_event(MicroBitEvent evt)
     }
 
     // Unregister this event, as we've woken up all the fibers with this match.
-    pc.printf("Scheduler: Deregistering for Event: %d:%d\n", evt.source, evt.value);
     uBit.MessageBus.ignore(evt.source, evt.value, scheduler_event);
 }
 
@@ -311,7 +310,6 @@ void fiber_wait_for_event(uint16_t id, uint16_t value)
     queue_fiber(f, &waitQueue);
     
     // Register to receive this event, so we can wake up the fiber when it happens.
-    pc.printf("Scheduler: Registering for Event: %d:%d\n", id, value);
     uBit.MessageBus.listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_NONBLOCKING);
 
     // Finally, enter the scheduler.

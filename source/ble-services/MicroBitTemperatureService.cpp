@@ -17,7 +17,7 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) :
         ble(_ble) 
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
-    GattCharacteristic  temperatureDataCharacteristic(MicroBitTemperatureServiceDataUUID, (uint8_t *)temperatureDataCharacteristicBuffer, 0, 
+    GattCharacteristic  temperatureDataCharacteristic(MicroBitTemperatureServiceDataUUID, (uint8_t *)&temperatureDataCharacteristicBuffer, 0, 
     sizeof(temperatureDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
     // Initialise our characteristic values.
@@ -29,9 +29,9 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) :
     ble.addService(service);
 
     temperatureDataCharacteristicHandle = temperatureDataCharacteristic.getValueHandle();
-    ble.updateCharacteristicValue(temperatureDataCharacteristicHandle, (const uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
+    ble.gattServer().write(temperatureDataCharacteristicHandle,(uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
 
-    uBit.MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_TEMPERATURE_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_NONBLOCKING | MESSAGE_BUS_LISTENER_URGENT);
+    uBit.MessageBus.listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_NONBLOCKING | MESSAGE_BUS_LISTENER_URGENT);
 }
 
 /**
@@ -39,8 +39,11 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) :
   */
 void MicroBitTemperatureService::temperatureUpdate(MicroBitEvent e)
 {
-    temperatureDataCharacteristicBuffer = uBit.compass.getTemperature();
-    ble.gattServer().notify(temperatureDataCharacteristicHandle,(uint8_t *)temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
+    if (ble.getGapState().connected)
+    {
+        temperatureDataCharacteristicBuffer = uBit.thermometer.getTemperature();
+        ble.gattServer().notify(temperatureDataCharacteristicHandle,(uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
+    }
 }
 
 const uint8_t  MicroBitTemperatureServiceUUID[] = {

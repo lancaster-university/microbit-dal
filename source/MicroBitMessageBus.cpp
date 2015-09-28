@@ -374,7 +374,6 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
 	if (newListener == NULL)
 		return 0;
 
-
 	l = listeners;
 
 	// Firstly, we treat a listener as an idempotent operation. Ensure we don't already have this handler
@@ -459,25 +458,28 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
     // Walk this list of event handlers. Delete any that match the given listener.
     while (l != NULL)
     {
-        if (l->id == listener->id && l->value == listener->value && ((listener->flags & MESSAGE_BUS_LISTENER_METHOD) == (l->flags & MESSAGE_BUS_LISTENER_METHOD)))
+        if ((listener->flags & MESSAGE_BUS_LISTENER_METHOD) == (l->flags & MESSAGE_BUS_LISTENER_METHOD))
         {
             if(((listener->flags & MESSAGE_BUS_LISTENER_METHOD) && (*l->cb_method == *listener->cb_method)) || 
-              ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
+                    ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
             {
-                // Found a match. Remove from the list.
-                if (p == NULL)
-                    listeners = l->next;
-                else 
-                    p->next = l->next;
+                if ((listener->id == MICROBIT_ID_ANY || listener->id == l->id) && (listener->value == MICROBIT_EVT_ANY || listener->value == l->value))
+                {
+                    // Found a match. Remove from the list.
+                    if (p == NULL)
+                        listeners = l->next;
+                    else 
+                        p->next = l->next;
 
-                // delete the listener.
-                MicroBitListener *t = l;
-                l = l->next;
+                    // delete the listener.
+                    MicroBitListener *t = l;
+                    l = l->next;
 
-                delete t;
-                removed++;
+                    delete t;
+                    removed++;
 
-                continue;
+                    continue;
+                }
             }
         }
 
@@ -486,5 +488,26 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
     }
 
     return removed;
+}
+
+/**
+ * Returns the microBitListener with the given position in our list.
+ * @param n The position in the list to return.
+ * @return the MicroBitListener at postion n in the list, or NULL if the position is invalid.
+ */
+MicroBitListener* MicroBitMessageBus::elementAt(int n)
+{
+    MicroBitListener *l = listeners;
+
+    while (n > 0)
+    {
+        if (l == NULL)
+            return NULL;
+
+        n--;
+        l = l->next;
+    }
+
+    return l;
 }
 
