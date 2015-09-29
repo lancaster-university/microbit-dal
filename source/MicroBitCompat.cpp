@@ -37,20 +37,20 @@ void string_reverse(char *s)
 void itoa(int n, char *s)
 {
     int i = 0;
-    int sign = (n >= 0);
+    int positive = (n >= 0);
 
     // Record the sign of the number,
     // Ensure our working value is positive.
-    if (!sign)  
+    if (positive)
         n = -n;          
 
     // Calculate each character, starting with the LSB.    
     do {       
-         s[i++] = n % 10 + '0';   
-    } while ((n /= 10) > 0);     
+         s[i++] = abs(n % 10) + '0';
+    } while (abs(n /= 10) > 0);
     
     // Add a negative sign as needed
-    if (!sign)
+    if (!positive)
         s[i++] = '-';
     
     // Terminate the string.
