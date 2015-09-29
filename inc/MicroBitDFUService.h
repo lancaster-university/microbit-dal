@@ -68,9 +68,6 @@ class MicroBitDFUService
 
     private:
 
-    // BLE pairing name of this device, encoded as an integer.
-    uint32_t    flashCode;
-    
     // State of paiting process.
     bool authenticated;
     bool flashCodeRequested;
@@ -78,8 +75,11 @@ class MicroBitDFUService
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
 
-    // memory for our 8 bit control characteristics.
+    // memory for our 8 bit control characteristic.
     uint8_t             controlByte;
+
+    // BLE pairing name of this device, encoded as an integer.
+    uint32_t            flashCode;
 
     GattAttribute::Handle_t microBitDFUServiceControlCharacteristicHandle;
     GattAttribute::Handle_t microBitDFUServiceFlashCodeCharacteristicHandle;

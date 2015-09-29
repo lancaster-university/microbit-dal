@@ -36,6 +36,10 @@
 #define MMA8653_SAMPLE_RANGES   3
 #define MMA8653_SAMPLE_RATES    8
 
+/*
+ * Accelerometer events
+ */
+#define MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE        1
 
 struct MMA8653Sample
 {

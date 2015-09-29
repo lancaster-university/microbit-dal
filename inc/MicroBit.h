@@ -22,6 +22,7 @@
 #include "MicroBitPin.h"
 #include "MicroBitCompass.h"
 #include "MicroBitAccelerometer.h"
+#include "MicroBitThermometer.h"
 #include "MicroBitMultiButton.h"
 
 #include "MicroBitSerial.h"
@@ -36,6 +37,11 @@
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
 #include "MicroBitLEDService.h"
+#include "MicroBitAccelerometerService.h"
+#include "MicroBitMagnetometerService.h"
+#include "MicroBitButtonService.h"
+#include "MicroBitIOPinService.h"
+#include "MicroBitTemperatureService.h"
 #include "ExternalEvents.h"
 
 // MicroBit::flags values
@@ -100,15 +106,21 @@ class MicroBit
     MicroBitMultiButton     buttonAB;    
     MicroBitAccelerometer   accelerometer;
     MicroBitCompass         compass;
+    MicroBitThermometer     thermometer;
 
     //An object of available IO pins on the device
     MicroBitIO              io;
     
     // Bluetooth related member variables.
-    BLEDevice               *ble;
-    MicroBitDFUService      *ble_firmware_update_service;
-    MicroBitEventService    *ble_event_service;
-    MicroBitLEDService      *ble_led_service;
+    BLEDevice                       *ble;
+    MicroBitDFUService              *ble_firmware_update_service;
+    MicroBitEventService            *ble_event_service;
+    MicroBitLEDService              *ble_led_service;
+    MicroBitAccelerometerService    *ble_accelerometer_service;
+    MicroBitMagnetometerService     *ble_magnetometer_service;
+    MicroBitButtonService           *ble_button_service;
+    MicroBitIOPinService            *ble_io_pin_service;
+    MicroBitTemperatureService      *ble_temperature_service;
     
     /**
       * Constructor. 

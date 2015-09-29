@@ -18,6 +18,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitFiber.cpp"
     "ManagedString.cpp"
     "MicroBitAccelerometer.cpp"
+    "MicroBitThermometer.cpp"
     "MicroBitIO.cpp"
     "MicroBitCompat.cpp"
     "MicroBitImage.cpp"
@@ -32,6 +33,10 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "ble-services/MicroBitEventService.cpp"
     "ble-services/MicroBitLEDService.cpp"
     "ble-services/MicroBitAccelerometerService.cpp"
+    "ble-services/MicroBitMagnetometerService.cpp"
+    "ble-services/MicroBitButtonService.cpp"
+    "ble-services/MicroBitIOPinService.cpp"
+    "ble-services/MicroBitTemperatureService.cpp"
 )
 
 if (YOTTA_CFG_MICROBIT_CONFIGFILE)

@@ -24,19 +24,25 @@ class MicroBitAccelerometerService
       */
     MicroBitAccelerometerService(BLEDevice &_ble);  
     
+
+    private:
+
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
       */
     void onDataWritten(const GattWriteCallbackParams *params);
 
-    private:
+    /**
+     * Accelerometer update callback
+     */
+    void accelerometerUpdate(MicroBitEvent e);
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
 
     // memory for our 8 bit control characteristics.
     uint16_t            accelerometerDataCharacteristicBuffer[3];
-    uint8_t             accelerometerPeriodCharacteristicBuffer;
+    uint16_t            accelerometerPeriodCharacteristicBuffer;
 
     // Handles to access each characteristic when they are held by Soft Device.
     GattAttribute::Handle_t accelerometerDataCharacteristicHandle;

@@ -59,6 +59,7 @@ MicroBit::MicroBit() :
     buttonAB(MICROBIT_ID_BUTTON_AB,MICROBIT_ID_BUTTON_A,MICROBIT_ID_BUTTON_B), 
     accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR),
     compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR),
+    thermometer(MICROBIT_ID_THERMOMETER),
     io(MICROBIT_ID_IO_P0,MICROBIT_ID_IO_P1,MICROBIT_ID_IO_P2,
        MICROBIT_ID_IO_P3,MICROBIT_ID_IO_P4,MICROBIT_ID_IO_P5,
        MICROBIT_ID_IO_P6,MICROBIT_ID_IO_P7,MICROBIT_ID_IO_P8,
@@ -119,6 +120,26 @@ void MicroBit::init()
     
 #if CONFIG_ENABLED(MICROBIT_BLE_LED_SERVICE) 
     ble_led_service = new MicroBitLEDService(*ble);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_ACCELEROMETER_SERVICE) 
+    ble_accelerometer_service = new MicroBitAccelerometerService(*ble);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_MAGNETOMETER_SERVICE) 
+    ble_magnetometer_service = new MicroBitMagnetometerService(*ble);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_BUTTON_SERVICE) 
+    ble_button_service = new MicroBitButtonService(*ble);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_IO_PIN_SERVICE) 
+    ble_io_pin_service = new MicroBitIOPinService(*ble);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_TEMPERATURE_SERVICE) 
+    ble_temperature_service = new MicroBitTemperatureService(*ble);
 #endif
 
     // Setup advertising.
