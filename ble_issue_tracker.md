@@ -6,18 +6,6 @@ Profile Design
 
 ### OPEN:
 
-D3. Simplify the IO Pin Service, possible to expose the edge connector pins only. Possibly drop it to save memory and use the event service to transport pin values in either direction. Needs further thought.
-
-* Update: Removed all pin characteristics except for pin 0, pin 1 and pin 2.
-
-D5. Generic Attribute Service: profile design doc/report doesn’t show it and it’s mandatory (issue with Bluetooth Developer Studio). 
-
-D9. DFU services uses a different base UUID to the other custom services. Is this deliberate?
-
-D10. Characteristics in the DFU service use a different base UUID to the parent service. Is this deliberate?
-
-D11. What are the data types for DFU Control and DFU Flash Code? Assumed uint8 and array of uint8.
-
 
 ### CLOSED:
 
@@ -25,7 +13,13 @@ D1. Lose the System LED State characteristic since it cannot be controlled from 
 
 D2. Lose the Scrolling State characteristic – complexity and memory constraints. DONE.
 
+D3. Simplify the IO Pin Service, possible to expose the edge connector pins only. Possibly drop it to save memory and use the event service to transport pin values in either direction. Needs further thought.
+
+* Update: Removed all pin characteristics except for pin 0, pin 1 and pin 2.
+
 D4. Generic Access Service: Peripheral Privacy Flag is optional and I don’t think we need it. Ditto Reconnection Address, ditto Peripheral Preferred Connection Parameters --> Removed optional characteristics Peripheral Privacy Flag, Reconnection Address and Peripheral Preferred Connection Parameters from Generic Access Service.
+
+D5. Generic Attribute Service: profile design doc/report doesn’t show it and it’s mandatory (issue with Bluetooth Developer Studio). 
 
 D6. Device Information Service: All characteristics are optional. Which ones do we really want/need? Save a little memory --> Removed PnP ID, IEEE 11073-20601 Regulatory Certification Data List, System ID and Software Revision String characteristics.
 
@@ -33,7 +27,14 @@ D7. Why does LED Matrix State support “Write Without Response”? I think this
 
 D8. MicroBit Requirements supports Write. This is (ironically and puntastically) wrong. Client should not be able to modify the requirements the MicroBit has. Changed.
 
+D9. DFU services uses a different base UUID to the other custom services. Is this deliberate?
+
+D10. Characteristics in the DFU service use a different base UUID to the parent service. Is this deliberate?
+
+D11. What are the data types for DFU Control and DFU Flash Code? Assumed uint8 and array of uint8.
+
 D12. Microbit DFU service not in the profile design. Added. Needs descriptions and data types confirming.
+
 
 
 Profile Testing
