@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="en">
-<head><title>Bluetooth Developer Studio - Level 1 Profile Report</title>
+<head><title>Bluetooth Developer Studio - Profile Report</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <link rel="stylesheet" type="text/css" href="style.css" />
 	<script language="javascript" type="text/javascript" src="functions.js"></script>
@@ -12,7 +12,7 @@
 
 	<div class="main_heading">
 	  <div id="id_date" class="date">The Date</div>
-	  <div class="heading_title">Bluetooth Developer Studio Level 1 Profile Report</div>
+	  <div class="heading_title">Bluetooth Developer Studio Level 1 Report</div>
 	  <div class="icon"><img src="BluetoothSIG.png"/></div>
 	</div>
 
@@ -24,43 +24,22 @@
     
 	<div class="profile_item">
 	  <div class="profile_label">Profile Name</div>
-	</div>
-	<div class="profile_item">
 	  <div class="profile_value">BBC MICROBIT</div>
 	</div>
 
 	<div class="profile_item">
-	  <div class="profile_label">Abstract:</div>
-	</div>
-	<div class="profile_item">
-	  <div class="text_block"><pre>Default 'out of the box' profile for the BBC Micro Bit</pre></div>
+	  <div class="profile_label">Abstract</div>
+	  <div class="profile_value"></div>
 	</div>
 
 	<div class="profile_item">
-	  <div class="profile_label">Summary:</div>
-	</div>
-	<div class="profile_item">
-	  <div class="text_block"><pre>Version 1.6 - 21st September 2015
-Removed the Battery Service. No way to establish battery levels on the micro:bit
-Added a simple Temperature Service to exploit temperature sensors in micro:bit processors
-Accelerometer and Magnetometer period characteristics now have uint16 fields instead of uint8 which required scaling up by multipling by 10.
-Accelerometer Data and Magnetometer Data characteristics now use signed 16 bit integer fields for each of their X, Y and Z parts.
-Accelerometer Data and Magnetometer Data characteristics now use signed 16 bit integer fields for each of their X, Y and Z parts.
-New characteristic Magnetometer Heading added to the Magnetometer Service. Provides current heading in degrees.
-Removed IO Parallel Port characteristic due to complexity and memory considerations.
-Added Generic Attribute Service (previously absent in the repository)
-
-Version 1.5 - 10th September 2015
-Button State 2 characteristic given new, distinct UUID of E95DDA91-251D-470A-A062-FA1922DFA9A8
-Removed the System LED State characteristic from the LED Service since it cannot be controlled from the BLE MCU.
-Removed the Scrolling State characteristic from the LED Service due to complexity and memory constraints.
-Changed LED Matrix State use of “Write Without Response” to “Write” so that no further writes can be made until there’s been an ACK back from the previous one.
-Removed Write property from MicroBit Requirements characteristic.</pre></div>
+	  <div class="profile_label">Summary</div>
+	  <div class="profile_value"></div>
 	</div>
 
 	<div class="profile_item">
 	  <div class="profile_label">Base UUID</div>
-	  <div class="profile_value">E95D0000251D470AA062FA1922DFA9A8</div>
+	  <div class="profile_value">E95D0000-251D-470A-A062-FA1922DFA9A8</div>
 	</div>
 
 	<div class="profile_item">
@@ -84,163 +63,152 @@ Removed Write property from MicroBit Requirements characteristic.</pre></div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">Generic Access</p></div>
-   	<div class="service_hdg_text2"><p>E95D2257251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>Generic Access</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Device Name : 2A00</p></div>
+	   	<div class="characteristic_summary"><p>2A00 : Device Name</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Appearance : E95DB788251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DB788-251D-470A-A062-FA1922DFA9A8 : Appearance</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">Generic Attribute</p></div>
-   	<div class="service_hdg_text2"><p>1801</p></div>
+   	<div class="service_hdg_text"><p>Generic Attribute</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Service Changed : 2A05</p></div>
+	   	<div class="characteristic_summary"><p>2A05 : Service Changed</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">Device Information</p></div>
-   	<div class="service_hdg_text2"><p>E95D5C58251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>Device Information</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Manufacturer Name String : E95D1BFB251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D1BFB-251D-470A-A062-FA1922DFA9A8 : Manufacturer Name String</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Model Number String : E95D4257251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D4257-251D-470A-A062-FA1922DFA9A8 : Model Number String</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Serial Number String : E95D06E2251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D06E2-251D-470A-A062-FA1922DFA9A8 : Serial Number String</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Hardware Revision String : E95DADDF251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DADDF-251D-470A-A062-FA1922DFA9A8 : Hardware Revision String</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Firmware Revision String : E95DB9A2251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DB9A2-251D-470A-A062-FA1922DFA9A8 : Firmware Revision String</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">ACCELEROMETER SERVICE</p></div>
-   	<div class="service_hdg_text2"><p>E95D0753251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>ACCELEROMETER SERVICE</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Accelerometer Data : E95D41FB251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D41FB-251D-470A-A062-FA1922DFA9A8 : Accelerometer Data</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Accelerometer Period : E95D08DD251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D08DD-251D-470A-A062-FA1922DFA9A8 : Accelerometer Period</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">MAGNETOMETER SERVICE</p></div>
-   	<div class="service_hdg_text2"><p>E95DF2D8251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>MAGNETOMETER SERVICE</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Magnetometer Data : E95DD9D1251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DD9D1-251D-470A-A062-FA1922DFA9A8 : Magnetometer Data</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Magnetometer Period : E95D0A68251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D0A68-251D-470A-A062-FA1922DFA9A8- : Magnetometer Period</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Magnetometer Bearing : E95DB42F251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DB42F-251D-470A-A062-FA1922DFA9A8 : Magnetometer Bearing</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">Button Service</p></div>
-   	<div class="service_hdg_text2"><p>E95D9882251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>Button Service</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Button 1 State : E95DDA90251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DDA90-251D-470A-A062-FA1922DFA9A8 : Button 1 State</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Button 2 State : E95DFB03251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DFB03-251D-470A-A062-FA1922DFA9A8 : Button 2 State</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">LED SERVICE</p></div>
-   	<div class="service_hdg_text2"><p>E95DD91D251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>LED SERVICE</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>LED Matrix State : E95D0D97251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D0D97-251D-470A-A062-FA1922DFA9A8 : LED Matrix State</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>LED Text : E95DF078251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DF078-251D-470A-A062-FA1922DFA9A8 : LED Text</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Scrolling Delay : E95D15D1251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D15D1-251D-470A-A062-FA1922DFA9A8 : Scrolling Delay</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">IO PIN SERVICE</p></div>
-   	<div class="service_hdg_text2"><p>E95127B251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>IO PIN SERVICE</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Pin Data : E95DD6A3251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DD6A3-251D-470A-A062-FA1922DFA9A8 : Pin Data</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Pin AD Configuration : E95D4388251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D4388-251D-470A-A062-FA1922DFA9A8 : Pin AD Configuration</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Pin IO Configuration : E95DC5A2251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DC5A2-251D-470A-A062-FA1922DFA9A8 : Pin IO Configuration</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">EVENT SERVICE</p></div>
-   	<div class="service_hdg_text2"><p>E95D4C7C251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>EVENT SERVICE</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>MicroBit Requirements : E95D8912251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D8912-251D-470A-A062-FA1922DFA9A8 : MicroBit Requirements</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>MicroBit Event : E95DAEF6251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DAEF6-251D-470A-A062-FA1922DFA9A8 : MicroBit Event</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Client Requirements : E95DDDA1251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95DDDA1-251D-470A-A062-FA1922DFA9A8 : Client Requirements</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Client Event : E95D531C251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D531C-251D-470A-A062-FA1922DFA9A8 : Client Event</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">DFU CONTROL SERVICE</p></div>
-   	<div class="service_hdg_text2"><p>E95D93B0251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>DFU CONTROL SERVICE</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>DFU Control : E95D6A96251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D6A96-251D-470A-A062-FA1922DFA9A8 : DFU Control</p></div>
 	  </div>
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>DFU Flash Code : E95D2E9D251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D2E9D-251D-470A-A062-FA1922DFA9A8 : DFU Flash Code</p></div>
 	  </div>
 
 <!-- Service Block -->
   <div class="service_hdg">
-   	<div><p class="service_hdg_text1">TEMPERATURE SERVICE</p></div>
-   	<div class="service_hdg_text2"><p>E95D6100251D470AA062FA1922DFA9A8</p></div>
+   	<div class="service_hdg_text"><p>TEMPERATURE SERVICE</p></div>
   </div>
 
 	  <div class="characteristic_hdg">
-	   	<div class="characteristic_summary"><p>Temperature : E95D9250251D470AA062FA1922DFA9A8</p></div>
+	   	<div class="characteristic_summary"><p>E95D9250-251D-470A-A062-FA1922DFA9A8 : Temperature</p></div>
 	  </div>
 
 </div>
