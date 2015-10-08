@@ -226,6 +226,14 @@ class MicroBit
     unsigned long systemTime();
     
     /**
+      * Determine the version of the micro:bit runtime currently in use.
+      *
+      * @return A textual description of the currentlt executing micro:bit runtime.
+      * TODO: handle overflow case.
+      */
+    char *systemVersion();
+
+    /**
       * Triggers a microbit panic where an infinite loop will occur swapping between the panicFace and statusCode if provided.
       * 
       * @param statusCode the status code of the associated error. Status codes must be in the range 0-255.

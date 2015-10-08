@@ -16,12 +16,16 @@ int main()
 #if CONFIG_ENABLED(MICROBIT_DBG)
     pc.baud(115200);
 
+
     // For diagnostics. Gives time to open the console window. :-) 
     for (int i=3; i>0; i--)
     {
         pc.printf("=== SUPERMAIN: Starting in %d ===\n", i);
         wait(1.0);
     }
+
+    pc.printf("micro:bit runtime DAL version %s\n", MICROBIT_DAL_VERSION);
+
 #endif    
 
     // Bring up our nested heap allocator.
