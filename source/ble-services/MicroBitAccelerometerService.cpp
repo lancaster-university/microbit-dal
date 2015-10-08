@@ -22,7 +22,7 @@ MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble) :
 
     GattCharacteristic  accelerometerPeriodCharacteristic(MicroBitAccelerometerServicePeriodUUID, (uint8_t *)&accelerometerPeriodCharacteristicBuffer, 0, 
     sizeof(accelerometerPeriodCharacteristicBuffer), 
-    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
+    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Initialise our characteristic values.
     accelerometerDataCharacteristicBuffer[0] = 0;

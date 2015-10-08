@@ -16,7 +16,7 @@
 MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble) : 
         ble(_ble), 
         matrixCharacteristic(MicroBitLEDServiceMatrixUUID, (uint8_t *)&matrixCharacteristicBuffer, 0, sizeof(matrixCharacteristicBuffer), 
-    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ)
+    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
     GattCharacteristic  textCharacteristic(MicroBitLEDServiceTextUUID, (uint8_t *)textCharacteristicBuffer, 0, MICROBIT_BLE_MAXIMUM_SCROLLTEXT, 
