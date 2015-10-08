@@ -1,10 +1,10 @@
 #include "MicroBit.h"
 
-char MICROBIT_BLE_DEVICE_NAME[] = "BBC MicroBit [xxxxx]";
+char MICROBIT_BLE_DEVICE_NAME[] = "BBC micro:bit [xxxxx]";
 
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED) && CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
 const char MICROBIT_BLE_MANUFACTURER[] = "The Cast of W1A";
-const char MICROBIT_BLE_MODEL[] = "Microbit SB2";
+const char MICROBIT_BLE_MODEL[] = "micro:bit";
 const char MICROBIT_BLE_SERIAL[] = "SN1";
 const char MICROBIT_BLE_HARDWARE_VERSION[] = "0.2";
 const char MICROBIT_BLE_FIRMWARE_VERSION[] = "1.1";
@@ -107,7 +107,7 @@ void MicroBit::init()
     ble_firmware_update_service = new MicroBitDFUService(*ble);
 
     // Compute our auto-generated MicroBit device name.
-    ble_firmware_update_service->getName(MICROBIT_BLE_DEVICE_NAME+14);
+    ble_firmware_update_service->getName(MICROBIT_BLE_DEVICE_NAME+15);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
