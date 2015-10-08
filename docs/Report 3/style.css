@@ -42,25 +42,25 @@ p
 }
 
 .date {
-  width: 100px;
+	width: 240px;
   line-height: 79px;
   height: 79px;
-  float:left;
+	float:left;
 }
 
 .heading_title {
-  width: 980px;
+	width: 800px;
   line-height: 79px;
   height: 79px;
-  float:left;
-  text-align:center;	
+	float:left;
+	text-align:center;	
 }
 
 .icon {
-  width: 200px;
+	width: 240px;
   line-height: 79px;
-  height: 79;
-  float:left;
+	height: 79;
+	float:left;
 }
 
 .section_hdg {
@@ -87,6 +87,7 @@ p
 .profile_item {
   float:left;
   width:1265px;
+  height:33px;
   border-width: 1px;
   border-style: solid;
   border-color: #FFFFFF;
@@ -105,16 +106,9 @@ p
 
 .profile_value {
 	font-size: 14px;
-    line-height: 33px;
-    height: 33px;
+  line-height: 33px;
+  height: 33px;
 	float:left;
-}
-
-.text_block {
-	font-size: 14px;
-	float:left;
-	padding-top: 5px;
-	padding-bottom: 5px;
 }
 
 .services_section_hdg {
@@ -162,6 +156,7 @@ p
 .service_item {
   float:left;
   width:1265px;
+  height:33px;
   border-width: 1px;
   border-style: solid;
   border-color: #FFFFFF;
@@ -231,6 +226,7 @@ p
 .characteristic_item {
   float:left;
   width:1280px;
+  height:33px;
   border-width: 1px;
   border-style: solid;
   border-color: #FFFFFF;
@@ -256,14 +252,6 @@ p
   height: 33px;
 	float:left;
   padding-left: 45px;
-}
-
-.char_text_block {
-	font-size: 14px;
-	float:left;
-	padding-top: 5px;
-	padding-bottom: 5px;
-    padding-left: 45px;
 }
 
 .characteristic_value {
@@ -454,14 +442,4 @@ p
 .align_right
 {
    text-align: right;
-}
-
-.mandatory_property {
-	width: 935px;
-	font-size: 12px;
-  line-height: 33px;
-  height: 33px;
-	float:left;
-	font-weight:bold;
-	color:#ff0000;
 }
