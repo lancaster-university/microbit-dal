@@ -310,7 +310,7 @@ void fiber_wait_for_event(uint16_t id, uint16_t value)
     queue_fiber(f, &waitQueue);
     
     // Register to receive this event, so we can wake up the fiber when it happens.
-    uBit.MessageBus.listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_NONBLOCKING);
+    uBit.MessageBus.listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
     // Finally, enter the scheduler.
     schedule();

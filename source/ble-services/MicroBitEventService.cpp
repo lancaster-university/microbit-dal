@@ -73,7 +73,7 @@ void MicroBitEventService::onDataWritten(const GattWriteCallbackParams *params)
         // Read and register for all the events given...
         while (len >= 4)
         {
-            uBit.MessageBus.listen(e->type, e->reason, this, &MicroBitEventService::onMicroBitEvent, MESSAGE_BUS_LISTENER_NONBLOCKING | MESSAGE_BUS_LISTENER_URGENT);
+            uBit.MessageBus.listen(e->type, e->reason, this, &MicroBitEventService::onMicroBitEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
             len-=4;
             e++;

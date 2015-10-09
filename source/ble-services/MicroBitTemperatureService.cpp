@@ -31,7 +31,7 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) :
     temperatureDataCharacteristicHandle = temperatureDataCharacteristic.getValueHandle();
     ble.gattServer().write(temperatureDataCharacteristicHandle,(uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
 
-    uBit.MessageBus.listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_NONBLOCKING | MESSAGE_BUS_LISTENER_URGENT);
+    uBit.MessageBus.listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 /**
@@ -51,7 +51,7 @@ const uint8_t  MicroBitTemperatureServiceUUID[] = {
 };
 
 const uint8_t  MicroBitTemperatureServiceDataUUID[] = {
-    0xe9,0x5d,0x8a,0x38,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
+    0xe9,0x5d,0x92,0x50,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
 
 
