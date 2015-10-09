@@ -92,6 +92,10 @@ class MicroBitDFUService
 
     // Update BLE characteristic to release our flash code.
     void releaseFlashCode();
+
+    // Event handlers for button clicks.
+    void onButtonA(MicroBitEvent e);
+    void onButtonB(MicroBitEvent e);
 };
 
 #endif

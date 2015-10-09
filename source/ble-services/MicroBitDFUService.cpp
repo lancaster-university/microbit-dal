@@ -46,7 +46,7 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     microBitDFUServiceControlCharacteristicHandle = microBitDFUServiceControlCharacteristic.getValueHandle();
     microBitDFUServiceFlashCodeCharacteristicHandle = microBitDFUServiceFlashCodeCharacteristic.getValueHandle();
 
-    ble.onDataWritten(this, &MicroBitDFUService::onDataWritten);
+    ble.gattServer().onDataWritten(this, &MicroBitDFUService::onDataWritten);
 }
 
 
@@ -88,53 +88,53 @@ int MicroBitDFUService::getName(char *name)
     return MICROBIT_DFU_HISTOGRAM_WIDTH;
 }
 
+void MicroBitDFUService::onButtonA(MicroBitEvent e)
+{
+    if (flashCodeRequested)
+    {
+        releaseFlashCode();
+        uBit.display.scroll("");
+        showTick();
+        flashCodeRequested = false;
+        authenticated = true;
+    }
+}
+
+void MicroBitDFUService::onButtonB(MicroBitEvent e)
+{
+    uBit.display.scroll("VERSION: TODO");
+    showNameHistogram();
+}
+
 /**
   * Begin the pairing process. Typically called when device is powered up with buttons held down.
   * Scroll a description on the display, then displays the device ID code as a histogram on the matrix display.
   */
 void MicroBitDFUService::pair()
 {
-    ManagedString blueZoneString("BLUE ZONE...");
-    ManagedString pairString("PAIR?");
-    
-    uBit.display.scroll(blueZoneString);
+    uBit.MessageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, this, &MicroBitDFUService::onButtonA);
+    uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, this, &MicroBitDFUService::onButtonB);
 
+    uBit.display.scroll("BLUE ZONE...");
     showNameHistogram();
     
     while(1)
     {    
-        for (int i=0; i<100; i++)
-        {
-            if (flashCodeRequested)
-            {
-                uBit.display.scrollAsync(pairString);
-                for (int j=0; j<40; j++)
-                {          
-                    if (uBit.buttonA.isPressed())
-                    {
-                        i=100;
-                        releaseFlashCode();
-                        showTick();
-                        flashCodeRequested = false;
-                        authenticated = true;
-                        break;
-                    }
-                             
-                    wait(0.1);
-                }
-            }
-            wait (0.1);
+        if (flashCodeRequested)
+            uBit.display.scroll("PAIR?");
             
-            // If our peer disconnects, drop all state.
-            if ((authenticated || flashCodeRequested) && !ble.getGapState().connected)
-            {
-                authenticated = false;
-                flashCodeRequested = false;
-                flashCode = 0x00;
-            }
+        // If our peer disconnects, drop all state.
+        if ((authenticated || flashCodeRequested) && !ble.getGapState().connected)
+        {
+            authenticated = false;
+            flashCodeRequested = false;
+            flashCode = 0x00;
         }
+
+        uBit.sleep(500);
     }
 }
+
 
 /**
   * Callback. Invoked when any of our attributes are written via BLE.
@@ -152,6 +152,9 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
             
                 if (authenticated)
                 {
+                    uBit.display.scroll("");
+                    uBit.display.clear();
+
 #if CONFIG_ENABLED(MICROBIT_DBG)
                     pc.printf("  ACTIVATING BOOTLOADER.\n");
 #endif
@@ -161,6 +164,9 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
                 break;
             
             case MICROBIT_DFU_OPCODE_START_PAIR:
+#if CONFIG_ENABLED(MICROBIT_DBG)
+                pc.printf("  PAIRING REQUESTED.\n");
+#endif
                 flashCodeRequested = true;
                 break;
                                 
