@@ -125,10 +125,7 @@ void microbit_initialise_heap(HeapDefinition &heap)
 int
 microbit_create_sd_heap(HeapDefinition &heap)
 {
-#if CONFIG_DISABLED(MICROBIT_HEAP_REUSE_SD)
-    // We're not configure to use memory of this sort.
-    return 0;
-#endif
+#if CONFIG_ENABLED(MICROBIT_HEAP_REUSE_SD)
 
     // OK, see how much of the RAM assigned to Soft Device we can reclaim.
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
@@ -141,6 +138,9 @@ microbit_create_sd_heap(HeapDefinition &heap)
 
     microbit_initialise_heap(heap);
     return 1;
+#else
+    return 0;
+#endif
 }
 
 int
