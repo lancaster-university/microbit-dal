@@ -12,17 +12,6 @@ const float timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {0.000010, 0.000047,
 
 /**
   * Constructor.
-  * Create a Point representation of an LED on a matrix
-  * Used to handle non-linear matrix layouts.
-  */
-MatrixPoint::MatrixPoint(uint8_t x, uint8_t y)
-{
-    this->x = x;
-    this->y = y;
-}
-
-/**
-  * Constructor.
   * Create a representation of a display of a given size.
   * The display is initially blank.
   *

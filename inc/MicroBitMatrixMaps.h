@@ -19,50 +19,50 @@
 
 #if MICROBIT_DISPLAY_TYPE == MICROBUG_REFERENCE_DEVICE
     const MatrixPoint MicroBitDisplay::matrixMap[MICROBIT_DISPLAY_COLUMN_COUNT][MICROBIT_DISPLAY_ROW_COUNT] = 
-    {   {MatrixPoint(0,0),MatrixPoint(0,1),MatrixPoint(0,2), MatrixPoint(0,3), MatrixPoint(0,4)},
-        {MatrixPoint(1,0),MatrixPoint(1,1),MatrixPoint(1,2), MatrixPoint(1,3), MatrixPoint(1,4)},
-        {MatrixPoint(2,0),MatrixPoint(2,1),MatrixPoint(2,2), MatrixPoint(2,3), MatrixPoint(2,4)},
-        {MatrixPoint(3,0),MatrixPoint(3,1),MatrixPoint(3,2), MatrixPoint(3,3), MatrixPoint(3,4)},
-        {MatrixPoint(4,0),MatrixPoint(4,1),MatrixPoint(4,2), MatrixPoint(4,3), MatrixPoint(4,4)} 
+    {   {{0,0},{0,1},{0,2},{0,3},{0,4}},
+        {{1,0},{1,1},{1,2},{1,3},{1,4}},
+        {{2,0},{2,1},{2,2},{2,3},{2,4}},
+        {{3,0},{3,1},{3,2},{3,3},{3,4}},
+        {{4,0},{4,1},{4,2},{4,3},{4,4}}
     };
 #endif
 
 #if MICROBIT_DISPLAY_TYPE == MICROBIT_3X9
     const MatrixPoint MicroBitDisplay::matrixMap[MICROBIT_DISPLAY_COLUMN_COUNT][MICROBIT_DISPLAY_ROW_COUNT] = 
     {   
-        {MatrixPoint(0,4),MatrixPoint(0,3),MatrixPoint(1,1)},
-        {MatrixPoint(1,4),MatrixPoint(4,2),MatrixPoint(0,1)},
-        {MatrixPoint(2,4),MatrixPoint(3,2),MatrixPoint(4,0)},  
-        {MatrixPoint(3,4),MatrixPoint(2,2),MatrixPoint(3,0)},
-        {MatrixPoint(4,4),MatrixPoint(1,2),MatrixPoint(2,0)},
-        {MatrixPoint(4,3),MatrixPoint(0,2),MatrixPoint(1,0)},
-        {MatrixPoint(3,3),MatrixPoint(4,1),MatrixPoint(0,0)},
-        {MatrixPoint(2,3),MatrixPoint(3,1),MatrixPoint(NO_CONN,NO_CONN)},
-        {MatrixPoint(1,3),MatrixPoint(2,1),MatrixPoint(NO_CONN,NO_CONN)}
+        {{0,4},{0,3},{1,1}},
+        {{1,4},{4,2},{0,1}},
+        {{2,4},{3,2},{4,0}},
+        {{3,4},{2,2},{3,0}},
+        {{4,4},{1,2},{2,0}},
+        {{4,3},{0,2},{1,0}},
+        {{3,3},{4,1},{0,0}},
+        {{2,3},{3,1},{NO_CONN,NO_CONN}},
+        {{1,3},{2,1},{NO_CONN,NO_CONN}}
     };
 #endif
 
 #if MICROBIT_DISPLAY_TYPE == MICROBIT_SB1
     const MatrixPoint MicroBitDisplay::matrixMap[MICROBIT_DISPLAY_COLUMN_COUNT][MICROBIT_DISPLAY_ROW_COUNT] = 
     {   
-        {MatrixPoint(0,4), MatrixPoint(1,4), MatrixPoint(2,4), MatrixPoint(3,4), MatrixPoint(4,4), MatrixPoint(4,3), MatrixPoint(3,3), MatrixPoint(2,3), MatrixPoint(1,3)},
-        {MatrixPoint(0,3), MatrixPoint(4,2), MatrixPoint(3,2), MatrixPoint(2,2), MatrixPoint(1,2), MatrixPoint(0,2), MatrixPoint(4,1), MatrixPoint(3,1), MatrixPoint(2,1)},
-        {MatrixPoint(1,1), MatrixPoint(0,1), MatrixPoint(4,0), MatrixPoint(3,0), MatrixPoint(2,0), MatrixPoint(1,0), MatrixPoint(0,0), MatrixPoint(NO_CONN,NO_CONN), MatrixPoint(NO_CONN,NO_CONN)}        
+        {{0,4},{1,4},{2,4},{3,4},{4,4},{4,3},{3,3},{2,3},{1,3}},
+        {{0,3},{4,2},{3,2},{2,2},{1,2},{0,2},{4,1},{3,1},{2,1}},
+        {{1,1},{0,1},{4,0},{3,0},{2,0},{1,0},{0,0},{NO_CONN,NO_CONN},{NO_CONN,NO_CONN}}
     };
 #endif
 
 #if MICROBIT_DISPLAY_TYPE == MICROBIT_SB2
     const MatrixPoint MicroBitDisplay::matrixMap[MICROBIT_DISPLAY_COLUMN_COUNT][MICROBIT_DISPLAY_ROW_COUNT] = 
     {   
-        {MatrixPoint(0,0),MatrixPoint(4,2),MatrixPoint(2,4)},
-        {MatrixPoint(2,0),MatrixPoint(0,2),MatrixPoint(4,4)},
-        {MatrixPoint(4,0),MatrixPoint(2,2),MatrixPoint(0,4)},  
-        {MatrixPoint(4,3),MatrixPoint(1,0),MatrixPoint(0,1)},
-        {MatrixPoint(3,3),MatrixPoint(3,0),MatrixPoint(1,1)},
-        {MatrixPoint(2,3),MatrixPoint(3,4),MatrixPoint(2,1)},
-        {MatrixPoint(1,3),MatrixPoint(1,4),MatrixPoint(3,1)},
-        {MatrixPoint(0,3),MatrixPoint(NO_CONN,NO_CONN),MatrixPoint(4,1)},
-        {MatrixPoint(1,2),MatrixPoint(NO_CONN,NO_CONN),MatrixPoint(3,2)}
+        {{0,0},{4,2},{2,4}},
+        {{2,0},{0,2},{4,4}},
+        {{4,0},{2,2},{0,4}},
+        {{4,3},{1,0},{0,1}},
+        {{3,3},{3,0},{1,1}},
+        {{2,3},{3,4},{2,1}},
+        {{1,3},{1,4},{3,1}},
+        {{0,3},{NO_CONN,NO_CONN},{4,1}},
+        {{1,2},{NO_CONN,NO_CONN},{3,2}}
     };
     
 #endif
