@@ -85,8 +85,6 @@ enum DisplayMode {
 struct MatrixPoint {
     uint8_t x;
     uint8_t y;
-
-    MatrixPoint(uint8_t x, uint8_t y);
 };
 
 /**
