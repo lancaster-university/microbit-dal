@@ -59,12 +59,21 @@
 // This is permissable if SD is configured to release some of its internal storage that
 // is normally reserved for its BLE GATT table.
 #ifndef MICROBIT_HEAP_BASE_BLE_ENABLED
+#if defined(YOTTA_CFG_MICROBIT_S130) && (YOTTA_CFG_MICROBIT_S130 == 1)
+#define MICROBIT_HEAP_BASE_BLE_ENABLED          0x20002500
+#else
 #define MICROBIT_HEAP_BASE_BLE_ENABLED          0x20001C00
+#endif
 #endif
 
 // The highest address of memory normally reserved for Soft Device that is safe to use as heap storage 
 #ifndef MICROBIT_HEAP_SD_LIMIT
+#if defined(YOTTA_CFG_MICROBIT_S130) && (YOTTA_CFG_MICROBIT_S130 == 1)
+#define MICROBIT_HEAP_SD_LIMIT                  0x20002800
+#else
+#error S130 BUILD
 #define MICROBIT_HEAP_SD_LIMIT                  0x20002000
+#endif
 #endif
 
 //
