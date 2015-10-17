@@ -19,6 +19,7 @@
   * MessageBus Event Codes
   */
 #define MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE         1
+#define MICROBIT_DISPLAY_EVT_FREE                       2
 
 /**
   * I/O configurations for common devices.
@@ -70,6 +71,7 @@
 
 enum AnimationMode {
     ANIMATION_MODE_NONE,
+    ANIMATION_MODE_STOPPED,
     ANIMATION_MODE_SCROLL_TEXT,
     ANIMATION_MODE_PRINT_TEXT,
     ANIMATION_MODE_SCROLL_IMAGE,
@@ -103,7 +105,6 @@ class MicroBitDisplay : public MicroBitComponent
     uint8_t mode;
     uint8_t greyscaleBitMsk;
     uint8_t timingCount;
-    uint16_t nonce;
     Timeout renderTimer;
 
     MicroBitFont font;
@@ -221,6 +222,11 @@ class MicroBitDisplay : public MicroBitComponent
       */
     void sendAnimationCompleteEvent();
 
+    /**
+      * Blocks the current fiber until the display is available (i.e. not effect is being displayed).
+      * Animations are queued until their time to display.
+      */ 
+    void waitForFreeDisplay();
 
 public:
     // The mutable bitmap buffer being rendered to the LED matrix.
@@ -242,16 +248,29 @@ public:
     MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y);
 
     /**
-      * Resets the current given animation.
-      * @param delay the delay after which the animation is reset.
+      * Stops any currently running animation, and any that are waiting to be displayed.
       */
-    void resetAnimation(uint16_t delay);
+    void stopAnimation();
 
     /**
       * Frame update method, invoked periodically to strobe the display.
       */
     virtual void systemTick();
     
+    /**
+     * Prints the given character to the display, if it is not in use.
+     *
+     * @param c The character to display.
+     * @param d Optional parameter - the time for which to show the character. Zero displays the character forever.
+     * 
+     * Example:
+     * @code 
+     * uBit.display.printAsync('p');
+     * uBit.display.printAsync('p',100);
+     * @endcode
+     */
+    void printAsync(char c, int delay = 0);
+
     /**
       * Prints the given string to the display, one character at a time.
       * Uses the given delay between characters.
@@ -266,6 +285,24 @@ public:
       * @endcode
       */
     void printAsync(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+
+    /**
+     * Prints the given image to the display, if the display is not in use.
+     * Returns immediately, and executes the animation asynchronously.
+     *
+     * @param i The image to display.
+     * @param x The horizontal position on the screen to display the image (default 0)
+     * @param y The vertical position on the screen to display the image (default 0)
+     * @param alpha Treats the brightness level '0' as transparent (default 0) 
+     * @param delay The time to delay between characters, in timer ticks. 
+     *
+     * Example:
+     * @code
+     * MicrobitImage i("1,1,1,1,1\n1,1,1,1,1\n");
+     * uBit.display.print(i,400);
+     * @endcode
+     */
+    void printAsync(MicroBitImage i, int x, int y, int alpha, int delay = 0);
 
     /**
       * Prints the given character to the display.
@@ -307,7 +344,7 @@ public:
       * uBit.display.print(i,400);
       * @endcode
       */
-    void print(MicroBitImage i, int x, int y, int alpha, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+    void print(MicroBitImage i, int x, int y, int alpha, int delay = 0);
     
     /**
       * Scrolls the given string to the display, from right to left.

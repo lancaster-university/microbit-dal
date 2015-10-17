@@ -15,7 +15,7 @@
  */
 Fiber *currentFiber = NULL;                 // The context in which the current fiber is executing.
 Fiber *forkedFiber = NULL;                  // The context in which a newly created child fiber is executing.
-Fiber *idleFiber = NULL;                         // IDLE task - performs a power efficient sleep, and system maintenance tasks.
+Fiber *idleFiber = NULL;                    // IDLE task - performs a power efficient sleep, and system maintenance tasks.
 
 /*
  * Scheduler state.
@@ -205,6 +205,7 @@ void scheduler_event(MicroBitEvent evt)
 {
     Fiber *f = waitQueue;
     Fiber *t;
+    int notifyOneComplete = 0;
     
     // Check the wait queue, and wake up any fibers as necessary.
     while (f != NULL)
@@ -214,7 +215,16 @@ void scheduler_event(MicroBitEvent evt)
         // extract the event data this fiber is blocked on.    
         uint16_t id = f->context & 0xFFFF;
         uint16_t value = (f->context & 0xFFFF0000) >> 16;
-        
+       
+        // Special case for the NOTIFY_ONE channel...
+        if ((notifyOneComplete == 0) && (id == MICROBIT_ID_NOTIFY && evt.source == MICROBIT_ID_NOTIFY_ONE) && (value == MICROBIT_EVT_ANY || value == evt.value))
+        {
+            // Wakey wakey!
+            dequeue_fiber(f);
+            queue_fiber(f,&runQueue);
+            notifyOneComplete = 1;
+        }
+
         if ((id == MICROBIT_ID_ANY || id == evt.source) && (value == MICROBIT_EVT_ANY || value == evt.value))
         {
             // Wakey wakey!

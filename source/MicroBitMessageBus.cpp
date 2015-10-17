@@ -15,18 +15,6 @@ MicroBitMessageBus::MicroBitMessageBus()
 	this->listeners = NULL;
     this->evt_queue_head = NULL;
     this->evt_queue_tail = NULL;
-    this->nonce_val = 0;
-}
-
-/**
- * Returns a 'nonce' for use with the NONCE_ID channel of the message bus.
- */
-uint16_t MicroBitMessageBus::nonce()
-{
-    // In the global scheme of things, a terrible nonce generator. 
-    // However, for our purposes, this is simple and adequate for local use.
-    // This would be a bad idea if our events were networked though - can you think why?
-    return nonce_val++;
 }
 
 /**
@@ -86,6 +74,9 @@ void async_callback(void *param)
             listener->evt = item->evt;
             listener->evt_queue = listener->evt_queue->next;
             delete item;
+
+            // We spin the scheduler here, to preven any particular event handler from continuously holding onto resources.
+            schedule();
         }
         else
             break;

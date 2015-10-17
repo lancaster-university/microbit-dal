@@ -203,11 +203,6 @@ class MicroBitMessageBus : public MicroBitComponent
     template <typename T>
 	void ignore(uint16_t id, uint16_t value, T* object, void (T::*handler)(MicroBitEvent));
 
-    /**
-      * Returns a 'nonce' for use with the NONCE_ID channel of the message bus.
-      */
-    uint16_t nonce();
-
 	private:
 
     /**
