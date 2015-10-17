@@ -40,15 +40,16 @@
 	  <div class="profile_label">Summary:</div>
 	</div>
 	<div class="profile_item">
-	  <div class="text_block"><pre>Version 1.6 - 21st September 2015
+	  <div class="text_block"><pre>Version 1.6 - 17th October 2015
 Removed the Battery Service. No way to establish battery levels on the micro:bit
-Added a simple Temperature Service to exploit temperature sensors in micro:bit processors
+Added a simple Temperature Service to exploit temperature sensors in micro:bit processors with Temperature and Temperature Period characteristics.
 Accelerometer and Magnetometer period characteristics now have uint16 fields instead of uint8 which required scaling up by multipling by 10.
 Accelerometer Data and Magnetometer Data characteristics now use signed 16 bit integer fields for each of their X, Y and Z parts.
 Accelerometer Data and Magnetometer Data characteristics now use signed 16 bit integer fields for each of their X, Y and Z parts.
 New characteristic Magnetometer Heading added to the Magnetometer Service. Provides current heading in degrees.
 Removed IO Parallel Port characteristic due to complexity and memory considerations.
 Added Generic Attribute Service (previously absent in the repository)
+Changed the LED Matrix State characteristic field so that we now have one octet per row of LEDs for ease of use.
 
 Version 1.5 - 10th September 2015
 Button State 2 characteristic given new, distinct UUID of E95DDA91-251D-470A-A062-FA1922DFA9A8
@@ -247,6 +248,9 @@ Removed Write property from MicroBit Requirements characteristic.</pre></div>
 
 	  <div class="characteristic_hdg">
 	   	<div class="characteristic_summary"><p>Temperature : E95D9250251D470AA062FA1922DFA9A8</p></div>
+	  </div>
+	  <div class="characteristic_hdg">
+	   	<div class="characteristic_summary"><p>Temperature Period : E95D1B25251D470AA062FA1922DFA9A8</p></div>
 	  </div>
 
 </div>

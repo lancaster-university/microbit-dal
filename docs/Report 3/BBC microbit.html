@@ -38,15 +38,16 @@
 	  <div class="profile_label">Summary:</div>
 	</div>
 	<div class="profile_item">
-	  <div class="text_block"><pre>Version 1.6 - 21st September 2015
+	  <div class="text_block"><pre>Version 1.6 - 17th October 2015
 Removed the Battery Service. No way to establish battery levels on the micro:bit
-Added a simple Temperature Service to exploit temperature sensors in micro:bit processors
+Added a simple Temperature Service to exploit temperature sensors in micro:bit processors with Temperature and Temperature Period characteristics.
 Accelerometer and Magnetometer period characteristics now have uint16 fields instead of uint8 which required scaling up by multipling by 10.
 Accelerometer Data and Magnetometer Data characteristics now use signed 16 bit integer fields for each of their X, Y and Z parts.
 Accelerometer Data and Magnetometer Data characteristics now use signed 16 bit integer fields for each of their X, Y and Z parts.
 New characteristic Magnetometer Heading added to the Magnetometer Service. Provides current heading in degrees.
 Removed IO Parallel Port characteristic due to complexity and memory considerations.
 Added Generic Attribute Service (previously absent in the repository)
+Changed the LED Matrix State characteristic field so that we now have one octet per row of LEDs for ease of use.
 
 Version 1.5 - 10th September 2015
 Button State 2 characteristic given new, distinct UUID of E95DDA91-251D-470A-A062-FA1922DFA9A8
@@ -2849,7 +2850,20 @@ Allows short text strings to be sent by a client for display on the LED matrix a
 	</div>
 	<div class="characteristic_item">
 		  <div class="char_text_block"><pre>Allows the state of any|all LEDs in the 5x5 grid to be set to on or off with a single GATT operation. 
-Consists of a 32 bit field with bits 0 - 24 representing the off (0) or on (1) state of the corresponding LED.</pre></div>
+Consists of an array of 5 x utf8 octets, each representing one row of 5 LEDs.  
+Octet 0 represents the first row of LEDs i.e. the top row when the micro:bit is viewed with the edge connector at the bottom and USB connector at the top. 
+Octet 1 represents the second row and so on.
+In each octet, bit 4 corresponds to the first LED in the row, bit 3 the second and so on. 
+Bit values represent the state of the related LED: off (0) or on (1).
+
+So we have:
+
+Octet 0, LED Row 1: bit4 bit3 bit2 bit1 bit0
+Octet 1, LED Row 2: bit4 bit3 bit2 bit1 bit0
+Octet 2, LED Row 3: bit4 bit3 bit2 bit1 bit0
+Octet 3, LED Row 4: bit4 bit3 bit2 bit1 bit0
+Octet 4, LED Row 5: bit4 bit3 bit2 bit1 bit0
+</pre></div>
 	</div>
 
    	<div class="characteristic_item">
@@ -2914,7 +2928,7 @@ Consists of a 32 bit field with bits 0 - 24 representing the off (0) or on (1) s
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. LED_Matrix_State&nbsp;:&nbsp;uint32</td></tr>
+			<tr><td>1. LED_Matrix_State&nbsp;:&nbsp;uint8[]</td></tr>
 </table></div>
 	  </div>
 
@@ -4134,6 +4148,117 @@ Notifications are used to deliver the flash code to a client during the initial 
 	   	<div class="characteristic_field_value">
 <table>
 			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
+</table></div>
+	  </div>
+
+
+
+<!-- Characteristic Block -->
+	  <div class="characteristic_hdg">
+	   	<div class="characteristic_hdg_text"><p>Temperature Period</p></div>
+	  </div>
+	  
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">UUID</div>
+		  <div class="characteristic_value">E95D1B25251D470AA062FA1922DFA9A8</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Type</div>
+		  <div class="characteristic_value"></div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Requirement</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+	  
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
+  	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
+
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Determines the frequency with which temperature data is updated in milliseconds.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
+		  <div class="characteristic_label">Examples</div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Read</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Write</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Write Without Response</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Signed Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Reliable Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Notify</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Indicate</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Broadcast</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Writable Auxiliaries</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Extended Properties</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div> 
+
+  <!-- Field Block -->
+	  <div class="characteristic_field">
+		  <div class="characteristic_field_label">Fields</div>
+	   	<div class="characteristic_field_value">
+<table>
+			<tr><td>1. temperature period value&nbsp;:&nbsp;uint16</td></tr>
+</table></div>
+	  </div>
+
+
+<!-- Descriptor Block -->
+	  <div class="characteristic_field">
+		  <div class="characteristic_field_label">Descriptors</div>
+	   	<div class="characteristic_field_value">
+<table>
 </table></div>
 	  </div>
 
