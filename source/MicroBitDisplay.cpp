@@ -314,6 +314,7 @@ void MicroBitDisplay::updateAnimateImage()
     if (scrollingImagePosition <= -scrollingImage.getWidth() + (MICROBIT_DISPLAY_WIDTH + scrollingImageStride) && scrollingImageRendered)
     {
         animationMode = ANIMATION_MODE_NONE;  
+        this->clear();
         this->sendAnimationCompleteEvent();     
         return;
     }
@@ -566,6 +567,8 @@ void MicroBitDisplay::scrollAsync(ManagedString s, int delay)
         scrollingChar = 0;
         scrollingText = s;
 
+        animationDelay = delay;
+        animationTick = 0;
         animationMode = ANIMATION_MODE_SCROLL_TEXT;
     }
 }
@@ -592,11 +595,13 @@ void MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
         if(delay <= 0 )
             delay = MICROBIT_DEFAULT_SCROLL_SPEED;
 
-        this->scrollingImagePosition = stride < 0 ? width : -image.getWidth();
-        this->scrollingImageStride = stride;
-        this->scrollingImage = image;
-        this->scrollingImageRendered = false;
+        scrollingImagePosition = stride < 0 ? width : -image.getWidth();
+        scrollingImageStride = stride;
+        scrollingImage = image;
+        scrollingImageRendered = false;
 
+        animationDelay = delay;
+        animationTick = 0;
         animationMode = ANIMATION_MODE_SCROLL_IMAGE;
     }
 }
@@ -692,15 +697,14 @@ void MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, i
         if(delay <= 0 )
             delay = MICROBIT_DEFAULT_SCROLL_SPEED;
 
-        animationDelay = delay;
-        animationTick = delay-1;
-
         //calculate starting position which is offset by the stride
         scrollingImagePosition = (startingPosition == MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS) ? MICROBIT_DISPLAY_WIDTH + stride : startingPosition; 
         scrollingImageStride = stride;
         scrollingImage = image;
         scrollingImageRendered = false;
 
+        animationDelay = delay;
+        animationTick = delay-1;
         animationMode = ANIMATION_MODE_ANIMATE_IMAGE;
     }
 }

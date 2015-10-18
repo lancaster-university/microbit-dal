@@ -163,6 +163,10 @@ void scheduler_init()
     idleFiber->tcb.SP = CORTEX_M0_STACK_BASE - 0x04;    
     idleFiber->tcb.LR = (uint32_t) &idle_task;
 
+    // Register to receive events in the NOTIFY channel - this is used to implement wait-notify semantics
+    uBit.MessageBus.listen(MICROBIT_ID_NOTIFY, MICROBIT_EVT_ANY, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    uBit.MessageBus.listen(MICROBIT_ID_NOTIFY_ONE, MICROBIT_EVT_ANY, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
+
     // Flag that we now have a scheduler running
     uBit.flags |= MICROBIT_FLAG_SCHEDULER_RUNNING;
 }
@@ -236,7 +240,8 @@ void scheduler_event(MicroBitEvent evt)
     }
 
     // Unregister this event, as we've woken up all the fibers with this match.
-    uBit.MessageBus.ignore(evt.source, evt.value, scheduler_event);
+    if (evt.source != MICROBIT_ID_NOTIFY && evt.source != MICROBIT_ID_NOTIFY_ONE)
+        uBit.MessageBus.ignore(evt.source, evt.value, scheduler_event);
 }
 
 
@@ -320,7 +325,9 @@ void fiber_wait_for_event(uint16_t id, uint16_t value)
     queue_fiber(f, &waitQueue);
     
     // Register to receive this event, so we can wake up the fiber when it happens.
-    uBit.MessageBus.listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    // Special case for teh notify channel, as we always stay registered for that.
+    if (id != MICROBIT_ID_NOTIFY && id != MICROBIT_ID_NOTIFY_ONE)
+        uBit.MessageBus.listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
     // Finally, enter the scheduler.
     schedule();
