@@ -6,6 +6,7 @@
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitTemperatureServiceUUID[];
 extern const uint8_t  MicroBitTemperatureServiceDataUUID[];
+extern const uint8_t  MicroBitTemperatureServicePeriodUUID[];
 
 
 /**
@@ -24,6 +25,11 @@ class MicroBitTemperatureService
     MicroBitTemperatureService(BLEDevice &_ble);  
     
     /**
+      * Callback. Invoked when any of our attributes are written via BLE.
+      */
+    void onDataWritten(const GattWriteCallbackParams *params);
+
+    /**
      * Temperature update callback
      */
     void temperatureUpdate(MicroBitEvent e);
@@ -35,9 +41,11 @@ class MicroBitTemperatureService
 
     // memory for our 8 bit temperature characteristic.
     int8_t             temperatureDataCharacteristicBuffer;
+    uint16_t           temperaturePeriodCharacteristicBuffer;
 
     // Handles to access each characteristic when they are held by Soft Device.
     GattAttribute::Handle_t temperatureDataCharacteristicHandle;
+    GattAttribute::Handle_t temperaturePeriodCharacteristicHandle;
 };
 
 

@@ -41,9 +41,9 @@ class MicroBitLEDService
     BLEDevice           &ble;
 
     // memory for our 8 bit control characteristics.
-    uint32_t            matrixCharacteristicBuffer;
+    uint8_t             matrixCharacteristicBuffer[5];
+    uint16_t            scrollingSpeedCharacteristicBuffer;
     uint8_t             textCharacteristicBuffer[MICROBIT_BLE_MAXIMUM_SCROLLTEXT];
-    uint8_t             scrollingSpeedCharacteristicBuffer;
 
     // Handles to access each characteristic when they are held by Soft Device.
     GattAttribute::Handle_t matrixCharacteristicHandle;

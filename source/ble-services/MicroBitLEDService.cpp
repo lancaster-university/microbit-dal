@@ -26,7 +26,7 @@ MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble) :
     sizeof(scrollingSpeedCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ);
 
     // Initialise our characteristic values.
-    matrixCharacteristicBuffer = 0;
+    memclr(matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
     textCharacteristicBuffer[0] = 0;
     scrollingSpeedCharacteristicBuffer = MICROBIT_DEFAULT_SCROLL_SPEED;
     
@@ -53,19 +53,13 @@ MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble) :
   */
 void MicroBitLEDService::onDataWritten(const GattWriteCallbackParams *params)
 {   
-    if (params->handle == matrixCharacteristicHandle && params->len >= 4)
-    {
-        uint32_t d = *((uint32_t *)params->data);
-        uint32_t mask = 0x01;
+    uint8_t *data = (uint8_t *)params->data;
 
-        for (int x=0; x<5; x++)        
-        {
-            for (int y=0; y<5; y++)        
-            {
-                uBit.display.image.setPixelValue(x, y, (d & mask) ? 255 : 0);
-                mask = mask << 1;
-            }
-        }
+    if (params->handle == matrixCharacteristicHandle && params->len > 0 && params->len < 6)
+    {
+        for (int y=0; y<params->len; y++)        
+            for (int x=0; x<5; x++)        
+                uBit.display.image.setPixelValue(x, y, (data[y] & (0x01 << 4-x)) ? 255 : 0);
     }
 
     else if (params->handle == textCharacteristicHandle) 
@@ -82,7 +76,7 @@ void MicroBitLEDService::onDataWritten(const GattWriteCallbackParams *params)
     {
         // Read the speed requested, and store it locally.
         // We use this as the speed for all scroll operations subsquently initiated from BLE.
-        scrollingSpeedCharacteristicBuffer = *((uint8_t *)params->data);
+        scrollingSpeedCharacteristicBuffer = *((uint16_t *)params->data);
     }
 }
 
@@ -93,18 +87,14 @@ void MicroBitLEDService::onDataRead(GattReadAuthCallbackParams *params)
 {
     if (params->handle == matrixCharacteristicHandle)
     {
-        uint32_t mask = 0x01;
-
-        matrixCharacteristicBuffer = 0;
-
-        for (int x=0; x<5; x++)        
+        for (int y=0; y<5; y++)        
         {
-            for (int y=0; y<5; y++)        
+            matrixCharacteristicBuffer[y] = 0;
+
+            for (int x=0; x<5; x++)        
             {
                 if (uBit.display.image.getPixelValue(x, y))
-                    matrixCharacteristicBuffer |= mask;
-
-                mask = mask << 1;
+                    matrixCharacteristicBuffer[y] |= 0x01 << 4-x;
             }
         }
 

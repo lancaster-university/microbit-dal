@@ -7,6 +7,8 @@ Serial pc(USBTX, USBRX);
 MicroBit        uBit;
 InterruptIn     resetButton(MICROBIT_PIN_BUTTON_RESET);
 
+extern char* MICROBIT_BLE_DEVICE_NAME;
+
 void
 reset()
 {
@@ -64,10 +66,7 @@ int main()
             }
 
             if (!uBit.ble_firmware_update_service)
-            {
                 uBit.ble_firmware_update_service = new MicroBitDFUService(*uBit.ble);
-                uBit.ble_firmware_update_service->getName(MICROBIT_BLE_DEVICE_NAME+14);
-            }
 
             // Ensure we're advertising.
             uBit.ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
