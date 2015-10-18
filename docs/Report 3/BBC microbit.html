@@ -12,7 +12,7 @@
 
 	<div class="main_heading">
 	  <div id="id_date" class="date">The Date</div>
-	  <div class="heading_title">Bluetooth Developer Studio Level 3 Report</div>
+	  <div class="heading_title">Bluetooth Developer Studio Level 3 Profile Report</div>
 	  <div class="icon"><img src="BluetoothSIG.png"/></div>
 	</div>
 
@@ -28,18 +28,38 @@
 	</div>
 
 	<div class="profile_item">
-	  <div class="profile_label">Abstract</div>
-	  <div class="profile_value"></div>
+	  <div class="profile_label">Abstract:</div>
+	</div>
+	<div class="profile_item">
+	  <div class="text_block"><pre>Default 'out of the box' profile for the BBC Micro Bit</pre></div>
 	</div>
 
 	<div class="profile_item">
-	  <div class="profile_label">Summary</div>
-	  <div class="profile_value"></div>
+	  <div class="profile_label">Summary:</div>
+	</div>
+	<div class="profile_item">
+	  <div class="text_block"><pre>Version 1.6 - 17th October 2015
+Removed the Battery Service. No way to establish battery levels on the micro:bit
+Added a simple Temperature Service to exploit temperature sensors in micro:bit processors with Temperature and Temperature Period characteristics.
+Accelerometer and Magnetometer period characteristics now have uint16 fields instead of uint8 which required scaling up by multipling by 10.
+Accelerometer Data and Magnetometer Data characteristics now use signed 16 bit integer fields for each of their X, Y and Z parts.
+Accelerometer Data and Magnetometer Data characteristics now use signed 16 bit integer fields for each of their X, Y and Z parts.
+New characteristic Magnetometer Heading added to the Magnetometer Service. Provides current heading in degrees.
+Removed IO Parallel Port characteristic due to complexity and memory considerations.
+Added Generic Attribute Service (previously absent in the repository)
+Changed the LED Matrix State characteristic field so that we now have one octet per row of LEDs for ease of use.
+
+Version 1.5 - 10th September 2015
+Button State 2 characteristic given new, distinct UUID of E95DDA91-251D-470A-A062-FA1922DFA9A8
+Removed the System LED State characteristic from the LED Service since it cannot be controlled from the BLE MCU.
+Removed the Scrolling State characteristic from the LED Service due to complexity and memory constraints.
+Changed LED Matrix State use of “Write Without Response” to “Write” so that no further writes can be made until there’s been an ACK back from the previous one.
+Removed Write property from MicroBit Requirements characteristic.</pre></div>
 	</div>
 
 	<div class="profile_item">
 	  <div class="profile_label">Base UUID</div>
-	  <div class="profile_value">E95D0000-251D-470A-A062-FA1922DFA9A8</div>
+	  <div class="profile_value">E95D0000251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="profile_item">
@@ -70,7 +90,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">00001800-0000-1000-8000-00805F9B34FB</div>
+	  <div class="service_value">0000180000001000800000805F9B34FB</div>
 	</div>
 
 	<div class="service_item">
@@ -80,7 +100,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -94,33 +114,24 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>The generic_access service contains generic information about the device. All available Characteristics are readonly. 		</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -135,7 +146,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">00002A00-0000-1000-8000-00805F9B34FB</div>
+		  <div class="characteristic_value">00002A0000001000800000805F9B34FB</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -145,37 +156,38 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -218,14 +230,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Name&nbsp;utf8s</td></tr>
+			<tr><td>1. Name&nbsp;:&nbsp;utf8s</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -244,7 +257,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">00002A01-0000-1000-8000-00805F9B34FB</div>
+		  <div class="characteristic_value">00002A0100001000800000805F9B34FB</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -254,32 +267,33 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre>The external appearance of this device. The values are composed of a category (10-bits) and sub-categories (6-bits).</pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -327,14 +341,129 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Category&nbsp;16bit</td></tr>
+			<tr><td>1. Category&nbsp;:&nbsp;16bit</td></tr>
 </table></div>
 	  </div>
+
+
+<!-- Descriptor Block -->
+	  <div class="characteristic_field">
+		  <div class="characteristic_field_label">Descriptors</div>
+	   	<div class="characteristic_field_value">
+<table>
+</table></div>
+	  </div>
+
+
+
+<!-- Characteristic Block -->
+	  <div class="characteristic_hdg">
+	   	<div class="characteristic_hdg_text"><p>Peripheral Preferred Connection Parameters</p></div>
+	  </div>
+	  
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">UUID</div>
+		  <div class="characteristic_value">00002A0400001000800000805F9B34FB</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Type</div>
+		  <div class="characteristic_value"></div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Requirement</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+	  
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
+  	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
+
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+   	<div class="characteristic_item">
+		  <div class="characteristic_label">Examples</div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Read</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Write Without Response</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Signed Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Reliable Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Notify</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Indicate</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Broadcast</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Writable Auxiliaries</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Extended Properties</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div> 
+
+  <!-- Field Block -->
+	  <div class="characteristic_field">
+		  <div class="characteristic_field_label">Fields</div>
+	   	<div class="characteristic_field_value">
+<table>
+			<tr><td>1. Minimum Connection Interval&nbsp;:&nbsp;uint16</td></tr>
+			<tr><td>2. Maximum Connection Interval&nbsp;:&nbsp;uint16</td></tr>
+			<tr><td>3. Slave Latency&nbsp;:&nbsp;uint16</td></tr>
+			<tr><td>4. Connection Supervision Timeout Multiplier&nbsp;:&nbsp;uint16</td></tr>
+</table></div>
+	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -356,7 +485,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">00001801-0000-1000-8000-00805F9B34FB</div>
+	  <div class="service_value">0000180100001000800000805F9B34FB</div>
 	</div>
 
 	<div class="service_item">
@@ -366,7 +495,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -380,33 +509,24 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -435,28 +555,29 @@
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -486,7 +607,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Indicate</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -504,22 +625,23 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Start of Affected Attribute Handle Range&nbsp;uint16</td></tr>
-			<tr><td>2. End of Affected Attribute Handle Range&nbsp;uint16</td></tr>
+			<tr><td>1. Start of Affected Attribute Handle Range&nbsp;:&nbsp;uint16</td></tr>
+			<tr><td>2. End of Affected Attribute Handle Range&nbsp;:&nbsp;uint16</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -535,7 +657,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">0000180A-0000-1000-8000-00805F9B34FB</div>
+	  <div class="service_value">0000180A00001000800000805F9B34FB</div>
 	</div>
 
 	<div class="service_item">
@@ -545,7 +667,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -559,33 +681,28 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>The Device Information Service exposes manufacturer and/or vendor information about a device.            
+		</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>This service exposes manufacturer information about a device.
+The Device Information Service is instantiated as a Primary Service.
+Only one instance of the Device Information Service is exposed on a device.
+		</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -600,7 +717,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">00002A29-0000-1000-8000-00805F9B34FB</div>
+		  <div class="characteristic_value">00002A2900001000800000805F9B34FB</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -614,28 +731,29 @@
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre>The value of this characteristic is a UTF-8 string representing the name of the manufacturer of the device.</pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -683,14 +801,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Manufacturer Name&nbsp;utf8s</td></tr>
+			<tr><td>1. Manufacturer Name&nbsp;:&nbsp;utf8s</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -709,7 +828,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">00002A24-0000-1000-8000-00805F9B34FB</div>
+		  <div class="characteristic_value">00002A2400001000800000805F9B34FB</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -723,28 +842,29 @@
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre>The value of this characteristic is a UTF-8 string representing the model number assigned by the device vendor. </pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -792,14 +912,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Model Number&nbsp;utf8s</td></tr>
+			<tr><td>1. Model Number&nbsp;:&nbsp;utf8s</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -818,7 +939,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">00002A25-0000-1000-8000-00805F9B34FB</div>
+		  <div class="characteristic_value">00002A2500001000800000805F9B34FB</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -832,28 +953,29 @@
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre>The value of this characteristic is a variable-length UTF-8 string representing the serial number for a particular instance of the device.</pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -901,14 +1023,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Serial Number&nbsp;utf8s</td></tr>
+			<tr><td>1. Serial Number&nbsp;:&nbsp;utf8s</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -927,7 +1050,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">00002A27-0000-1000-8000-00805F9B34FB</div>
+		  <div class="characteristic_value">00002A2700001000800000805F9B34FB</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -941,28 +1064,29 @@
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>The value of this characteristic is a UTF-8 string representing the hardware revision for the hardware within the device.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1010,14 +1134,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Hardware Revision&nbsp;utf8s</td></tr>
+			<tr><td>1. Hardware Revision&nbsp;:&nbsp;utf8s</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -1036,7 +1161,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">00002A26-0000-1000-8000-00805F9B34FB</div>
+		  <div class="characteristic_value">00002A2600001000800000805F9B34FB</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1050,28 +1175,29 @@
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>The value of this characteristic is a UTF-8 string representing the firmware revision for the firmware within the device.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1119,14 +1245,127 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Firmware Revision&nbsp;utf8s</td></tr>
+			<tr><td>1. Firmware Revision&nbsp;:&nbsp;utf8s</td></tr>
 </table></div>
 	  </div>
+
+
+<!-- Descriptor Block -->
+	  <div class="characteristic_field">
+		  <div class="characteristic_field_label">Descriptors</div>
+	   	<div class="characteristic_field_value">
+<table>
+</table></div>
+	  </div>
+
+
+
+<!-- Characteristic Block -->
+	  <div class="characteristic_hdg">
+	   	<div class="characteristic_hdg_text"><p>Software Revision String</p></div>
+	  </div>
+	  
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">UUID</div>
+		  <div class="characteristic_value">00002A2800001000800000805F9B34FB</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Type</div>
+		  <div class="characteristic_value"></div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Requirement</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+	  
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
+  	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>The value of this characteristic is a UTF-8 string representing the software revision for the software within the device.
+		</pre></div>
+    </div>
+
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+   	<div class="characteristic_item">
+		  <div class="characteristic_label">Examples</div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Read</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Write Without Response</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Signed Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Reliable Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Notify</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Indicate</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Broadcast</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Writable Auxiliaries</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Extended Properties</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div> 
+
+  <!-- Field Block -->
+	  <div class="characteristic_field">
+		  <div class="characteristic_field_label">Fields</div>
+	   	<div class="characteristic_field_value">
+<table>
+			<tr><td>1. Software Revision&nbsp;:&nbsp;utf8s</td></tr>
+</table></div>
+	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -1148,7 +1387,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">E95D0753-251D-470A-A062-FA1922DFA9A8-</div>
+	  <div class="service_value">E95D0753251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="service_item">
@@ -1158,7 +1397,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -1172,33 +1411,30 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>Exposes accelerometer data. An accelerometer is an electromechanical device that will measure acceleration forces. 
+These forces may be static, like the constant force of gravity pulling at your feet, or they could be dynamic - caused by moving or vibrating the accelerometer.
+
+Value contains fields which represent 3 seperate accelerometer measurements for X, Y and Z axes as 3 unsigned 16 bit values in that order and in 
+little endian format. 
+
+Data can be read on demand or notified periodically.</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -1213,7 +1449,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95DCA4B-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95DCA4B251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1223,32 +1459,33 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Contains accelerometer measurements for X, Y and Z axes as 3 signed 16 bit values in that order and in little endian format.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1273,7 +1510,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1296,23 +1533,24 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Accelerometer_X &nbsp;sint16</td></tr>
-			<tr><td>2. Accelerometer_Y&nbsp;sint16</td></tr>
-			<tr><td>3. Accelerometer_Z&nbsp;sint16</td></tr>
+			<tr><td>1. Accelerometer_X &nbsp;:&nbsp;sint16</td></tr>
+			<tr><td>2. Accelerometer_Y&nbsp;:&nbsp;sint16</td></tr>
+			<tr><td>3. Accelerometer_Z&nbsp;:&nbsp;sint16</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -1325,7 +1563,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95DFB24-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95DFB24251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1335,37 +1573,38 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Determines the frequency with which accelerometer data is reported in milliseconds.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1408,14 +1647,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Accelerometer_Period&nbsp;uint16</td></tr>
+			<tr><td>1. Accelerometer_Period&nbsp;:&nbsp;uint16</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -1437,7 +1677,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">E95DF2D8-251D-470A-A062-FA1922DFA9A8</div>
+	  <div class="service_value">E95DF2D8251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="service_item">
@@ -1447,7 +1687,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -1461,33 +1701,24 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>Exposes magnetometer data.  A magnetometer measures a magnetic field such as the earth's magnetic field in 3 axes.</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -1502,7 +1733,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95DFB11-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95DFB11251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1512,32 +1743,34 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Contains magnetometer measurements for X, Y and Z axes as 3 signed 16 bit values in that order and in little endian format. 
+Data can be read on demand or notified periodically.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1562,7 +1795,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1585,23 +1818,24 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Magnetometer_X&nbsp;sint16</td></tr>
-			<tr><td>2. Magnetometer_Y&nbsp;sint16</td></tr>
-			<tr><td>3. Magnetometer_Z&nbsp;sint16</td></tr>
+			<tr><td>1. Magnetometer_X&nbsp;:&nbsp;sint16</td></tr>
+			<tr><td>2. Magnetometer_Y&nbsp;:&nbsp;sint16</td></tr>
+			<tr><td>3. Magnetometer_Z&nbsp;:&nbsp;sint16</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -1614,7 +1848,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D386C-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D386C251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1624,37 +1858,38 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Determines the frequency with which magnetometer data is reported in milliseconds.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1697,14 +1932,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Magnetometer_Period&nbsp;uint16</td></tr>
+			<tr><td>1. Magnetometer_Period&nbsp;:&nbsp;uint16</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -1723,7 +1959,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D9715-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D9715251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1733,32 +1969,33 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Compass bearing in degrees from North.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1783,7 +2020,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1806,21 +2043,22 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. bearing value&nbsp;uint16</td></tr>
+			<tr><td>1. bearing value&nbsp;:&nbsp;uint16</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -1836,7 +2074,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">E95D9882-251D-470A-A062-FA1922DFA9A8-</div>
+	  <div class="service_value">E95D9882251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="service_item">
@@ -1846,7 +2084,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -1860,33 +2098,24 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>Exposes the two Micro Bit buttons and allows 'commands' associated with button state changes to be associated with button states and notified to a connected client.</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -1901,7 +2130,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95DDA90-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95DDA90251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1911,32 +2140,34 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>State of Button A may be read on demand by a connected client or the client may subscribe to notifications of state change. 
+3 button states are defined and represented by a simple numeric enumeration:  0 = not pressed, 1 = pressed, 2 = long press.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1961,7 +2192,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -1984,21 +2215,22 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Button_State_Value&nbsp;uint8</td></tr>
+			<tr><td>1. Button_State_Value&nbsp;:&nbsp;uint8</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -2011,7 +2243,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95DDA91-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95DDA91251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2021,32 +2253,34 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>State of Button B may be read on demand by a connected client or the client may subscribe to notifications of state change. 
+3 button states are defined and represented by a simple numeric enumeration:  0 = not pressed, 1 = pressed, 2 = long press.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2071,7 +2305,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2094,21 +2328,22 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Button_State_Value&nbsp;uint8</td></tr>
+			<tr><td>1. Button_State_Value&nbsp;:&nbsp;uint8</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -2124,7 +2359,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">E95D127B-251D-470A-A062-FA1922DFA9A8</div>
+	  <div class="service_value">E95D127B251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="service_item">
@@ -2134,7 +2369,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -2148,33 +2383,24 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>Provides read/write access to I/O pins, individually or collectively. Allows configuration of each pin for input/output and analogue/digital use.</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -2189,7 +2415,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D8D00-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D8D00251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2199,37 +2425,53 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Contains data relating to zero or more pins. Structured as a variable length array of up to 19 Pin Number / Value pairs. 
+
+Pin Number and Value are each uint8 fields. 
+
+Note however that the micro:bit has a 10 bit ADC and so values are compressed to 8 bits with a loss of resolution.
+
+OPERATIONS:
+
+WRITE: Clients may write values to one or more pins in a single GATT write operation. 
+A pin to which a value is to be written must have been configured for output using the Pin IO Configuration characteristic. 
+Any attempt to write to a pin which is configured for input will be ignored.
+
+NOTIFY: Notifications will deliver Pin Number / Value pairs for those pins defined as input pins by the Pin IO Configuration characteristic 
+and whose value when read differs from the last read of the pin.
+
+READ: A client reading this characteristic will receive Pin Number / Value pairs for all those pins defined as input pins by the Pin IO Configuration characteristic.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2249,7 +2491,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2272,21 +2514,22 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. IO_Pin_Data&nbsp;uint8[]</td></tr>
+			<tr><td>1. IO_Pin_Data&nbsp;:&nbsp;uint8[]</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -2299,7 +2542,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D5899-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D5899251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2309,37 +2552,38 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>A bit mask which allows each pin to be configured for analogue or digital use.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2382,14 +2626,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Pin_AD_Config_Value&nbsp;uint24</td></tr>
+			<tr><td>1. Pin_AD_Config_Value&nbsp;:&nbsp;uint24</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -2408,7 +2653,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95DB9FE-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95DB9FE251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2418,37 +2663,39 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>A bit mask which allows each pin to be configured for input or output use. 
+Bit n corresponds to pin n where 0 LESS THAN OR EQUAL TO n LESS THAN 19. A value of 0 means configured for output and 1 means configured for input.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2491,14 +2738,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Pin_IO_Config_Value&nbsp;uint24</td></tr>
+			<tr><td>1. Pin_IO_Config_Value&nbsp;:&nbsp;uint24</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -2520,7 +2768,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">E95DD91D-251D-470A-A062-FA1922DFA9A8</div>
+	  <div class="service_value">E95DD91D251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="service_item">
@@ -2530,7 +2778,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -2544,33 +2792,25 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>Provides access to and control of LED state. Allows the state (ON or OFF) of all 25 LEDs to be set in a single write operation. 
+Allows short text strings to be sent by a client for display on the LED matrix and scrolled across at a speed controlled by the Scrolling Delay characteristic.</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -2585,7 +2825,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D7B77-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D7B77251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2595,37 +2835,52 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Allows the state of any|all LEDs in the 5x5 grid to be set to on or off with a single GATT operation. 
+Consists of an array of 5 x utf8 octets, each representing one row of 5 LEDs.  
+Octet 0 represents the first row of LEDs i.e. the top row when the micro:bit is viewed with the edge connector at the bottom and USB connector at the top. 
+Octet 1 represents the second row and so on.
+In each octet, bit 4 corresponds to the first LED in the row, bit 3 the second and so on. 
+Bit values represent the state of the related LED: off (0) or on (1).
+
+So we have:
+
+Octet 0, LED Row 1: bit4 bit3 bit2 bit1 bit0
+Octet 1, LED Row 2: bit4 bit3 bit2 bit1 bit0
+Octet 2, LED Row 3: bit4 bit3 bit2 bit1 bit0
+Octet 3, LED Row 4: bit4 bit3 bit2 bit1 bit0
+Octet 4, LED Row 5: bit4 bit3 bit2 bit1 bit0
+</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2668,14 +2923,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. LED_Matrix_State&nbsp;uint32</td></tr>
+			<tr><td>1. LED_Matrix_State&nbsp;:&nbsp;uint8[]</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -2694,7 +2950,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D93EE-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D93EE251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2704,28 +2960,29 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>A short UTF-8 string to be shown on the LED display.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
@@ -2734,7 +2991,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2777,14 +3034,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. LED_Text_Value&nbsp;utf8s</td></tr>
+			<tr><td>1. LED_Text_Value&nbsp;:&nbsp;utf8s</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -2803,7 +3061,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D0D2D-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D0D2D251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2813,37 +3071,38 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Specifies a millisecond delay to wait for in between showing each character on the display.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2886,14 +3145,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Scrolling_Delay_Value&nbsp;uint16</td></tr>
+			<tr><td>1. Scrolling_Delay_Value&nbsp;:&nbsp;uint16</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -2915,7 +3175,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">E95D93AF-251D-470A-A062-FA1922DFA9A8</div>
+	  <div class="service_value">E95D93AF251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="service_item">
@@ -2925,7 +3185,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -2939,33 +3199,44 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>A generic, bi-directional event communication service. 
+
+The Event Service allows events or commands to be notified to the micro:bit by a connected client and it allows micro:bit to notify the connected client 
+of events or commands originating from with the micro:bit. The micro:bit can inform the client of the types of event it is interested in being informed 
+about (e.g. an incoming call) and the client can inform the micro:bit of types of event it wants to be notified about.  
+
+The term “event” will be used here for both event and command types of data.
+
+Events may have an associated value.
+
+Note that specific event ID values including any special values such as those which may represent wild cards are not defined here. 
+The micro:bit run time documentation should be consulted for this information.
+
+Multiple events of different types may be notified to the client or micro:bit at the same time.
+Event data is encoded as an array of structs each encoding an event of a given type together with an associated value. 
+Event Type and Event Value are both defined as uint16 and therefore the length of this array will always be a multiple of 4.
+
+struct event {
+ uint16 event_type;
+ uint16 event_value;
+};</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -2980,7 +3251,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95DB84C-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95DB84C251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -2990,32 +3261,35 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>A variable length list of event data structures which indicates the types of client event, potentially with a specific value which the micro:bit wishes
+to be informed of when they occur. The client should read this characteristic when it first connects to the micro:bit. It may also subscribe to notifications
+to that it can be informed if the value of this characteristic is changed by the micro:bit firmware.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3040,7 +3314,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3063,21 +3337,22 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. microbit_reqs_value&nbsp;uint8[]</td></tr>
+			<tr><td>1. microbit_reqs_value&nbsp;:&nbsp;uint8[]</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -3090,7 +3365,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D9775-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D9775251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3100,32 +3375,34 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Contains one or more event structures which should be notified to the client. It supports notifications and as such the client should subscribe to 
+notifications from this characteristic.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3150,7 +3427,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3173,21 +3450,22 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Event_Type_And_Value&nbsp;uint8[]</td></tr>
+			<tr><td>1. Event_Type_And_Value&nbsp;:&nbsp;uint8[]</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -3200,7 +3478,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D23C4-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D23C4251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3210,37 +3488,39 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>a variable length list of event data structures which indicates the types of micro:bit event, potentially with a specific value which the client wishes
+to be informed of when they occur. The client should write to this characteristic when it first connects to the micro:bit.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="characteristic_value">Excluded</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3283,14 +3563,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client_Requirements_Value&nbsp;uint8[]</td></tr>
+			<tr><td>1. Client_Requirements_Value&nbsp;:&nbsp;uint8[]</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -3309,7 +3590,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D5404-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D5404251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3319,37 +3600,39 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>a writable characteristic which the client may write one or more event structures to, to inform the micro:bit of events which have occurred on the client. 
+These should be of types indicated in the micro:bit Requirements characteristic bit mask.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="characteristic_value">Excluded</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3392,14 +3675,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Event_Types_And_Values&nbsp;uint8[]</td></tr>
+			<tr><td>1. Event_Types_And_Values&nbsp;:&nbsp;uint8[]</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -3421,7 +3705,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">E95D93B0-251D-470A-A062-FA1922DFA9A8</div>
+	  <div class="service_value">E95D93B0251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="service_item">
@@ -3431,7 +3715,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -3445,33 +3729,24 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>Allows clients to initiate the micro:bit pairing and over the air firmware update procedures.</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -3486,7 +3761,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D93B1-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D93B1251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3496,28 +3771,32 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Writing 0x01 initiates rebooting the micro:bit into the Nordic Semiconductor bootloader if the DFU Flash Code characteristic has been written
+to with the correct secret key. 
+
+Writing 0x02 to this characteristic  means "request flash code".</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
@@ -3526,7 +3805,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3569,14 +3848,15 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. dfu_control&nbsp;uint8</td></tr>
+			<tr><td>1. dfu_control&nbsp;:&nbsp;uint8</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
@@ -3595,7 +3875,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D93B2-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D93B2251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3605,37 +3885,40 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Allows a client to indicate that it "knows" the flash code produced when pairing. 
+
+Notifications are used to deliver the flash code to a client during the initial pairing process.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Write</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3655,7 +3938,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3678,21 +3961,22 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. dfu_flash_code&nbsp;uint32</td></tr>
+			<tr><td>1. dfu_flash_code&nbsp;:&nbsp;uint32</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
 </table></div>
 	  </div>
 
@@ -3708,7 +3992,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">UUID</div>
-	  <div class="service_value">E95D6100-251D-470A-A062-FA1922DFA9A8</div>
+	  <div class="service_value">E95D6100251D470AA062FA1922DFA9A8</div>
 	</div>
 
 	<div class="service_item">
@@ -3718,7 +4002,7 @@
 
 	<div class="service_item">
 	  <div class="service_label">Requirement</div>
-	  <div class="service_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	</div>
 
 	<div class="service_item">
@@ -3732,33 +4016,24 @@
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Summary</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Abstract:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Abstract</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Summary:</div>
+	</div>
+	<div class="service_item">
+	  <div class="text_block"><pre>Ambient temperature derived from several internal temperature sensors on the micro:bit</pre></div>
 	</div>
 
 	<div class="service_item">
-	  <div class="service_label">Examples</div>
-	  <div class="service_value"></div>
+	  <div class="service_label">Examples:</div>
 	</div>
-
 	<div class="service_item">
-	  <div class="service_label">Classic</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">Low Energy</div>
-	  <div class="service_value"></div>
-	</div>
-
-	<div class="service_item">
-	  <div class="service_label">High Speed</div>
-	  <div class="service_value"></div>
+	  <div class="text_block"><pre></pre></div>
 	</div>
 
   <div class="characteristics_section_hdg">
@@ -3773,7 +4048,7 @@
 	  
   	<div class="characteristic_item">
 		  <div class="characteristic_label">UUID</div>
-		  <div class="characteristic_value">E95D8A38-251D-470A-A062-FA1922DFA9A8</div>
+		  <div class="characteristic_value">E95D9250251D470AA062FA1922DFA9A8</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3783,32 +4058,33 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Requirement</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 	  
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Summary</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
   	<div class="characteristic_item">
-		  <div class="characteristic_label">Abstract</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
 
-  	<div class="characteristic_item">
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Signed integer 8 bit value in degrees celsius.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
 		  <div class="characteristic_label">Examples</div>
-		  <div class="characteristic_value"></div>
-	  </div>
-
-  	<div class="characteristic_item">
-		  <div class="characteristic_label">AsText</div>
-		  <div class="characteristic_value"></div>
-	  </div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Read</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3833,7 +4109,7 @@
 
   	<div class="characteristic_item">
 		  <div class="characteristic_label">Notify</div>
-		  <div class="characteristic_value">Mandatory</div>
+		  <div class="mandatory_property">Mandatory</div>
 	  </div>
 
   	<div class="characteristic_item">
@@ -3856,21 +4132,133 @@
 		  <div class="characteristic_value">Excluded</div>
 	  </div> 
 
-<!-- Field Block -->
+  <!-- Field Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Fields</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. temperature value&nbsp;sint8</td></tr>
+			<tr><td>1. temperature value&nbsp;:&nbsp;sint8</td></tr>
 </table></div>
 	  </div>
+
 
 <!-- Descriptor Block -->
 	  <div class="characteristic_field">
 		  <div class="characteristic_field_label">Descriptors</div>
 	   	<div class="characteristic_field_value">
 <table>
-			<tr><td>1. Client Characteristic Configuration&nbsp;2902&nbsp;org.bluetooth.descriptor.gatt.client_characteristic_configuration</td></tr>
+			<tr><td>1. Client Characteristic Configuration&nbsp;:&nbsp;2902</td></tr>
+</table></div>
+	  </div>
+
+
+
+<!-- Characteristic Block -->
+	  <div class="characteristic_hdg">
+	   	<div class="characteristic_hdg_text"><p>Temperature Period</p></div>
+	  </div>
+	  
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">UUID</div>
+		  <div class="characteristic_value">E95D1B25251D470AA062FA1922DFA9A8</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Type</div>
+		  <div class="characteristic_value"></div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Requirement</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+	  
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Abstract:</div>
+    </div>
+  	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+    </div>
+
+	<div class="characteristic_item">
+		  <div class="characteristic_label">Summary:</div>
+	</div>
+	<div class="characteristic_item">
+		  <div class="char_text_block"><pre>Determines the frequency with which temperature data is updated in milliseconds.</pre></div>
+	</div>
+
+   	<div class="characteristic_item">
+		  <div class="characteristic_label">Examples</div>
+	</div>
+   	<div class="characteristic_item">
+		  <div class="char_text_block"><pre></pre></div>
+	</div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Read</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Write</div>
+		  <div class="mandatory_property">Mandatory</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Write Without Response</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Signed Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Reliable Write</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Notify</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Indicate</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Broadcast</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Writable Auxiliaries</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div>
+
+  	<div class="characteristic_item">
+		  <div class="characteristic_label">Extended Properties</div>
+		  <div class="characteristic_value">Excluded</div>
+	  </div> 
+
+  <!-- Field Block -->
+	  <div class="characteristic_field">
+		  <div class="characteristic_field_label">Fields</div>
+	   	<div class="characteristic_field_value">
+<table>
+			<tr><td>1. temperature period value&nbsp;:&nbsp;uint16</td></tr>
+</table></div>
+	  </div>
+
+
+<!-- Descriptor Block -->
+	  <div class="characteristic_field">
+		  <div class="characteristic_field_label">Descriptors</div>
+	   	<div class="characteristic_field_value">
+<table>
 </table></div>
 	  </div>
 
