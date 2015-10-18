@@ -132,6 +132,30 @@ class MicroBitPin : public MicroBitComponent
     int getAnalogValue();
 
     /**
+     * Determines if this IO pin is currently configured as an input.
+     * @return 1 if pin is an analog or digital input, 0 otherwise.
+     */
+    int isInput();
+
+    /**
+     * Determines if this IO pin is currently configured as an output.
+     * @return 1 if pin is an analog or digital output, 0 otherwise.
+     */
+    int isOutput();
+
+    /**
+     * Determines if this IO pin is currently configured for digital use.
+     * @return 1 if pin is digital, 0 otherwise.
+     */
+    int isDigital();
+
+    /**
+     * Determines if this IO pin is currently configured for analog use.
+     * @return 1 if pin is analog, 0 otherwise.
+     */
+    int isAnalog();
+
+    /**
       * Configures this IO pin as a makey makey style touch sensor (if necessary) and tests its current debounced state.
       * @return 1 if pin is touched, 0 otherwise.
       * 

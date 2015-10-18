@@ -14,12 +14,11 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitButton.cpp"
     "MicroBitMessageBus.cpp"
     "MicroBitCompass.cpp"
-    "MicroBitEventService.cpp"
     "MicroBitEvent.cpp"
     "MicroBitFiber.cpp"
     "ManagedString.cpp"
     "MicroBitAccelerometer.cpp"
-    "MicroBitDFUService.cpp"
+    "MicroBitThermometer.cpp"
     "MicroBitIO.cpp"
     "MicroBitCompat.cpp"
     "MicroBitImage.cpp"
@@ -30,6 +29,14 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitHeapAllocator.cpp"
     "MicroBitListener.cpp"
     "MemberFunctionCallback.cpp"
+    "ble-services/MicroBitDFUService.cpp"
+    "ble-services/MicroBitEventService.cpp"
+    "ble-services/MicroBitLEDService.cpp"
+    "ble-services/MicroBitAccelerometerService.cpp"
+    "ble-services/MicroBitMagnetometerService.cpp"
+    "ble-services/MicroBitButtonService.cpp"
+    "ble-services/MicroBitIOPinService.cpp"
+    "ble-services/MicroBitTemperatureService.cpp"
 )
 
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)
@@ -49,17 +56,16 @@ if (YOTTA_CFG_MICROBIT_CONFIGFILE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${YOTTA_FORCE_INCLUDE_FLAG} \"${YOTTA_CFG_MICROBIT_CONFIGFILE}\"")
 endif ()
 
-
 if(CMAKE_COMPILER_IS_GNUCC)
-  file(REMOVE "CortexContextSwitch.s")
-  configure_file("CortexContextSwitch.s.gcc" "CortexContextSwitch.s" COPYONLY)
+  file(REMOVE "asm/CortexContextSwitch.s")
+  configure_file("asm/CortexContextSwitch.s.gcc" "asm/CortexContextSwitch.s" COPYONLY)
 else()
-  file(REMOVE "CortexContextSwitch.s")
-  configure_file("CortexContextSwitch.s.armcc" "CortexContextSwitch.s" COPYONLY)
+  file(REMOVE "asm/CortexContextSwitch.s")
+  configure_file("asm/CortexContextSwitch.s.armcc" "asm/CortexContextSwitch.s" COPYONLY)
 endif()
 
 set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
-    "CortexContextSwitch.s"
+    "asm/CortexContextSwitch.s"
 )
 
 add_library(microbit-dal

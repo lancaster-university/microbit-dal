@@ -16,6 +16,7 @@
 #define MICROBIT_ID_ACCELEROMETER       4
 #define MICROBIT_ID_COMPASS             5
 #define MICROBIT_ID_DISPLAY             6
+#define MICROBIT_ID_THERMOMETER         7
 
 //EDGE connector events
 #define MICROBIT_IO_PINS                20            

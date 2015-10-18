@@ -162,7 +162,7 @@ void scheduler_init()
     idleFiber = getFiberContext();
     idleFiber->tcb.SP = CORTEX_M0_STACK_BASE - 0x04;    
     idleFiber->tcb.LR = (uint32_t) &idle_task;
-    
+
     // Flag that we now have a scheduler running
     uBit.flags |= MICROBIT_FLAG_SCHEDULER_RUNNING;
 }
@@ -234,6 +234,9 @@ void scheduler_event(MicroBitEvent evt)
         
         f = t;
     }
+
+    // Unregister this event, as we've woken up all the fibers with this match.
+    uBit.MessageBus.ignore(evt.source, evt.value, scheduler_event);
 }
 
 
@@ -316,6 +319,9 @@ void fiber_wait_for_event(uint16_t id, uint16_t value)
     // Add ourselves to the sleep queue. We maintain strict ordering here to reduce lookup times.
     queue_fiber(f, &waitQueue);
     
+    // Register to receive this event, so we can wake up the fiber when it happens.
+    uBit.MessageBus.listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
+
     // Finally, enter the scheduler.
     schedule();
 }
