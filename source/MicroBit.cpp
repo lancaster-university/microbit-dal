@@ -6,7 +6,7 @@ char MICROBIT_BLE_DEVICE_NAME[] = "BBC micro:bit [xxxxx]";
 const char* MICROBIT_BLE_MANUFACTURER = "The Cast of W1A";
 const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
 const char* MICROBIT_BLE_HARDWARE_VERSION = "1.0";
-const char* MICROBIT_BLE_FIRMWARE_VERSION = "1.1";
+const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
 #endif
 
@@ -17,6 +17,16 @@ void panic(int statusCode)
 {
     uBit.panic(statusCode);   
 }
+
+/**
+  * Perform a hard reset of the micro:bit.
+  */
+void
+microbit_reset()
+{
+    NVIC_SystemReset();
+}
+
 
 /**
   * Callback when a BLE GATT disconnect occurs.
@@ -232,7 +242,7 @@ ManagedString MicroBit::getSerial()
   */
 void MicroBit::reset()
 {
-  reset();
+  microbit_reset();
 }
 
 /**
@@ -423,7 +433,7 @@ void MicroBit::removeIdleComponent(MicroBitComponent *component)
 {
     int i = 0;
     
-    while(idleThreadComponents[i] != component  && i < MICROBIT_IDLE_COMPONENTS)  
+    while(idleThreadComponents[i] != component && i < MICROBIT_IDLE_COMPONENTS)  
         i++;
     
     if(i == MICROBIT_IDLE_COMPONENTS)
@@ -441,6 +451,18 @@ void MicroBit::removeIdleComponent(MicroBitComponent *component)
 unsigned long MicroBit::systemTime()
 {
     return ticks;
+}
+
+
+/**
+ * Determine the version of the micro:bit runtime currently in use.
+ *
+ * @return A textual description of the currentlt executing micro:bit runtime.
+ * TODO: handle overflow case.
+ */
+char *MicroBit::systemVersion()
+{
+    return MICROBIT_DAL_VERSION;
 }
 
 /**

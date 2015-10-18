@@ -241,11 +241,18 @@ int MicroBitPin::isTouched()
   * If this pin is not configured as an analog output, the operation
   * has no effect.
   *
-  * @param period The new period for the analog output in milliseconds.
-  */   
-void MicroBitPin::setAnalogPeriod(int period)
+  * @param period The new period for the analog output in microseconds.
+  */
+void MicroBitPin::setAnalogPeriodUs(int period)
 {
     if (status & IO_STATUS_ANALOG_OUT)
-        ((DynamicPwm *)pin)->setPeriodUs(period*1000);
-   
+        ((DynamicPwm *)pin)->setPeriodUs(period);
+}
+
+/**
+ * Same thing as setAnalogPeriodUs, but with milliseconds.
+ */
+void MicroBitPin::setAnalogPeriod(int period)
+{
+    setAnalogPeriodUs(period*1000);
 }

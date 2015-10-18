@@ -1,17 +1,24 @@
 {
   "name": "microbit-dal",
-  "version": "0.0.1",
+  "version": "1.2.2",
   "license": "Apache2",
   "description": "The runtime library for the BBC micro:bit, developed by Lancaster University",
-  "keywords": ["mbed-classic", "microbit", "runtime", "library", "lancaster", "University"],
-  "author": "James Devine <j.devine@lancaster.ac.uk (mailto:j.devine@lancaster.ac.uk) >",
+  "keywords": [
+    "mbed-classic",
+    "microbit",
+    "runtime",
+    "library",
+    "lancaster",
+    "University"
+  ],
+  "author": "Joe Finney <j.finney@lancaster.ac.uk (mailto:j.finney@lancaster.ac.uk) >",
   "homepage": "https://developer.mbed.org/teams/Lancaster-University/code/microbit/",
-  "dependencies":{
+  "dependencies": {
     "mbed-classic": "~0.0.4",
     "ble": "lancaster-university/BLE_API#master",
     "ble-nrf51822": "lancaster-university/nrf51822#master"
   },
-  "extraIncludes":[
+  "extraIncludes": [
     "inc"
   ]
 }

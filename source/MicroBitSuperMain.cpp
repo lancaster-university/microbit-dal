@@ -9,21 +9,15 @@ InterruptIn     resetButton(MICROBIT_PIN_BUTTON_RESET);
 
 extern char* MICROBIT_BLE_DEVICE_NAME;
 
-void
-reset()
-{
-    NVIC_SystemReset();
-}
-
-
 int main()
 {    
     // Bring up soft reset button.
     resetButton.mode(PullUp);
-    resetButton.fall(reset);
+    resetButton.fall(microbit_reset);
     
 #if CONFIG_ENABLED(MICROBIT_DBG)
     pc.baud(115200);
+
 
     // For diagnostics. Gives time to open the console window. :-) 
     for (int i=3; i>0; i--)
@@ -31,6 +25,9 @@ int main()
         pc.printf("=== SUPERMAIN: Starting in %d ===\n", i);
         wait(1.0);
     }
+
+    pc.printf("micro:bit runtime DAL version %s\n", MICROBIT_DAL_VERSION);
+
 #endif    
 
     // Bring up our nested heap allocator.

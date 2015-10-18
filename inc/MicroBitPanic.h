@@ -11,7 +11,7 @@ void panic(int statusCode);
  * Resets the micro:bit.
  * @param statusCode the appropriate status code. Status codes must be in the range 0-255.
   */
-void reset(int statusCode);
+void microbit_reset();
 
 #endif
 

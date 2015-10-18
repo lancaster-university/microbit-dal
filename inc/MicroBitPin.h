@@ -178,6 +178,11 @@ class MicroBitPin : public MicroBitComponent
       * @param period The new period for the analog output in milliseconds.
       */   
     void setAnalogPeriod(int period);
+
+    /**
+     * Same thing as setAnalogPeriodUs, but with microseconds.
+     */
+    void setAnalogPeriodUs(int period);
 };
 
 #endif

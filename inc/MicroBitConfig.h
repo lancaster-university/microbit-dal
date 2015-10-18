@@ -149,7 +149,7 @@
 // This enables the standard BLE device information service.
 // Set '1' to enable. 
 #ifndef MICROBIT_BLE_DEVICE_INFORMATION_SERVICE
-#define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE     0
+#define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE     1
 #endif
 
 
@@ -288,6 +288,16 @@
 #ifndef MICROBIT_HEAP_DBG
 #define MICROBIT_HEAP_DBG       0
 #endif
+
+// Versioning options.
+// We use semantic versioning (http://semver.org/) to identify differnet versions of the micro:bit runtime.
+// Where possible we use yotta (an ARM mbed build tool) to help us track versions.
+// if this isn't available, it can be defined manually as a configuration option.
+//
+#ifndef MICROBIT_DAL_VERSION
+#define MICROBIT_DAL_VERSION   "unknown" 
+#endif
+
 
 //
 // Helper macro used by the micro:bit runtime to determine if a boolean configuration option is set.
