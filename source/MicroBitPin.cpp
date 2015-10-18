@@ -172,6 +172,42 @@ int MicroBitPin::getAnalogValue()
 }
 
 /**
+  * Determines if this IO pin is currently configured as an input.
+  * @return 1 if pin is an analog or digital input, 0 otherwise.
+  */
+int MicroBitPin::isInput()
+{
+    return (status & (IO_STATUS_DIGITAL_IN | IO_STATUS_ANALOG_IN)) == 0 ? 0 : 1;
+}
+
+/**
+  * Determines if this IO pin is currently configured as an output.
+  * @return 1 if pin is an analog or digital output, 0 otherwise.
+  */
+int MicroBitPin::isOutput()
+{
+    return (status & (IO_STATUS_DIGITAL_OUT | IO_STATUS_ANALOG_OUT)) == 0 ? 0 : 1;
+}
+
+/**
+  * Determines if this IO pin is currently configured for digital use.
+  * @return 1 if pin is digital, 0 otherwise.
+  */
+int MicroBitPin::isDigital()
+{
+    return (status & (IO_STATUS_DIGITAL_IN | IO_STATUS_DIGITAL_OUT)) == 0 ? 0 : 1;
+}
+
+/**
+  * Determines if this IO pin is currently configured for analog use.
+  * @return 1 if pin is analog, 0 otherwise.
+  */
+int MicroBitPin::isAnalog()
+{
+    return (status & (IO_STATUS_ANALOG_IN | IO_STATUS_ANALOG_OUT)) == 0 ? 0 : 1;
+}
+
+/**
   * Configures this IO pin as a makey makey style touch sensor (if necessary) and tests its current debounced state.
   * @return 1 if pin is touched, 0 otherwise.
   * 

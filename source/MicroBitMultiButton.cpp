@@ -35,8 +35,8 @@ MicroBitMultiButton::MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t
     this->button1 = button1;
     this->button2 = button2;
     
-    uBit.MessageBus.listen(button1, MICROBIT_EVT_ANY, onMultiButtonEvent);
-    uBit.MessageBus.listen(button2, MICROBIT_EVT_ANY, onMultiButtonEvent);
+    uBit.MessageBus.listen(button1, MICROBIT_EVT_ANY, onMultiButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    uBit.MessageBus.listen(button2, MICROBIT_EVT_ANY, onMultiButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 uint16_t MicroBitMultiButton::otherSubButton(uint16_t b)

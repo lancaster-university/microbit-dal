@@ -5,7 +5,7 @@
 #include "MicroBitEvent.h"
 #include "MemberFunctionCallback.h"
 
-// MessageBusListener flags...
+// MicroBitListener flags...
 #define MESSAGE_BUS_LISTENER_PARAMETERISED          0x0001
 #define MESSAGE_BUS_LISTENER_METHOD                 0x0002
 #define MESSAGE_BUS_LISTENER_BUSY                   0x0004
@@ -13,6 +13,9 @@
 #define MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY          0x0010
 #define MESSAGE_BUS_LISTENER_DROP_IF_BUSY           0x0020
 #define MESSAGE_BUS_LISTENER_NONBLOCKING            0x0040
+#define MESSAGE_BUS_LISTENER_URGENT                 0x0080
+#define MESSAGE_BUS_LISTENER_IMMEDIATE              (MESSAGE_BUS_LISTENER_NONBLOCKING |  MESSAGE_BUS_LISTENER_URGENT)
+
 
 struct MicroBitListener
 {
