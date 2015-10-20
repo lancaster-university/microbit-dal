@@ -2343,7 +2343,9 @@ READ: A client reading this characteristic will receive Pin Number / Value pairs
 		  <div class="characteristic_label">Summary:</div>
 	</div>
 	<div class="characteristic_item">
-		  <div class="char_text_block"><pre>A bit mask which allows each pin to be configured for analogue or digital use.</pre></div>
+		  <div class="char_text_block"><pre>A bit mask which allows each pin to be configured for analogue or digital use.
+
+Bit n corresponds to pin n where 0 LESS THAN OR EQUAL TO n LESS THAN 19. A value of 0 means digital and 1 means analogue.</pre></div>
 	</div>
 
    	<div class="characteristic_item">
@@ -2455,6 +2457,7 @@ READ: A client reading this characteristic will receive Pin Number / Value pairs
 	</div>
 	<div class="characteristic_item">
 		  <div class="char_text_block"><pre>A bit mask which allows each pin to be configured for input or output use. 
+
 Bit n corresponds to pin n where 0 LESS THAN OR EQUAL TO n LESS THAN 19. A value of 0 means configured for output and 1 means configured for input.</pre></div>
 	</div>
 
