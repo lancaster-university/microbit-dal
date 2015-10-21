@@ -261,11 +261,11 @@ void MicroBit::reset()
   * uBit.sleep(20); //sleep for 20ms
   * @endcode
   */
-void MicroBit::sleep(int milliseconds)
+int MicroBit::sleep(int milliseconds)
 {
     //sanity check, we can't time travel... (yet?)
     if(milliseconds < 0)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
         
     if (flags & MICROBIT_FLAG_SCHEDULER_RUNNING)
         fiber_sleep(milliseconds);
@@ -296,7 +296,7 @@ int MicroBit::random(int max)
 {
     //return MICROBIT_INVALID_VALUE if max is <= 0...
     if(max <= 0)
-        return MICROBIT_INVALID_VALUE;
+        return MICROBIT_INVALID_PARAMETER;
     
     // Cycle the LFSR (Linear Feedback Shift Register).
     // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
