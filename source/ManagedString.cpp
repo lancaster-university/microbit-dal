@@ -31,6 +31,34 @@ void ManagedString::initString(const char *str)
     memcpy(ptr->data, str, len+1);
 }
 
+/**
+  * Constructor. 
+  * Create a managed string from a specially prepared string literal. It will ptr->incr().
+  *
+  * @param ptr The literal - first two bytes should be 0xff, then the length in little endian, then the literal. The literal has to be 4-byte aligned.
+  * 
+  * Example:
+  * @code 
+  * static const char hello[] __attribute__ ((aligned (4))) = "\xff\xff\x05\x00" "Hello";
+  * ManagedString s((StringData*)(void*)hello);
+  * @endcode
+  */    
+ManagedString::ManagedString(StringData *p)
+{
+    ptr = p;
+    ptr->incr();
+}
+
+/**
+  * Get current ptr, do not decr() it, and set the current instance to empty string.
+  * This is to be used by specialized runtimes which pass StringData around.
+  */
+StringData* ManagedString::leakData()
+{
+    StringData *res = ptr;
+    initEmpty();
+    return res;
+}
 
 /**
   * Constructor. 

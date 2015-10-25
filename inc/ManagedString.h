@@ -32,7 +32,7 @@ class ManagedString
 
     /**
       * Constructor. 
-      * Create a managed string from a specially prepared string literal.
+      * Create a managed string from a specially prepared string literal. It will ptr->incr().
       *
       * @param ptr The literal - first two bytes should be 0xff, then the length in little endian, then the literal. The literal has to be 4-byte aligned.
       * 
@@ -42,7 +42,13 @@ class ManagedString
       * ManagedString s((StringData*)(void*)hello);
       * @endcode
       */    
-    ManagedString(StringData *p) : ptr(p) {}
+    ManagedString(StringData *ptr);
+
+    /**
+      * Get current ptr, do not decr() it, and set the current instance to empty string.
+      * This is to be used by specialized runtimes which pass StringData around.
+      */
+    StringData *leakData();
 
     /**
       * Constructor. 

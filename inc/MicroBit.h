@@ -5,6 +5,7 @@
 #pragma GCC diagnostic ignored "-Wconversion-null"
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wparentheses"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 #include "mbed.h"
 

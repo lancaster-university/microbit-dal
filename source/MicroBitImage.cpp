@@ -7,10 +7,12 @@
 
 #include "MicroBit.h"
 
+static const uint8_t empty[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 1, 1, 0, 0 };
+
 /*
  * The null image. We actally create a small one byte buffer here, just to keep NULL pointers out of the equation.
  */
-MicroBitImage MicroBitImage::EmptyImage(1,1);
+MicroBitImage MicroBitImage::EmptyImage((ImageData*)(void*)empty);
 
 /**
   * Default Constructor. 
@@ -162,6 +164,36 @@ MicroBitImage::MicroBitImage(const char *s)
         parseReadPtr++;
     }
 }
+
+/**
+  * Constructor. 
+  * Create an image from a specially prepared constant array, with no copying. Will call ptr->incr().
+  *
+  * @param ptr The literal - first two bytes should be 0xff, then width, height, and the bitmap. The literal has to be 4-byte aligned.
+  * 
+  * Example:
+  * @code 
+  * static const uint8_t heart[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 10, 5, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
+  * MicroBitImage i((ImageData*)(void*)heart);
+  * @endcode
+  */
+MicroBitImage::MicroBitImage(ImageData *p)
+{
+    ptr = p;
+    ptr->incr();
+}
+    
+/**
+  * Get current ptr, do not decr() it, and set the current instance to empty image.
+  * This is to be used by specialized runtimes which pass ImageData around.
+  */
+ImageData *MicroBitImage::leakData()
+{
+    ImageData* res = ptr;
+    init_empty();
+    return res;
+}
+
 
 /**
   * Constructor. 
@@ -761,4 +793,22 @@ MicroBitImage MicroBitImage::crop(int startx, int starty, int cropWidth, int cro
     }
     
     return MicroBitImage(newWidth, newHeight, cropped);  
+}
+
+/**
+  * Check if image is read-only (i.e., residing in flash).
+  */
+bool MicroBitImage::isReadOnly()
+{
+    return ptr->isReadOnly();
+}
+
+/**
+  * Create a copy of the image bitmap. Used particularly, when isReadOnly() is true.
+  *
+  * @return an instance of MicroBitImage which can be modified independently of the current instance
+  */
+MicroBitImage MicroBitImage::clone()
+{
+    return MicroBitImage(getWidth(), getHeight(), getBitmap());
 }
