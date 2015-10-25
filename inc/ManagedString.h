@@ -3,6 +3,29 @@
 
 #include "mbed.h"
 
+struct RefCounted
+{
+public:
+    uint16_t refcnt;
+    uint16_t size;
+
+    void incr();
+    void decr();
+
+};
+
+class VirtualRefCounted : RefCounted
+{
+public:
+    virtual ~VirtualRefCounted();
+};
+
+struct StringData : RefCounted
+{
+    char data[0];
+};
+
+
 /**
   * Class definition for a ManagedString.
   *
@@ -19,16 +42,28 @@ class ManagedString
 {
     // Internally we record the string as a char *, but control access to this to proide immutability
     // and reference counting.
-    char *data;
-    int16_t *ref;
-    int16_t len;
+    StringData *ptr;
 
     public:
 
     /**
       * Constructor. 
+      * Create a managed string from a specially prepared string literal.
+      *
+      * @param ptr The literal - first two bytes should be 0xff, then the length in little endian, then the literal. The literal has to be 4-byte aligned.
+      * 
+      * Example:
+      * @code 
+      * static const char hello[] __attribute__ ((aligned (4))) = "\xff\xff\x05\x00" "Hello";
+      * ManagedString s((StringData*)(void*)hello);
+      * @endcode
+      */    
+    ManagedString(StringData *p) : ptr(p) {}
+
+    /**
+      * Constructor. 
       * Create a managed string from a pointer to an 8-bit character buffer.
-      * The buffer is copied to ensure sage memory management (the supplied
+      * The buffer is copied to ensure safe memory management (the supplied
       * character buffer may be decalred on the stack for instance).
       *
       * @param str The character array on which to base the new ManagedString.
@@ -251,11 +286,15 @@ class ManagedString
 
 
     /**
-      * Provides an immutable 8 bit wide haracter buffer representing this string.
+      * Provides an immutable 8 bit wide character buffer representing this string.
       *
       * @return a pointer to the character buffer.
       */    
-    const char *toCharArray();
+    const char *toCharArray() const
+    {
+        if (ptr->refcnt == 0) panic(243);
+        return ptr->data;
+    }
     
     /**
       * Determines the length of this ManagedString in characters.
@@ -269,7 +308,10 @@ class ManagedString
       * print(s.length()) // prints "4"
       * @endcode
       */ 
-    int16_t length();
+    int16_t length() const
+    {
+        return ptr->size;
+    }
 
     /**
       * Empty String constant
