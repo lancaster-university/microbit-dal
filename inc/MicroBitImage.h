@@ -2,6 +2,12 @@
 #define MICROBIT_IMAGE_H
 
 #include "mbed.h"
+#include "RefCounted.h"
+
+struct ImageData : RefCounted
+{
+    uint8_t data[0];
+};
 
 /**
   * Class definition for a MicroBitImage.
@@ -11,9 +17,8 @@
   */
 class MicroBitImage
 {
-    int16_t width;                               // Width of the bitmap, in pixels.
-    int16_t height;                              // Height of the bitmap, in pixels.
-    int16_t *ref;                                // Reference count.
+    ImageData *ptr;     // Pointer to payload data
+                        // Width/height (in pixels) are in high/low byte of ptr->size
     
     
     /**
@@ -32,7 +37,28 @@ class MicroBitImage
     
     public:
     static MicroBitImage EmptyImage;    // Shared representation of a null image.
-    uint8_t *bitmap;                    // 2D array representing the bitmap image.    
+
+    /**
+      * Return a 2D array representing the bitmap image.
+      */
+    uint8_t *getBitmap()
+    {
+        return ptr->data;
+    }
+    
+    /**
+      * Constructor. 
+      * Create an image from a specially prepared constant array, with no copying.
+      *
+      * @param p The literal - first two bytes should be 0xff, then width, height, and the bitmap. The literal has to be 4-byte aligned.
+      * 
+      * Example:
+      * @code 
+      * static const uint8_t heart[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 10, 5, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
+      * ManagedString s((ImageData*)(void*)heart);
+      * @endcode
+      */
+    MicroBitImage(ImageData *p) : ptr(p) {}
     
     /**
       * Default Constructor. 
@@ -315,7 +341,10 @@ class MicroBitImage
       * i.getWidth(); //equals 10...
       * @endcode
       */
-    int getWidth();
+    int getWidth() const
+    {
+        return ptr->width;
+    }
 
     /**
       * Gets the height of this image.
@@ -329,8 +358,28 @@ class MicroBitImage
       * i.getHeight(); //equals 5...
       * @endcode
       */
-    int getHeight();
+    int getHeight() const
+    {
+        return ptr->height;
+    }
     
+    /**
+      * Gets number of bytes in the bitmap, ie., width * height.
+      *
+      * @return The size of the bitmap.
+      * 
+      * Example:
+      * @code
+      * const uint8_t heart[] = { 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
+      * MicroBitImage i(10,5,heart);
+      * i.getSize(); //equals 50...
+      * @endcode
+      */
+    int getSize() const
+    {
+        return ptr->width * ptr->height;
+    }
+
     /**
       * Converts the bitmap to a csv string.
       *

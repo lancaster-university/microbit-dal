@@ -1,6 +1,11 @@
 #ifndef MICROBIT_H
 #define MICROBIT_H
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wconversion-null"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wparentheses"
+
 #include "mbed.h"
 
 #include "MicroBitConfig.h"  
