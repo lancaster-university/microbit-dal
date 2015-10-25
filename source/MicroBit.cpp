@@ -221,6 +221,9 @@ ManagedString MicroBit::getName()
  */
 ManagedString MicroBit::getSerial()
 {
+    if (serialCache.length() > 0)
+        return serialCache;
+
     // We take to 16 bit numbers here, as we want the full range of ID bits, but don't want negative numbers...
     int n1 = NRF_FICR->DEVICEID[1] & 0xffff;
     int n2 = (NRF_FICR->DEVICEID[1] >> 16) & 0xffff;
@@ -229,7 +232,9 @@ ManagedString MicroBit::getSerial()
     ManagedString s1 = ManagedString(n1);
     ManagedString s2 = ManagedString(n2);
 
-    return s1+s2;
+    serialCache = s1 + s2;
+
+    return serialCache;
 }
 
 /**
