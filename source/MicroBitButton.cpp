@@ -38,7 +38,7 @@ MicroBitButton::MicroBitButton(uint16_t id, PinName name, PinMode mode) : pin(na
   */  
 void MicroBitButton::systemTick()
 {   
-     //
+    //
     // If the pin is pulled low (touched), increment our culumative counter.
     // otherwise, decrement it. We're essentially building a lazy follower here.
     // This makes the output debounced for buttons, and desensitizes touch sensors

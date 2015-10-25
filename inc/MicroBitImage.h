@@ -173,6 +173,7 @@ class MicroBitImage
       * @param x The co-ordinate of the pixel to change w.r.t. top left origin.
       * @param y The co-ordinate of the pixel to change w.r.t. top left origin.
       * @param value The new value of the pixel (the brightness level 0-255)
+      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -180,11 +181,14 @@ class MicroBitImage
       * i.setPixelValue(0,0,255);
       * @endcode
       */
-    void setPixelValue(int16_t x , int16_t y, uint8_t value);
+    int setPixelValue(int16_t x , int16_t y, uint8_t value);
 
     /**
-      * Determines the value of a given pixel.
-      * @return The value assigned to the given pixel location (the brightness level 0-255)
+      * Determines the value of a given pixel. 
+      *
+      * @param x The x co-ordinate of the pixel to read. Must be within the dimensions of the image.
+      * @param y The y co-ordinate of the pixel to read. Must be within the dimensions of the image.
+      * @return The value assigned to the given pixel location (the brightness level 0-255), or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -199,9 +203,10 @@ class MicroBitImage
       * 2D array representing the image.
       * Origin is in the top left corner of the image.
       *
-      * @param x the width of the image.
-      * @param y the height of the image.
+      * @param x the width of the image. Must be within the dimensions of the image.
+      * @param y the width of the image. Must be within the dimensions of the image.
       * @param bitmap a 2D array representing the image.
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
       * 
       * Example:
       * @code
@@ -210,7 +215,7 @@ class MicroBitImage
       * i.printImage(0,0,heart); 
       * @endcode
       */
-    void printImage(int16_t x, int16_t y, const uint8_t *bitmap);
+    int printImage(int16_t x, int16_t y, const uint8_t *bitmap);
     
     /**
       * Pastes a given bitmap at the given co-ordinates.
@@ -220,7 +225,7 @@ class MicroBitImage
       * @param x The leftmost X co-ordinate in this image where the given image should be pasted.
       * @param y The uppermost Y co-ordinate in this image where the given image should be pasted.
       * @param alpha set to 1 if transparency clear pixels in given image should be treated as transparent. Set to 0 otherwise.
-      * @return The number of pixels written.
+      * @return The number of pixels written, or MICROBIT_INVALID_PARAMETER.
       * 
       * Example:
       * @code
@@ -237,6 +242,7 @@ class MicroBitImage
       * @param c The character to display.
       * @param x The x co-ordinate of on the image to place the top left of the character
       * @param y The y co-ordinate of on the image to place the top left of the character
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
       * 
       * Example:
       * @code
@@ -244,12 +250,13 @@ class MicroBitImage
       * i.print('a',0,0);
       * @endcode
       */
-    void print(char c, int16_t x, int16_t y);
+    int print(char c, int16_t x, int16_t y);
  
     /**
       * Shifts the pixels in this Image a given number of pixels to the Left.
       *
       * @param n The number of pixels to shift.
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
       * 
       * Example:
       * @code
@@ -258,12 +265,13 @@ class MicroBitImage
       * i.shiftLeft(5); //displays a small heart :) 
       * @endcode
       */
-    void shiftLeft(int16_t n);
+    int shiftLeft(int16_t n);
 
     /**
       * Shifts the pixels in this Image a given number of pixels to the Right.
       *
       * @param n The number of pixels to shift.
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
       * 
       * Example:
       * @code
@@ -273,12 +281,13 @@ class MicroBitImage
       * i.shiftRight(5); //displays a big heart :) 
       * @endcode
       */
-    void shiftRight(int16_t n);
+    int shiftRight(int16_t n);
     
     /**
       * Shifts the pixels in this Image a given number of pixels to Upward.
       *
       * @param n The number of pixels to shift.
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
       * 
       * Example:
       * @code
@@ -287,12 +296,13 @@ class MicroBitImage
       * i.shiftUp(1);
       * @endcode
       */
-    void shiftUp(int16_t n);
+    int shiftUp(int16_t n);
     
     /**
       * Shifts the pixels in this Image a given number of pixels to Downward.
       *
       * @param n The number of pixels to shift.
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
       * 
       * Example:
       * @code
@@ -301,7 +311,7 @@ class MicroBitImage
       * i.shiftDown(1);
       * @endcode
       */
-    void shiftDown(int16_t n);
+    int shiftDown(int16_t n);
 
     /**
       * Gets the width of this image.

@@ -210,9 +210,7 @@ void MicroBitMessageBus::send(MicroBitEvent evt)
     // We simply queue processing of the event until we're scheduled in normal thread context.
     // We do this to avoid the possibility of executing event handler code in IRQ context, which may bring
     // hidden race conditions to kids code. Queuing all events ensures causal ordering (total ordering in fact).
-
     this->queueEvent(evt);
-    return;
 }
 
 /*
@@ -269,7 +267,9 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, uint32_t mask)
   * @param value The value of messages to listen for. Events with any other values will be filtered. 
   * Use MICROBIT_VALUE_ANY to receive events of any value.
   *
-  * @param hander The function to call when an event is received.
+  * @param handler The function to call when an event is received.
+  *
+  * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
   *
   * Example:
   * @code 
@@ -281,26 +281,30 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, uint32_t mask)
   * @endcode
   */
 
-void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags) 
+int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags) 
 {
 	if (handler == NULL)
-		return;
+		return MICROBIT_INVALID_PARAMETER;
 
 	MicroBitListener *newListener = new MicroBitListener(id, value, handler, flags);
 
-    if(!add(newListener))
+    if(add(newListener) != MICROBIT_OK)
         delete newListener;
+
+    return MICROBIT_OK;
 }
 
-void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg, uint16_t flags) 
+int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg, uint16_t flags) 
 {
 	if (handler == NULL)
-		return;
+		return MICROBIT_INVALID_PARAMETER;
 
 	MicroBitListener *newListener = new MicroBitListener(id, value, handler, arg, flags);
 
-    if(!add(newListener))
+    if(add(newListener) != MICROBIT_OK)
         delete newListener;
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -322,13 +326,15 @@ void MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent
  * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
  * @endcode
  */
-void MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent))
+int MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent))
 {
 	if (handler == NULL)
-		return;
+		return MICROBIT_INVALID_PARAMETER;
 
 	MicroBitListener listener(id, value, handler);
     remove(&listener);
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -350,14 +356,16 @@ void MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent
  * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
  * @endcode
  */
-void MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent, void*))
+int MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent, void*))
 {
 	if (handler == NULL)
-		return;
+		return MICROBIT_INVALID_PARAMETER;
 
     // The remove function is not comparing the [arg] anyhow.
 	MicroBitListener listener(id, value, handler, NULL);
     remove(&listener);
+
+    return MICROBIT_OK;
 }
 
 
@@ -373,7 +381,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
 
 	//handler can't be NULL!
 	if (newListener == NULL)
-		return 0;
+		return MICROBIT_INVALID_PARAMETER;
 
 	l = listeners;
 
@@ -387,7 +395,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
         methodCallback = (newListener->flags & MESSAGE_BUS_LISTENER_METHOD) && (l->flags & MESSAGE_BUS_LISTENER_METHOD);
 
         if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb))
-            return 0;
+            return MICROBIT_NOT_SUPPORTED;
 
         l = l->next;
     }
@@ -397,7 +405,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
 	if (listeners == NULL)
 	{
 		listeners = newListener;
-		return 1;
+		return MICROBIT_OK;
 	}
 
 	// We maintain an ordered list of listeners. 
@@ -436,14 +444,14 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
 		p->next = newListener;
 	}
 
-    return 1;
+    return MICROBIT_OK;
 }
 
 /**
-  * Remove a MicroBitListener from the list that matches the given listener.
-  * @param listener The MicroBitListener to validate.
-  * @return The number of listeners removed from the list.
-  */
+ * Remove the given MicroBitListener from the list of event handlers.
+ * @param listener The MicroBitListener to remove.
+ * @return MICROBIT_OK if the listener is valid, MICROBIT_INVALID_PARAMETER otherwise.
+ */
 int MicroBitMessageBus::remove(MicroBitListener *listener)
 {
 	MicroBitListener *l, *p;
@@ -451,7 +459,7 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
 
 	//handler can't be NULL!
 	if (listener == NULL)
-		return 0;
+		return MICROBIT_INVALID_PARAMETER;
 
 	l = listeners;
 	p = NULL;
@@ -488,7 +496,7 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
         l = l->next;
     }
 
-    return removed;
+    return MICROBIT_OK;
 }
 
 /**

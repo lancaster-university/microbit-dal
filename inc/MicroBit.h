@@ -191,13 +191,14 @@ class MicroBit
       * @note Values of 6 and below tend to lose resolution - do you really need to sleep for this short amount of time?
       *
       * @param milliseconds the amount of time, in ms, to wait for. This number cannot be negative.
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER milliseconds is less than zero. 
       *
       * Example:
       * @code 
       * uBit.sleep(20); //sleep for 20ms
       * @endcode
       */
-    void sleep(int milliseconds);
+    int sleep(int milliseconds);
 
     /**
       * Generate a random number in the given range.
@@ -205,7 +206,7 @@ class MicroBit
       * TODO: Determine if we want to, given its relatively high power consumption!
       *
       * @param max the upper range to generate a number for. This number cannot be negative
-      * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_VALUE (defined in ErrorNo.h) if max is <= 0.
+      * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_PARAMETER if max is <= 0.
       *
       * Example:
       * @code 
@@ -227,24 +228,33 @@ class MicroBit
 
     /**
       * add a component to the array of system components which invocate the systemTick member function during a systemTick 
+      *
+      * @param component The component to add.
+      * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
       */
-    void addSystemComponent(MicroBitComponent *component);
+    int addSystemComponent(MicroBitComponent *component);
     
     /**
       * remove a component from the array of system components
+      * @param component The component to remove.
+      * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
       */
-    void removeSystemComponent(MicroBitComponent *component);
+    int removeSystemComponent(MicroBitComponent *component);
     
     /**
       * add a component to the array of of idle thread components.
       * isIdleCallbackNeeded is polled during a systemTick to determine if the idle thread should jump to the front of the queue
+      * @param component The component to add.
+      * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
       */
-    void addIdleComponent(MicroBitComponent *component);
+    int addIdleComponent(MicroBitComponent *component);
     
     /**
       * remove a component from the array of idle thread components
+      * @param component The component to remove.
+      * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
       */
-    void removeIdleComponent(MicroBitComponent *component);
+    int removeIdleComponent(MicroBitComponent *component);
 
     /**
       * Determine the time since this MicroBit was last reset.

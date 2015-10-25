@@ -137,16 +137,18 @@ class MicroBitCompass : public MicroBitComponent
      * in this object. The nearest values are chosen to those defined
      * that are supported by the hardware. The instance variables are then
      * updated to reflect reality.
+     * @return MICROBIT_OK or MICROBIT_I2C_ERROR if the magnetometer could not be configured.
      */
-    void configure();
+    int configure();
 
     /**
      * Attempts to set the sample rate of the compass to the specified value (in ms).
      * n.b. the requested rate may not be possible on the hardware. In this case, the
      * nearest lower rate is chosen.
      * @param period the requested time between samples, in milliseconds.
+     * @return MICROBIT_OK or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
      */
-    void setPeriod(int period);
+    int setPeriod(int period);
 
     /**
       * Reads the currently configured sample rate of the compass. 
@@ -156,7 +158,8 @@ class MicroBitCompass : public MicroBitComponent
 
     /**
       * Gets the current heading of the device, relative to magnetic north.
-      * @return the current heading, in degrees.
+      * @return the current heading, in degrees. Or MICROBIT_COMPASS_IS_CALIBRATING if the compass is calibrating. 
+      * Or MICROBIT_COMPASS_CALIBRATE_REQUIRED if the compass requires calibration.
       *
       * Example:
       * @code
@@ -167,7 +170,7 @@ class MicroBitCompass : public MicroBitComponent
     
     /**
       * Attempts to determine the 8 bit ID from the magnetometer. 
-      * @return the id of the compass (magnetometer)
+      * @return the id of the compass (magnetometer), or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
       *
       * Example:
       * @code
@@ -211,13 +214,14 @@ class MicroBitCompass : public MicroBitComponent
 
     /**
       * Reads the currently die temperature of the compass. 
-      * @return The temperature, in degrees celsius.
+      * @return the temperature in degrees celsius, or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
       */
     int readTemperature();
 
     /**
       * Perform the asynchronous calibration of the compass.
       * This will fire MICROBIT_COMPASS_EVT_CAL_START and MICROBIT_COMPASS_EVT_CAL_END when finished.
+      * @return MICROBIT_OK, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
       * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
       */
     void calibrateAsync();  
@@ -227,7 +231,7 @@ class MicroBitCompass : public MicroBitComponent
       * This will fire MICROBIT_COMPASS_EVT_CAL_START.
       * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
       */
-    void calibrateStart();    
+    int calibrateStart();    
 
     /**
       * Complete the calibration of the compass.
@@ -270,8 +274,9 @@ class MicroBitCompass : public MicroBitComponent
       *
       * @param reg The address of the register to write to.
       * @param value The value to write.
+      * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
       */
-    void writeCommand(uint8_t reg, uint8_t value);
+    int writeCommand(uint8_t reg, uint8_t value);
     
     /**
       * Issues a read command into the specified buffer.
@@ -280,17 +285,18 @@ class MicroBitCompass : public MicroBitComponent
       * @param reg The address of the register to access.
       * @param buffer Memory area to read the data into.
       * @param length The number of bytes to read.
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
       */
-    void readCommand(uint8_t reg, uint8_t* buffer, int length);
+    int readCommand(uint8_t reg, uint8_t* buffer, int length);
     
     /**
       * Issues a read of a given address, and returns the value.
       * Blocks the calling thread until complete.
       *
       * @param reg The based address of the 16 bit register to access.
-      * @return The register value, interpreted as a 16 but signed value.
+      * @return The register value, interpreted as a 16 but signed value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
       */
-    int16_t read16(uint8_t reg);
+    int read16(uint8_t reg);
     
     
     /**
@@ -298,9 +304,9 @@ class MicroBitCompass : public MicroBitComponent
       * Blocks the calling thread until complete.
       *
       * @param reg The based address of the 16 bit register to access.
-      * @return The register value, interpreted as a 8 bi signed value.
+      * @return The register value, interpreted as a 8 bit unsigned value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
       */
-    uint8_t read8(uint8_t reg);
+    int read8(uint8_t reg);
 };
 
 #endif

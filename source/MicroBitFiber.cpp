@@ -83,7 +83,6 @@ void queue_fiber(Fiber *f, Fiber **queue)
   */
 void dequeue_fiber(Fiber *f)
 {
-
     // If this fiber is already dequeued, nothing the there's nothing to do.
     if (f->queue == NULL)
         return;
@@ -248,7 +247,7 @@ void fiber_sleep(unsigned long t)
     // it's time to spawn a new fiber...
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
     {
-        // Allocate a TCB from the new fiber. This will come from the tread pool if availiable,
+        // Allocate a new fiber. This will come from the fiber pool if availiable,
         // else a new one will be allocated on the heap.
         forkedFiber = getFiberContext();
     
@@ -326,19 +325,20 @@ void fiber_wait_for_event(uint16_t id, uint16_t value)
   * We only create an additional fiber if that function performs a block operation. 
   *
   * @param entry_fn The function to execute.
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER. 
   */
-void invoke(void (*entry_fn)(void))
+int invoke(void (*entry_fn)(void))
 {
     // Validate our parameters.
     if (entry_fn == NULL)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
     {
         // If we attempt a fork on block whilst already in  fork n block context,
         // simply launch a fiber to deal with the request and we're done.
         create_fiber(entry_fn);
-        return;
+        return MICROBIT_OK;
     }
                     
     // Snapshot current context, but also update the Link Register to
@@ -354,7 +354,7 @@ void invoke(void (*entry_fn)(void))
     {
         currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
         currentFiber->flags &= ~MICROBIT_FIBER_FLAG_PARENT;
-        return;
+        return MICROBIT_OK;
     }
 
     // Otherwise, we're here for the first time. Enter FORK ON BLOCK mode, and
@@ -368,6 +368,8 @@ void invoke(void (*entry_fn)(void))
     // The fiber will then re-enter the scheduler, so no need for further cleanup.
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_CHILD)
         release_fiber();
+
+     return MICROBIT_OK;
 }
 
 /**
@@ -381,19 +383,20 @@ void invoke(void (*entry_fn)(void))
   *
   * @param entry_fn The function to execute.
   * @param param an untyped parameter passed into the entry_fn.
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER. 
   */
-void invoke(void (*entry_fn)(void *), void *param)
+int invoke(void (*entry_fn)(void *), void *param)
 {
     // Validate our parameters.
     if (entry_fn == NULL)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD))
     {
         // If we attempt a fork on block whilst already in a fork on block context,
         // simply launch a fiber to deal with the request and we're done.
         create_fiber(entry_fn, param);
-        return;
+        return MICROBIT_OK;
     }
                     
     // Snapshot current context, but also update the Link Register to
@@ -409,7 +412,7 @@ void invoke(void (*entry_fn)(void *), void *param)
     {
         currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
         currentFiber->flags &= ~MICROBIT_FIBER_FLAG_PARENT;
-        return;
+        return MICROBIT_OK;
     }
 
     // Otherwise, we're here for the first time. Enter FORK ON BLOCK mode, and
@@ -423,6 +426,8 @@ void invoke(void (*entry_fn)(void *), void *param)
     // The fiber will then re-enter the scheduler, so no need for further cleanup.
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_CHILD)
         release_fiber(param);
+
+    return MICROBIT_OK;
 }
 
 void launch_new_fiber(void (*ep)(void), void (*cp)(void))

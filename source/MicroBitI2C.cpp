@@ -19,7 +19,16 @@ MicroBitI2C::MicroBitI2C(PinName sda, PinName scl) : I2C(sda,scl)
     this->retries = 0;
 }
 
-
+/**
+ * Performs a complete read transaction. The bottom bit of the address is forced to 1 to indicate a read.
+ *
+ * @address 8-bit I2C slave address [ addr | 1 ]
+ * @data Pointer to the byte-array to read data in to
+ * @length Number of bytes to read
+ * @repeated Repeated start, true - don't send stop at end.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if an unresolved read failure is detected.
+ */
 int MicroBitI2C::read(int address, char *data, int length, bool repeated)
 {
     int result = I2C::read(address,data,length,repeated);
@@ -38,18 +47,25 @@ int MicroBitI2C::read(int address, char *data, int length, bool repeated)
         retries++;
     }
     
-    if(retries == MICROBIT_I2C_MAX_RETRIES - 1)
-        uBit.panic(MICROBIT_I2C_LOCKUP);
-    
-    retries = 0;
-    
-    return result;
+    if(result != 0)
+        return MICROBIT_I2C_ERROR;
+   
+    retries = 0; 
+    return MICROBIT_OK;
 }
 
+/**
+ * Performs a complete write transaction. The bottom bit of the address is forced to 0 to indicate a write.
+ *
+ * @address 8-bit I2C slave address [ addr | 0 ]
+ * @data Pointer to the byte-arraycontaining the data to write 
+ * @length Number of bytes to write
+ * @repeated Repeated start, true - don't send stop at end.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if an unresolved write failure is detected.
+ */
 int MicroBitI2C::write(int address, const char *data, int length, bool repeated)
 {   
-    
-
     int result = I2C::write(address,data,length,repeated);
     
     //0 indicates a success, presume failure
@@ -67,10 +83,9 @@ int MicroBitI2C::write(int address, const char *data, int length, bool repeated)
         retries++;
     }
     
-    if(retries == MICROBIT_I2C_MAX_RETRIES - 1)
-        uBit.panic(MICROBIT_I2C_LOCKUP);
+    if(result != 0)
+        return MICROBIT_I2C_ERROR;
         
-    retries = 0;
-    
-    return result;
+    retries = 0; 
+    return MICROBIT_OK;
 }

@@ -2,18 +2,19 @@
   * Compatibility / portability funcitons and constants for the MicroBit DAL.
   */
 #include "mbed.h"
+#include "ErrorNo.h"
 
 
 /**
   * Performs an in buffer reverse of a given char array
   * @param s the char* to reverse.
-  * @return the reversed char*
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
-void string_reverse(char *s) 
+int string_reverse(char *s) 
 {
     //sanity check...
     if(s == NULL)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
     
     char *j;
     int c;
@@ -26,6 +27,8 @@ void string_reverse(char *s)
         *s++ = *j;
         *j-- = c;
     }
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -33,11 +36,15 @@ void string_reverse(char *s)
   *
   * @param n The number to convert.
   * @param s Pointer to a buffer in which to store the resulting string.
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
-void itoa(int n, char *s)
+int itoa(int n, char *s)
 {
     int i = 0;
     int positive = (n >= 0);
+
+    if (s == NULL)
+        return MICROBIT_INVALID_PARAMETER;
 
     // Record the sign of the number,
     // Ensure our working value is positive.
@@ -58,5 +65,7 @@ void itoa(int n, char *s)
     
     // Flip the order.
     string_reverse(s);
+
+    return MICROBIT_OK;
 }
 

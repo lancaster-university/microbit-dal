@@ -252,9 +252,10 @@ void MicroBit::reset()
   * If the scheduler is disabled or we're running in an interrupt context, this
   * will revert to a busy wait. 
   *
-  * @note Values of 6 and below tend to lose resolution - do you really need to sleep for this short amount of time?
+  * @note Values of below below the scheduling period (typical 6ms) tend to lose resolution.
   * 
   * @param milliseconds the amount of time, in ms, to wait for. This number cannot be negative.
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER milliseconds is less than zero. 
   *
   * Example:
   * @code 
@@ -271,6 +272,8 @@ int MicroBit::sleep(int milliseconds)
         fiber_sleep(milliseconds);
     else
         wait_ms(milliseconds);
+
+    return MICROBIT_OK;
 }
 
 
@@ -376,9 +379,11 @@ void MicroBit::systemTasks()
 
 /**
   * add a component to the array of components which invocate the systemTick member function during a systemTick 
+  * @param component The component to add.
+  * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
   * @note this will be converted into a dynamic list of components
   */
-void MicroBit::addSystemComponent(MicroBitComponent *component)
+int MicroBit::addSystemComponent(MicroBitComponent *component)
 {
     int i = 0;
     
@@ -386,16 +391,19 @@ void MicroBit::addSystemComponent(MicroBitComponent *component)
         i++;
     
     if(i == MICROBIT_SYSTEM_COMPONENTS)
-        return;
+        return MICROBIT_NO_RESOURCES;
         
     systemTickComponents[i] = component;    
+    return MICROBIT_OK;
 }
 
 /**
   * remove a component from the array of components
+  * @param component The component to remove.
+  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMTER is returned if the given component has not been previous added.
   * @note this will be converted into a dynamic list of components
   */
-void MicroBit::removeSystemComponent(MicroBitComponent *component)
+int MicroBit::removeSystemComponent(MicroBitComponent *component)
 {
     int i = 0;
     
@@ -403,16 +411,20 @@ void MicroBit::removeSystemComponent(MicroBitComponent *component)
         i++;
     
     if(i == MICROBIT_SYSTEM_COMPONENTS)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     systemTickComponents[i] = NULL;
+
+    return MICROBIT_OK;
 }
 
 /**
   * add a component to the array of components which invocate the systemTick member function during a systemTick 
+  * @param component The component to add.
+  * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
   * @note this will be converted into a dynamic list of components
   */
-void MicroBit::addIdleComponent(MicroBitComponent *component)
+int MicroBit::addIdleComponent(MicroBitComponent *component)
 {
     int i = 0;
     
@@ -420,16 +432,20 @@ void MicroBit::addIdleComponent(MicroBitComponent *component)
         i++;
     
     if(i == MICROBIT_IDLE_COMPONENTS)
-        return;
+        return MICROBIT_NO_RESOURCES;
         
     idleThreadComponents[i] = component;    
+
+    return MICROBIT_OK;
 }
 
 /**
   * remove a component from the array of components
+  * @param component The component to remove.
+  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMTER is returned if the given component has not been previous added.
   * @note this will be converted into a dynamic list of components
   */
-void MicroBit::removeIdleComponent(MicroBitComponent *component)
+int MicroBit::removeIdleComponent(MicroBitComponent *component)
 {
     int i = 0;
     
@@ -437,9 +453,11 @@ void MicroBit::removeIdleComponent(MicroBitComponent *component)
         i++;
     
     if(i == MICROBIT_IDLE_COMPONENTS)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     idleThreadComponents[i] = NULL;
+
+    return MICROBIT_OK;
 }
 
 /**

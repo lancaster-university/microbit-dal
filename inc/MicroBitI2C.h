@@ -8,11 +8,11 @@
 /**
   * Class definition for MicroBitI2C.
   *
-  * Represents a wrapped mbed call to hopefully fix silicon issues once and for all.
+  * Presents a wrapped mbed call to capture failed I2C operations caused by a known silicon bug in the nrf51822.
+  * Attempts to automatically reset and restart the I2C hardware if this case is detected.
   */
 class MicroBitI2C : public I2C
 {
-    
     uint8_t retries;
     
     public:
@@ -29,9 +29,29 @@ class MicroBitI2C : public I2C
       * @note this should prevent i2c lockups as well.
       */
     MicroBitI2C(PinName sda, PinName scl);
-    
+  
+    /**
+      * Performs a complete read transaction. The bottom bit of the address is forced to 1 to indicate a read.
+      *
+      * @address 8-bit I2C slave address [ addr | 1 ]
+      * @data Pointer to the byte-array to read data in to
+      * @length Number of bytes to read
+      * @repeated Repeated start, true - don't send stop at end.
+      *
+      * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if an unresolved read failure is detected.
+      */
     int read(int address, char *data, int length, bool repeated = false);
-    
+   
+    /**
+      * Performs a complete write transaction. The bottom bit of the address is forced to 0 to indicate a write.
+      *
+      * @address 8-bit I2C slave address [ addr | 0 ]
+      * @data Pointer to the byte-arraycontaining the data to write 
+      * @length Number of bytes to write
+      * @repeated Repeated start, true - don't send stop at end.
+      *
+      * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if an unresolved write failure is detected.
+      */
     int write(int address, const char *data, int length, bool repeated = false);
 };
 

@@ -102,22 +102,27 @@ class MicroBitAccelerometer : public MicroBitComponent
      * in this object. The nearest values are chosen to those defined
      * that are supported by the hardware. The instance variables are then
      * updated to reflect reality.
+     *
+     * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the accelerometer could not be configured.
      */
-    void configure();
+    int configure();
 
     /**
       * Reads the acceleration data from the accelerometer, and stores it in our buffer.
-      * This is called by the tick() member function, if the interrupt is set!
+      * This is called by the tick() member function, if the interrupt is set.
+      *
+      * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the read request fails.
       */
-    void update();
+    int update();
     
     /**
       * Attempts to set the sample rate of the accelerometer to the specified value (in ms).
       * n.b. the requested rate may not be possible on the hardware. In this case, the
       * nearest lower rate is chosen.
       * @param period the requested time between samples, in milliseconds.
+      * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the request fails.
       */
-    void setPeriod(int period);
+    int setPeriod(int period);
 
     /**
       * Reads the currently configured sample rate of the accelerometer. 
@@ -130,8 +135,9 @@ class MicroBitAccelerometer : public MicroBitComponent
      * n.b. the requested range may not be possible on the hardware. In this case, the
      * nearest lower rate is chosen.
      * @param range The requested sample range of samples, in g.
+     * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the request fails.
      */
-    void setRange(int range);
+    int setRange(int range);
 
     /**
      * Reads the currently configured sample range of the accelerometer. 
@@ -141,7 +147,7 @@ class MicroBitAccelerometer : public MicroBitComponent
 
     /**
       * Attempts to determine the 8 bit ID from the accelerometer. 
-      * @return the 8 bit ID returned by the accelerometer
+      * @return the 8 bit ID returned by the accelerometer, or MICROBIT_I2C_ERROR if the request fails.
       *
       * Example:
       * @code 
@@ -204,8 +210,9 @@ class MicroBitAccelerometer : public MicroBitComponent
       *
       * @param reg The address of the register to write to.
       * @param value The value to write.
+      * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the the write request failed.
       */
-    void writeCommand(uint8_t reg, uint8_t value);
+    int writeCommand(uint8_t reg, uint8_t value);
     
     /**
       * Issues a read command into the specified buffer.
@@ -214,8 +221,9 @@ class MicroBitAccelerometer : public MicroBitComponent
       * @param reg The address of the register to access.
       * @param buffer Memory area to read the data into.
       * @param length The number of bytes to read.
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
       */
-    void readCommand(uint8_t reg, uint8_t* buffer, int length);
+    int readCommand(uint8_t reg, uint8_t* buffer, int length);
 };
 
 #endif

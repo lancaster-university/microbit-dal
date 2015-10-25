@@ -12,11 +12,14 @@
   * in this object. The nearest values are chosen to those defined
   * that are supported by the hardware. The instance variables are then
   * updated to reflect reality.
+  *
+  * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the accelerometer could not be configured.
   */
-void MicroBitAccelerometer::configure()
+int MicroBitAccelerometer::configure()
 {
     const MMA8653SampleRangeConfig  *actualSampleRange;
     const MMA8653SampleRateConfig  *actualSampleRate;
+    int result;
 
     // First find the nearest sample rate to that specified.
     actualSampleRate = &MMA8653SampleRate[MMA8653_SAMPLE_RATES-1];
@@ -44,22 +47,36 @@ void MicroBitAccelerometer::configure()
 
     // Now configure the accelerometer accordingly.
     // First place the device into standby mode, so it can be configured.
-    writeCommand(MMA8653_CTRL_REG1, 0x00);
+    result = writeCommand(MMA8653_CTRL_REG1, 0x00);
+    if (result != 0) 
+        return MICROBIT_I2C_ERROR;
     
     // Enable high precisiosn mode. This consumes a bit more power, but still only 184 uA!
-    writeCommand(MMA8653_CTRL_REG2, 0x10);
+    result = writeCommand(MMA8653_CTRL_REG2, 0x10);
+    if (result != 0) 
+        return MICROBIT_I2C_ERROR;
 
     // Enable the INT1 interrupt pin.
-    writeCommand(MMA8653_CTRL_REG4, 0x01);
+    result = writeCommand(MMA8653_CTRL_REG4, 0x01);
+    if (result != 0) 
+        return MICROBIT_I2C_ERROR;
 
     // Select the DATA_READY event source to be routed to INT1
-    writeCommand(MMA8653_CTRL_REG5, 0x01);
+    result = writeCommand(MMA8653_CTRL_REG5, 0x01);
+    if (result != 0) 
+        return MICROBIT_I2C_ERROR;
 
     // Configure for the selected g range.
-    writeCommand(MMA8653_XYZ_DATA_CFG, actualSampleRange->xyz_data_cfg);
+    result = writeCommand(MMA8653_XYZ_DATA_CFG, actualSampleRange->xyz_data_cfg);
+    if (result != 0) 
+        return MICROBIT_I2C_ERROR;
     
     // Bring the device back online, with 10bit wide samples at the requested frequency.
-    writeCommand(MMA8653_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
+    result = writeCommand(MMA8653_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
+    if (result != 0) 
+        return MICROBIT_I2C_ERROR;
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -68,14 +85,15 @@ void MicroBitAccelerometer::configure()
   *
   * @param reg The address of the register to write to.
   * @param value The value to write.
+  * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the the write request failed.
   */
-void MicroBitAccelerometer::writeCommand(uint8_t reg, uint8_t value)
+int MicroBitAccelerometer::writeCommand(uint8_t reg, uint8_t value)
 {
     uint8_t command[2];
     command[0] = reg;
     command[1] = value;
     
-    uBit.i2c.write(address, (const char *)command, 2);
+    return uBit.i2c.write(address, (const char *)command, 2);
 }
 
 /**
@@ -85,11 +103,24 @@ void MicroBitAccelerometer::writeCommand(uint8_t reg, uint8_t value)
   * @param reg The address of the register to access.
   * @param buffer Memory area to read the data into.
   * @param length The number of bytes to read.
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
   */
-void MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
+int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
 {
-    uBit.i2c.write(address, (const char *)&reg, 1, true);
-    uBit.i2c.read(address, (char *)buffer, length);
+    int result;
+
+    if (buffer == NULL || length <= 0 )
+        return MICROBIT_INVALID_PARAMETER;
+
+    result = uBit.i2c.write(address, (const char *)&reg, 1, true);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
+
+    result = uBit.i2c.read(address, (char *)buffer, length);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -114,15 +145,13 @@ MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address) : sa
     this->sampleRange = 2;
 
     // Configure and enable the accelerometer.
-    this->configure();
-
-    // indicate that we're ready to receive tick callbacks.
-    uBit.flags |= MICROBIT_FLAG_ACCELEROMETER_RUNNING;
+    if (this->configure() == MICROBIT_OK)
+        uBit.flags |= MICROBIT_FLAG_ACCELEROMETER_RUNNING;
 }
 
 /**
   * Attempts to determine the 8 bit ID from the accelerometer. 
-  * @return the 8 bit ID returned by the accelerometer
+  * @return the 8 bit ID returned by the accelerometer, or MICROBIT_I2C_ERROR if the request fails.
   *
   * Example:
   * @code 
@@ -132,20 +161,29 @@ MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address) : sa
 int MicroBitAccelerometer::whoAmI()
 {
     uint8_t data;
+    int result;
 
-    readCommand(MMA8653_WHOAMI, &data, 1);    
+    result = readCommand(MMA8653_WHOAMI, &data, 1);    
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
+
     return (int)data;
 }
 
 /**
   * Reads the acceleration data from the accelerometer, and stores it in our buffer.
   * This is called by the tick() member function, if the interrupt is set!
+  *
+  * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the read request fails.
   */
-void MicroBitAccelerometer::update()
+int MicroBitAccelerometer::update()
 {
     int8_t data[6];
+    int result;
 
-    readCommand(MMA8653_OUT_X_MSB, (uint8_t *)data, 6);
+    result = readCommand(MMA8653_OUT_X_MSB, (uint8_t *)data, 6);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
 
     // read MSB values...
     sample.x = data[0]; 
@@ -175,6 +213,8 @@ void MicroBitAccelerometer::update()
 
     // Indicate that a new sample is available
     MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
+
+    return MICROBIT_OK;
 };
 
 /**
@@ -182,11 +222,12 @@ void MicroBitAccelerometer::update()
  * n.b. the requested rate may not be possible on the hardware. In this case, the
  * nearest lower rate is chosen.
  * @param period the requested time between samples, in milliseconds.
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the request fails.
  */
-void MicroBitAccelerometer::setPeriod(int period)
+int MicroBitAccelerometer::setPeriod(int period)
 {
     this->samplePeriod = period;
-    this->configure();
+    return this->configure();
 }
 
 /**
@@ -203,11 +244,12 @@ int MicroBitAccelerometer::getPeriod()
  * n.b. the requested range may not be possible on the hardware. In this case, the
  * nearest lower rate is chosen.
  * @param range The requested sample range of samples, in g.
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the request fails.
  */
-void MicroBitAccelerometer::setRange(int range)
+int MicroBitAccelerometer::setRange(int range)
 {
     this->sampleRange = range;
-    this->configure();
+    return this->configure();
 }
 
 /**
