@@ -228,7 +228,7 @@ MicroBitImage::~MicroBitImage()
   */
 void MicroBitImage::init_empty()
 {   
-    ptr = MicroBitImage::EmptyImage.ptr;
+    ptr = (ImageData*)(void*)empty;
 }
 
 /**
