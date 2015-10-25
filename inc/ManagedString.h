@@ -1,24 +1,7 @@
 #ifndef MANAGED_STRING_H
 #define MANAGED_STRING_H
 
-#include "mbed.h"
-
-struct RefCounted
-{
-public:
-    uint16_t refcnt;
-    uint16_t size;
-
-    void incr();
-    void decr();
-
-};
-
-class VirtualRefCounted : RefCounted
-{
-public:
-    virtual ~VirtualRefCounted();
-};
+#include "RefCounted.h"
 
 struct StringData : RefCounted
 {
