@@ -7,11 +7,11 @@
 
 #include "MicroBit.h"
 
-static const uint8_t empty[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 1, 1, 0, 0 };
 
 /*
  * The null image. We actally create a small one byte buffer here, just to keep NULL pointers out of the equation.
  */
+static const uint8_t empty[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 1, 1, 0, 0 };
 MicroBitImage MicroBitImage::EmptyImage((ImageData*)(void*)empty);
 
 /**

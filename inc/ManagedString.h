@@ -21,11 +21,15 @@ struct StringData : RefCounted
   * 1) std::shared_ptr is not yet availiable on the ARMCC compiler
   * 2) to reduce memory footprint - we don't need many of the other features in the std library
   * 3) it makes an interestin case study for anyone interested in seeing how it works!
+  * 4) we need explicit reference counting to inter-op with low-level application langauge runtimes
+  * 5) the reference counting needs to also work for read-only, flash-resident strings
   */
 class ManagedString
 {
-    // Internally we record the string as a char *, but control access to this to proide immutability
-    // and reference counting.
+    // StringData contains the reference count, the length, follwed by char[] data, all in one block.
+    // When referece count is 0xffff, then it's read only and should not be counted.
+    // Otherwise the block was malloc()ed.
+    // We control access to this to proide immutability and reference counting.
     StringData *ptr;
 
     public:
@@ -140,7 +144,7 @@ class ManagedString
       *
       * Free this ManagedString, and decrement the reference count to the
       * internal character buffer. If we're holding the last reference,
-      * also free the character buffer and reference counter.
+      * also free the character buffer.
       */
     ~ManagedString();
     
@@ -282,7 +286,7 @@ class ManagedString
       */    
     const char *toCharArray() const
     {
-        ptr->isReadOnly();  // this performs sanity checks on refCount
+        // ptr->isReadOnly();  // this performs sanity checks on refCount
         return ptr->data;
     }
     

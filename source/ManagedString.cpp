@@ -3,8 +3,6 @@
 #include "mbed.h"
 #include "MicroBit.h"
 
-#define printf(...) uBit.serial.printf(__VA_ARGS__)
-
 static const char empty[] __attribute__ ((aligned (4))) = "\xff\xff\0\0\0";
 
 /**
