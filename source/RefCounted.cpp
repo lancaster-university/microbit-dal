@@ -20,12 +20,8 @@ void RefCounted::decr()
     if (refcnt == 0) {
         // size of 0xffff indicates a class with a virtual destructor
         if (size == 0xffff)
-            delete (VirtualRefCounted*)this;
+            uBit.panic(32);
         else
             free(this);
     }
-}
-
-VirtualRefCounted::~VirtualRefCounted()
-{
 }

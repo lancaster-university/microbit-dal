@@ -38,14 +38,4 @@ public:
 
 };
 
-/**
-  * Base class for ref-counted objects. Used in native compiler in TD for Collections,
-  * user-defined records, closures etc.
-  */
-class VirtualRefCounted : RefCounted
-{
-public:
-    virtual ~VirtualRefCounted();
-};
-
 #endif
