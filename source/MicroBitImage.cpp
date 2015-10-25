@@ -218,9 +218,9 @@ void MicroBitImage::init(const int16_t x, const int16_t y, const uint8_t *bitmap
     
     // Create a copy of the array
     ptr = (ImageData*)malloc(4 + x * y);
+    ptr->init();
     ptr->width = x;
     ptr->height = y;
-    ptr->refcnt = 1;
     
     // create a linear buffer to represent the image. We could use a jagged/2D array here, but experimentation
     // showed this had a negative effect on memory management (heap fragmentation etc).
@@ -283,7 +283,7 @@ bool MicroBitImage::operator== (const MicroBitImage& i)
     if (ptr == i.ptr)
         return true;
     else
-        return (ptr->size == i.ptr->size && (memcmp(getBitmap(), i.ptr->data, getSize())==0));    
+        return (ptr->width == i.ptr->width && ptr->height == i.ptr->height && (memcmp(getBitmap(), i.ptr->data, getSize())==0));    
 }
 
 

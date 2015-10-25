@@ -26,8 +26,8 @@ void ManagedString::initString(const char *str)
     // We assume the string is sane, and null terminated.
     int len = strlen(str);
     ptr = (StringData *) malloc(4+len+1);
-    ptr->size = len;
-    ptr->refcnt = 1;
+    ptr->init();
+    ptr->len = len;
     memcpy(ptr->data, str, len+1);
 }
 
@@ -96,8 +96,8 @@ ManagedString::ManagedString(const ManagedString &s1, const ManagedString &s2)
 
     // Create a new buffer for holding the new string data.
     ptr = (StringData*) malloc(4+len+1);
-    ptr->size = len;
-    ptr->refcnt = 1;
+    ptr->init();
+    ptr->len = len;
 
     // Enter the data, and terminate the string.
     memcpy(ptr->data, s1.toCharArray(), s1.length());
@@ -132,9 +132,9 @@ ManagedString::ManagedString(const char *str, const int16_t length)
     
     // Allocate a new buffer, and create a NULL terminated string.
     ptr = (StringData*) malloc(4+length+1);
+    ptr->init();
     // Store the length of the new string
-    ptr->size = length;
-    ptr->refcnt = 1;
+    ptr->len = length;
     memcpy(ptr->data, str, length);
     ptr->data[length] = 0;
 }
@@ -331,8 +331,6 @@ ManagedString ManagedString::substring(int16_t start, int16_t length)
   */     
 ManagedString ManagedString::operator+ (ManagedString& s)
 {
-    //printf("add(%d,%d)\n", this->length(), s.length()); uBit.sleep(100);
-        
     // If the other string is empty, nothing to do!
     if(s.length() == 0)
         return *this;

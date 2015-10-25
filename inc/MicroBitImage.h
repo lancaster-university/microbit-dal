@@ -6,7 +6,9 @@
 
 struct ImageData : RefCounted
 {
-    uint8_t data[0];
+    uint8_t width;      // Width in pixels
+    uint8_t height;     // Height in pixels
+    uint8_t data[0];    // 2D array representing the bitmap image
 };
 
 /**
@@ -18,7 +20,6 @@ struct ImageData : RefCounted
 class MicroBitImage
 {
     ImageData *ptr;     // Pointer to payload data
-                        // Width/height (in pixels) are in high/low byte of ptr->size
     
     
     /**

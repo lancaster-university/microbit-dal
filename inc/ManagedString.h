@@ -5,6 +5,7 @@
 
 struct StringData : RefCounted
 {
+    uint16_t len;
     char data[0];
 };
 
@@ -275,7 +276,7 @@ class ManagedString
       */    
     const char *toCharArray() const
     {
-        if (ptr->refcnt == 0) panic(243);
+        ptr->isReadOnly();  // this performs sanity checks on refCount
         return ptr->data;
     }
     
@@ -293,7 +294,7 @@ class ManagedString
       */ 
     int16_t length() const
     {
-        return ptr->size;
+        return ptr->len;
     }
 
     /**
