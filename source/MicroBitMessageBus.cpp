@@ -288,10 +288,12 @@ int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent)
 
 	MicroBitListener *newListener = new MicroBitListener(id, value, handler, flags);
 
-    if(add(newListener) != MICROBIT_OK)
-        delete newListener;
+    if(add(newListener) == MICROBIT_OK)
+        return MICROBIT_OK;
 
-    return MICROBIT_OK;
+    delete newListener;
+    return MICROBIT_NO_RESOURCES;
+
 }
 
 int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg, uint16_t flags) 
@@ -301,10 +303,11 @@ int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent,
 
 	MicroBitListener *newListener = new MicroBitListener(id, value, handler, arg, flags);
 
-    if(add(newListener) != MICROBIT_OK)
-        delete newListener;
-
+    if(add(newListener) == MICROBIT_OK)
     return MICROBIT_OK;
+
+    delete newListener;
+    return MICROBIT_NO_RESOURCES;
 }
 
 /**

@@ -256,7 +256,7 @@ class MicroBitMessageBus : public MicroBitComponent
 };
 
 /**
-  * A registrationt function to allow C++ member funcitons (methods) to be registered as an event
+  * A registration function to allow C++ member funcitons (methods) to be registered as an event
   * listener.
   *
   * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
@@ -278,10 +278,11 @@ int MicroBitMessageBus::listen(uint16_t id, uint16_t value, T* object, void (T::
 
 	MicroBitListener *newListener = new MicroBitListener(id, value, object, handler, flags);
 
-    if(!add(newListener))
-        delete newListener;
+    if(add(newListener) == MICROBIT_OK)
+        return MICROBIT_OK;
 
-    return MICROBIT_OK;
+    delete newListener;
+    return MICROBIT_NO_RESOURCES;
 }
 
 /**
