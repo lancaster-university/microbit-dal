@@ -138,7 +138,7 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
     if (params->handle == ioPinServiceDataCharacteristic->getValueHandle())
     {
         // We have some pin data to change...
-        int len = params->len;
+        uint16_t len = params->len;
         IOData *data = (IOData *)params->data;
 
         // There may be multiple write operaitons... take each in turn and update the pin values

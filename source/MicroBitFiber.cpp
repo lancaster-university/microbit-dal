@@ -130,8 +130,8 @@ Fiber *getFiberContext()
         if (f == NULL)
             return NULL;
 
-        f->stack_bottom = NULL;
-        f->stack_top = NULL;
+        f->stack_bottom = 0;
+        f->stack_top = 0;
     }    
    
     // Ensure this fiber is in suitable state for reuse. 
@@ -512,7 +512,7 @@ Fiber *__create_fiber(uint32_t ep, uint32_t cp, uint32_t pm, int parameterised)
   */
 Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void))
 {
-    return __create_fiber((uint32_t) entry_fn, (uint32_t)completion_fn, NULL, 0);
+    return __create_fiber((uint32_t) entry_fn, (uint32_t)completion_fn, 0, 0);
 }
 
 
@@ -535,6 +535,8 @@ Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)
   */
 void release_fiber(void * param)
 {
+    (void)param; /* -Wunused-parameter */
+
     release_fiber();
 }
 
@@ -688,7 +690,7 @@ void schedule()
         if (oldFiber == idleFiber)
         {
             // Just swap in the new fiber, and discard changes to stack and register context.
-            swap_context(NULL, &currentFiber->tcb, NULL, currentFiber->stack_top);
+            swap_context(NULL, &currentFiber->tcb, 0, currentFiber->stack_top);
         }
         else
         {

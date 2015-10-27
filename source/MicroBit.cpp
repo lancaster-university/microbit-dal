@@ -33,6 +33,9 @@ microbit_reset()
   */
 void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
+    (void) handle; /* -Wunused-param */
+    (void) reason; /* -Wunused-param */
+
     uBit.ble->startAdvertising(); 
 }
 
@@ -478,7 +481,7 @@ unsigned long MicroBit::systemTime()
  * @return A textual description of the currentlt executing micro:bit runtime.
  * TODO: handle overflow case.
  */
-char *MicroBit::systemVersion()
+const char *MicroBit::systemVersion()
 {
     return MICROBIT_DAL_VERSION;
 }

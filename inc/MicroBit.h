@@ -32,7 +32,11 @@
 #include "MicroBitFiber.h"
 #include "MicroBitMessageBus.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "ble/BLE.h"
+#pragma GCC diagnostic pop
+
 #include "ble/services/DeviceInformationService.h"
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
@@ -270,7 +274,7 @@ class MicroBit
       * @return A textual description of the currentlt executing micro:bit runtime.
       * TODO: handle overflow case.
       */
-    char *systemVersion();
+    const char *systemVersion();
 
     /**
       * Triggers a microbit panic where an infinite loop will occur swapping between the panicFace and statusCode if provided.

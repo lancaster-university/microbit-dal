@@ -87,7 +87,7 @@ void MicroBitDisplay::renderFinish()
     //kept inline to reduce overhead
     //clear the old bit pattern for this row.
     //clear port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0 | nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F); 
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0 | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F)); 
     
     // clear port 1 8-12 for the current row
     nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | 0x1F); 
@@ -132,7 +132,7 @@ void MicroBitDisplay::render()
                     
     //write the new bit pattern
     //set port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, ~coldata<<4 & 0xF0 | nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F); 
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F)); 
     
     //set port 1 8-12 for the current row
     nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); 
@@ -180,7 +180,7 @@ void MicroBitDisplay::renderGreyscale()
     }            
     //write the new bit pattern
     //set port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, ~coldata<<4 & 0xF0 | nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F); 
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F)); 
     
     //set port 1 8-12 for the current row
     nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); 
