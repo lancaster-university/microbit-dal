@@ -1,7 +1,7 @@
 # This file is no longer auto-generated to make the repository builds with GCC
 # and ARMCC no matter what.
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 2.8.12)
 
 enable_language(ASM)
 
