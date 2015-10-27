@@ -80,3 +80,9 @@ target_link_libraries(microbit-dal
     ble
     ble-nrf51822
 )
+
+if(CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(mbed-classic PRIVATE "-w")
+    target_compile_options(ble PRIVATE "-w")
+    target_compile_options(ble-nrf51822 PRIVATE "-w")
+endif()
