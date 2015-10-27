@@ -22,12 +22,6 @@ enum Error{
     MICROBIT_OOM = 20, 
 
     // Corruption detected in the micro:bit heap space
-    MICROBIT_HEAP_ERROR = 30,
-
-    // refcounter on an object is invalid (memory corruption)
-    MICROBIT_REF_COUNT_CORRUPTION = 31,
-
-    // refcounter was incremented/decremented after it already reached zero
-    MICROBIT_USE_AFTER_FREE = 32,
+    MICROBIT_HEAP_ERROR = 30
 };
 #endif

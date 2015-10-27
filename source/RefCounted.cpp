@@ -15,11 +15,9 @@ static inline bool isReadOnlyInline(RefCounted *t)
         return true; // object in flash
 
     // Do some sanity checking while we're here
-    if (refCount == 1)
-        uBit.panic(MICROBIT_USE_AFTER_FREE); // object should have been deleted
-
-    if ((refCount & 1) == 0)
-        uBit.panic(MICROBIT_REF_COUNT_CORRUPTION); // refCount doesn't look right
+    if (refCount == 1 ||        // object should have been deleted
+        (refCount & 1) == 0)    // refCount doesn't look right
+        uBit.panic(MICROBIT_HEAP_ERROR);
 
     // Not read only
     return false;
