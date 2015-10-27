@@ -11,7 +11,7 @@
 /*
  * The null image. We actally create a small one byte buffer here, just to keep NULL pointers out of the equation.
  */
-static const uint8_t empty[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 1, 1, 0, 0 };
+static const uint16_t empty[] __attribute__ ((aligned (4))) = { 0xffff, 1, 1, 0, };
 MicroBitImage MicroBitImage::EmptyImage((ImageData*)(void*)empty);
 
 /**
@@ -169,11 +169,11 @@ MicroBitImage::MicroBitImage(const char *s)
   * Constructor. 
   * Create an image from a specially prepared constant array, with no copying. Will call ptr->incr().
   *
-  * @param ptr The literal - first two bytes should be 0xff, then width, height, and the bitmap. The literal has to be 4-byte aligned.
+  * @param ptr The literal - first two bytes should be 0xff, then width, 0, height, 0, and the bitmap. Width and height are 16 bit. The literal has to be 4-byte aligned.
   * 
   * Example:
   * @code 
-  * static const uint8_t heart[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 10, 5, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
+  * static const uint8_t heart[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 10, 0, 5, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
   * MicroBitImage i((ImageData*)(void*)heart);
   * @endcode
   */
@@ -241,7 +241,7 @@ void MicroBitImage::init_empty()
 void MicroBitImage::init(const int16_t x, const int16_t y, const uint8_t *bitmap)
 {
     //sanity check size of image - you cannot have a negative sizes
-    if(x < 0 || y < 0 || x >= 0xff || y >= 0xff)
+    if(x < 0 || y < 0)
     {
         init_empty();
         return; 
