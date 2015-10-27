@@ -118,7 +118,9 @@ void MicroBit::init()
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, getSerial().toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    // Create a temporary, so that compiler doesn't delete the pointer before DeviceInformationService copies it
+    ManagedString tmp = getSerial();
+    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, tmp.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
@@ -221,9 +223,6 @@ ManagedString MicroBit::getName()
  */
 ManagedString MicroBit::getSerial()
 {
-    if (serialCache.length() > 0)
-        return serialCache;
-
     // We take to 16 bit numbers here, as we want the full range of ID bits, but don't want negative numbers...
     int n1 = NRF_FICR->DEVICEID[1] & 0xffff;
     int n2 = (NRF_FICR->DEVICEID[1] >> 16) & 0xffff;
@@ -232,9 +231,7 @@ ManagedString MicroBit::getSerial()
     ManagedString s1 = ManagedString(n1);
     ManagedString s2 = ManagedString(n2);
 
-    serialCache = s1 + s2;
-
-    return serialCache;
+    return s1 + s2;
 }
 
 /**

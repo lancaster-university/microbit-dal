@@ -77,7 +77,6 @@ class MicroBit
     
     void                    seedRandom();
     uint32_t                randomValue;
-    ManagedString           serialCache;
   
     public:
     
