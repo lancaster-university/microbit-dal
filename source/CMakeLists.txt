@@ -42,7 +42,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "rev-parse" "--abbrev-ref" "HEAD" OUTPUT_VARIABLE git_branch OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if (${git_branch} STREQUAL "master")
+if ("${git_branch}" STREQUAL "master")
     set(MICROBIT_DAL_VERSION_STRING "${YOTTA_MICROBIT_DAL_VERSION_STRING}")
 else()
     set(MICROBIT_DAL_VERSION_STRING "${YOTTA_MICROBIT_DAL_VERSION_STRING}-${git_branch}-g${git_hash}")
