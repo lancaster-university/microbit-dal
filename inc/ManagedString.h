@@ -286,7 +286,6 @@ class ManagedString
       */    
     const char *toCharArray() const
     {
-        // ptr->isReadOnly();  // this performs sanity checks on refCount
         return ptr->data;
     }
     
