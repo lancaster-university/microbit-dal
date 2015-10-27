@@ -42,7 +42,7 @@ void RefCounted::decr()
         return;
 
     refCount -= 2;
-    if (refCount == 2) {
+    if (refCount == 1) {
         free(this);
     }
 }
