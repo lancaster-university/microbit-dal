@@ -66,7 +66,7 @@ void async_callback(void *param)
         else
             listener->cb(listener->evt);
 
-        // If there are more events to process, dequeue te next one and process it.
+        // If there are more events to process, dequeue the next one and process it.
         if ((listener->flags & MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY) && listener->evt_queue)
         {
             MicroBitEventQueueItem *item = listener->evt_queue;

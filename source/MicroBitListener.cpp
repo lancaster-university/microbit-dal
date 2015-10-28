@@ -23,6 +23,7 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(
 	this->cb_arg = NULL;
     this->flags = flags;
 	this->next = NULL;
+    this->evt_queue = NULL;
 }
 
 /**
@@ -41,6 +42,7 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(
 	this->cb_arg = arg;
     this->flags = flags | MESSAGE_BUS_LISTENER_PARAMETERISED;
 	this->next = NULL;
+    this->evt_queue = NULL;
 }
 
 /**
