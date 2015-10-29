@@ -222,6 +222,12 @@ class MicroBitMessageBus : public MicroBitComponent
     int add(MicroBitListener *newListener);
     int remove(MicroBitListener *newListener);
 
+    /**
+     * Cleanup any MicroBitListeners marked for deletion from the list.
+     * @return The number of listeners removed from the list.
+     */
+    int deleteMarkedListeners();
+
 	MicroBitListener            *listeners;		    // Chain of active listeners.
     MicroBitEventQueueItem      *evt_queue_head;    // Head of queued events to be processed.
     MicroBitEventQueueItem      *evt_queue_tail;    // Tail of queued events to be processed.

@@ -221,15 +221,19 @@ void scheduler_event(MicroBitEvent evt)
         uint16_t value = (f->context & 0xFFFF0000) >> 16;
        
         // Special case for the NOTIFY_ONE channel...
-        if ((notifyOneComplete == 0) && (id == MICROBIT_ID_NOTIFY && evt.source == MICROBIT_ID_NOTIFY_ONE) && (value == MICROBIT_EVT_ANY || value == evt.value))
+        if ((evt.source == MICROBIT_ID_NOTIFY_ONE && id == MICROBIT_ID_NOTIFY) && (value == MICROBIT_EVT_ANY || value == evt.value))
         {
-            // Wakey wakey!
-            dequeue_fiber(f);
-            queue_fiber(f,&runQueue);
-            notifyOneComplete = 1;
+            if (!notifyOneComplete) 
+            {
+                // Wakey wakey!
+                dequeue_fiber(f);
+                queue_fiber(f,&runQueue);
+                notifyOneComplete = 1;
+            }
         }
 
-        if ((id == MICROBIT_ID_ANY || id == evt.source) && (value == MICROBIT_EVT_ANY || value == evt.value))
+        // Normal case.
+        else if ((id == MICROBIT_ID_ANY || id == evt.source) && (value == MICROBIT_EVT_ANY || value == evt.value))
         {
             // Wakey wakey!
             dequeue_fiber(f);

@@ -143,12 +143,54 @@ MicroBitEventQueueItem* MicroBitMessageBus::dequeueEvent()
 }
 
 /**
+  * Cleanup any MicroBitListeners marked for deletion from the list.
+  * @return The number of listeners removed from the list.
+  */
+int MicroBitMessageBus::deleteMarkedListeners()
+{
+	MicroBitListener *l, *p;
+    int removed = 0;
+
+	l = listeners;
+	p = NULL;
+
+    // Walk this list of event handlers. Delete any that match the given listener.
+    while (l != NULL)
+    {
+        if (l->flags & MESSAGE_BUS_LISTENER_DELETING)
+        {
+            if (p == NULL)
+                listeners = l->next;
+            else 
+                p->next = l->next;
+
+            // delete the listener.
+            MicroBitListener *t = l;
+            l = l->next;
+
+            delete t;
+            removed++;
+
+            continue;
+        }
+
+        p = l;
+        l = l->next;
+    }
+
+    return removed;
+}
+
+/**
   * Periodic callback from MicroBit.
   * Process at least one event from the event queue, if it is not empty.
   * We then continue processing events until something appears on the runqueue.
   */  
 void MicroBitMessageBus::idleTick()
 {
+    // Clear out any listeners marked for deletion
+    this->deleteMarkedListeners();
+
     MicroBitEventQueueItem *item = this->dequeueEvent();
 
     // Whilst there are events to process and we have no useful other work to do, pull them off the queue and process them.
@@ -225,7 +267,7 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, uint32_t mask)
     {
 	    if((l->id == evt.source || l->id == MICROBIT_ID_ANY) && (l->value == evt.value || l->value == MICROBIT_EVT_ANY))
         {
-            if(l->flags & mask) 
+            if(l->flags & mask && !(l->flags & MESSAGE_BUS_LISTENER_DELETING))
             {
                 l->evt = evt;
 
@@ -377,7 +419,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
     {
         methodCallback = (newListener->flags & MESSAGE_BUS_LISTENER_METHOD) && (l->flags & MESSAGE_BUS_LISTENER_METHOD);
 
-        if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb))
+        if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb) && !(l->flags & MESSAGE_BUS_LISTENER_DELETING))
             return 0;
 
         l = l->next;
@@ -437,7 +479,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
   */
 int MicroBitMessageBus::remove(MicroBitListener *listener)
 {
-	MicroBitListener *l, *p;
+	MicroBitListener *l;
     int removed = 0;
 
 	//handler can't be NULL!
@@ -445,7 +487,6 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
 		return 0;
 
 	l = listeners;
-	p = NULL;
 
     // Walk this list of event handlers. Delete any that match the given listener.
     while (l != NULL)
@@ -453,29 +494,16 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
         if ((listener->flags & MESSAGE_BUS_LISTENER_METHOD) == (l->flags & MESSAGE_BUS_LISTENER_METHOD))
         {
             if(((listener->flags & MESSAGE_BUS_LISTENER_METHOD) && (*l->cb_method == *listener->cb_method)) || 
-                    ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
+              ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
             {
                 if ((listener->id == MICROBIT_ID_ANY || listener->id == l->id) && (listener->value == MICROBIT_EVT_ANY || listener->value == l->value))
                 {
-                    // Found a match. Remove from the list.
-                    if (p == NULL)
-                        listeners = l->next;
-                    else 
-                        p->next = l->next;
-
-                    // delete the listener.
-                    MicroBitListener *t = l;
-                    l = l->next;
-
-                    delete t;
-                    removed++;
-
-                    continue;
+                    // Found a match. mark this to be removed from the list.
+                    l->flags |= MESSAGE_BUS_LISTENER_DELETING;
                 }
             }
         }
 
-        p = l;
         l = l->next;
     }
 
