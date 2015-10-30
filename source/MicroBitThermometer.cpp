@@ -1,4 +1,18 @@
 #include "MicroBit.h"
+
+/**
+  * Turn off unused-parameter warnings under gcc -Wall
+  * This turns them off for the entire compilation unit
+  * (i.e. the whole of this file) as the compiler can't
+  * tell that a parameter is unused until the end, and
+  * so we can't just turn it off as a guard around the
+  * next include.
+  * It might be better to add
+  * #pragram GCC system header
+  * as the first line of nrf_soc.h, but that's a different
+  * module ...
+  */
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "nrf_soc.h"
 
 /**
