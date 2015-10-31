@@ -92,6 +92,13 @@
 #endif
 
 //
+// Maximum event queue depth. If a queue exceeds this depth, further events will be dropped.
+// Used to prevent message queues growing uncontrollably due to badly behaved user code and causing panic conditions.
+// 
+#ifndef MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH
+#define MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH        20
+#endif
+//
 // Core micro:bit services
 //
 

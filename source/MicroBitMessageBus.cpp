@@ -15,6 +15,7 @@ MicroBitMessageBus::MicroBitMessageBus()
 	this->listeners = NULL;
     this->evt_queue_head = NULL;
     this->evt_queue_tail = NULL;
+    this->queueLength = 0;
 }
 
 /**
@@ -86,7 +87,6 @@ void async_callback(void *param)
     listener->flags &= ~MESSAGE_BUS_LISTENER_BUSY;
 }
 
-
 /**
   * Queue the given event for processing at a later time.
   * Add the given event at the tail of our queue.
@@ -97,24 +97,54 @@ void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
 {
     int processingComplete;
 
-    // Firstly, process all handler regsitered as URGENT. These pre-empt the queue, and are useful for fast, high priority services.
-    processingComplete = this->process(evt, MESSAGE_BUS_LISTENER_URGENT);
+    if (queueLength >= MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH)
+        return;
 
-    if (!processingComplete)
+    MicroBitEventQueueItem *item = new MicroBitEventQueueItem(evt);
+    MicroBitEventQueueItem *prev;
+
+    // Queue this event. We always do this to maintain event ordering...
+    // It costs a a little time and memory, but is worth it.
+    __disable_irq();
+
+    prev = evt_queue_tail;
+
+    if (evt_queue_tail == NULL)
     {
-        // We need to queue this event for later processing...
-        MicroBitEventQueueItem *item = new MicroBitEventQueueItem(evt);
+        evt_queue_head = evt_queue_tail = item;
+    }
+    else 
+    {
+        evt_queue_tail->next = item;
+        evt_queue_tail = item;
+    }
 
-        __disable_irq();
+    queueLength++;
 
-        if (evt_queue_tail == NULL)
-            evt_queue_head = evt_queue_tail = item;
-        else 
-            evt_queue_tail->next = item;
+    __enable_irq();
 
-        __enable_irq();
+    // Now process all handler regsitered as URGENT. 
+    // These pre-empt the queue, and are useful for fast, high priority services.
+    processingComplete = this->process(evt, true);
+
+    if (processingComplete)
+    {
+        // No more processing is required... drop the event from the list to avoid the need for processing later.
+        if (evt_queue_head == item)
+            evt_queue_head = item->next;
+
+        if (evt_queue_tail == item)
+            evt_queue_tail = prev;
+
+        if (prev)
+            prev->next = item->next;
+
+        queueLength--;
+
+        delete item;
     }
 }
+
 
 /**
   * Extract the next event from the front of the event queue (if present).
@@ -135,9 +165,12 @@ MicroBitEventQueueItem* MicroBitMessageBus::dequeueEvent()
 
         if (evt_queue_head == NULL)
             evt_queue_tail = NULL;
+
+        queueLength--;
     }
     
     __enable_irq();
+
 
     return item;
 }
@@ -254,20 +287,23 @@ void MicroBitMessageBus::send(MicroBitEvent evt)
  * This will attempt to call the event handler directly, but spawn a fiber should that
  * event handler attempt a blocking operation.
  * @param evt The event to be delivered.
- * @param mask The type of listeners to process (optional). Matches MicroBitListener flags. If not defined, all standard listeners will be processed.
- * @return The 1 if all matching listeners were processed, 0 if further processing is required.
+ * @param urgent The type of listeners to process (optional). If set to true, only listeners defined as urgent and non-blocking will be processed
+ * otherwise, all other (standard) listeners will be processed.
+ * @return 1 if all matching listeners were processed, 0 if further processing is required.
  */
-int MicroBitMessageBus::process(MicroBitEvent &evt, uint32_t mask)
+int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
 {
 	MicroBitListener *l;
     int complete = 1;
+    bool listenerUrgent;
 
     l = listeners;
     while (l != NULL)
     {
 	    if((l->id == evt.source || l->id == MICROBIT_ID_ANY) && (l->value == evt.value || l->value == MICROBIT_EVT_ANY))
         {
-            if(l->flags & mask && !(l->flags & MESSAGE_BUS_LISTENER_DELETING))
+            listenerUrgent = (l->flags & MESSAGE_BUS_LISTENER_IMMEDIATE) == MESSAGE_BUS_LISTENER_IMMEDIATE;
+            if(listenerUrgent == urgent && !(l->flags & MESSAGE_BUS_LISTENER_DELETING))
             {
                 l->evt = evt;
 

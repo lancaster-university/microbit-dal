@@ -66,6 +66,16 @@ int MicroBitMultiButton::isSubButtonHeld(uint16_t button)
     return 0;
 }
 
+int MicroBitMultiButton::isSubButtonSupressed(uint16_t button)
+{
+    if (button == button1)
+        return status & MICROBIT_MULTI_BUTTON_SUPRESSED_1;
+        
+    if (button == button2)
+        return status & MICROBIT_MULTI_BUTTON_SUPRESSED_2;
+        
+    return 0;
+}
 
 void MicroBitMultiButton::setButtonState(uint16_t button, int value)
 {
@@ -105,6 +115,26 @@ void MicroBitMultiButton::setHoldState(uint16_t button, int value)
     }
 }
 
+void MicroBitMultiButton::setSupressedState(uint16_t button, int value)
+{
+    if (button == button1)
+    {
+        if (value)
+            status |= MICROBIT_MULTI_BUTTON_SUPRESSED_1;
+        else
+            status &= ~MICROBIT_MULTI_BUTTON_SUPRESSED_1;
+    }
+        
+    if (button == button2)
+    {
+        if (value)
+            status |= MICROBIT_MULTI_BUTTON_SUPRESSED_2;
+        else
+            status &= ~MICROBIT_MULTI_BUTTON_SUPRESSED_2;
+    }
+}
+
+
 void MicroBitMultiButton::onEvent(MicroBitEvent evt)
 {
     int button = evt.source;
@@ -118,30 +148,40 @@ void MicroBitMultiButton::onEvent(MicroBitEvent evt)
                 MicroBitEvent e(id, MICROBIT_BUTTON_EVT_DOWN);
                 
         break;
-        
-        case MICROBIT_BUTTON_EVT_UP:
-            setButtonState(button, 0);
-            setHoldState(button, 0);
-            
-            if(isSubButtonPressed(otherButton))
-                MicroBitEvent e(id, MICROBIT_BUTTON_EVT_UP);
-        break;
-        
-        case MICROBIT_BUTTON_EVT_CLICK:
-        case MICROBIT_BUTTON_EVT_LONG_CLICK:
-            setButtonState(button, 0);
-            setHoldState(button, 0);
-            if(isSubButtonPressed(otherButton))
-                MicroBitEvent e(id, evt.value);
-            
-        break;
-        
+
         case MICROBIT_BUTTON_EVT_HOLD:
             setHoldState(button, 1);
             if(isSubButtonHeld(otherButton))
                 MicroBitEvent e(id, MICROBIT_BUTTON_EVT_HOLD);
             
         break;
+        
+        case MICROBIT_BUTTON_EVT_UP:
+            if(isSubButtonPressed(otherButton))
+            {
+                MicroBitEvent e(id, MICROBIT_BUTTON_EVT_UP);
+                
+                if (isSubButtonHeld(button) && isSubButtonHeld(otherButton))
+                    MicroBitEvent e(id, MICROBIT_BUTTON_EVT_LONG_CLICK);
+                else
+                    MicroBitEvent e(id, MICROBIT_BUTTON_EVT_CLICK);
+
+                setSupressedState(otherButton, 1);
+            }
+            else if (!isSubButtonSupressed(button))
+            {
+                if (isSubButtonHeld(button))
+                    MicroBitEvent e(button, MICROBIT_BUTTON_EVT_LONG_CLICK);
+                else
+                    MicroBitEvent e(button, MICROBIT_BUTTON_EVT_CLICK);
+            }
+
+            setButtonState(button, 0);
+            setHoldState(button, 0);
+            setSupressedState(button, 0);
+
+        break;
+
     }
 }
 

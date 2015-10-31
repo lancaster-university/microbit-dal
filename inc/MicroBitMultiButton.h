@@ -3,10 +3,12 @@
 
 #include "MicroBit.h"
 
-#define MICROBIT_MULTI_BUTTON_STATE_1               1
-#define MICROBIT_MULTI_BUTTON_STATE_2               2
-#define MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_1      4
-#define MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_2      8
+#define MICROBIT_MULTI_BUTTON_STATE_1               0x01
+#define MICROBIT_MULTI_BUTTON_STATE_2               0x02
+#define MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_1      0x04
+#define MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_2      0x08
+#define MICROBIT_MULTI_BUTTON_SUPRESSED_1           0X10 
+#define MICROBIT_MULTI_BUTTON_SUPRESSED_2           0x20
 
 /**
   * Class definition for MicroBitMultiButton.
@@ -22,8 +24,10 @@ class MicroBitMultiButton : public MicroBitComponent
     uint16_t    otherSubButton(uint16_t b);
     int         isSubButtonPressed(uint16_t button);
     int         isSubButtonHeld(uint16_t button);
+    int         isSubButtonSupressed(uint16_t button);
     void        setButtonState(uint16_t button, int value);
     void        setHoldState(uint16_t button, int value);
+    void        setSupressedState(uint16_t button, int value);
 
     public:
 

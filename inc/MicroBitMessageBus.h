@@ -64,10 +64,11 @@ class MicroBitMessageBus : public MicroBitComponent
       * or the constructors provided by MicroBitEvent.
 	  *
 	  * @param evt The event to send. 
-      * @param mask The type of listeners to process (optional). Matches MicroBitListener flags. If not defined, all standard listeners will be processed.
-      * @return The 1 if all matching listeners were processed, 0 if further processing is required.
+      * @param urgent The type of listeners to process (optional). If set to true, only listeners defined as urgent and non-blocking will be processed
+      * otherwise, all other (standard) listeners will be processed.
+      * @return 1 if all matching listeners were processed, 0 if further processing is required.
 	  */
-	int process(MicroBitEvent &evt, uint32_t mask = MESSAGE_BUS_LISTENER_REENTRANT | MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY |  MESSAGE_BUS_LISTENER_DROP_IF_BUSY |  MESSAGE_BUS_LISTENER_NONBLOCKING);
+	int process(MicroBitEvent &evt, bool urgent = false);
 
 	/**
 	  * Register a listener function.
@@ -232,6 +233,7 @@ class MicroBitMessageBus : public MicroBitComponent
     MicroBitEventQueueItem      *evt_queue_head;    // Head of queued events to be processed.
     MicroBitEventQueueItem      *evt_queue_tail;    // Tail of queued events to be processed.
     uint16_t                    nonce_val;          // The last nonce issued.
+    uint16_t                    queueLength;        // The number of events currently waiting to be processed.
             
     void queueEvent(MicroBitEvent &evt);
     MicroBitEventQueueItem* dequeueEvent();

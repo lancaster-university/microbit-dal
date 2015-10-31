@@ -478,7 +478,8 @@ void MicroBitDisplay::print(char c, int delay)
     if (animationMode == ANIMATION_MODE_NONE)
     {
         this->printAsync(c, delay);
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
     }
 }
 
@@ -509,7 +510,9 @@ void MicroBitDisplay::print(ManagedString s, int delay)
     if (animationMode == ANIMATION_MODE_NONE)
     {
         this->printAsync(s, delay);
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        //TODO: Put this in when we merge tight-validation
+        //if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
     }
 }
 
@@ -537,7 +540,8 @@ void MicroBitDisplay::print(MicroBitImage i, int x, int y, int alpha, int delay)
     if (animationMode == ANIMATION_MODE_NONE)
     {
         this->printAsync(i, x, y, alpha, delay);
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
     }
 }
 
@@ -632,7 +636,9 @@ void MicroBitDisplay::scroll(ManagedString s, int delay)
         this->scrollAsync(s, delay);
 
         // Wait for completion.
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        //TODO: Put this in when we merge tight-validation
+        //if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
     }
 }
 
@@ -663,7 +669,9 @@ void MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
         this->scrollAsync(image, delay, stride);
 
         // Wait for completion.
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        //TODO: Put this in when we merge tight-validation
+        //if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
     }
 }
 
@@ -740,7 +748,9 @@ void MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int st
         this->animateAsync(image, delay, stride, startingPosition);
 
         // Wait for completion.
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        //TODO: Put this in when we merge tight-validation
+        //if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
     }
 }
 
