@@ -1,19 +1,22 @@
 #include "MicroBit.h"
 
 /**
-  * Turn off unused-parameter warnings under gcc -Wall
-  * This turns them off for the entire compilation unit
-  * (i.e. the whole of this file) as the compiler can't
-  * tell that a parameter is unused until the end, and
-  * so we can't just turn it off as a guard around the
-  * next include.
-  * It might be better to add
+  * Turn off warnings under gcc -Wall
+  * We turn off unused-function for the entire compilation
+  * unit as the compiler can't tell if a function is
+  * unused until the end of the unit.  The macro
+  * expansion for SVCALL() in nrf_soc.h and nrf_srv.h
+  * tries to leave unused-function turned off, but
+  * It might be leaner to add
   * #pragram GCC system header
   * as the first line of nrf_soc.h, but that's a different
   * module ...
   */
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "nrf_soc.h"
+#pragma GCC diagnostic pop
 
 /**
   * Constructor. 
