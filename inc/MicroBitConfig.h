@@ -96,7 +96,7 @@
 // Used to prevent message queues growing uncontrollably due to badly behaved user code and causing panic conditions.
 // 
 #ifndef MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH
-#define MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH        20
+#define MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH        10
 #endif
 //
 // Core micro:bit services
