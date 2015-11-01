@@ -117,7 +117,7 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
                     uBit.display.clear();
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
-                    pc.printf("  ACTIVATING BOOTLOADER.\n");
+                    uBit.serial.printf("  ACTIVATING BOOTLOADER.\n");
 #endif
                     bootloader_start();    
                 }   
@@ -126,7 +126,7 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
             
             case MICROBIT_DFU_OPCODE_START_PAIR:
 #if CONFIG_ENABLED(MICROBIT_DBG)
-                pc.printf("  PAIRING REQUESTED.\n");
+                uBit.serial.printf("  PAIRING REQUESTED.\n");
 #endif
                 flashCodeRequested = true;
                 break;
@@ -143,7 +143,7 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
             if (lockCode == NRF_FICR->DEVICEID[0])
             {
 #if CONFIG_ENABLED(MICROBIT_DBG)
-                pc.printf("MicroBitDFU: FLASHCODE AUTHENTICATED\n");                
+                uBit.serial.printf("MicroBitDFU: FLASHCODE AUTHENTICATED\n");                
 #endif
                 authenticated = true;
             }else{

@@ -62,13 +62,13 @@ void microbit_heap_print(HeapDefinition &heap)
 
     if (heap.heap_start == NULL)
     {
-        pc.printf("--- HEAP NOT INITIALISED ---\n");
+        uBit.serial.printf("--- HEAP NOT INITIALISED ---\n");
         return;
     }
 
-    pc.printf("heap_start : %p\n", heap.heap_start);
-    pc.printf("heap_end   : %p\n", heap.heap_end);
-    pc.printf("heap_size  : %d\n", (int)heap.heap_end - (int)heap.heap_start);
+    uBit.serial.printf("heap_start : %p\n", heap.heap_start);
+    uBit.serial.printf("heap_end   : %p\n", heap.heap_end);
+    uBit.serial.printf("heap_size  : %d\n", (int)heap.heap_end - (int)heap.heap_start);
 
 	// Disable IRQ temporarily to ensure no race conditions!
     __disable_irq();
@@ -77,10 +77,10 @@ void microbit_heap_print(HeapDefinition &heap)
 	while (block < heap.heap_end)
 	{
 		blockSize = *block & ~MICROBIT_HEAP_BLOCK_FREE;
-        pc.printf("[%C:%d] ", *block & MICROBIT_HEAP_BLOCK_FREE ? 'F' : 'U', blockSize*4);
+        uBit.serialpc.printf("[%C:%d] ", *block & MICROBIT_HEAP_BLOCK_FREE ? 'F' : 'U', blockSize*4);
         if (cols++ == 20)
         {
-            pc.printf("\n");
+            uBit.serial.printf("\n");
             cols = 0;
         }
 
@@ -95,10 +95,10 @@ void microbit_heap_print(HeapDefinition &heap)
 	// Enable Interrupts
     __enable_irq();
 
-    pc.printf("\n");
+    uBit.serial.printf("\n");
 
-    pc.printf("mb_total_free : %d\n", totalFreeBlock*4);
-    pc.printf("mb_total_used : %d\n", totalUsedBlock*4);
+    uBit.serial.printf("mb_total_free : %d\n", totalFreeBlock*4);
+    uBit.serial.printf("mb_total_used : %d\n", totalUsedBlock*4);
 }
 
 
@@ -108,7 +108,7 @@ void microbit_heap_print()
 {
     for (int i=0; i < MICROBIT_HEAP_COUNT; i++)
     {
-        pc.printf("\nHEAP %d: \n", i);
+        uBit.serial.printf("\nHEAP %d: \n", i);
         microbit_heap_print(heap[i]);
     }
 }
@@ -329,7 +329,7 @@ void *microbit_malloc(size_t size)
             if (p != NULL)
             {
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
-                pc.printf("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
+                pc.uBit.serial("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
 #endif    
                 return p;
             }
@@ -345,7 +345,7 @@ void *microbit_malloc(size_t size)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
         // Keep everything trasparent if we've not been initialised yet
         if (microbit_active_heaps())
-            pc.printf("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
+            pc.uBit.serial("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
 #endif    
         return p;
     }
@@ -354,7 +354,7 @@ void *microbit_malloc(size_t size)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     // Keep everything trasparent if we've not been initialised yet
     if (microbit_active_heaps())
-        pc.printf("microbit_malloc: OUT OF MEMORY\n");
+        pc.uBit.serial("microbit_malloc: OUT OF MEMORY\n");
 #endif    
     
 #if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
@@ -375,7 +375,7 @@ void microbit_free(void *mem)
 
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     if (microbit_active_heaps())
-        pc.printf("microbit_free:   %p\n", mem);
+        pc.uBit.serial("microbit_free:   %p\n", mem);
 #endif    
     // Sanity check.
 	if (memory == NULL)

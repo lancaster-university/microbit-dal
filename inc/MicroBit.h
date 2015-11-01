@@ -62,10 +62,6 @@
 #define MICROBIT_PIN_SDA                P0_30
 #define MICROBIT_PIN_SCL                P0_0
 
-#if CONFIG_ENABLED(MICROBIT_DBG)
-extern Serial pc;
-#endif
-
 /**
   * Class definition for a MicroBit device.
   *
@@ -90,9 +86,7 @@ class MicroBit
     MicroBitI2C             i2c;  
     
     // Serial Interface
-#if CONFIG_DISABLED(MICROBIT_DBG)
     MicroBitSerial          serial;   
-#endif    
 
     // Array of components which are iterated during a system tick
     MicroBitComponent*      systemTickComponents[MICROBIT_SYSTEM_COMPONENTS];

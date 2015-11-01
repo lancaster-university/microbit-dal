@@ -58,9 +58,7 @@ void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t r
 MicroBit::MicroBit() : 
     flags(0x00),
     i2c(MICROBIT_PIN_SDA, MICROBIT_PIN_SCL),
-#if CONFIG_DISABLED(MICROBIT_DBG)
     serial(USBTX, USBRX),
-#endif    
     MessageBus(),
     display(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_WIDTH, MICROBIT_DISPLAY_HEIGHT),
     buttonA(MICROBIT_ID_BUTTON_A,MICROBIT_PIN_BUTTON_A, MICROBIT_BUTTON_SIMPLE_EVENTS),
@@ -92,6 +90,9 @@ MicroBit::MicroBit() :
   */
 void MicroBit::init()
 {   
+    // Set the default baud rate for the serial port.`
+    uBit.serial.baud(115200);
+        
     //add the display to the systemComponent array
     addSystemComponent(&uBit.display);
     
