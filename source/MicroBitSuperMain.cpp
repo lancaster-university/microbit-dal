@@ -60,17 +60,17 @@ int main()
                 uBit.ble = new BLEDevice();
                 uBit.ble->init();
                 uBit.ble->onDisconnection(bleDisconnectionCallback);
+
+                // Ensure we're advertising.
+                uBit.ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+                uBit.ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)MICROBIT_BLE_DEVICE_NAME, sizeof(MICROBIT_BLE_DEVICE_NAME));
+                uBit.ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
+                uBit.ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(200));
+                uBit.ble->startAdvertising();  
             }
 
             if (!uBit.ble_firmware_update_service)
                 uBit.ble_firmware_update_service = new MicroBitDFUService(*uBit.ble);
-
-            // Ensure we're advertising.
-            uBit.ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-            uBit.ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)MICROBIT_BLE_DEVICE_NAME, strlen(MICROBIT_BLE_DEVICE_NAME)+1);
-            uBit.ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-            uBit.ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(1000));
-            uBit.ble->startAdvertising();  
 
             // enter BLUE ZONE mode.
             uBit.ble_firmware_update_service->pair();
