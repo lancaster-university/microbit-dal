@@ -158,7 +158,7 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
   */
 void MicroBitDFUService::showTick()
 {
-    uBit.display.resetAnimation(0);
+    uBit.display.stopAnimation();
     
     uBit.display.image.setPixelValue(0,3, 255);
     uBit.display.image.setPixelValue(1,4, 255);
@@ -173,7 +173,7 @@ void MicroBitDFUService::showTick()
   */
 void MicroBitDFUService::showNameHistogram()
 {
-    uBit.display.resetAnimation(0);
+    uBit.display.stopAnimation();
 
     uint32_t n = NRF_FICR->DEVICEID[1];
     int ld = 1;

@@ -236,10 +236,10 @@ MicroBitDisplay::animationUpdate()
 void MicroBitDisplay::sendAnimationCompleteEvent()
 {
     // Signal that we've completed an animation.
-    MicroBitEvent evt1(id,MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
 
-    // Wake up any fibers that were blocked on the animation (if any).
-    MicroBitEvent evt2(MICROBIT_ID_ALERT, nonce);
+    // Wake up a fiber that was blocked on the animation (if any).
+    MicroBitEvent(MICROBIT_ID_NOTIFY_ONE, MICROBIT_DISPLAY_EVT_FREE);
 }
 
 /**
@@ -306,7 +306,6 @@ void MicroBitDisplay::updateScrollImage()
     scrollingImageRendered = true;
 }
 
-
 /**
   * Internal animateImage update method. 
   * Paste the stored bitmap at the appropriate point and stop on the last frame.
@@ -317,6 +316,7 @@ void MicroBitDisplay::updateAnimateImage()
     if (scrollingImagePosition <= -scrollingImage.getWidth() + (MICROBIT_DISPLAY_WIDTH + scrollingImageStride) && scrollingImageRendered)
     {
         animationMode = ANIMATION_MODE_NONE;  
+        this->clear();
         this->sendAnimationCompleteEvent();     
         return;
     }
@@ -333,38 +333,84 @@ void MicroBitDisplay::updateAnimateImage()
 
 /**
   * Resets the current given animation.
-  * @param delay the delay after which the animation is reset. Must be > 0.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
-int MicroBitDisplay::resetAnimation(uint16_t delay)
+void MicroBitDisplay::stopAnimation()
 {
-    //sanitise this value
-    if(delay <= 0 )
-        return MICROBIT_INVALID_PARAMETER;
-        
     // Reset any ongoing animation.
     if (animationMode != ANIMATION_MODE_NONE)
     {
         animationMode = ANIMATION_MODE_NONE;
-        this->sendAnimationCompleteEvent();
+
+        // Indicate that we've completed an animation.
+        MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+
+        // Wake up aall fibers that may blocked on the animation (if any).
+        MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_DISPLAY_EVT_FREE);
     }
     
     // Clear the display and setup the animation timers.
     this->image.clear();
-    this->animationDelay = delay;
-    this->animationTick = delay-1;
+}
+
+/**
+  * Blocks the current fiber until the display is available (i.e. not effect is being displayed).
+  * Animations are queued until their time to display.
+  *
+  */ 
+void MicroBitDisplay::waitForFreeDisplay()
+{
+    // If there's an ongoing animation, wait for our turn to display.
+    if (animationMode != ANIMATION_MODE_NONE && animationMode != ANIMATION_MODE_STOPPED)
+        fiber_wait_for_event(MICROBIT_ID_NOTIFY, MICROBIT_DISPLAY_EVT_FREE);
+}
+
+
+/**
+  * Prints the given character to the display, if it is not in use.
+  *
+  * @param c The character to display.
+  * @param delay Optional parameter - the time for which to show the character. Zero displays the character forever.
+  * @return MICROBIT_OK, MICROBIT_BUSY is the screen is in use, or MICROBIT_INVALID_PARAMETER.
+  * 
+  * Example:
+  * @code 
+  * uBit.display.printAsync('p');
+  * uBit.display.printAsync('p',100);
+  * @endcode
+  */
+int MicroBitDisplay::printAsync(char c, int delay)
+{
+    //sanitise this value
+    if(delay < 0)
+        return MICROBIT_INVALID_PARAMETER;
+
+    // If the display is free, it's our turn to display.
+    if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
+    {
+        image.print(c, 0, 0);
+
+        if (delay > 0)
+        {
+            animationDelay = delay;
+            animationTick = 0;
+            animationMode = ANIMATION_MODE_PRINT_CHARACTER;
+        }
+    }
+    else
+    {
+        return MICROBIT_BUSY;
+    }
 
     return MICROBIT_OK;
 }
 
 /**
-  * Prints the given string to the display, one character at a time.
-  * Uses the given delay between characters.
+  * Prints the given string to the display, one character at a time, if the display is not in use.
   * Returns immediately, and executes the animation asynchronously.
   *
   * @param s The string to display.
   * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -377,25 +423,75 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
     if(delay <= 0 )
         return MICROBIT_INVALID_PARAMETER;
     
-    this->resetAnimation(delay);
-    
-    this->printingChar = 0;
-    this->printingText = s;
-    
-    animationMode = ANIMATION_MODE_PRINT_TEXT;
+    if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
+    {
+        printingChar = 0;
+        printingText = s;
+        animationDelay = delay;
+        animationTick = 0;
+
+        animationMode = ANIMATION_MODE_PRINT_TEXT;
+    } 
+    else
+    {
+        return MICROBIT_BUSY;
+    }
+
+    return MICROBIT_OK;
+
+}
+
+/**
+  * Prints the given image to the display, if the display is not in use.
+  * Returns immediately, and executes the animation asynchronously.
+  *
+  * @param i The image to display.
+  * @param x The horizontal position on the screen to display the image (default 0)
+  * @param y The vertical position on the screen to display the image (default 0)
+  * @param alpha Treats the brightness level '0' as transparent (default 0) 
+  * @param delay The time to delay between characters, in milliseconds. set to 0 to display forever. (default 0).
+  *
+  * Example:
+  * @code
+  * MicrobitImage i("1,1,1,1,1\n1,1,1,1,1\n");
+  * uBit.display.print(i,400);
+  * @endcode
+  */
+int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int delay)
+{
+    if(delay < 0)
+        return MICROBIT_INVALID_PARAMETER;
+
+    if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
+    {
+        image.paste(i, x, y, alpha);
+
+        if(delay > 0)
+        {
+            animationDelay = delay;
+            animationTick = 0;
+            animationMode = ANIMATION_MODE_PRINT_CHARACTER;
+        }
+    }
+    else
+    {
+        return MICROBIT_BUSY;
+    }
+
     return MICROBIT_OK;
 }
 
 /**
-  * Prints the given character to the display.
+  * Prints the given character to the display, and wait for it to complete.
   *
   * @param c The character to display.
   * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
   * 
   * Example:
   * @code 
   * uBit.display.print('p');
+  * uBit.display.print('p',100);
   * @endcode
   */
 int MicroBitDisplay::print(char c, int delay)
@@ -403,17 +499,21 @@ int MicroBitDisplay::print(char c, int delay)
     if (delay < 0)
         return MICROBIT_INVALID_PARAMETER;
 
-    image.print(c, 0, 0);
-    
-    if (delay == 0)
-        return MICROBIT_OK;
-        
-    this->animationDelay = delay;
-    animationMode = ANIMATION_MODE_PRINT_CHARACTER;
-    
-    // Wait for completion.
-    nonce = uBit.MessageBus.nonce();
-    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
+    // If there's an ongoing animation, wait for our turn to display.
+    this->waitForFreeDisplay();
+
+    // If the display is free, it's our turn to display.
+    // If someone called stopAnimation(), then we simply skip...
+    if (animationMode == ANIMATION_MODE_NONE)
+    {
+        this->printAsync(c, delay);
+        if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    }
+    else
+    {
+        return MICROBIT_CANCELLED;
+    }
 
     return MICROBIT_OK;
 }
@@ -425,7 +525,7 @@ int MicroBitDisplay::print(char c, int delay)
   *
   * @param s The string to display.
   * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -438,12 +538,20 @@ int MicroBitDisplay::print(ManagedString s, int delay)
     if(delay <= 0 )
         return MICROBIT_INVALID_PARAMETER;
     
-    // Start the effect.
-    this->printAsync(s, delay);
-    
-    // Wait for completion.
-    nonce = uBit.MessageBus.nonce();
-    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
+    // If there's an ongoing animation, wait for our turn to display.
+    this->waitForFreeDisplay();
+
+    // If the display is free, it's our turn to display.
+    // If someone called stopAnimation(), then we simply skip...
+    if (animationMode == ANIMATION_MODE_NONE)
+    {
+        this->printAsync(s, delay);
+        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    }
+    else
+    {
+        return MICROBIT_CANCELLED;
+    }
 
     return MICROBIT_OK;
 }
@@ -454,7 +562,7 @@ int MicroBitDisplay::print(ManagedString s, int delay)
   *
   * @param i The image to display.
   * @param delay The time to display the image for, or zero to show the image forever. Must be >= 0.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -467,17 +575,21 @@ int MicroBitDisplay::print(MicroBitImage i, int x, int y, int alpha, int delay)
     if(delay < 0)
         return MICROBIT_INVALID_PARAMETER;
 
-    image.paste(i, x, y, alpha);
-    
-    if(delay == 0)
-        return MICROBIT_OK;
-        
-    this->animationDelay = delay;
-    animationMode = ANIMATION_MODE_PRINT_CHARACTER;
-    
-    // Wait for completion.
-    nonce = uBit.MessageBus.nonce();
-    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
+    // If there's an ongoing animation, wait for our turn to display.
+    this->waitForFreeDisplay();
+
+    // If the display is free, it's our turn to display.
+    // If someone called stopAnimation(), then we simply skip...
+    if (animationMode == ANIMATION_MODE_NONE)
+    {
+        this->printAsync(i, x, y, alpha, delay);
+        if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    }
+    else
+    {
+        return MICROBIT_CANCELLED;
+    }
 
     return MICROBIT_OK;
 }
@@ -489,7 +601,7 @@ int MicroBitDisplay::print(MicroBitImage i, int x, int y, int alpha, int delay)
   *
   * @param s The string to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -502,13 +614,21 @@ int MicroBitDisplay::scrollAsync(ManagedString s, int delay)
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
     
-    this->resetAnimation(delay);
-    
-    this->scrollingPosition = width-1;
-    this->scrollingChar = 0;
-    this->scrollingText = s;
-    
-    animationMode = ANIMATION_MODE_SCROLL_TEXT;
+    // If the display is free, it's our turn to display.
+    if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
+    {
+        scrollingPosition = width-1;
+        scrollingChar = 0;
+        scrollingText = s;
+
+        animationDelay = delay;
+        animationTick = 0;
+        animationMode = ANIMATION_MODE_SCROLL_TEXT;
+    }
+    else
+    {
+        return MICROBIT_BUSY;
+    }
 
     return MICROBIT_OK;
 }
@@ -520,7 +640,7 @@ int MicroBitDisplay::scrollAsync(ManagedString s, int delay)
   * @param image The image to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
   * @param stride The number of pixels to move in each update. Default value is the screen width.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -533,15 +653,23 @@ int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
     //sanitise the delay value
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
-            
-    this->resetAnimation(delay);
 
-    this->scrollingImagePosition = stride < 0 ? width : -image.getWidth();
-    this->scrollingImageStride = stride;
-    this->scrollingImage = image;
-    this->scrollingImageRendered = false;
-        
-    animationMode = ANIMATION_MODE_SCROLL_IMAGE;
+    // If the display is free, it's our turn to display.
+    if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
+    {
+        scrollingImagePosition = stride < 0 ? width : -image.getWidth();
+        scrollingImageStride = stride;
+        scrollingImage = image;
+        scrollingImageRendered = false;
+
+        animationDelay = delay;
+        animationTick = 0;
+        animationMode = ANIMATION_MODE_SCROLL_IMAGE;
+    }
+    else
+    {
+        return MICROBIT_BUSY;
+    }
 
     return MICROBIT_OK;
 }
@@ -553,7 +681,7 @@ int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
   *
   * @param s The string to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
   * 
   * Example:
   * @code 
@@ -565,14 +693,25 @@ int MicroBitDisplay::scroll(ManagedString s, int delay)
     //sanitise this value
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
-    
-    // Start the effect.
-    this->scrollAsync(s, delay);
-    
-    // Wait for completion.
-    nonce = uBit.MessageBus.nonce();
-    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
 
+    // If there's an ongoing animation, wait for our turn to display.
+    this->waitForFreeDisplay();
+
+    // If the display is free, it's our turn to display.
+    // If someone called stopAnimation(), then we simply skip...
+    if (animationMode == ANIMATION_MODE_NONE)
+    {
+        // Start the effect.
+        this->scrollAsync(s, delay);
+
+        // Wait for completion.
+        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    } 
+    else
+    {
+        return MICROBIT_CANCELLED;
+    }
+    
     return MICROBIT_OK;
 }
 
@@ -583,7 +722,7 @@ int MicroBitDisplay::scroll(ManagedString s, int delay)
   * @param image The image to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
   * @param stride The number of pixels to move in each update. Default value is the screen width.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -597,12 +736,23 @@ int MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
     
-    // Start the effect.
-    this->scrollAsync(image, delay, stride);
-    
-    // Wait for completion.
-    nonce = uBit.MessageBus.nonce();
-    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
+    // If there's an ongoing animation, wait for our turn to display.
+    this->waitForFreeDisplay();
+
+    // If the display is free, it's our turn to display.
+    // If someone called stopAnimation(), then we simply skip...
+    if (animationMode == ANIMATION_MODE_NONE)
+    {
+        // Start the effect.
+        this->scrollAsync(image, delay, stride);
+
+        // Wait for completion.
+        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    }
+    else
+    {
+        return MICROBIT_CANCELLED;
+    }
 
     return MICROBIT_OK;
 }
@@ -614,7 +764,7 @@ int MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
   * @param image The image to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
   * @param stride The number of pixels to move in each update. Default value is the screen width.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -632,26 +782,26 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
 
-    // Assume right to left functionality, to align with scrollString()
-    stride = -stride;
-    
-    // Reset any ongoing animation.
-    if (animationMode != ANIMATION_MODE_NONE)
+    // If the display is free, we can display.
+    if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
     {
-        animationMode = ANIMATION_MODE_NONE;
-        this->sendAnimationCompleteEvent();
-    }
-            
-    this->animationDelay = delay;
-    this->animationTick = delay-1;
+        // Assume right to left functionality, to align with scrollString()
+        stride = -stride;
 
-    //calculate starting position which is offset by the stride
-    this->scrollingImagePosition = (startingPosition == MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS)?MICROBIT_DISPLAY_WIDTH + stride:startingPosition; 
-    this->scrollingImageStride = stride;
-    this->scrollingImage = image;
-    this->scrollingImageRendered = false;
-    
-    animationMode = ANIMATION_MODE_ANIMATE_IMAGE;
+        //calculate starting position which is offset by the stride
+        scrollingImagePosition = (startingPosition == MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS) ? MICROBIT_DISPLAY_WIDTH + stride : startingPosition; 
+        scrollingImageStride = stride;
+        scrollingImage = image;
+        scrollingImageRendered = false;
+
+        animationDelay = delay;
+        animationTick = delay-1;
+        animationMode = ANIMATION_MODE_ANIMATE_IMAGE;
+    }
+    else
+    {
+        return MICROBIT_BUSY;
+    }
 
     return MICROBIT_OK;
 }
@@ -663,7 +813,7 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
   * @param image The image to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
   * @param stride The number of pixels to move in each update. Default value is the screen width.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -680,14 +830,26 @@ int MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int sta
     //sanitise the delay value
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
-    
-    // Start the effect.
-    this->animateAsync(image, delay, stride, startingPosition);
-    
-    // Wait for completion.
-    nonce = uBit.MessageBus.nonce();
-    fiber_wait_for_event(MICROBIT_ID_ALERT, nonce);
 
+    // If there's an ongoing animation, wait for our turn to display.
+    this->waitForFreeDisplay();
+
+    // If the display is free, it's our turn to display.
+    // If someone called stopAnimation(), then we simply skip...
+    if (animationMode == ANIMATION_MODE_NONE)
+    {
+        // Start the effect.
+        this->animateAsync(image, delay, stride, startingPosition);
+
+        // Wait for completion.
+        //TODO: Put this in when we merge tight-validation
+        //if (delay > 0)
+            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+    }
+    else
+    {
+        return MICROBIT_CANCELLED;
+    }
     return MICROBIT_OK;
 }
 

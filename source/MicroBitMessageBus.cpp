@@ -15,18 +15,7 @@ MicroBitMessageBus::MicroBitMessageBus()
 	this->listeners = NULL;
     this->evt_queue_head = NULL;
     this->evt_queue_tail = NULL;
-    this->nonce_val = 0;
-}
-
-/**
- * Returns a 'nonce' for use with the NONCE_ID channel of the message bus.
- */
-uint16_t MicroBitMessageBus::nonce()
-{
-    // In the global scheme of things, a terrible nonce generator. 
-    // However, for our purposes, this is simple and adequate for local use.
-    // This would be a bad idea if our events were networked though - can you think why?
-    return nonce_val++;
+    this->queueLength = 0;
 }
 
 /**
@@ -78,7 +67,7 @@ void async_callback(void *param)
         else
             listener->cb(listener->evt);
 
-        // If there are more events to process, dequeue te next one and process it.
+        // If there are more events to process, dequeue the next one and process it.
         if ((listener->flags & MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY) && listener->evt_queue)
         {
             MicroBitEventQueueItem *item = listener->evt_queue;
@@ -86,6 +75,9 @@ void async_callback(void *param)
             listener->evt = item->evt;
             listener->evt_queue = listener->evt_queue->next;
             delete item;
+
+            // We spin the scheduler here, to preven any particular event handler from continuously holding onto resources.
+            schedule();
         }
         else
             break;
@@ -94,7 +86,6 @@ void async_callback(void *param)
     // The fiber of exiting... clear our state.
     listener->flags &= ~MESSAGE_BUS_LISTENER_BUSY;
 }
-
 
 /**
   * Queue the given event for processing at a later time.
@@ -106,23 +97,47 @@ void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
 {
     int processingComplete;
 
-    // Firstly, process all handler regsitered as URGENT. These pre-empt the queue, and are useful for fast, high priority services.
-    processingComplete = this->process(evt, MESSAGE_BUS_LISTENER_URGENT);
+    MicroBitEventQueueItem *prev = evt_queue_tail;
 
-    if (!processingComplete)
+    // Now process all handler regsitered as URGENT. 
+    // These pre-empt the queue, and are useful for fast, high priority services.
+    processingComplete = this->process(evt, true);
+
+    // If we've already processed all event handlers, we're all done.
+    // No need to queue the event.
+    if (processingComplete)
+        return;
+
+    // If we need to queue, but there is no space, then there's nothg we can do.
+    if (queueLength >= MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH)
+        return;
+
+    // Otherwise, we need to queue this event for later processing...
+    // We queue this event at the tail of the queue at the point where we entered queueEvent()
+    // This is important as the processing above *may* have generated further events, and
+    // we want to maintain ordering of events.
+    MicroBitEventQueueItem *item = new MicroBitEventQueueItem(evt);
+
+    // The queue was empty when we entered this function, so queue our event at the start of the queue.
+    __disable_irq();
+
+    if (prev == NULL)
     {
-        // We need to queue this event for later processing...
-        MicroBitEventQueueItem *item = new MicroBitEventQueueItem(evt);
-
-        __disable_irq();
-
-        if (evt_queue_tail == NULL)
-            evt_queue_head = evt_queue_tail = item;
-        else 
-            evt_queue_tail->next = item;
-
-        __enable_irq();
+        item->next = evt_queue_head;
+        evt_queue_head = item;
+    } 
+    else
+    {
+        item->next = prev->next;
+        prev->next = item;
     }
+
+    if (item->next == NULL)
+        evt_queue_tail = item;
+
+    queueLength++;
+
+    __enable_irq();
 }
 
 /**
@@ -144,11 +159,53 @@ MicroBitEventQueueItem* MicroBitMessageBus::dequeueEvent()
 
         if (evt_queue_head == NULL)
             evt_queue_tail = NULL;
+
+        queueLength--;
     }
     
     __enable_irq();
 
+
     return item;
+}
+
+/**
+  * Cleanup any MicroBitListeners marked for deletion from the list.
+  * @return The number of listeners removed from the list.
+  */
+int MicroBitMessageBus::deleteMarkedListeners()
+{
+	MicroBitListener *l, *p;
+    int removed = 0;
+
+	l = listeners;
+	p = NULL;
+
+    // Walk this list of event handlers. Delete any that match the given listener.
+    while (l != NULL)
+    {
+        if (l->flags & MESSAGE_BUS_LISTENER_DELETING && !l->flags & MESSAGE_BUS_LISTENER_BUSY)
+        {
+            if (p == NULL)
+                listeners = l->next;
+            else 
+                p->next = l->next;
+
+            // delete the listener.
+            MicroBitListener *t = l;
+            l = l->next;
+
+            delete t;
+            removed++;
+
+            continue;
+        }
+
+        p = l;
+        l = l->next;
+    }
+
+    return removed;
 }
 
 /**
@@ -158,6 +215,9 @@ MicroBitEventQueueItem* MicroBitMessageBus::dequeueEvent()
   */  
 void MicroBitMessageBus::idleTick()
 {
+    // Clear out any listeners marked for deletion
+    this->deleteMarkedListeners();
+
     MicroBitEventQueueItem *item = this->dequeueEvent();
 
     // Whilst there are events to process and we have no useful other work to do, pull them off the queue and process them.
@@ -219,20 +279,23 @@ void MicroBitMessageBus::send(MicroBitEvent evt)
  * This will attempt to call the event handler directly, but spawn a fiber should that
  * event handler attempt a blocking operation.
  * @param evt The event to be delivered.
- * @param mask The type of listeners to process (optional). Matches MicroBitListener flags. If not defined, all standard listeners will be processed.
- * @return The 1 if all matching listeners were processed, 0 if further processing is required.
+ * @param urgent The type of listeners to process (optional). If set to true, only listeners defined as urgent and non-blocking will be processed
+ * otherwise, all other (standard) listeners will be processed.
+ * @return 1 if all matching listeners were processed, 0 if further processing is required.
  */
-int MicroBitMessageBus::process(MicroBitEvent &evt, uint32_t mask)
+int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
 {
 	MicroBitListener *l;
     int complete = 1;
+    bool listenerUrgent;
 
     l = listeners;
     while (l != NULL)
     {
 	    if((l->id == evt.source || l->id == MICROBIT_ID_ANY) && (l->value == evt.value || l->value == MICROBIT_EVT_ANY))
         {
-            if(l->flags & mask) 
+            listenerUrgent = (l->flags & MESSAGE_BUS_LISTENER_IMMEDIATE) == MESSAGE_BUS_LISTENER_IMMEDIATE;
+            if(listenerUrgent == urgent && !(l->flags & MESSAGE_BUS_LISTENER_DELETING))
             {
                 l->evt = evt;
 
@@ -292,6 +355,7 @@ int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent)
         return MICROBIT_OK;
 
     delete newListener;
+
     return MICROBIT_NO_RESOURCES;
 
 }
@@ -304,9 +368,10 @@ int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent,
 	MicroBitListener *newListener = new MicroBitListener(id, value, handler, arg, flags);
 
     if(add(newListener) == MICROBIT_OK)
-    return MICROBIT_OK;
+        return MICROBIT_OK;
 
     delete newListener;
+
     return MICROBIT_NO_RESOURCES;
 }
 
@@ -398,7 +463,15 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
         methodCallback = (newListener->flags & MESSAGE_BUS_LISTENER_METHOD) && (l->flags & MESSAGE_BUS_LISTENER_METHOD);
 
         if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb))
+        {
+            // We have a perfect match for this event listener already registered. 
+            // If it's marked for deletion, we simply resurrect the listener, and we're done.
+            // Either way, we return an error code, as the *new* listener should be released...
+            if(l->flags & MESSAGE_BUS_LISTENER_DELETING)
+                l->flags &= ~MESSAGE_BUS_LISTENER_DELETING;
+
             return MICROBIT_NOT_SUPPORTED;
+        }
 
         l = l->next;
     }
@@ -457,7 +530,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
  */
 int MicroBitMessageBus::remove(MicroBitListener *listener)
 {
-	MicroBitListener *l, *p;
+	MicroBitListener *l;
     int removed = 0;
 
 	//handler can't be NULL!
@@ -465,7 +538,6 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
 		return MICROBIT_INVALID_PARAMETER;
 
 	l = listeners;
-	p = NULL;
 
     // Walk this list of event handlers. Delete any that match the given listener.
     while (l != NULL)
@@ -473,33 +545,24 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
         if ((listener->flags & MESSAGE_BUS_LISTENER_METHOD) == (l->flags & MESSAGE_BUS_LISTENER_METHOD))
         {
             if(((listener->flags & MESSAGE_BUS_LISTENER_METHOD) && (*l->cb_method == *listener->cb_method)) || 
-                    ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
+              ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
             {
                 if ((listener->id == MICROBIT_ID_ANY || listener->id == l->id) && (listener->value == MICROBIT_EVT_ANY || listener->value == l->value))
                 {
-                    // Found a match. Remove from the list.
-                    if (p == NULL)
-                        listeners = l->next;
-                    else 
-                        p->next = l->next;
-
-                    // delete the listener.
-                    MicroBitListener *t = l;
-                    l = l->next;
-
-                    delete t;
+                    // Found a match. mark this to be removed from the list.
+                    l->flags |= MESSAGE_BUS_LISTENER_DELETING;
                     removed++;
-
-                    continue;
                 }
             }
         }
 
-        p = l;
         l = l->next;
     }
 
-    return MICROBIT_OK;
+    if (removed > 0)
+        return MICROBIT_OK;
+    else
+        return MICROBIT_INVALID_PARAMETER;
 }
 
 /**

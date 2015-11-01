@@ -11,6 +11,7 @@
   * MessageBus Event Codes
   */
 #define MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE         1
+#define MICROBIT_DISPLAY_EVT_FREE                       2
 
 /**
   * I/O configurations for common devices.
@@ -62,6 +63,7 @@
 
 enum AnimationMode {
     ANIMATION_MODE_NONE,
+    ANIMATION_MODE_STOPPED,
     ANIMATION_MODE_SCROLL_TEXT,
     ANIMATION_MODE_PRINT_TEXT,
     ANIMATION_MODE_SCROLL_IMAGE,
@@ -102,7 +104,6 @@ class MicroBitDisplay : public MicroBitComponent
     uint8_t mode;
     uint8_t greyscaleBitMsk;
     uint8_t timingCount;
-    uint16_t nonce;
     Timeout renderTimer;
 
     MicroBitFont font;
@@ -220,6 +221,11 @@ class MicroBitDisplay : public MicroBitComponent
       */
     void sendAnimationCompleteEvent();
 
+    /**
+      * Blocks the current fiber until the display is available (i.e. not effect is being displayed).
+      * Animations are queued until their time to display.
+      */ 
+    void waitForFreeDisplay();
 
 public:
     // The mutable bitmap buffer being rendered to the LED matrix.
@@ -241,17 +247,30 @@ public:
     MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y);
 
     /**
-      * Resets the current given animation.
-      * @param delay the delay after which the animation is reset. Must be > 0.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * Stops any currently running animation, and any that are waiting to be displayed.
       */
-    int resetAnimation(uint16_t delay);
+    void stopAnimation();
 
     /**
       * Frame update method, invoked periodically to strobe the display.
       */
     virtual void systemTick();
     
+    /**
+     * Prints the given character to the display, if it is not in use.
+     *
+     * @param c The character to display.
+     * @param delay Optional parameter - the time for which to show the character. Zero displays the character forever.
+     * @return MICROBIT_OK, MICROBIT_BUSY is the screen is in use, or MICROBIT_INVALID_PARAMETER.
+     * 
+     * Example:
+     * @code 
+     * uBit.display.printAsync('p');
+     * uBit.display.printAsync('p',100);
+     * @endcode
+     */
+    int printAsync(char c, int delay = 0);
+
     /**
       * Prints the given string to the display, one character at a time.
       * Uses the given delay between characters.
@@ -269,11 +288,29 @@ public:
     int printAsync(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
 
     /**
+     * Prints the given image to the display, if the display is not in use.
+     * Returns immediately, and executes the animation asynchronously.
+     *
+     * @param i The image to display.
+     * @param x The horizontal position on the screen to display the image (default 0)
+     * @param y The vertical position on the screen to display the image (default 0)
+     * @param alpha Treats the brightness level '0' as transparent (default 0) 
+     * @param delay The time to delay between characters, in milliseconds. set to 0 to display forever. (default 0).
+     *
+     * Example:
+     * @code
+     * MicrobitImage i("1,1,1,1,1\n1,1,1,1,1\n");
+     * uBit.display.print(i,400);
+     * @endcode
+     */
+    int printAsync(MicroBitImage i, int x, int y, int alpha, int delay = 0);
+
+    /**
       * Prints the given character to the display.
       *
       * @param c The character to display.
       * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -289,7 +326,7 @@ public:
       *
       * @param s The string to display.
       * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -304,7 +341,7 @@ public:
       *
       * @param i The image to display.
       * @param delay The time to display the image for, or zero to show the image forever. Must be >= 0.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -312,7 +349,7 @@ public:
       * uBit.display.print(i,400);
       * @endcode
       */
-    int print(MicroBitImage i, int x, int y, int alpha, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+    int print(MicroBitImage i, int x, int y, int alpha, int delay = 0);
     
     /**
       * Scrolls the given string to the display, from right to left.
@@ -321,7 +358,7 @@ public:
       *
       * @param s The string to display.
       * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -337,7 +374,7 @@ public:
       * @param image The image to display.
       * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
       * @param stride The number of pixels to move in each update. Default value is the screen width.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -354,7 +391,7 @@ public:
       *
       * @param s The string to display.
       * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -370,7 +407,7 @@ public:
       * @param image The image to display.
       * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
       * @param stride The number of pixels to move in each update. Default value is the screen width.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -387,7 +424,7 @@ public:
       * @param image The image to display.
       * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
       * @param stride The number of pixels to move in each update. Default value is the screen width.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -408,7 +445,7 @@ public:
       * @param image The image to display.
       * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
       * @param stride The number of pixels to move in each update. Default value is the screen width.
-      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code

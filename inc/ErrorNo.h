@@ -23,6 +23,12 @@ enum ErrorCode{
     // The requested operation could not be performed as the device has run out of some essential resource (e.g. allocated memory)
     MICROBIT_NO_RESOURCES = -1005,
 
+    // The requested operation could not be performed as some essential resource is busy (e.g. the display)
+    MICROBIT_BUSY = -1006,
+
+    // The requested operation was cancelled before it completed.
+    MICROBIT_CANCELLED = -1007,
+
     // I2C Communication error occured (typically I2C module on processor has locked up.) 
     MICROBIT_I2C_ERROR = -1010 
 };

@@ -23,6 +23,7 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(
 	this->cb_arg = NULL;
     this->flags = flags;
 	this->next = NULL;
+    this->evt_queue = NULL;
 }
 
 /**
@@ -41,6 +42,7 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(
 	this->cb_arg = arg;
     this->flags = flags | MESSAGE_BUS_LISTENER_PARAMETERISED;
 	this->next = NULL;
+    this->evt_queue = NULL;
 }
 
 /**
@@ -58,16 +60,23 @@ MicroBitListener::~MicroBitListener()
   */
 void MicroBitListener::queue(MicroBitEvent e)
 {
-    MicroBitEventQueueItem *q = new MicroBitEventQueueItem(e);
+    int queueDepth;
+
     MicroBitEventQueueItem *p = evt_queue;
 
     if (evt_queue == NULL)
-        evt_queue = q;
+        evt_queue = new MicroBitEventQueueItem(e);
     else
     {
-        while (p->next != NULL)
-            p = p->next;
+        queueDepth = 1;
 
-        p->next = q;
+        while (p->next != NULL)
+        {
+            p = p->next;
+            queueDepth++;
+        }
+
+        if (queueDepth < MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH) 
+            p->next = new MicroBitEventQueueItem(e);
     }
 }
