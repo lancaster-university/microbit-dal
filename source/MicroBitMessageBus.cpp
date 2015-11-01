@@ -97,54 +97,48 @@ void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
 {
     int processingComplete;
 
-    if (queueLength >= MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH)
-        return;
-
-    MicroBitEventQueueItem *item = new MicroBitEventQueueItem(evt);
-    MicroBitEventQueueItem *prev;
-
-    // Queue this event. We always do this to maintain event ordering...
-    // It costs a a little time and memory, but is worth it.
-    __disable_irq();
-
-    prev = evt_queue_tail;
-
-    if (evt_queue_tail == NULL)
-    {
-        evt_queue_head = evt_queue_tail = item;
-    }
-    else 
-    {
-        evt_queue_tail->next = item;
-        evt_queue_tail = item;
-    }
-
-    queueLength++;
-
-    __enable_irq();
+    MicroBitEventQueueItem *prev = evt_queue_tail;
 
     // Now process all handler regsitered as URGENT. 
     // These pre-empt the queue, and are useful for fast, high priority services.
     processingComplete = this->process(evt, true);
 
+    // If we've already processed all event handlers, we're all done.
+    // No need to queue the event.
     if (processingComplete)
+        return;
+
+    // If we need to queue, but there is no space, then there's nothg we can do.
+    if (queueLength >= MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH)
+        return;
+
+    // Otherwise, we need to queue this event for later processing...
+    // We queue this event at the tail of the queue at the point where we entered queueEvent()
+    // This is important as the processing above *may* have generated further events, and
+    // we want to maintain ordering of events.
+    MicroBitEventQueueItem *item = new MicroBitEventQueueItem(evt);
+
+    // The queue was empty when we entered this function, so queue our event at the start of the queue.
+    __disable_irq();
+
+    if (prev == NULL)
     {
-        // No more processing is required... drop the event from the list to avoid the need for processing later.
-        if (evt_queue_head == item)
-            evt_queue_head = item->next;
-
-        if (evt_queue_tail == item)
-            evt_queue_tail = prev;
-
-        if (prev)
-            prev->next = item->next;
-
-        queueLength--;
-
-        delete item;
+        item->next = evt_queue_head;
+        evt_queue_head = item;
+    } 
+    else
+    {
+        item->next = prev->next;
+        prev->next = item;
     }
-}
 
+    if (item->next == NULL)
+        evt_queue_tail = item;
+
+    queueLength++;
+
+    __enable_irq();
+}
 
 /**
   * Extract the next event from the front of the event queue (if present).
