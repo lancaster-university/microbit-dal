@@ -976,6 +976,8 @@ void MicroBitDisplay::clear()
   */
 void MicroBitDisplay::error(int statusCode)
 {   
+    extern InterruptIn resetButton;
+
     __disable_irq(); //stop ALL interrupts
 
     if(statusCode < 0 || statusCode > 255)
@@ -1001,7 +1003,7 @@ void MicroBitDisplay::error(int statusCode)
             int outerCount = 0;
             
             //display the current character
-            while( outerCount < 100000)
+            while(outerCount < 500)
             {
                 int coldata = 0;
         
@@ -1033,11 +1035,17 @@ void MicroBitDisplay::error(int statusCode)
                 nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); //set port 1 8-12
             
                 //set i to an obscene number.
-                i = 100000;
+                i = 1000;
                 
                 //burn cycles
                 while(i>0)
+                {
+                    // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
+                    if (resetButton == 0)
+                        microbit_reset();
+
                     i--;
+                }
                 
                 //update the bit mask and row count
                 strobeBitMsk <<= 1;    
