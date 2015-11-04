@@ -45,6 +45,9 @@ enum PanicCode{
     MICROBIT_OOM = 20, 
 
     // Corruption detected in the micro:bit heap space
-    MICROBIT_HEAP_ERROR = 30 
+    MICROBIT_HEAP_ERROR = 30,
+
+    // Dereference of a NULL pointer through the ManagedType class,
+    MICROBIT_NULL_DEREFERENCE = 40,
 };
 #endif

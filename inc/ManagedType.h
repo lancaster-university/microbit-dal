@@ -103,6 +103,8 @@ public:
      * x->m(); // resolves to T::m
      */
     T* operator->() {
+        if (object == NULL)
+            panic(MICROBIT_NULL_DEREFERENCE);
         return object;
     }
 
