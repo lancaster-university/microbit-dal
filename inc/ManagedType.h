@@ -11,7 +11,7 @@
 template <class T>
 class ManagedType
 {
-private:
+protected:
 
     int *ref;
 
