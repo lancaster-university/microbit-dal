@@ -2,6 +2,7 @@
 #define MICROBIT_BUTTON_H
 
 #include "mbed.h"
+#include "hal/DebouncedPin.h"
 #include "MicroBitComponent.h"
 #include "MicroBitEvent.h"
 
@@ -43,11 +44,8 @@ enum MicroBitButtonEventConfiguration
   *
   * Represents a single, generic button on the device.
   */
-class MicroBitButton : public MicroBitComponent
+class MicroBitButton : public MicroBitComponent, public DebouncedPin
 {
-    PinName name;                                           // mbed pin name of this pin.
-    DigitalIn pin;                                          // The mbed object looking after this pin at any point in time (may change!).
-    
     unsigned long downStartTime;                            // used to store the current system clock when a button down event occurs
     uint8_t sigma;                                          // integration of samples over time. We use this for debouncing, and noise tolerance for touch sensing
     MicroBitButtonEventConfiguration eventConfiguration;    // Do we want to generate high level event (clicks), or defer this to another service.
@@ -59,7 +57,6 @@ class MicroBitButton : public MicroBitComponent
       * Create a pin representation with the given ID.
       * @param id the ID of the new MicroBitButton object.
       * @param name the physical pin on the processor that this butotn is connected to.
-      * @param mode the configuration of internal pullups/pulldowns, as define in the mbed PinMode class. PullNone by default.
       *
       * Example:
       * @code 
@@ -76,7 +73,7 @@ class MicroBitButton : public MicroBitComponent
       * MICROBIT_BUTTON_EVT_HOLD
       * @endcode
       */
-    MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventConfiguration eventConfiguration = MICROBIT_BUTTON_ALL_EVENTS, PinMode mode = PullNone);
+    MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventConfiguration eventConfiguration = MICROBIT_BUTTON_ALL_EVENTS);
     
     /**
       * Tests if this Button is currently pressed.
