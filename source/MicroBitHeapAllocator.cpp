@@ -32,7 +32,7 @@ struct HeapDefinition
 
 // Create the necessary heap definitions.
 // We use two heaps by default: one for SoftDevice reuse, and one to run inside the mbed heap.
-HeapDefinition heap[MICROBIT_HEAP_COUNT] = { NULL }; 
+HeapDefinition heap[MICROBIT_HEAP_COUNT] = { }; 
 
 // Scans the status of the heap definition table, and returns the number of INITIALISED heaps.
 int microbit_active_heaps()

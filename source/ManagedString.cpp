@@ -127,7 +127,7 @@ ManagedString::ManagedString(const ManagedString &s1, const ManagedString &s2)
 ManagedString::ManagedString(const char *str, const int16_t length)
 {
     // Sanity check. Return EmptyString for anything distasteful
-    if (str == NULL || *str == 0 || length > strlen(str))
+    if (str == NULL || *str == 0 || (uint16_t)length > strlen(str)) // XXX length should be unsigned on the interface
     {
         initEmpty();
         return;
