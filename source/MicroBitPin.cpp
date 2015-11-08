@@ -53,7 +53,7 @@ void MicroBitPin::disconnect()
     }   
 
     if (status & IO_STATUS_TOUCH_IN)
-        delete ((MicroBitButton *)pin);
+        delete ((DebouncedPin *)pin);
     
     this->pin = NULL;
     this->status = status & IO_STATUS_EVENTBUS_ENABLED; //retain event bus status
@@ -238,11 +238,11 @@ int MicroBitPin::isTouched()
     // Move into a touch input state if necessary.
     if (!(status & IO_STATUS_TOUCH_IN)){
         disconnect();  
-        pin = new MicroBitButton(id, name); 
+        pin = new DebouncedPin(name);
         status |= IO_STATUS_TOUCH_IN;
     }
     
-    return ((MicroBitButton *)pin)->isPressed();
+    return !((DebouncedPin *)pin)->isHigh();
 }
 
 /**

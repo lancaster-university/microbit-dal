@@ -23,7 +23,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitCompat.cpp"
     "MicroBitImage.cpp"
     "MicroBitDisplay.cpp"
-    "DynamicPwm.cpp"
+    "hal/DynamicPwm.cpp"
     "MicroBitPin.cpp"
     "MicroBitSerial.cpp"
     "MicroBitHeapAllocator.cpp"
