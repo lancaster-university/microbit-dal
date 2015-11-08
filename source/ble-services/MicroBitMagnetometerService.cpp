@@ -69,6 +69,8 @@ void MicroBitMagnetometerService::onDataWritten(const GattWriteCallbackParams *p
   */
 void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent e)
 {
+    (void) e; /* -Wunused-parameter */
+
     if (ble.getGapState().connected)
     {
         magnetometerDataCharacteristicBuffer[0] = uBit.compass.getX();
@@ -90,6 +92,8 @@ void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent e)
  */
 void MicroBitMagnetometerService::samplePeriodUpdateNeeded(MicroBitEvent e)
 {
+    (void) e; /* -Wunused-parameter */
+
     // Reconfigure the compass. This might take a while...
     uBit.compass.setPeriod(magnetometerPeriodCharacteristicBuffer);
 

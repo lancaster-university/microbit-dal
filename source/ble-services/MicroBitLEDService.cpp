@@ -59,7 +59,7 @@ void MicroBitLEDService::onDataWritten(const GattWriteCallbackParams *params)
     {
         for (int y=0; y<params->len; y++)        
             for (int x=0; x<5; x++)        
-                uBit.display.image.setPixelValue(x, y, (data[y] & (0x01 << 4-x)) ? 255 : 0);
+                uBit.display.image.setPixelValue(x, y, (data[y] & (0x01 << (4-x))) ? 255 : 0);
     }
 
     else if (params->handle == textCharacteristicHandle) 
@@ -94,7 +94,7 @@ void MicroBitLEDService::onDataRead(GattReadAuthCallbackParams *params)
             for (int x=0; x<5; x++)        
             {
                 if (uBit.display.image.getPixelValue(x, y))
-                    matrixCharacteristicBuffer[y] |= 0x01 << 4-x;
+                    matrixCharacteristicBuffer[y] |= 0x01 << (4-x);
             }
         }
 

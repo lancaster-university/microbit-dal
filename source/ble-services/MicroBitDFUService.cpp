@@ -51,6 +51,7 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
 
 void MicroBitDFUService::onButtonA(MicroBitEvent e)
 {
+    (void) e; /* -Wunused-parameter */
     if (flashCodeRequested)
     {
         releaseFlashCode();
@@ -63,6 +64,7 @@ void MicroBitDFUService::onButtonA(MicroBitEvent e)
 
 void MicroBitDFUService::onButtonB(MicroBitEvent e)
 {
+    (void) e; /* -Wunused-parameter */
     uBit.display.scroll("VERSION: TODO");
     showNameHistogram();
 }
