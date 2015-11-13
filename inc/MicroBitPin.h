@@ -18,10 +18,10 @@
 #define MICROBIT_PIN_P3                  P0_4        //COL1 (ANALOG/DIGITAL) 
 #define MICROBIT_PIN_P4                  P0_17       //BTN_A           
 #define MICROBIT_PIN_P5                  P0_5        //COL2 (ANALOG/DIGITAL) 
-#define MICROBIT_PIN_P6                  P0_14       //ROW2
-#define MICROBIT_PIN_P7                  P0_13       //ROW1       
+#define MICROBIT_PIN_P6                  P0_12       //COL9
+#define MICROBIT_PIN_P7                  P0_11       //COL8
 #define MICROBIT_PIN_P8                  P0_18       //PIN 18
-#define MICROBIT_PIN_P9                  P0_15       //ROW3                  
+#define MICROBIT_PIN_P9                  P0_10       //COL7
 #define MICROBIT_PIN_P10                 P0_6        //COL3 (ANALOG/DIGITAL) 
 #define MICROBIT_PIN_P11                 P0_26       //BTN_B
 #define MICROBIT_PIN_P12                 P0_20       //PIN 20
