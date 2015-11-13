@@ -338,6 +338,7 @@ void MicroBitImage::clear()
   * @param x The co-ordinate of the pixel to change w.r.t. top left origin.
   * @param y The co-ordinate of the pixel to change w.r.t. top left origin.
   * @param value The new value of the pixel (the brightness level 0-255)
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -345,18 +346,22 @@ void MicroBitImage::clear()
   * i.setPixelValue(0,0,255);
   * @endcode
   */
-void MicroBitImage::setPixelValue(int16_t x , int16_t y, uint8_t value)
+int MicroBitImage::setPixelValue(int16_t x , int16_t y, uint8_t value)
 {
     //sanity check
     if(x >= getWidth() || y >= getHeight() || x < 0 || y < 0)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
     
     this->getBitmap()[y*getWidth()+x] = value;
+    return MICROBIT_OK;
 }
 
 /**
   * Determines the value of a given pixel.
-  * @return The value assigned to the given pixel location (the brightness level 0-255)
+  *
+  * @param x The x co-ordinate of the pixel to read. Must be within the dimensions of the image.
+  * @param y The y co-ordinate of the pixel to read. Must be within the dimensions of the image.
+  * @return The value assigned to the given pixel location (the brightness level 0-255), or MICROBIT_INVALID_PARAMETER.
   *
   * Example:
   * @code
@@ -368,7 +373,7 @@ int MicroBitImage::getPixelValue(int16_t x , int16_t y)
 {
     //sanity check
     if(x >= getWidth() || y >= getHeight() || x < 0 || y < 0)
-        return MICROBIT_INVALID_VALUE;
+        return MICROBIT_INVALID_PARAMETER;
     
     return this->getBitmap()[y*getWidth()+x];
 }
@@ -378,9 +383,10 @@ int MicroBitImage::getPixelValue(int16_t x , int16_t y)
   * 2D array representing the image.
   * Origin is in the top left corner of the image.
   *
-  * @param x the width of the image.
-  * @param y the height of the image.
+  * @param x the width of the image. Must be within the dimensions of the image.
+  * @param y the width of the image. Must be within the dimensions of the image.
   * @param bitmap a 2D array representing the image.
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
   * 
   * Example:
   * @code
@@ -389,7 +395,7 @@ int MicroBitImage::getPixelValue(int16_t x , int16_t y)
   * i.printImage(0,0,heart); 
   * @endcode
   */
-void MicroBitImage::printImage(int16_t width, int16_t height, const uint8_t *bitmap)
+int MicroBitImage::printImage(int16_t width, int16_t height, const uint8_t *bitmap)
 {   
     const uint8_t *pIn;
     uint8_t *pOut;
@@ -397,7 +403,7 @@ void MicroBitImage::printImage(int16_t width, int16_t height, const uint8_t *bit
 
     // Sanity check.
     if (width <= 0 || width <= 0 || bitmap == NULL)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     // Calcualte sane start pointer.
     pixelsToCopyX = min(width,this->getWidth());
@@ -413,6 +419,8 @@ void MicroBitImage::printImage(int16_t width, int16_t height, const uint8_t *bit
         pIn += width;
         pOut += this->getWidth();
     }
+
+    return MICROBIT_OK;
 }
   
 /**
@@ -447,7 +455,7 @@ int MicroBitImage::paste(const MicroBitImage &image, int16_t x, int16_t y, uint8
     cx = x < 0 ? min(image.getWidth() + x, getWidth()) : min(image.getWidth(), getWidth() - x);
     cy = y < 0 ? min(image.getHeight() + y, getHeight()) : min(image.getHeight(), getHeight() - y);
 
-    // Calcualte sane start pointer.
+    // Calculate sane start pointer.
     pIn = image.ptr->data;
     pIn += (x < 0) ? -x : 0;
     pIn += (y < 0) ? -image.getWidth()*y : 0;
@@ -498,6 +506,7 @@ int MicroBitImage::paste(const MicroBitImage &image, int16_t x, int16_t y, uint8
   * @param c The character to display.
   * @param x The x co-ordinate of on the image to place the top left of the character
   * @param y The y co-ordinate of on the image to place the top left of the character
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
   * 
   * Example:
   * @code
@@ -505,7 +514,7 @@ int MicroBitImage::paste(const MicroBitImage &image, int16_t x, int16_t y, uint8
   * i.print('a',0,0);
   * @endcode
   */
-void MicroBitImage::print(char c, int16_t x, int16_t y)
+int MicroBitImage::print(char c, int16_t x, int16_t y)
 {
     unsigned char v;
     int x1, y1;
@@ -514,7 +523,7 @@ void MicroBitImage::print(char c, int16_t x, int16_t y)
     
     // Sanity check. Silently ignore anything out of bounds.
     if (x >= getWidth() || y >= getHeight() || c < MICROBIT_FONT_ASCII_START || c > font.asciiEnd)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
     
     // Paste.
     int offset = (c-MICROBIT_FONT_ASCII_START) * 5;
@@ -537,6 +546,8 @@ void MicroBitImage::print(char c, int16_t x, int16_t y)
                 this->getBitmap()[y1*getWidth()+x1] = (v & (0x10 >> col)) ? 255 : 0;
         }
     }  
+
+    return MICROBIT_OK;
 }
 
 
@@ -544,6 +555,7 @@ void MicroBitImage::print(char c, int16_t x, int16_t y)
   * Shifts the pixels in this Image a given number of pixels to the Left.
   *
   * @param n The number of pixels to shift.
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
   * 
   * Example:
   * @code
@@ -552,18 +564,18 @@ void MicroBitImage::print(char c, int16_t x, int16_t y)
   * i.shiftLeft(5); //displays a small heart :) 
   * @endcode
   */
-void MicroBitImage::shiftLeft(int16_t n)
+int MicroBitImage::shiftLeft(int16_t n)
 {
     uint8_t *p = getBitmap();
     int pixels = getWidth()-n;
     
     if (n <= 0 )
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     if(n >= getWidth())
     {
         clear();
-        return;
+        return MICROBIT_OK;
     }
     
     for (int y = 0; y < getHeight(); y++)
@@ -573,12 +585,15 @@ void MicroBitImage::shiftLeft(int16_t n)
         memclr(p+pixels, n);
         p += getWidth();
     }        
+
+    return MICROBIT_OK;
 }
 
 /**
   * Shifts the pixels in this Image a given number of pixels to the Right.
   *
   * @param n The number of pixels to shift.
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
   * 
   * Example:
   * @code
@@ -588,18 +603,18 @@ void MicroBitImage::shiftLeft(int16_t n)
   * i.shiftRight(5); //displays a big heart :) 
   * @endcode
   */
-void MicroBitImage::shiftRight(int16_t n)
+int MicroBitImage::shiftRight(int16_t n)
 {
     uint8_t *p = getBitmap();
     int pixels = getWidth()-n;
     
     if (n <= 0)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     if(n >= getWidth())
     {
         clear();
-        return;
+        return MICROBIT_OK;
     }
 
     for (int y = 0; y < getHeight(); y++)
@@ -609,6 +624,8 @@ void MicroBitImage::shiftRight(int16_t n)
         memclr(p, n);
         p += getWidth();
     }        
+
+    return MICROBIT_OK;
 }
 
 
@@ -616,6 +633,7 @@ void MicroBitImage::shiftRight(int16_t n)
   * Shifts the pixels in this Image a given number of pixels to Upward.
   *
   * @param n The number of pixels to shift.
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
   * 
   * Example:
   * @code
@@ -624,17 +642,17 @@ void MicroBitImage::shiftRight(int16_t n)
   * i.shiftUp(1);
   * @endcode
   */
-void MicroBitImage::shiftUp(int16_t n)
+int MicroBitImage::shiftUp(int16_t n)
 {
     uint8_t *pOut, *pIn;
    
     if (n <= 0 )
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     if(n >= getHeight())
     {
         clear();
-        return;
+        return MICROBIT_OK;
     }
     
     pOut = getBitmap();
@@ -651,6 +669,8 @@ void MicroBitImage::shiftUp(int16_t n)
         pIn += getWidth();
         pOut += getWidth();
     }        
+
+    return MICROBIT_OK;
 }
 
 
@@ -658,6 +678,7 @@ void MicroBitImage::shiftUp(int16_t n)
   * Shifts the pixels in this Image a given number of pixels to Downward.
   *
   * @param n The number of pixels to shift.
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER.
   * 
   * Example:
   * @code
@@ -666,17 +687,17 @@ void MicroBitImage::shiftUp(int16_t n)
   * i.shiftDown(1);
   * @endcode
   */
-void MicroBitImage::shiftDown(int16_t n)
+int MicroBitImage::shiftDown(int16_t n)
 {
     uint8_t *pOut, *pIn;
    
     if (n <= 0 )
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     if(n >= getHeight())
     {
         clear();
-        return;
+        return MICROBIT_OK;
     }
     
     pOut = getBitmap() + getWidth()*(getHeight()-1);
@@ -693,6 +714,8 @@ void MicroBitImage::shiftDown(int16_t n)
         pIn -= getWidth();
         pOut -= getWidth();
     }        
+
+    return MICROBIT_OK;
 }
 
 

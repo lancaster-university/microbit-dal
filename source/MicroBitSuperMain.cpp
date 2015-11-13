@@ -1,9 +1,5 @@
 #include "MicroBit.h"
 
-#if CONFIG_ENABLED(MICROBIT_DBG)
-Serial pc(USBTX, USBRX);
-#endif
-
 MicroBit        uBit;
 InterruptIn     resetButton(MICROBIT_PIN_BUTTON_RESET);
 
@@ -16,17 +12,16 @@ int main()
     resetButton.fall(microbit_reset);
     
 #if CONFIG_ENABLED(MICROBIT_DBG)
-    pc.baud(115200);
-
 
     // For diagnostics. Gives time to open the console window. :-) 
+    uBit.serial.baud(115200);
     for (int i=3; i>0; i--)
     {
-        pc.printf("=== SUPERMAIN: Starting in %d ===\n", i);
+        uBit.serial.printf("=== SUPERMAIN: Starting in %d ===\n", i);
         wait(1.0);
     }
 
-    pc.printf("micro:bit runtime DAL version %s\n", MICROBIT_DAL_VERSION);
+    uBit.serial.printf("micro:bit runtime DAL version %s\n", MICROBIT_DAL_VERSION);
 
 #endif    
 

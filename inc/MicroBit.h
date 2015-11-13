@@ -32,7 +32,25 @@
 #include "MicroBitFiber.h"
 #include "MicroBitMessageBus.h"
 
+/* 
+ * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
+ * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
+ * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
+ * as a compatability option, but does not support the options used...
+ */
+#if !defined (__arm)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 #include "ble/BLE.h"
+
+/* 
+ * Return to our predefined compiler settings.
+ */
+#if !defined (__arm)
+#pragma GCC diagnostic pop
+#endif
+
 #include "ble/services/DeviceInformationService.h"
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
@@ -62,10 +80,6 @@
 #define MICROBIT_PIN_SDA                P0_30
 #define MICROBIT_PIN_SCL                P0_0
 
-#if CONFIG_ENABLED(MICROBIT_DBG)
-extern Serial pc;
-#endif
-
 /**
   * Class definition for a MicroBit device.
   *
@@ -90,9 +104,7 @@ class MicroBit
     MicroBitI2C             i2c;  
     
     // Serial Interface
-#if CONFIG_DISABLED(MICROBIT_DBG)
     MicroBitSerial          serial;   
-#endif    
 
     // Array of components which are iterated during a system tick
     MicroBitComponent*      systemTickComponents[MICROBIT_SYSTEM_COMPONENTS];
@@ -191,13 +203,14 @@ class MicroBit
       * @note Values of 6 and below tend to lose resolution - do you really need to sleep for this short amount of time?
       *
       * @param milliseconds the amount of time, in ms, to wait for. This number cannot be negative.
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER milliseconds is less than zero. 
       *
       * Example:
       * @code 
       * uBit.sleep(20); //sleep for 20ms
       * @endcode
       */
-    void sleep(int milliseconds);
+    int sleep(int milliseconds);
 
     /**
       * Generate a random number in the given range.
@@ -205,7 +218,7 @@ class MicroBit
       * TODO: Determine if we want to, given its relatively high power consumption!
       *
       * @param max the upper range to generate a number for. This number cannot be negative
-      * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_VALUE (defined in ErrorNo.h) if max is <= 0.
+      * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_PARAMETER if max is <= 0.
       *
       * Example:
       * @code 
@@ -227,24 +240,33 @@ class MicroBit
 
     /**
       * add a component to the array of system components which invocate the systemTick member function during a systemTick 
+      *
+      * @param component The component to add.
+      * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
       */
-    void addSystemComponent(MicroBitComponent *component);
+    int addSystemComponent(MicroBitComponent *component);
     
     /**
       * remove a component from the array of system components
+      * @param component The component to remove.
+      * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
       */
-    void removeSystemComponent(MicroBitComponent *component);
+    int removeSystemComponent(MicroBitComponent *component);
     
     /**
       * add a component to the array of of idle thread components.
       * isIdleCallbackNeeded is polled during a systemTick to determine if the idle thread should jump to the front of the queue
+      * @param component The component to add.
+      * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
       */
-    void addIdleComponent(MicroBitComponent *component);
+    int addIdleComponent(MicroBitComponent *component);
     
     /**
       * remove a component from the array of idle thread components
+      * @param component The component to remove.
+      * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
       */
-    void removeIdleComponent(MicroBitComponent *component);
+    int removeIdleComponent(MicroBitComponent *component);
 
     /**
       * Determine the time since this MicroBit was last reset.
@@ -260,7 +282,7 @@ class MicroBit
       * @return A textual description of the currentlt executing micro:bit runtime.
       * TODO: handle overflow case.
       */
-    char *systemVersion();
+    const char *systemVersion();
 
     /**
       * Triggers a microbit panic where an infinite loop will occur swapping between the panicFace and statusCode if provided.

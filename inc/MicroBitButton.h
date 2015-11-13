@@ -31,6 +31,13 @@
 #define MICROBIT_BUTTON_SIGMA_THRESH_LO         2
 #define MICROBIT_BUTTON_DOUBLE_CLICK_THRESH     50
 
+enum MicroBitButtonEventConfiguration
+{
+    MICROBIT_BUTTON_SIMPLE_EVENTS,
+    MICROBIT_BUTTON_ALL_EVENTS
+};
+
+
 /**
   * Class definition for MicroBit Button.
   *
@@ -38,12 +45,12 @@
   */
 class MicroBitButton : public MicroBitComponent
 {
-    PinName name;                   // mBed pin name of this pin.
-    DigitalIn pin;                  // The mBed object looking after this pin at any point in time (may change!).
+    PinName name;                                           // mbed pin name of this pin.
+    DigitalIn pin;                                          // The mbed object looking after this pin at any point in time (may change!).
     
-    unsigned long downStartTime;    // used to store the current system clock when a button down event occurs
-    uint8_t sigma;                  // integration of samples over time.
-    uint8_t doubleClickTimer;       // double click timer (ticks).
+    unsigned long downStartTime;                            // used to store the current system clock when a button down event occurs
+    uint8_t sigma;                                          // integration of samples over time. We use this for debouncing, and noise tolerance for touch sensing
+    MicroBitButtonEventConfiguration eventConfiguration;    // Do we want to generate high level event (clicks), or defer this to another service.
     
     public:
 
@@ -69,7 +76,7 @@ class MicroBitButton : public MicroBitComponent
       * MICROBIT_BUTTON_EVT_HOLD
       * @endcode
       */
-    MicroBitButton(uint16_t id, PinName name, PinMode mode = PullNone);
+    MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventConfiguration eventConfiguration = MICROBIT_BUTTON_ALL_EVENTS, PinMode mode = PullNone);
     
     /**
       * Tests if this Button is currently pressed.

@@ -33,6 +33,9 @@ microbit_reset()
   */
 void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
+    (void) handle; /* -Wunused-param */
+    (void) reason; /* -Wunused-param */
+
     uBit.ble->startAdvertising(); 
 }
 
@@ -58,13 +61,11 @@ void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t r
 MicroBit::MicroBit() : 
     flags(0x00),
     i2c(MICROBIT_PIN_SDA, MICROBIT_PIN_SCL),
-#if CONFIG_DISABLED(MICROBIT_DBG)
     serial(USBTX, USBRX),
-#endif    
     MessageBus(),
     display(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_WIDTH, MICROBIT_DISPLAY_HEIGHT),
-    buttonA(MICROBIT_ID_BUTTON_A,MICROBIT_PIN_BUTTON_A),
-    buttonB(MICROBIT_ID_BUTTON_B,MICROBIT_PIN_BUTTON_B),
+    buttonA(MICROBIT_ID_BUTTON_A,MICROBIT_PIN_BUTTON_A, MICROBIT_BUTTON_SIMPLE_EVENTS),
+    buttonB(MICROBIT_ID_BUTTON_B,MICROBIT_PIN_BUTTON_B, MICROBIT_BUTTON_SIMPLE_EVENTS),
     buttonAB(MICROBIT_ID_BUTTON_AB,MICROBIT_ID_BUTTON_A,MICROBIT_ID_BUTTON_B), 
     accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR),
     compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR),
@@ -92,6 +93,9 @@ MicroBit::MicroBit() :
   */
 void MicroBit::init()
 {   
+    // Set the default baud rate for the serial port.`
+    uBit.serial.baud(115200);
+        
     //add the display to the systemComponent array
     addSystemComponent(&uBit.display);
     
@@ -254,25 +258,28 @@ void MicroBit::reset()
   * If the scheduler is disabled or we're running in an interrupt context, this
   * will revert to a busy wait. 
   *
-  * @note Values of 6 and below tend to lose resolution - do you really need to sleep for this short amount of time?
+  * @note Values of below below the scheduling period (typical 6ms) tend to lose resolution.
   * 
   * @param milliseconds the amount of time, in ms, to wait for. This number cannot be negative.
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER milliseconds is less than zero. 
   *
   * Example:
   * @code 
   * uBit.sleep(20); //sleep for 20ms
   * @endcode
   */
-void MicroBit::sleep(int milliseconds)
+int MicroBit::sleep(int milliseconds)
 {
     //sanity check, we can't time travel... (yet?)
     if(milliseconds < 0)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
         
     if (flags & MICROBIT_FLAG_SCHEDULER_RUNNING)
         fiber_sleep(milliseconds);
     else
         wait_ms(milliseconds);
+
+    return MICROBIT_OK;
 }
 
 
@@ -298,7 +305,7 @@ int MicroBit::random(int max)
 {
     //return MICROBIT_INVALID_VALUE if max is <= 0...
     if(max <= 0)
-        return MICROBIT_INVALID_VALUE;
+        return MICROBIT_INVALID_PARAMETER;
     
     // Cycle the LFSR (Linear Feedback Shift Register).
     // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
@@ -378,9 +385,11 @@ void MicroBit::systemTasks()
 
 /**
   * add a component to the array of components which invocate the systemTick member function during a systemTick 
+  * @param component The component to add.
+  * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
   * @note this will be converted into a dynamic list of components
   */
-void MicroBit::addSystemComponent(MicroBitComponent *component)
+int MicroBit::addSystemComponent(MicroBitComponent *component)
 {
     int i = 0;
     
@@ -388,16 +397,19 @@ void MicroBit::addSystemComponent(MicroBitComponent *component)
         i++;
     
     if(i == MICROBIT_SYSTEM_COMPONENTS)
-        return;
+        return MICROBIT_NO_RESOURCES;
         
     systemTickComponents[i] = component;    
+    return MICROBIT_OK;
 }
 
 /**
   * remove a component from the array of components
+  * @param component The component to remove.
+  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMTER is returned if the given component has not been previous added.
   * @note this will be converted into a dynamic list of components
   */
-void MicroBit::removeSystemComponent(MicroBitComponent *component)
+int MicroBit::removeSystemComponent(MicroBitComponent *component)
 {
     int i = 0;
     
@@ -405,16 +417,20 @@ void MicroBit::removeSystemComponent(MicroBitComponent *component)
         i++;
     
     if(i == MICROBIT_SYSTEM_COMPONENTS)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     systemTickComponents[i] = NULL;
+
+    return MICROBIT_OK;
 }
 
 /**
   * add a component to the array of components which invocate the systemTick member function during a systemTick 
+  * @param component The component to add.
+  * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
   * @note this will be converted into a dynamic list of components
   */
-void MicroBit::addIdleComponent(MicroBitComponent *component)
+int MicroBit::addIdleComponent(MicroBitComponent *component)
 {
     int i = 0;
     
@@ -422,16 +438,20 @@ void MicroBit::addIdleComponent(MicroBitComponent *component)
         i++;
     
     if(i == MICROBIT_IDLE_COMPONENTS)
-        return;
+        return MICROBIT_NO_RESOURCES;
         
     idleThreadComponents[i] = component;    
+
+    return MICROBIT_OK;
 }
 
 /**
   * remove a component from the array of components
+  * @param component The component to remove.
+  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMTER is returned if the given component has not been previous added.
   * @note this will be converted into a dynamic list of components
   */
-void MicroBit::removeIdleComponent(MicroBitComponent *component)
+int MicroBit::removeIdleComponent(MicroBitComponent *component)
 {
     int i = 0;
     
@@ -439,9 +459,11 @@ void MicroBit::removeIdleComponent(MicroBitComponent *component)
         i++;
     
     if(i == MICROBIT_IDLE_COMPONENTS)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     idleThreadComponents[i] = NULL;
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -462,7 +484,7 @@ unsigned long MicroBit::systemTime()
  * @return A textual description of the currentlt executing micro:bit runtime.
  * TODO: handle overflow case.
  */
-char *MicroBit::systemVersion()
+const char *MicroBit::systemVersion()
 {
     return MICROBIT_DAL_VERSION;
 }

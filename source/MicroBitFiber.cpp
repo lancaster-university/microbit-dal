@@ -15,7 +15,7 @@
  */
 Fiber *currentFiber = NULL;                 // The context in which the current fiber is executing.
 Fiber *forkedFiber = NULL;                  // The context in which a newly created child fiber is executing.
-Fiber *idleFiber = NULL;                         // IDLE task - performs a power efficient sleep, and system maintenance tasks.
+Fiber *idleFiber = NULL;                    // IDLE task - performs a power efficient sleep, and system maintenance tasks.
 
 /*
  * Scheduler state.
@@ -83,7 +83,6 @@ void queue_fiber(Fiber *f, Fiber **queue)
   */
 void dequeue_fiber(Fiber *f)
 {
-
     // If this fiber is already dequeued, nothing the there's nothing to do.
     if (f->queue == NULL)
         return;
@@ -131,8 +130,8 @@ Fiber *getFiberContext()
         if (f == NULL)
             return NULL;
 
-        f->stack_bottom = NULL;
-        f->stack_top = NULL;
+        f->stack_bottom = 0;
+        f->stack_top = 0;
     }    
    
     // Ensure this fiber is in suitable state for reuse. 
@@ -162,6 +161,10 @@ void scheduler_init()
     idleFiber = getFiberContext();
     idleFiber->tcb.SP = CORTEX_M0_STACK_BASE - 0x04;    
     idleFiber->tcb.LR = (uint32_t) &idle_task;
+
+    // Register to receive events in the NOTIFY channel - this is used to implement wait-notify semantics
+    uBit.MessageBus.listen(MICROBIT_ID_NOTIFY, MICROBIT_EVT_ANY, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    uBit.MessageBus.listen(MICROBIT_ID_NOTIFY_ONE, MICROBIT_EVT_ANY, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
     // Flag that we now have a scheduler running
     uBit.flags |= MICROBIT_FLAG_SCHEDULER_RUNNING;
@@ -205,6 +208,7 @@ void scheduler_event(MicroBitEvent evt)
 {
     Fiber *f = waitQueue;
     Fiber *t;
+    int notifyOneComplete = 0;
     
     // Check the wait queue, and wake up any fibers as necessary.
     while (f != NULL)
@@ -214,8 +218,21 @@ void scheduler_event(MicroBitEvent evt)
         // extract the event data this fiber is blocked on.    
         uint16_t id = f->context & 0xFFFF;
         uint16_t value = (f->context & 0xFFFF0000) >> 16;
-        
-        if ((id == MICROBIT_ID_ANY || id == evt.source) && (value == MICROBIT_EVT_ANY || value == evt.value))
+       
+        // Special case for the NOTIFY_ONE channel...
+        if ((evt.source == MICROBIT_ID_NOTIFY_ONE && id == MICROBIT_ID_NOTIFY) && (value == MICROBIT_EVT_ANY || value == evt.value))
+        {
+            if (!notifyOneComplete) 
+            {
+                // Wakey wakey!
+                dequeue_fiber(f);
+                queue_fiber(f,&runQueue);
+                notifyOneComplete = 1;
+            }
+        }
+
+        // Normal case.
+        else if ((id == MICROBIT_ID_ANY || id == evt.source) && (value == MICROBIT_EVT_ANY || value == evt.value))
         {
             // Wakey wakey!
             dequeue_fiber(f);
@@ -226,7 +243,8 @@ void scheduler_event(MicroBitEvent evt)
     }
 
     // Unregister this event, as we've woken up all the fibers with this match.
-    uBit.MessageBus.ignore(evt.source, evt.value, scheduler_event);
+    if (evt.source != MICROBIT_ID_NOTIFY && evt.source != MICROBIT_ID_NOTIFY_ONE)
+        uBit.MessageBus.ignore(evt.source, evt.value, scheduler_event);
 }
 
 
@@ -248,7 +266,7 @@ void fiber_sleep(unsigned long t)
     // it's time to spawn a new fiber...
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
     {
-        // Allocate a TCB from the new fiber. This will come from the tread pool if availiable,
+        // Allocate a new fiber. This will come from the fiber pool if availiable,
         // else a new one will be allocated on the heap.
         forkedFiber = getFiberContext();
     
@@ -310,7 +328,9 @@ void fiber_wait_for_event(uint16_t id, uint16_t value)
     queue_fiber(f, &waitQueue);
     
     // Register to receive this event, so we can wake up the fiber when it happens.
-    uBit.MessageBus.listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    // Special case for teh notify channel, as we always stay registered for that.
+    if (id != MICROBIT_ID_NOTIFY && id != MICROBIT_ID_NOTIFY_ONE)
+        uBit.MessageBus.listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
     // Finally, enter the scheduler.
     schedule();
@@ -326,19 +346,20 @@ void fiber_wait_for_event(uint16_t id, uint16_t value)
   * We only create an additional fiber if that function performs a block operation. 
   *
   * @param entry_fn The function to execute.
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER. 
   */
-void invoke(void (*entry_fn)(void))
+int invoke(void (*entry_fn)(void))
 {
     // Validate our parameters.
     if (entry_fn == NULL)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
     {
         // If we attempt a fork on block whilst already in  fork n block context,
         // simply launch a fiber to deal with the request and we're done.
         create_fiber(entry_fn);
-        return;
+        return MICROBIT_OK;
     }
                     
     // Snapshot current context, but also update the Link Register to
@@ -354,7 +375,7 @@ void invoke(void (*entry_fn)(void))
     {
         currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
         currentFiber->flags &= ~MICROBIT_FIBER_FLAG_PARENT;
-        return;
+        return MICROBIT_OK;
     }
 
     // Otherwise, we're here for the first time. Enter FORK ON BLOCK mode, and
@@ -368,6 +389,8 @@ void invoke(void (*entry_fn)(void))
     // The fiber will then re-enter the scheduler, so no need for further cleanup.
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_CHILD)
         release_fiber();
+
+     return MICROBIT_OK;
 }
 
 /**
@@ -381,19 +404,20 @@ void invoke(void (*entry_fn)(void))
   *
   * @param entry_fn The function to execute.
   * @param param an untyped parameter passed into the entry_fn.
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER. 
   */
-void invoke(void (*entry_fn)(void *), void *param)
+int invoke(void (*entry_fn)(void *), void *param)
 {
     // Validate our parameters.
     if (entry_fn == NULL)
-        return;
+        return MICROBIT_INVALID_PARAMETER;
 
     if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD))
     {
         // If we attempt a fork on block whilst already in a fork on block context,
         // simply launch a fiber to deal with the request and we're done.
         create_fiber(entry_fn, param);
-        return;
+        return MICROBIT_OK;
     }
                     
     // Snapshot current context, but also update the Link Register to
@@ -409,7 +433,7 @@ void invoke(void (*entry_fn)(void *), void *param)
     {
         currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
         currentFiber->flags &= ~MICROBIT_FIBER_FLAG_PARENT;
-        return;
+        return MICROBIT_OK;
     }
 
     // Otherwise, we're here for the first time. Enter FORK ON BLOCK mode, and
@@ -423,6 +447,8 @@ void invoke(void (*entry_fn)(void *), void *param)
     // The fiber will then re-enter the scheduler, so no need for further cleanup.
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_CHILD)
         release_fiber(param);
+
+    return MICROBIT_OK;
 }
 
 void launch_new_fiber(void (*ep)(void), void (*cp)(void))
@@ -486,7 +512,7 @@ Fiber *__create_fiber(uint32_t ep, uint32_t cp, uint32_t pm, int parameterised)
   */
 Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void))
 {
-    return __create_fiber((uint32_t) entry_fn, (uint32_t)completion_fn, NULL, 0);
+    return __create_fiber((uint32_t) entry_fn, (uint32_t)completion_fn, 0, 0);
 }
 
 
@@ -509,6 +535,8 @@ Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)
   */
 void release_fiber(void * param)
 {
+    (void)param; /* -Wunused-parameter */
+
     release_fiber();
 }
 
@@ -662,7 +690,7 @@ void schedule()
         if (oldFiber == idleFiber)
         {
             // Just swap in the new fiber, and discard changes to stack and register context.
-            swap_context(NULL, &currentFiber->tcb, NULL, currentFiber->stack_top);
+            swap_context(NULL, &currentFiber->tcb, 0, currentFiber->stack_top);
         }
         else
         {

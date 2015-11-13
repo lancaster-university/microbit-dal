@@ -11,7 +11,7 @@
 template <class T>
 class ManagedType
 {
-private:
+protected:
 
     int *ref;
 
@@ -80,10 +80,37 @@ public:
     */
     int getReferences();
 
+    /**
+     * De-reference operator overload. This makes modifying ref-counted POD
+     * easier.
+     *
+     * Example:
+     * @code
+     * ManagedType<int> x = 0;
+     * *x = 1; // mutates the ref-counted integer
+     */
+    T& operator*() {
+        return *object;
+    }
+
+    /**
+     * Method call operator overload. This forwards the call to the underlying
+     * object.
+     *
+     * Example:
+     * @code
+     * ManagedType<T> x = new T();
+     * x->m(); // resolves to T::m
+     */
     T* operator->() {
+        if (object == NULL)
+            panic(MICROBIT_NULL_DEREFERENCE);
         return object;
     }
 
+    /**
+     * x.get() is shorthand for x.operator->()
+     */
     T* get() {
         return object;
     }

@@ -1,14 +1,6 @@
 #ifndef MICROBIT_DISPLAY_H
 #define MICROBIT_DISPLAY_H
 
-/**
-  * User definable constants
-  */
-#define MICROBIT_DISPLAY_ROTATION_0         0
-#define MICROBIT_DISPLAY_ROTATION_90        1
-#define MICROBIT_DISPLAY_ROTATION_180       2
-#define MICROBIT_DISPLAY_ROTATION_270       3
-
 
 /**
   * Core Configuration settings.
@@ -19,6 +11,7 @@
   * MessageBus Event Codes
   */
 #define MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE         1
+#define MICROBIT_DISPLAY_EVT_FREE                       2
 
 /**
   * I/O configurations for common devices.
@@ -70,6 +63,7 @@
 
 enum AnimationMode {
     ANIMATION_MODE_NONE,
+    ANIMATION_MODE_STOPPED,
     ANIMATION_MODE_SCROLL_TEXT,
     ANIMATION_MODE_PRINT_TEXT,
     ANIMATION_MODE_SCROLL_IMAGE,
@@ -80,6 +74,13 @@ enum AnimationMode {
 enum DisplayMode {
     DISPLAY_MODE_BLACK_AND_WHITE,
     DISPLAY_MODE_GREYSCALE    
+};
+
+enum DisplayRotation {
+    MICROBIT_DISPLAY_ROTATION_0,
+    MICROBIT_DISPLAY_ROTATION_90,
+    MICROBIT_DISPLAY_ROTATION_180,
+    MICROBIT_DISPLAY_ROTATION_270
 };
 
 struct MatrixPoint {
@@ -103,7 +104,6 @@ class MicroBitDisplay : public MicroBitComponent
     uint8_t mode;
     uint8_t greyscaleBitMsk;
     uint8_t timingCount;
-    uint16_t nonce;
     Timeout renderTimer;
 
     MicroBitFont font;
@@ -115,10 +115,10 @@ class MicroBitDisplay : public MicroBitComponent
     // The animation mode that's currently running (if any)
     AnimationMode animationMode;
 
-    // The time (in ticks) between each frame update.
+    // The time in milliseconds between each frame update.
     uint16_t animationDelay;
 
-    // The time (in ticks) since the frame update.
+    // The time in milliseconds since the frame update.
     uint16_t animationTick;
 
     // Stop playback of any animations
@@ -221,6 +221,11 @@ class MicroBitDisplay : public MicroBitComponent
       */
     void sendAnimationCompleteEvent();
 
+    /**
+      * Blocks the current fiber until the display is available (i.e. not effect is being displayed).
+      * Animations are queued until their time to display.
+      */ 
+    void waitForFreeDisplay();
 
 public:
     // The mutable bitmap buffer being rendered to the LED matrix.
@@ -242,10 +247,9 @@ public:
     MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y);
 
     /**
-      * Resets the current given animation.
-      * @param delay the delay after which the animation is reset.
+      * Stops any currently running animation, and any that are waiting to be displayed.
       */
-    void resetAnimation(uint16_t delay);
+    void stopAnimation();
 
     /**
       * Frame update method, invoked periodically to strobe the display.
@@ -253,31 +257,67 @@ public:
     virtual void systemTick();
     
     /**
+     * Prints the given character to the display, if it is not in use.
+     *
+     * @param c The character to display.
+     * @param delay Optional parameter - the time for which to show the character. Zero displays the character forever.
+     * @return MICROBIT_OK, MICROBIT_BUSY is the screen is in use, or MICROBIT_INVALID_PARAMETER.
+     * 
+     * Example:
+     * @code 
+     * uBit.display.printAsync('p');
+     * uBit.display.printAsync('p',100);
+     * @endcode
+     */
+    int printAsync(char c, int delay = 0);
+
+    /**
       * Prints the given string to the display, one character at a time.
       * Uses the given delay between characters.
       * Returns immediately, and executes the animation asynchronously.
       *
       * @param s The string to display.
-      * @param delay The time to delay between characters, in timer ticks.
+      * @param delay The time to delay between characters, in milliseconds. Must be > 0.
+      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
       * uBit.display.printAsync("abc123",400);
       * @endcode
       */
-    void printAsync(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+    int printAsync(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+
+    /**
+     * Prints the given image to the display, if the display is not in use.
+     * Returns immediately, and executes the animation asynchronously.
+     *
+     * @param i The image to display.
+     * @param x The horizontal position on the screen to display the image (default 0)
+     * @param y The vertical position on the screen to display the image (default 0)
+     * @param alpha Treats the brightness level '0' as transparent (default 0) 
+     * @param delay The time to delay between characters, in milliseconds. set to 0 to display forever. (default 0).
+     *
+     * Example:
+     * @code
+     * MicrobitImage i("1,1,1,1,1\n1,1,1,1,1\n");
+     * uBit.display.print(i,400);
+     * @endcode
+     */
+    int printAsync(MicroBitImage i, int x, int y, int alpha, int delay = 0);
 
     /**
       * Prints the given character to the display.
       *
       * @param c The character to display.
+      * @param delay The time to delay between characters, in milliseconds. Must be > 0.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
       * uBit.display.print('p');
       * @endcode
       */
-    void print(char c, int delay = 0);
+    int print(char c, int delay = 0);
 
     /**
       * Prints the given string to the display, one character at a time.
@@ -285,21 +325,23 @@ public:
       * Blocks the calling thread until all the text has been displayed.
       *
       * @param s The string to display.
-      * @param delay The time to delay between characters, in timer ticks.
+      * @param delay The time to delay between characters, in milliseconds. Must be > 0.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
       * uBit.display.print("abc123",400);
       * @endcode
       */
-    void print(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+    int print(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
     
     /**
       * Prints the given image to the display.
       * Blocks the calling thread until all the text has been displayed.
       *
       * @param i The image to display.
-      * @param delay The time to delay between characters, in timer ticks.
+      * @param delay The time to display the image for, or zero to show the image forever. Must be >= 0.
+      * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -307,7 +349,7 @@ public:
       * uBit.display.print(i,400);
       * @endcode
       */
-    void print(MicroBitImage i, int x, int y, int alpha, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+    int print(MicroBitImage i, int x, int y, int alpha, int delay = 0);
     
     /**
       * Scrolls the given string to the display, from right to left.
@@ -315,21 +357,24 @@ public:
       * Returns immediately, and executes the animation asynchronously.
       *
       * @param s The string to display.
-      * @param delay The time to delay between characters, in timer ticks.
+      * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
+      * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
       * uBit.display.scrollAsync("abc123",100);
       * @endcode
       */
-    void scrollAsync(ManagedString s, int delay = MICROBIT_DEFAULT_SCROLL_SPEED);
+    int scrollAsync(ManagedString s, int delay = MICROBIT_DEFAULT_SCROLL_SPEED);
 
     /**
       * Scrolls the given image across the display, from right to left.
       * Returns immediately, and executes the animation asynchronously.
+      *
       * @param image The image to display.
-      * @param delay The time to delay between each scroll update, in timer ticks. Has a default.
-      * @param stride The number of pixels to move in each quantum. Has a default.
+      * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
+      * @param stride The number of pixels to move in each update. Default value is the screen width.
+      * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -337,7 +382,7 @@ public:
       * uBit.display.scrollAsync(i,100,1);
       * @endcode
       */
-    void scrollAsync(MicroBitImage image, int delay = MICROBIT_DEFAULT_SCROLL_SPEED, int stride = MICROBIT_DEFAULT_SCROLL_STRIDE);
+    int scrollAsync(MicroBitImage image, int delay = MICROBIT_DEFAULT_SCROLL_SPEED, int stride = MICROBIT_DEFAULT_SCROLL_STRIDE);
 
     /**
       * Scrolls the given string to the display, from right to left.
@@ -345,22 +390,24 @@ public:
       * Blocks the calling thread until all the text has been displayed.
       *
       * @param s The string to display.
-      * @param delay The time to delay between characters, in timer ticks.
+      * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
       * uBit.display.scroll("abc123",100);
       * @endcode
       */
-    void scroll(ManagedString s, int delay = MICROBIT_DEFAULT_SCROLL_SPEED);
+    int scroll(ManagedString s, int delay = MICROBIT_DEFAULT_SCROLL_SPEED);
 
     /**
       * Scrolls the given image across the display, from right to left.
       * Blocks the calling thread until all the text has been displayed.
       *
       * @param image The image to display.
-      * @param delay The time to delay between each scroll update, in timer ticks. Has a default.
-      * @param stride The number of pixels to move in each quantum. Has a default.
+      * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
+      * @param stride The number of pixels to move in each update. Default value is the screen width.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -368,15 +415,16 @@ public:
       * uBit.display.scroll(i,100,1);
       * @endcode
       */
-    void scroll(MicroBitImage image, int delay = MICROBIT_DEFAULT_SCROLL_SPEED, int stride = MICROBIT_DEFAULT_SCROLL_STRIDE);
+    int scroll(MicroBitImage image, int delay = MICROBIT_DEFAULT_SCROLL_SPEED, int stride = MICROBIT_DEFAULT_SCROLL_STRIDE);
 
     /**
       * "Animates" the current image across the display with a given stride, finishing on the last frame of the animation.
       * Returns immediately.
       *
       * @param image The image to display.
-      * @param delay The time to delay between each animation update, in timer ticks. Has a default.
-      * @param stride The number of pixels to move in each quantum. Has a default.
+      * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
+      * @param stride The number of pixels to move in each update. Default value is the screen width.
+      * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -388,15 +436,16 @@ public:
       * uBit.display.animateAsync(i,100,5);
       * @endcode
       */
-    void animateAsync(MicroBitImage image, int delay, int stride, int startingPosition = MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS);
+    int animateAsync(MicroBitImage image, int delay, int stride, int startingPosition = MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS);
 
     /**
       * "Animates" the current image across the display with a given stride, finishing on the last frame of the animation.
       * Blocks the calling thread until the animation is complete.
       *
       * @param image The image to display.
-      * @param delay The time to delay between each animation update, in timer ticks. Has a default.
-      * @param stride The number of pixels to move in each quantum. Has a default.
+      * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
+      * @param stride The number of pixels to move in each update. Default value is the screen width.
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * Example:
       * @code
@@ -408,19 +457,19 @@ public:
       * uBit.display.animate(i,100,5);
       * @endcode
       */
-    void animate(MicroBitImage image, int delay, int stride, int startingPosition = MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS);
+    int animate(MicroBitImage image, int delay, int stride, int startingPosition = MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS);
 
     /**
       * Sets the display brightness to the specified level.
       * @param b The brightness to set the brightness to, in the range 0..255.
+      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER
       *
       * Example:
       * @code
       * uBit.display.setBrightness(255); //max brightness
       * @endcode
       */
-    void setBrightness(int b);
-
+    int setBrightness(int b);
 
     /**
       * Sets the mode of the display.
@@ -453,7 +502,7 @@ public:
       * uBit.display.rotateTo(MICROBIT_DISPLAY_ROTATION_180); //rotates 180 degrees from original orientation
       * @endcode
       */
-    void rotateTo(uint8_t position);
+    void rotateTo(DisplayRotation position);
 
     /**
       * Enables the display, should only be called if the display is disabled.

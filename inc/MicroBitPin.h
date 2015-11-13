@@ -77,7 +77,7 @@ class MicroBitPin : public MicroBitComponent
       * Create a Button representation with the given ID.
       * @param id the ID of the new Pin object.
       * @param name the pin name for this MicroBitPin instance to represent
-      * @param capability the capability of this pin, can it only be digital? can it only be analog? can it be both?
+      * @param capability the capability of this pin.
       * 
       * Example:
       * @code 
@@ -89,18 +89,20 @@ class MicroBitPin : public MicroBitComponent
     /**
       * Configures this IO pin as a digital output (if necessary) and sets the pin to 'value'.
       * @param value 0 (LO) or 1 (HI)
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
+      * if the given pin does not have digital capability.
       * 
       * Example:
       * @code 
       * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
-      * P0.setDigitalValue(1); // P0 is now HI!
+      * P0.setDigitalValue(1); // P0 is now HI
       * @endcode
       */
-    void setDigitalValue(int value);
+    int setDigitalValue(int value);
     
     /**
       * Configures this IO pin as a digital input (if necessary) and tests its current value.
-      * @return 1 if this input is high, 0 otherwise.
+      * @return 1 if this input is high, 0 if input is LO, or MICROBIT_NOT_SUPPORTED if the given pin does not have analog capability.
       * 
       * Example:
       * @code 
@@ -111,22 +113,22 @@ class MicroBitPin : public MicroBitComponent
     int getDigitalValue();
 
     /**
-      * Configures this IO pin as an analogue output (if necessary and possible).
-      * Change the DAC value to the given level.
-      * @param value the level to set on the output pin, in the range 0..???
-      * @note NOT IN USE, but may exist in the future if we do some clever rejigging! :)
+      * Configures this IO pin as an analog/pwm output, and change the output value to the given level.
+      * @param value the level to set on the output pin, in the range 0 - 1024
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
+      * if the given pin does not have analog capability.
       */
-    void setAnalogValue(int value);
+    int setAnalogValue(int value);
 
 
     /**
       * Configures this IO pin as an analogue input (if necessary and possible).
-      * @return the current analogue level on the pin, in the range 0-0xFFFF
+      * @return the current analogue level on the pin, in the range 0 - 1024, or MICROBIT_NOT_SUPPORTED if the given pin does not have analog capability.
       * 
       * Example:
       * @code 
       * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
-      * P0.getAnalogValue(); // P0 is a value in the range of 0 - 0xFFFF
+      * P0.getAnalogValue(); // P0 is a value in the range of 0 - 1024
       * @endcode
       */
     int getAnalogValue();
@@ -157,7 +159,7 @@ class MicroBitPin : public MicroBitComponent
 
     /**
       * Configures this IO pin as a makey makey style touch sensor (if necessary) and tests its current debounced state.
-      * @return 1 if pin is touched, 0 otherwise.
+      * @return 1 if pin is touched, 0 if not, or MICROBIT_NOT_SUPPORTED if this pin does not support touch capability.
       * 
       * Example:
       * @code 
@@ -170,19 +172,23 @@ class MicroBitPin : public MicroBitComponent
       */
     int isTouched();
 
-     /**
-      * Configures the PWM period of the analog output to the given value.
-      * If this pin is not configured as an analog output, the operation
-      * has no effect.
-      *
-      * @param period The new period for the analog output in milliseconds.
-      */   
-    void setAnalogPeriod(int period);
+    /**
+     * Configures the PWM period of the analog output to the given value.
+     *
+     * @param period The new period for the analog output in milliseconds.
+     * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the 
+     * given pin is not configured as an analog output.
+     */   
+    int setAnalogPeriod(int period);
 
     /**
-     * Same thing as setAnalogPeriodUs, but with microseconds.
-     */
-    void setAnalogPeriodUs(int period);
+     * Configures the PWM period of the analog output to the given value.
+     *
+     * @param period The new period for the analog output in microseconds.
+     * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the 
+     * given pin is not configured as an analog output.
+     */   
+    int setAnalogPeriodUs(int period);
 };
 
 #endif

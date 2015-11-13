@@ -1,7 +1,7 @@
 # This file is no longer auto-generated to make the repository builds with GCC
 # and ARMCC no matter what.
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 2.8.12)
 
 enable_language(ASM)
 
@@ -43,7 +43,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "rev-parse" "--abbrev-ref" "HEAD" OUTPUT_VARIABLE git_branch OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if (${git_branch} STREQUAL "master")
+if ("${git_branch}" STREQUAL "master")
     set(MICROBIT_DAL_VERSION_STRING "${YOTTA_MICROBIT_DAL_VERSION_STRING}")
 else()
     set(MICROBIT_DAL_VERSION_STRING "${YOTTA_MICROBIT_DAL_VERSION_STRING}-${git_branch}-g${git_hash}")
@@ -81,3 +81,9 @@ target_link_libraries(microbit-dal
     ble
     ble-nrf51822
 )
+
+if(CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(mbed-classic PRIVATE "-w")
+    target_compile_options(ble PRIVATE "-w")
+    target_compile_options(ble-nrf51822 PRIVATE "-w")
+endif()

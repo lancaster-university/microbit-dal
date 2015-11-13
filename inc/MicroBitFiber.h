@@ -170,8 +170,9 @@ void fiber_wait_for_event(uint16_t id, uint16_t value);
   * We only create an additional fiber if that function performs a block operation. 
   *
   * @param entry_fn The function to execute.
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER. 
   */
-void invoke(void (*entry_fn)(void));
+int invoke(void (*entry_fn)(void));
 
 /**
   * Executes the given function asynchronously if necessary.
@@ -183,9 +184,10 @@ void invoke(void (*entry_fn)(void));
   * We only create an additional fiber if that function performs a block operation. 
   *
   * @param entry_fn The function to execute.
-  * @param param an untyped parameter passed into the entry_fn anf completion_fn.
+  * @param param an untyped parameter passed into the entry_fn and completion_fn.
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER. 
   */
-void invoke(void (*entry_fn)(void *), void *param);
+int invoke(void (*entry_fn)(void *), void *param);
 
 /**
   * Resizes the stack allocation of the current fiber if necessary to hold the system stack.

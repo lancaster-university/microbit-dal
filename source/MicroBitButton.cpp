@@ -18,17 +18,16 @@
   * MICROBIT_BUTTON_EVT_UP
   * MICROBIT_BUTTON_EVT_CLICK
   * MICROBIT_BUTTON_EVT_LONG_CLICK
-  * MICROBIT_BUTTON_EVT_DOUBLE_CLICK
   * MICROBIT_BUTTON_EVT_HOLD
   * @endcode
   */
-MicroBitButton::MicroBitButton(uint16_t id, PinName name, PinMode mode) : pin(name, mode)
+MicroBitButton::MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventConfiguration eventConfiguration, PinMode mode) : pin(name, mode)
 {
     this->id = id;
     this->name = name;
+    this->eventConfiguration = eventConfiguration;
     this->downStartTime = 0;
     this->sigma = 0;
-    this->doubleClickTimer = 0;
     uBit.addSystemComponent(this);
 }
 
@@ -38,7 +37,7 @@ MicroBitButton::MicroBitButton(uint16_t id, PinName name, PinMode mode) : pin(na
   */  
 void MicroBitButton::systemTick()
 {   
-     //
+    //
     // If the pin is pulled low (touched), increment our culumative counter.
     // otherwise, decrement it. We're essentially building a lazy follower here.
     // This makes the output debounced for buttons, and desensitizes touch sensors
@@ -71,12 +70,15 @@ void MicroBitButton::systemTick()
     {
         status = 0;
         MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_UP);
-    
-        //determine if this is a long click or a normal click and send event
-        if((ticks - downStartTime) >= MICROBIT_BUTTON_LONG_CLICK_TIME)
-            MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_LONG_CLICK);    
-        else
-            MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK);
+   
+       if (eventConfiguration == MICROBIT_BUTTON_ALL_EVENTS)
+       { 
+           //determine if this is a long click or a normal click and send event
+           if((ticks - downStartTime) >= MICROBIT_BUTTON_LONG_CLICK_TIME)
+               MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_LONG_CLICK);    
+           else
+               MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK);
+       }
     }
 
     //if button is pressed and the hold triggered event state is not triggered AND we are greater than the button debounce value

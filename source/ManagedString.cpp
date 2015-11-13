@@ -139,17 +139,17 @@ ManagedString::ManagedString(const ManagedString &s1, const ManagedString &s2)
   * character buffer may be declared on the stack for instance).
   *
   * @param str The character array on which to base the new ManagedString.
-  * @param length The length of the character array
+  * @param length The number of characters to use.
   *
   * Example:
   * @code 
-  * ManagedString s("abcdefg",7); // this is generally used for substring... why not use a normal char * constructor?
+  * ManagedString s("abcdefg",7); 
   * @endcode
   */  
 ManagedString::ManagedString(const char *str, const int16_t length)
 {
     // Sanity check. Return EmptyString for anything distasteful
-    if (str == NULL || *str == 0 || length > strlen(str))
+    if (str == NULL || *str == 0 || (uint16_t)length > strlen(str)) // XXX length should be unsigned on the interface
     {
         initEmpty();
         return;

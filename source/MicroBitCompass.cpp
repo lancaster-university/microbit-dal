@@ -33,13 +33,7 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address) : average(), sam
     this->samplePeriod = 100;
     this->configure();
     
-    //fetch our previous average values
-    average.x = read16(MAG_OFF_X_MSB);
-    average.y = read16(MAG_OFF_Y_MSB);
-    average.z = read16(MAG_OFF_Z_MSB);
-
-    if(average.x == 0 && average.y == 0 && average.z == 0)
-        status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
+    status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
     
     // Indicate that we're up and running.
     uBit.flags |= MICROBIT_FLAG_COMPASS_RUNNING;
@@ -51,14 +45,15 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address) : average(), sam
   *
   * @param reg The address of the register to write to.
   * @param value The value to write.
+  * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
   */
-void MicroBitCompass::writeCommand(uint8_t reg, uint8_t value)
+int MicroBitCompass::writeCommand(uint8_t reg, uint8_t value)
 {
     uint8_t command[2];
     command[0] = reg;
     command[1] = value;
     
-    uBit.i2c.write(address, (const char *)command, 2);
+    return uBit.i2c.write(address, (const char *)command, 2);
 }
 
 /**
@@ -69,10 +64,22 @@ void MicroBitCompass::writeCommand(uint8_t reg, uint8_t value)
   * @param buffer Memory area to read the data into.
   * @param length The number of bytes to read.
   */
-void MicroBitCompass::readCommand(uint8_t reg, uint8_t* buffer, int length)
+int MicroBitCompass::readCommand(uint8_t reg, uint8_t* buffer, int length)
 {
-    uBit.i2c.write(address, (const char *)&reg, 1, true);
-    uBit.i2c.read(address, (char *)buffer, length);
+    int result;
+
+    if (buffer == NULL || length <= 0)
+        return MICROBIT_INVALID_PARAMETER;
+
+    result = uBit.i2c.write(address, (const char *)&reg, 1, true);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
+
+    result = uBit.i2c.read(address, (char *)buffer, length);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
+
+    return MICROBIT_OK;
 }
 
 
@@ -81,19 +88,25 @@ void MicroBitCompass::readCommand(uint8_t reg, uint8_t* buffer, int length)
   * Blocks the calling thread until complete.
   *
   * @param reg The based address of the 16 bit register to access.
-  * @return The register value, interpreted as a 16 but signed value.
+  * @return The register value, interpreted as a 16 but signed value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
   */
-int16_t MicroBitCompass::read16(uint8_t reg)
+int MicroBitCompass::read16(uint8_t reg)
 {
     uint8_t cmd[2];
+    int result;
 
     cmd[0] = reg;
-    uBit.i2c.write(address, (const char *)cmd, 1);
+    result = uBit.i2c.write(address, (const char *)cmd, 1);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
 
     cmd[0] = 0x00;
     cmd[1] = 0x00;
     
-    uBit.i2c.read(address, (char *)cmd, 2);
+    result = uBit.i2c.read(address, (char *)cmd, 2);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
+
     return (int16_t) ((cmd[1] | (cmd[0] << 8))); //concatenate the MSB and LSB
 }
 
@@ -102,14 +115,17 @@ int16_t MicroBitCompass::read16(uint8_t reg)
   * Blocks the calling thread until complete.
   *
   * @param reg The based address of the 16 bit register to access.
-  * @return The register value, interpreted as a 8 bi signed value.
+  * @return The register value, interpreted as a 8 bit unsigned value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
   */
-uint8_t MicroBitCompass::read8(uint8_t reg)
+int MicroBitCompass::read8(uint8_t reg)
 {
     uint8_t data;
+    int result;
 
     data = 0;
-    readCommand(reg, (uint8_t*) &data, 1);
+    result = readCommand(reg, (uint8_t*) &data, 1);
+    if (result != MICROBIT_OK)
+        return MICROBIT_I2C_ERROR;
 
     return data;
 }
@@ -128,12 +144,12 @@ uint8_t MicroBitCompass::read8(uint8_t reg)
 int MicroBitCompass::heading()
 {
     if(status & MICROBIT_COMPASS_STATUS_CALIBRATING)
-        return MICROBIT_COMPASS_IS_CALIBRATING;    
+        return MICROBIT_CALIBRATION_IN_PROGRESS;    
 
     else if(!(status & MICROBIT_COMPASS_STATUS_CALIBRATED))
     {
         MicroBitEvent(id, MICROBIT_COMPASS_EVT_CAL_REQUIRED);
-        return MICROBIT_COMPASS_CALIBRATE_REQUIRED;
+        return MICROBIT_CALIBRATION_REQUIRED;
     }
     
     float bearing = (atan2((double)(sample.y - average.y),(double)(sample.x - average.x)))*180/PI;
@@ -154,9 +170,9 @@ void MicroBitCompass::idleTick()
     // Active HI. Interrupt is cleared in data read of MAG_OUT_X_MSB.
     if(int1)
     {
-        sample.x = read16(MAG_OUT_X_MSB);
-        sample.y = read16(MAG_OUT_Y_MSB);
-        sample.z = read16(MAG_OUT_Z_MSB);
+        sample.x = (int16_t) read16(MAG_OUT_X_MSB);
+        sample.y = (int16_t) read16(MAG_OUT_Y_MSB);
+        sample.z = (int16_t) read16(MAG_OUT_Z_MSB);
 
         if (status & MICROBIT_COMPASS_STATUS_CALIBRATING)
         {
@@ -230,17 +246,34 @@ int MicroBitCompass::getZ()
  * in this object. The nearest values are chosen to those defined
  * that are supported by the hardware. The instance variables are then
  * updated to reflect reality.
+ * @return MICROBIT_OK or MICROBIT_I2C_ERROR if the magnetometer could not be configured.
  */
-void MicroBitCompass::configure()
+int MicroBitCompass::configure()
 {
     const MAG3110SampleRateConfig  *actualSampleRate;
+    int result;
 
     // First, take the device offline, so it can be configured.
-    writeCommand(MAG_CTRL_REG1, 0x00);
+    result = writeCommand(MAG_CTRL_REG1, 0x00);
+    if (result != MICROBIT_OK)
+        return MICROBIT_I2C_ERROR;
 
     // Wait for the part to enter standby mode...    
-    while(this->read8(MAG_SYSMOD) & 0x03)
+    while(1)
+    {
+        // Read the status of the part...
+        // If we can't communicate with it over I2C, pass on the error.
+        result = this->read8(MAG_SYSMOD);
+        if (result == MICROBIT_I2C_ERROR)
+            return MICROBIT_I2C_ERROR;
+
+        // if the part in in standby, we're good to carry on.
+        if((result & 0x03) == 0)
+            break;
+
+        // Perform a power efficient sleep...
         uBit.sleep(100);
+    }
 
     // Find the nearest sample rate to that specified.
     actualSampleRate = &MAG3110SampleRate[MAG3110_SAMPLE_RATES-1];
@@ -256,10 +289,17 @@ void MicroBitCompass::configure()
     this->samplePeriod = actualSampleRate->sample_period / 1000;
 
     // Enable automatic reset after each sample;
-    writeCommand(MAG_CTRL_REG2, 0xA0);
+    result = writeCommand(MAG_CTRL_REG2, 0xA0);
+    if (result != MICROBIT_OK)
+        return MICROBIT_I2C_ERROR;
+
     
     // Bring the device online, with the requested sample frequency.
-    writeCommand(MAG_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
+    result = writeCommand(MAG_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
+    if (result != MICROBIT_OK)
+        return MICROBIT_I2C_ERROR;
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -267,11 +307,12 @@ void MicroBitCompass::configure()
  * n.b. the requested rate may not be possible on the hardware. In this case, the
  * nearest lower rate is chosen.
  * @param period the requested time between samples, in milliseconds.
+ * @return MICROBIT_OK or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
  */
-void MicroBitCompass::setPeriod(int period)
+int MicroBitCompass::setPeriod(int period)
 {
     this->samplePeriod = period;
-    this->configure();
+    return this->configure();
 }
 
 /**
@@ -286,7 +327,7 @@ int MicroBitCompass::getPeriod()
 
 /**
   * Attempts to determine the 8 bit ID from the magnetometer. 
-  * @return the id of the compass (magnetometer)
+  * @return the id of the compass (magnetometer), or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
   *
   * Example:
   * @code
@@ -296,19 +337,27 @@ int MicroBitCompass::getPeriod()
 int MicroBitCompass::whoAmI()
 {
     uint8_t data;
+    int result;
 
-    readCommand(MAG_WHOAMI, &data, 1);    
+    result = readCommand(MAG_WHOAMI, &data, 1);    
+    if (result != MICROBIT_OK)
+        return MICROBIT_I2C_ERROR;
+
     return (int)data;
 }
 
 /**
  * Reads the currently die temperature of the compass. 
- * @return The temperature, in degrees celsius.
+ * @return the temperature in degrees celsius, or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
  */
 int MicroBitCompass::readTemperature()
 {
     int8_t temperature;
-    readCommand(MAG_DIE_TEMP, (uint8_t *)&temperature, 1);    
+    int result;
+
+    result = readCommand(MAG_DIE_TEMP, (uint8_t *)&temperature, 1);
+    if (result != MICROBIT_OK)
+        return MICROBIT_I2C_ERROR;
 
     return temperature;
 }
@@ -316,12 +365,13 @@ int MicroBitCompass::readTemperature()
 /**
   * Perform a calibration of the compass.
   * This will fire MICROBIT_COMPASS_EVT_CAL_START.
+  * @return MICROBIT_OK, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
   * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
   */
-void MicroBitCompass::calibrateStart()
+int MicroBitCompass::calibrateStart()
 {
     if(this->isCalibrating())
-        return;
+        return MICROBIT_CALIBRATION_IN_PROGRESS;
 
     status |= MICROBIT_COMPASS_STATUS_CALIBRATING;
 
@@ -330,6 +380,8 @@ void MicroBitCompass::calibrateStart()
     maxSample = sample;
 
     MicroBitEvent(id, MICROBIT_COMPASS_EVT_CAL_START);
+
+    return MICROBIT_OK;
 }   
 
  
@@ -358,16 +410,6 @@ void MicroBitCompass::calibrateEnd()
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATING;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;
    
-    //Store x, y and z values in persistent storage on the MAG3110
-    writeCommand(MAG_OFF_X_LSB, (uint8_t)average.x);
-    writeCommand(MAG_OFF_X_MSB, (uint8_t)(average.x >> 8));
-    
-    writeCommand(MAG_OFF_Y_LSB, (uint8_t)average.y);
-    writeCommand(MAG_OFF_Y_MSB, (uint8_t)(average.y >> 8));
-    
-    writeCommand(MAG_OFF_Z_LSB, (uint8_t)average.z);
-    writeCommand(MAG_OFF_Z_MSB, (uint8_t)(average.z >> 8));
-    
     MicroBitEvent(id, MICROBIT_COMPASS_EVT_CAL_END);
 }    
 
@@ -392,15 +434,6 @@ int MicroBitCompass::isCalibrating()
   */
 void MicroBitCompass::clearCalibration()
 {
-    writeCommand(MAG_OFF_X_LSB, 0);
-    writeCommand(MAG_OFF_X_MSB, 0);
-    
-    writeCommand(MAG_OFF_Y_LSB, 0);
-    writeCommand(MAG_OFF_Y_MSB, 0);
-    
-    writeCommand(MAG_OFF_Z_LSB, 0);
-    writeCommand(MAG_OFF_Z_MSB, 0);
-    
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;    
 }
 

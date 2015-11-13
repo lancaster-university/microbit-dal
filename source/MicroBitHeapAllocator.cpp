@@ -32,7 +32,7 @@ struct HeapDefinition
 
 // Create the necessary heap definitions.
 // We use two heaps by default: one for SoftDevice reuse, and one to run inside the mbed heap.
-HeapDefinition heap[MICROBIT_HEAP_COUNT] = { NULL }; 
+HeapDefinition heap[MICROBIT_HEAP_COUNT] = { }; 
 
 // Scans the status of the heap definition table, and returns the number of INITIALISED heaps.
 int microbit_active_heaps()
@@ -62,13 +62,13 @@ void microbit_heap_print(HeapDefinition &heap)
 
     if (heap.heap_start == NULL)
     {
-        pc.printf("--- HEAP NOT INITIALISED ---\n");
+        uBit.serial.printf("--- HEAP NOT INITIALISED ---\n");
         return;
     }
 
-    pc.printf("heap_start : %p\n", heap.heap_start);
-    pc.printf("heap_end   : %p\n", heap.heap_end);
-    pc.printf("heap_size  : %d\n", (int)heap.heap_end - (int)heap.heap_start);
+    uBit.serial.printf("heap_start : %p\n", heap.heap_start);
+    uBit.serial.printf("heap_end   : %p\n", heap.heap_end);
+    uBit.serial.printf("heap_size  : %d\n", (int)heap.heap_end - (int)heap.heap_start);
 
 	// Disable IRQ temporarily to ensure no race conditions!
     __disable_irq();
@@ -77,10 +77,10 @@ void microbit_heap_print(HeapDefinition &heap)
 	while (block < heap.heap_end)
 	{
 		blockSize = *block & ~MICROBIT_HEAP_BLOCK_FREE;
-        pc.printf("[%C:%d] ", *block & MICROBIT_HEAP_BLOCK_FREE ? 'F' : 'U', blockSize*4);
+        uBit.serialpc.printf("[%C:%d] ", *block & MICROBIT_HEAP_BLOCK_FREE ? 'F' : 'U', blockSize*4);
         if (cols++ == 20)
         {
-            pc.printf("\n");
+            uBit.serial.printf("\n");
             cols = 0;
         }
 
@@ -95,10 +95,10 @@ void microbit_heap_print(HeapDefinition &heap)
 	// Enable Interrupts
     __enable_irq();
 
-    pc.printf("\n");
+    uBit.serial.printf("\n");
 
-    pc.printf("mb_total_free : %d\n", totalFreeBlock*4);
-    pc.printf("mb_total_used : %d\n", totalUsedBlock*4);
+    uBit.serial.printf("mb_total_free : %d\n", totalFreeBlock*4);
+    uBit.serial.printf("mb_total_used : %d\n", totalUsedBlock*4);
 }
 
 
@@ -108,7 +108,7 @@ void microbit_heap_print()
 {
     for (int i=0; i < MICROBIT_HEAP_COUNT; i++)
     {
-        pc.printf("\nHEAP %d: \n", i);
+        uBit.serial.printf("\nHEAP %d: \n", i);
         microbit_heap_print(heap[i]);
     }
 }
@@ -137,9 +137,9 @@ microbit_create_sd_heap(HeapDefinition &heap)
 #endif
 
     microbit_initialise_heap(heap);
-    return 1;
+    return MICROBIT_OK;
 #else
-    return 0;
+    return MICROBIT_NOT_SUPPORTED;
 #endif
 }
 
@@ -151,7 +151,7 @@ microbit_create_nested_heap(HeapDefinition &heap)
   
     // Ensure we're configured to use this heap at all. If not, we can safely return.
     if (MICROBIT_HEAP_SIZE <= 0)
-       return 0;
+       return MICROBIT_INVALID_PARAMETER;
 
 	// Snapshot something at the top of the main heap.
 	p = native_malloc(sizeof(uint32_t));
@@ -173,14 +173,14 @@ microbit_create_nested_heap(HeapDefinition &heap)
         {
             mb_heap_max -= 32;
             if (mb_heap_max <= 0)
-                return 0;
+                return MICROBIT_NO_RESOURCES;
         }
     }
 
 	heap.heap_end = heap.heap_start + mb_heap_max / MICROBIT_HEAP_BLOCK_SIZE;
     microbit_initialise_heap(heap);
 
-    return 1;
+    return MICROBIT_OK;
 }
 
 /**
@@ -188,18 +188,29 @@ microbit_create_nested_heap(HeapDefinition &heap)
   * After this is called, any future calls to malloc, new, free or delete will use the new heap.
   * n.b. only code that #includes MicroBitHeapAllocator.h will use this heap. This includes all micro:bit runtime
   * code, and user code targetting the runtime. External code can choose to include this file, or
-  * simply use the strandard mbed heap.
+  * simply use the standard mbed heap.
   */
 int
 microbit_heap_init()
 {
-    int r = 0;
+    int result;
 
 	// Disable IRQ temporarily to ensure no race conditions!
     __disable_irq();
 
-    r += microbit_create_nested_heap(heap[0]);
-    r += microbit_create_sd_heap(heap[1]);
+    result = microbit_create_nested_heap(heap[0]);
+    if (result != MICROBIT_OK)
+    {
+        __enable_irq();
+        return MICROBIT_NO_RESOURCES;
+    }
+
+    result = microbit_create_sd_heap(heap[1]);
+    if (result != MICROBIT_OK)
+    {
+        __enable_irq();
+        return MICROBIT_NO_RESOURCES;
+    }
 
 	// Enable Interrupts
     __enable_irq();
@@ -207,7 +218,8 @@ microbit_heap_init()
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     microbit_heap_print();
 #endif    
-    return r;
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -317,7 +329,7 @@ void *microbit_malloc(size_t size)
             if (p != NULL)
             {
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
-                pc.printf("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
+                pc.uBit.serial("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
 #endif    
                 return p;
             }
@@ -333,7 +345,7 @@ void *microbit_malloc(size_t size)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
         // Keep everything trasparent if we've not been initialised yet
         if (microbit_active_heaps())
-            pc.printf("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
+            pc.uBit.serial("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
 #endif    
         return p;
     }
@@ -342,7 +354,7 @@ void *microbit_malloc(size_t size)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     // Keep everything trasparent if we've not been initialised yet
     if (microbit_active_heaps())
-        pc.printf("microbit_malloc: OUT OF MEMORY\n");
+        pc.uBit.serial("microbit_malloc: OUT OF MEMORY\n");
 #endif    
     
 #if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
@@ -363,7 +375,7 @@ void microbit_free(void *mem)
 
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     if (microbit_active_heaps())
-        pc.printf("microbit_free:   %p\n", mem);
+        pc.uBit.serial("microbit_free:   %p\n", mem);
 #endif    
     // Sanity check.
 	if (memory == NULL)
