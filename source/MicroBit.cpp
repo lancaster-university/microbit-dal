@@ -2,13 +2,6 @@
 
 char MICROBIT_BLE_DEVICE_NAME[] = "BBC micro:bit [xxxxx]";
 
-#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED) && CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-const char* MICROBIT_BLE_MANUFACTURER = "The Cast of W1A";
-const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
-const char* MICROBIT_BLE_HARDWARE_VERSION = "1.0";
-const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
-const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
-#endif
 
 /**
   * custom function for panic for malloc & new due to scoping issue.
@@ -27,17 +20,6 @@ microbit_reset()
     NVIC_SystemReset();
 }
 
-
-/**
-  * Callback when a BLE GATT disconnect occurs.
-  */
-void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
-{
-    (void) handle; /* -Wunused-param */
-    (void) reason; /* -Wunused-param */
-
-    uBit.ble->startAdvertising(); 
-}
 
 /**
   * Constructor. 
@@ -76,7 +58,8 @@ MicroBit::MicroBit() :
        MICROBIT_ID_IO_P9,MICROBIT_ID_IO_P10,MICROBIT_ID_IO_P11,
        MICROBIT_ID_IO_P12,MICROBIT_ID_IO_P13,MICROBIT_ID_IO_P14,
        MICROBIT_ID_IO_P15,MICROBIT_ID_IO_P16,MICROBIT_ID_IO_P19,
-       MICROBIT_ID_IO_P20)
+       MICROBIT_ID_IO_P20),
+	bleManager()
 {   
 }
 
@@ -112,62 +95,9 @@ void MicroBit::init()
 
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
     // Start the BLE stack.        
-    ble = new BLEDevice();
-    ble->init();
-    ble->onDisconnection(bleDisconnectionCallback);
-
-    // Bring up any configured auxiliary services.
-#if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
-    ble_firmware_update_service = new MicroBitDFUService(*ble);
+    bleManager.init(this->getName(), this->getSerial());
+    ble = bleManager.ble;
 #endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, getSerial().toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
-    new MicroBitEventService(*ble);
-#endif    
-    
-#if CONFIG_ENABLED(MICROBIT_BLE_LED_SERVICE) 
-    new MicroBitLEDService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_ACCELEROMETER_SERVICE) 
-    new MicroBitAccelerometerService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_MAGNETOMETER_SERVICE) 
-    new MicroBitMagnetometerService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_BUTTON_SERVICE) 
-    new MicroBitButtonService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_IO_PIN_SERVICE) 
-    new MicroBitIOPinService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_TEMPERATURE_SERVICE) 
-    new MicroBitTemperatureService(*ble);
-#endif
-
-    // Configure for high speed mode where possible.
-    Gap::ConnectionParams_t fast;
-    ble->getPreferredConnectionParams(&fast);
-    fast.minConnectionInterval = 8; // 10 ms
-    fast.maxConnectionInterval = 16; // 20 ms
-    fast.slaveLatency = 0;
-    ble->setPreferredConnectionParams(&fast);
-
-    // Setup advertising.
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)MICROBIT_BLE_DEVICE_NAME, sizeof(MICROBIT_BLE_DEVICE_NAME));
-    ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(200));
-    ble->startAdvertising();  
-#endif    
 
     // Start refreshing the Matrix Display
     systemTicker.attach(this, &MicroBit::systemTick, MICROBIT_DISPLAY_REFRESH_PERIOD);     

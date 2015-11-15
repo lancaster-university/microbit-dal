@@ -47,28 +47,13 @@ int main()
         
         if (i == 10)
         {
-            // OK - we need to enter BLUE ZONE mode.
-            // Test to see if BLE and the necessary services have been brought up already.
-            // If not, start them.
-            if (!uBit.ble)
-            {
-                uBit.ble = new BLEDevice();
-                uBit.ble->init();
-                uBit.ble->onDisconnection(bleDisconnectionCallback);
+			// Bring up the BLE stack if it isn't alredy done.
+			if (!uBit.ble)
+				uBit.bleManager.init(uBit.getName(), uBit.getSerial());
 
-                // Ensure we're advertising.
-                uBit.ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-                uBit.ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)MICROBIT_BLE_DEVICE_NAME, sizeof(MICROBIT_BLE_DEVICE_NAME));
-                uBit.ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-                uBit.ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(200));
-                uBit.ble->startAdvertising();  
-            }
+            // Enter BLUE ZONE mode, using the LED matrix for any necessary paiing operations
+			uBit.bleManager.bluezone(uBit.display);
 
-            if (!uBit.ble_firmware_update_service)
-                uBit.ble_firmware_update_service = new MicroBitDFUService(*uBit.ble);
-
-            // enter BLUE ZONE mode.
-            uBit.ble_firmware_update_service->pair();
         }
     }
 #endif

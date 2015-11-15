@@ -1,9 +1,8 @@
 #include "MicroBit.h"
 
 #define MICROBIT_BLE_ENABLE_BONDING 	true
-#define MICROBIT_BLE_REQUIRE_MITM	true
+#define MICROBIT_BLE_REQUIRE_MITM		true
 
-#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED) && CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
 const char* MICROBIT_BLE_MANUFACTURER = "The Cast of W1A";
 const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
 const char* MICROBIT_BLE_HARDWARE_VERSION = "1.0";
@@ -13,7 +12,7 @@ const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
 /*
  * Many of the mbed interfaces we need to use only support callbacks to plain C functions, rather than C++ methods.
  * So, we maintain a pointer to the MicroBitBLEManager that's in use. Ths way, we can still access resources on the micro:bit 
- * whilst keeping the code modular.
+ * whilst keeping the code modular. 
  */
 static MicroBitBLEManager *manager = NULL;
 
@@ -26,7 +25,7 @@ static void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionRea
     (void) reason; /* -Wunused-param */
 
     if (manager)
-	    manager->bleDisconnectionCallback();
+	    manager->onDisconnectionCallback();
 
 }
 
@@ -54,31 +53,14 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
 
 static void securitySetupInitiatedCallback(Gap::Handle_t handle, bool allowBonding, bool requireMITM, SecurityManager::SecurityIOCapabilities_t iocaps)
 {
-    (void) handle; 		/* -Wunused-param */
+    (void) handle; 			/* -Wunused-param */
     (void) allowBonding; 	/* -Wunused-param */
     (void) requireMITM; 	/* -Wunused-param */
-    (void) iocaps; 		/* -Wunused-param */
+    (void) iocaps; 			/* -Wunused-param */
 
     printf("Security setup initiated\r\n");
 }
 
-void initializeSecurity(BLE &ble)
-{
-    bool enableBonding = true;
-    bool requireMITM = HID_SECURITY_REQUIRE_MITM;
-
-    ble.securityManager().onSecuritySetupInitiated(securitySetupInitiatedCallback);
-    ble.securityManager().onPasskeyDisplay(passkeyDisplayCallback);
-    ble.securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
-
-    ble.securityManager().init(enableBonding, requireMITM, HID_SECURITY_IOCAPS);
-}
-
-
-void MicroBitBLEManager::bleDisconnectionCallback()
-{
-    ble.startAdvertising(); 
-}
 
 /**
   * Constructor. 
@@ -90,6 +72,18 @@ void MicroBitBLEManager::bleDisconnectionCallback()
   */
 MicroBitBLEManager::MicroBitBLEManager() 
 {   
+	this->ble = NULL;
+}
+
+/**
+  * Method that is called whenever a BLE device disconnects from us.
+  * The nordic stack stops dvertising whenever a device connects, so we use
+  * this callback to restart advertising.
+  */
+void MicroBitBLEManager::onDisconnectionCallback()
+{   
+	if(ble)
+    	ble->startAdvertising();  
 }
 
 /**
@@ -103,7 +97,7 @@ MicroBitBLEManager::MicroBitBLEManager()
   * uBit.init();
   * @endcode
   */
-void MicroBitBLEManager::init()
+void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber)
 {   
     // Start the BLE stack.        
     ble = new BLEDevice();
@@ -116,16 +110,15 @@ void MicroBitBLEManager::init()
     ble->securityManager().onSecuritySetupInitiated(securitySetupInitiatedCallback);
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
-
-    ble.securityManager().init(MICROBIT_BLE_ENABLE_BONDING, MICROBIT_BLE_REQUIRE_MITM, HID_SECURITY_IOCAPS);
+    ble->securityManager().init(MICROBIT_BLE_ENABLE_BONDING, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
     // Bring up any configured auxiliary services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
-    ble_firmware_update_service = new MicroBitDFUService(*ble);
+    new MicroBitDFUService(*ble);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, getSerial().toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
@@ -166,11 +159,20 @@ void MicroBitBLEManager::init()
 
     // Setup advertising.
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)MICROBIT_BLE_DEVICE_NAME, sizeof(MICROBIT_BLE_DEVICE_NAME));
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)deviceName.toCharArray(), deviceName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(200));
     ble->startAdvertising();  
-#endif    
-
 }
+
+/**
+ * Enter BLUEZONE mode. This is mode is called to initiate pairing, and to enable FOTA programming
+ * of the micro:bit in cases where BLE is disabled during normal operation.
+ */
+void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
+{   
+	// TODO:
+	while(1);
+}
+
 
