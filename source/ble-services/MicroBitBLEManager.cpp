@@ -33,34 +33,19 @@ static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::
 {
     (void) handle; /* -Wunused-param */
 
-    printf("Input passKey: ");
-    for (unsigned i = 0; i < Gap::ADDR_LEN; i++) {
-        printf("%c", passkey[i]);
-    }
-    printf("\r\n");
+	ManagedString passKey((const char *)passkey, SecurityManager::PASSKEY_LEN);
+
+    if (manager)
+	    manager->pairingRequested(passKey);
 }
 
 static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager::SecurityCompletionStatus_t status)
 {
     (void) handle; /* -Wunused-param */
 
-    if (status == SecurityManager::SEC_STATUS_SUCCESS) {
-        printf("Security success %d\r\n", status);
-    } else {
-        printf("Security failed %d\r\n", status);
-    }
+    if (manager)
+	    manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
 }
-
-static void securitySetupInitiatedCallback(Gap::Handle_t handle, bool allowBonding, bool requireMITM, SecurityManager::SecurityIOCapabilities_t iocaps)
-{
-    (void) handle; 			/* -Wunused-param */
-    (void) allowBonding; 	/* -Wunused-param */
-    (void) requireMITM; 	/* -Wunused-param */
-    (void) iocaps; 			/* -Wunused-param */
-
-    printf("Security setup initiated\r\n");
-}
-
 
 /**
   * Constructor. 
@@ -72,7 +57,9 @@ static void securitySetupInitiatedCallback(Gap::Handle_t handle, bool allowBondi
   */
 MicroBitBLEManager::MicroBitBLEManager() 
 {   
+	manager = this;
 	this->ble = NULL;
+	this->pairingStatus = 0;
 }
 
 /**
@@ -99,6 +86,12 @@ void MicroBitBLEManager::onDisconnectionCallback()
   */
 void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber)
 {   
+	ManagedString prefix("BBC micro:bit [");
+	ManagedString postfix("]");
+	ManagedString BLEName = prefix + deviceName + postfix;
+
+	this->deviceName = deviceName;
+
     // Start the BLE stack.        
     ble = new BLEDevice();
     ble->init();
@@ -107,7 +100,6 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->onDisconnection(bleDisconnectionCallback);
 
     // Setup our security requirements.
-    ble->securityManager().onSecuritySetupInitiated(securitySetupInitiatedCallback);
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
     ble->securityManager().init(MICROBIT_BLE_ENABLE_BONDING, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
@@ -159,10 +151,33 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     // Setup advertising.
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)deviceName.toCharArray(), deviceName.length());
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(200));
     ble->startAdvertising();  
+}
+
+/**
+ * A request to pair has been received from a BLE device.
+ * If we're in BLUEZONE mode, display the passkey to the user.
+ */
+void MicroBitBLEManager::pairingRequested(ManagedString passKey)
+{
+	this->passKey = passKey;
+	this->pairingStatus = MICROBIT_BLE_PAIR_REQUEST;
+}
+
+/**
+ * A pairing request has been sucesfully completed.
+ * If we're in BLUEZONE mode, display feedback to the user.
+ */
+void MicroBitBLEManager::pairingComplete(bool success)
+{
+	this->pairingStatus &= ~MICROBIT_BLE_PAIR_REQUEST;
+	this->pairingStatus |= MICROBIT_BLE_PAIR_COMPLETE;
+
+	if(success)
+		this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
 }
 
 /**
@@ -170,9 +185,62 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
  * of the micro:bit in cases where BLE is disabled during normal operation.
  */
 void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
-{   
-	// TODO:
-	while(1);
+{  
+	// Stop any running animations on the display
+	display.stopAnimation();
+
+	// Display a welcome message
+	display.scroll("Hi! I'm ");
+	display.scroll(deviceName);
+
+	// Display our name, visualised as a histogram in the display to aid identification.
+	showNameHistogram(display);
+
+	while(1)
+	{
+		if (pairingStatus & MICROBIT_BLE_PAIR_REQUEST)
+		{
+			display.scroll("Pair: ");
+			display.scroll(passKey);
+		}
+
+		if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
+		{
+			if (pairingStatus & MICROBIT_BLE_PAIR_SUCCESSFUL)
+			{
+				MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
+				display.print(tick,0,0,0);
+			}
+			else
+			{
+				MicroBitImage cross("255,0,0,0,255\n0,255,0,255,0\n0,0,255,0,0\n0,255,0,255,0\n255,0,0,0,255\n");
+				display.print(cross,0,0,0);
+			}
+		}
+	}
 }
 
+/**
+  * Displays the device's ID code as a histogram on the LED matrix display.
+  */
+void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
+{
+    uint32_t n = NRF_FICR->DEVICEID[1];
+    int ld = 1;
+    int d = MICROBIT_DFU_HISTOGRAM_HEIGHT;
+    int h;
+
+    display.clear();
+    for (int i=0; i<MICROBIT_DFU_HISTOGRAM_WIDTH;i++)
+    {
+        h = (n % d) / ld;
+
+        n -= h;
+        d *= MICROBIT_DFU_HISTOGRAM_HEIGHT;
+        ld *= MICROBIT_DFU_HISTOGRAM_HEIGHT;
+
+        for (int j=0; j<h+1; j++)
+            display.image.setPixelValue(MICROBIT_DFU_HISTOGRAM_WIDTH-i-1, MICROBIT_DFU_HISTOGRAM_HEIGHT-j-1, 255);
+    }       
+}
 

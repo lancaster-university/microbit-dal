@@ -33,7 +33,12 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble) :
     magnetometerDataCharacteristicBuffer[2] = 0;
     magnetometerBearingCharacteristicBuffer = 0;
     magnetometerPeriodCharacteristicBuffer = uBit.compass.getPeriod();
-    
+
+    // Set default security requirements
+    magnetometerDataCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    magnetometerBearingCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    magnetometerPeriodCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+
     GattCharacteristic *characteristics[] = {&magnetometerDataCharacteristic, &magnetometerBearingCharacteristic, &magnetometerPeriodCharacteristic};
     GattService         service(MicroBitMagnetometerServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 

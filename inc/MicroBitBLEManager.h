@@ -33,6 +33,10 @@
 #include "MicroBitTemperatureService.h"
 #include "ExternalEvents.h"
 
+#define MICROBIT_BLE_PAIR_REQUEST		0x01
+#define MICROBIT_BLE_PAIR_COMPLETE		0x02
+#define MICROBIT_BLE_PAIR_SUCCESSFUL	0x04
+
 /**
   * Class definition for the MicroBitBLEManager.
   *
@@ -68,7 +72,7 @@ class MicroBitBLEManager
     void init(ManagedString deviceName, ManagedString serialNumber);
 
     /**
-     * Enter BLUEZOE mode. This is mode is called to initiate pairing, and to enable FOTA programming
+     * Enter BLUEZONE mode. This is mode is called to initiate pairing, and to enable FOTA programming
      * of the micro:bit in cases where BLE is disabled during normal operation.
      *
      * @param display a MicroBitDisplay to use when displaying pairing information.
@@ -81,6 +85,29 @@ class MicroBitBLEManager
      * this callback to restart advertising.
      */
     void onDisconnectionCallback();
+
+	/**
+	 * Displays the device's ID code as a histogram on the LED matrix display.
+	 */
+	void			showNameHistogram(MicroBitDisplay &display);
+
+	/**
+	 * A request to pair has been received from a BLE device.
+	 * If we're in BLUEZONE mode, display the passkey to the user.
+	 */
+	void			pairingRequested(ManagedString passKey);
+
+	/**
+	 * A pairing request has been sucesfully completed.
+	 * If we're in BLUEZONE mode, display feedback to the user.
+	 */
+	void			pairingComplete(bool success);
+
+	private:
+	int				pairingStatus;
+	ManagedString	passKey;
+	ManagedString	deviceName;
+
 };
 
 

@@ -29,7 +29,11 @@ MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble) :
     accelerometerDataCharacteristicBuffer[1] = 0;
     accelerometerDataCharacteristicBuffer[2] = 0;
     accelerometerPeriodCharacteristicBuffer = uBit.accelerometer.getPeriod();
-    
+
+    // Set default security requirements
+    accelerometerDataCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    accelerometerPeriodCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+
     GattCharacteristic *characteristics[] = {&accelerometerDataCharacteristic, &accelerometerPeriodCharacteristic};
     GattService         service(MicroBitAccelerometerServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
