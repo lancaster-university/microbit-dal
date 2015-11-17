@@ -263,7 +263,7 @@ ManagedString& ManagedString::operator = (const ManagedString& s)
   */
 bool ManagedString::operator== (const ManagedString& s)
 {
-    return ((length() == s.length()) && (memcmp(toCharArray(),s.toCharArray(),s.length())==0));
+    return ((length() == s.length()) && (strcmp(toCharArray(),s.toCharArray())==0));
 }
 
 /**
@@ -287,7 +287,7 @@ bool ManagedString::operator== (const ManagedString& s)
   */
 bool ManagedString::operator< (const ManagedString& s)
 {
-    return (memcmp(toCharArray(), s.toCharArray(), min(length(),s.length()))<0);
+    return (strcmp(toCharArray(), s.toCharArray())<0);
 }
 
 /**
@@ -311,7 +311,7 @@ bool ManagedString::operator< (const ManagedString& s)
   */
 bool ManagedString::operator> (const ManagedString& s)
 {
-    return (memcmp(toCharArray(), s.toCharArray(), min(length(),s.length()))>0);
+    return (strcmp(toCharArray(), s.toCharArray())>0);
 }
 
 /**
