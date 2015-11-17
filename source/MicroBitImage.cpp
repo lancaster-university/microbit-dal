@@ -249,7 +249,7 @@ void MicroBitImage::init(const int16_t x, const int16_t y, const uint8_t *bitmap
 
     
     // Create a copy of the array
-    ptr = (ImageData*)malloc(4 + x * y);
+    ptr = (ImageData*)malloc(sizeof(ImageData) + x * y);
     ptr->init();
     ptr->width = x;
     ptr->height = y;
