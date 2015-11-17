@@ -314,8 +314,8 @@ int MicroBit::random(int max)
         bits++;
     }
     
-    m = 0;
     do {
+        m = 0;
         for(b=0; b<bits; b++) {
             // Cycle the LFSR (Linear Feedback Shift Register).
             // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
