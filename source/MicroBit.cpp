@@ -122,7 +122,9 @@ void MicroBit::init()
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, getSerial().toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    // Create a temporary, so that compiler doesn't delete the pointer before DeviceInformationService copies it
+    ManagedString tmp = getSerial();
+    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, tmp.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
@@ -233,7 +235,7 @@ ManagedString MicroBit::getSerial()
     ManagedString s1 = ManagedString(n1);
     ManagedString s2 = ManagedString(n2);
 
-    return s1+s2;
+    return s1 + s2;
 }
 
 /**

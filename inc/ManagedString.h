@@ -1,7 +1,14 @@
 #ifndef MANAGED_STRING_H
 #define MANAGED_STRING_H
 
-#include "mbed.h"
+#include "RefCounted.h"
+
+struct StringData : RefCounted
+{
+    uint16_t len;
+    char data[0];
+};
+
 
 /**
   * Class definition for a ManagedString.
@@ -14,21 +21,43 @@
   * 1) std::shared_ptr is not yet availiable on the ARMCC compiler
   * 2) to reduce memory footprint - we don't need many of the other features in the std library
   * 3) it makes an interestin case study for anyone interested in seeing how it works!
+  * 4) we need explicit reference counting to inter-op with low-level application langauge runtimes
+  * 5) the reference counting needs to also work for read-only, flash-resident strings
   */
 class ManagedString
 {
-    // Internally we record the string as a char *, but control access to this to proide immutability
-    // and reference counting.
-    char *data;
-    int16_t *ref;
-    int16_t len;
+    // StringData contains the reference count, the length, follwed by char[] data, all in one block.
+    // When referece count is 0xffff, then it's read only and should not be counted.
+    // Otherwise the block was malloc()ed.
+    // We control access to this to proide immutability and reference counting.
+    StringData *ptr;
 
     public:
 
     /**
       * Constructor. 
+      * Create a managed string from a specially prepared string literal. It will ptr->incr().
+      *
+      * @param ptr The literal - first two bytes should be 0xff, then the length in little endian, then the literal. The literal has to be 4-byte aligned.
+      * 
+      * Example:
+      * @code 
+      * static const char hello[] __attribute__ ((aligned (4))) = "\xff\xff\x05\x00" "Hello";
+      * ManagedString s((StringData*)(void*)hello);
+      * @endcode
+      */    
+    ManagedString(StringData *ptr);
+
+    /**
+      * Get current ptr, do not decr() it, and set the current instance to empty string.
+      * This is to be used by specialized runtimes which pass StringData around.
+      */
+    StringData *leakData();
+
+    /**
+      * Constructor. 
       * Create a managed string from a pointer to an 8-bit character buffer.
-      * The buffer is copied to ensure sage memory management (the supplied
+      * The buffer is copied to ensure safe memory management (the supplied
       * character buffer may be decalred on the stack for instance).
       *
       * @param str The character array on which to base the new ManagedString.
@@ -115,7 +144,7 @@ class ManagedString
       *
       * Free this ManagedString, and decrement the reference count to the
       * internal character buffer. If we're holding the last reference,
-      * also free the character buffer and reference counter.
+      * also free the character buffer.
       */
     ~ManagedString();
     
@@ -251,11 +280,14 @@ class ManagedString
 
 
     /**
-      * Provides an immutable 8 bit wide haracter buffer representing this string.
+      * Provides an immutable 8 bit wide character buffer representing this string.
       *
       * @return a pointer to the character buffer.
       */    
-    const char *toCharArray();
+    const char *toCharArray() const
+    {
+        return ptr->data;
+    }
     
     /**
       * Determines the length of this ManagedString in characters.
@@ -269,7 +301,10 @@ class ManagedString
       * print(s.length()) // prints "4"
       * @endcode
       */ 
-    int16_t length();
+    int16_t length() const
+    {
+        return ptr->len;
+    }
 
     /**
       * Empty String constant

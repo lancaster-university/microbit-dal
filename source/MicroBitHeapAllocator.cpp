@@ -77,7 +77,7 @@ void microbit_heap_print(HeapDefinition &heap)
 	while (block < heap.heap_end)
 	{
 		blockSize = *block & ~MICROBIT_HEAP_BLOCK_FREE;
-        uBit.serialpc.printf("[%C:%d] ", *block & MICROBIT_HEAP_BLOCK_FREE ? 'F' : 'U', blockSize*4);
+        uBit.serial.printf("[%C:%d] ", *block & MICROBIT_HEAP_BLOCK_FREE ? 'F' : 'U', blockSize*4);
         if (cols++ == 20)
         {
             uBit.serial.printf("\n");
@@ -329,7 +329,7 @@ void *microbit_malloc(size_t size)
             if (p != NULL)
             {
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
-                pc.uBit.serial("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
+                uBit.serial.printf("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
 #endif    
                 return p;
             }
@@ -345,7 +345,7 @@ void *microbit_malloc(size_t size)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
         // Keep everything trasparent if we've not been initialised yet
         if (microbit_active_heaps())
-            pc.uBit.serial("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
+            uBit.serial.printf("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
 #endif    
         return p;
     }
@@ -354,7 +354,7 @@ void *microbit_malloc(size_t size)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     // Keep everything trasparent if we've not been initialised yet
     if (microbit_active_heaps())
-        pc.uBit.serial("microbit_malloc: OUT OF MEMORY\n");
+        uBit.serial.printf("microbit_malloc: OUT OF MEMORY\n");
 #endif    
     
 #if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
@@ -375,7 +375,7 @@ void microbit_free(void *mem)
 
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     if (microbit_active_heaps())
-        pc.uBit.serial("microbit_free:   %p\n", mem);
+        uBit.serial.printf("microbit_free:   %p\n", mem);
 #endif    
     // Sanity check.
 	if (memory == NULL)

@@ -3,6 +3,7 @@
 #include "mbed.h"
 #include "MicroBit.h"
 
+static const char empty[] __attribute__ ((aligned (4))) = "\xff\xff\0\0\0";
 
 /**
   * Internal constructor helper.
@@ -10,11 +11,7 @@
   */
 void ManagedString::initEmpty()
 {
-    data = ManagedString::EmptyString.data;
-    ref = ManagedString::EmptyString.ref;
-    len = ManagedString::EmptyString.len;
-
-    (*ref)++;
+    ptr = (StringData*)(void*)empty;
 }
 
 /**
@@ -25,13 +22,41 @@ void ManagedString::initString(const char *str)
 {   
     // Initialise this ManagedString as a new string, using the data provided.
     // We assume the string is sane, and null terminated.
-    len = strlen(str);
-    data = (char *) malloc(len+1);
-    memcpy(data, str, len+1);
-    ref = (int16_t *) malloc(sizeof(int16_t));
-    *ref = 1;
+    int len = strlen(str);
+    ptr = (StringData *) malloc(4+len+1);
+    ptr->init();
+    ptr->len = len;
+    memcpy(ptr->data, str, len+1);
 }
 
+/**
+  * Constructor. 
+  * Create a managed string from a specially prepared string literal. It will ptr->incr().
+  *
+  * @param ptr The literal - first two bytes should be 0xff, then the length in little endian, then the literal. The literal has to be 4-byte aligned.
+  * 
+  * Example:
+  * @code 
+  * static const char hello[] __attribute__ ((aligned (4))) = "\xff\xff\x05\x00" "Hello";
+  * ManagedString s((StringData*)(void*)hello);
+  * @endcode
+  */    
+ManagedString::ManagedString(StringData *p)
+{
+    ptr = p;
+    ptr->incr();
+}
+
+/**
+  * Get current ptr, do not decr() it, and set the current instance to empty string.
+  * This is to be used by specialized runtimes which pass StringData around.
+  */
+StringData* ManagedString::leakData()
+{
+    StringData *res = ptr;
+    initEmpty();
+    return res;
+}
 
 /**
   * Constructor. 
@@ -65,7 +90,6 @@ ManagedString::ManagedString(const int value)
   */      
 ManagedString::ManagedString(const char value)
 {
-
     char str[2] = {value, 0};
     initString(str); 
 }
@@ -82,7 +106,7 @@ ManagedString::ManagedString(const char value)
 ManagedString::ManagedString(const char *str)
 {
     // Sanity check. Return EmptyString for anything distasteful
-    if ((str == NULL || *str == 0) && this != &ManagedString::EmptyString)
+    if (str == NULL || *str == 0)
     {
         initEmpty();
         return;
@@ -94,19 +118,17 @@ ManagedString::ManagedString(const char *str)
 ManagedString::ManagedString(const ManagedString &s1, const ManagedString &s2)
 {
     // Calculate length of new string.
-    len = s1.len + s2.len;
+    int len = s1.length() + s2.length();
 
     // Create a new buffer for holding the new string data.
-    data = (char *) malloc(len+1);
+    ptr = (StringData*) malloc(4+len+1);
+    ptr->init();
+    ptr->len = len;
 
     // Enter the data, and terminate the string.
-    memcpy(data, s1.data, s1.len);
-    memcpy(data + s1.len, s2.data, s2.len);
-    data[len] = 0;
-
-    // Initialise the ref count and we're done.
-    ref = (int16_t *) malloc(sizeof(int16_t));
-    *ref = 1;
+    memcpy(ptr->data, s1.toCharArray(), s1.length());
+    memcpy(ptr->data + s1.length(), s2.toCharArray(), s2.length());
+    ptr->data[len] = 0;
 }
 
 
@@ -133,17 +155,14 @@ ManagedString::ManagedString(const char *str, const int16_t length)
         return;
     }
 
-    // Store the length of the new string
-    len = length;
     
     // Allocate a new buffer, and create a NULL terminated string.
-    data = (char *) malloc(len+1);
-    memcpy(data, str, len);
-    data[len] = 0;
-
-    // Initialize a refcount and we're done.
-    ref = (int16_t *) malloc(sizeof(int16_t));
-    *ref = 1;
+    ptr = (StringData*) malloc(4+length+1);
+    ptr->init();
+    // Store the length of the new string
+    ptr->len = length;
+    memcpy(ptr->data, str, length);
+    ptr->data[length] = 0;
 }
 
 /**
@@ -161,11 +180,8 @@ ManagedString::ManagedString(const char *str, const int16_t length)
   */
 ManagedString::ManagedString(const ManagedString &s)
 {
-    data = s.data;
-    ref = s.ref;
-    len = s.len;
-
-    (*ref)++;
+    ptr = s.ptr;
+    ptr->incr();
 }
 
 
@@ -193,11 +209,7 @@ ManagedString::ManagedString()
   */
 ManagedString::~ManagedString()
 {
-    if(--(*ref) == 0)
-    {
-        free(data);
-        free(ref);
-    }
+    ptr->decr();
 }
 
 /**
@@ -220,19 +232,12 @@ ManagedString::~ManagedString()
   */
 ManagedString& ManagedString::operator = (const ManagedString& s)
 {
-    if(this == &s)
+    if (this->ptr == s.ptr)
         return *this; 
 
-    if(--(*ref) == 0)
-    {
-        free(data);
-        free(ref);
-    }
-    
-    data = s.data;
-    ref = s.ref;
-    len = s.len;
-    (*ref)++;
+    ptr->decr();
+    ptr = s.ptr;
+    ptr->incr();
 
     return *this;
 }
@@ -258,7 +263,7 @@ ManagedString& ManagedString::operator = (const ManagedString& s)
   */
 bool ManagedString::operator== (const ManagedString& s)
 {
-    return ((len == s.len) && (memcmp(data,s.data,len)==0));    
+    return ((length() == s.length()) && (strcmp(toCharArray(),s.toCharArray())==0));
 }
 
 /**
@@ -282,7 +287,7 @@ bool ManagedString::operator== (const ManagedString& s)
   */
 bool ManagedString::operator< (const ManagedString& s)
 {
-    return (memcmp(data, s.data,min(len,s.len))<0);
+    return (strcmp(toCharArray(), s.toCharArray())<0);
 }
 
 /**
@@ -306,7 +311,7 @@ bool ManagedString::operator< (const ManagedString& s)
   */
 bool ManagedString::operator> (const ManagedString& s)
 {
-    return (memcmp(data, s.data,min(len,s.len))>0); 
+    return (strcmp(toCharArray(), s.toCharArray())>0);
 }
 
 /**
@@ -326,14 +331,14 @@ bool ManagedString::operator> (const ManagedString& s)
 ManagedString ManagedString::substring(int16_t start, int16_t length)
 {
     // If the parameters are illegal, just return a reference to the empty string.
-    if (start >= len)
+    if (start >= this->length())
         return ManagedString(ManagedString::EmptyString);
 
     // Compute a safe copy length;
-    length = min(len-start, length);
+    length = min(this->length()-start, length);
 
     // Build a ManagedString from this.
-    return ManagedString(data+start, length);
+    return ManagedString(toCharArray()+start, length);
 }
 
 /**
@@ -353,19 +358,13 @@ ManagedString ManagedString::substring(int16_t start, int16_t length)
 ManagedString ManagedString::operator+ (ManagedString& s)
 {
     // If the other string is empty, nothing to do!
-    if(s.len == 0)
+    if(s.length() == 0)
         return *this;
 
-    if (len == 0)
-        return s;
-        
-    if(s == ManagedString::EmptyString)
-        return *this;
-        
-    if(*this == ManagedString::EmptyString)
+    if (length() == 0)
         return s;
 
-    return ManagedString(data, s.data);
+    return ManagedString(*this, s);
 }
 
 
@@ -384,39 +383,10 @@ ManagedString ManagedString::operator+ (ManagedString& s)
   */     
 char ManagedString::charAt(int16_t index)
 {
-    return (index >=0 && index < len) ? data[index] : 0;
-}
-
-/**
-  * Provides an immutable 8 bit wide haracter buffer representing this string.
-  *
-  * @return a pointer to the charcter buffer.
-  */    
-const char *ManagedString::toCharArray()
-{
-    return data;
-}
-
-/**
-  * Determines the length of this ManagedString in characters.
-  *
-  * @return the length of the string in characters.
-  *
-  * Example:
-  * @code 
-  * ManagedString s("abcd");
-  *
-  * print(s.length()) // prints "4"
-  * @endcode
-  */ 
-int16_t ManagedString::length()
-{
-    return len;
+    return (index >=0 && index < length()) ? ptr->data[index] : 0;
 }
 
 /**
   * Empty string constant literal
   */
-ManagedString ManagedString::EmptyString("\0");
-
-
+ManagedString ManagedString::EmptyString((StringData*)(void*)empty);
