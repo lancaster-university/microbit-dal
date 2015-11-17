@@ -301,17 +301,49 @@ int MicroBit::sleep(int milliseconds)
   */
 int MicroBit::random(int max)
 {
+    uint32_t m;
+    uint8_t  b, bits = 0;
+
     //return MICROBIT_INVALID_VALUE if max is <= 0...
     if(max <= 0)
         return MICROBIT_INVALID_PARAMETER;
+
+    // Calculate the number of bits we need
+    m = max;
+    while (m >>= 1) {
+        bits++;
+    }
     
-    // Cycle the LFSR (Linear Feedback Shift Register).
-    // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
-    // For those interested, it's documented in his paper:
-    // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
+    m = 0;
+    do {
+        for(b=0; b<bits; b++) {
+            // Cycle the LFSR (Linear Feedback Shift Register).
+            // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
+            // For those interested, it's documented in his paper:
+            // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
+            // https://www.schneier.com/paper-pseudorandom-sequence.html
+            // Avoid interupts (and hence fibre context switch) while we are doing this
     
-    randomValue = ((((randomValue >> 31) ^ (randomValue >> 6) ^ (randomValue >> 4) ^ (randomValue >> 2) ^ (randomValue >> 1) ^ randomValue) & 0x0000001) << 31 ) | (randomValue >> 1);   
-    return randomValue % max;
+            __disable_irq();
+
+            randomValue = ((((randomValue >> 31)
+                          ^ (randomValue >> 6)
+                          ^ (randomValue >> 4)
+                          ^ (randomValue >> 2)
+                          ^ (randomValue >> 1)
+                          ^ randomValue)
+                          & 0x0000001)
+                          << 31 )
+                          | (randomValue >> 1);
+
+            __enable_irq();
+
+            m = ((m << 1) | (randomValue & 0x00000001));
+        }
+    } while (m > (uint32_t)max);
+
+
+    return m;
 }
 
 
