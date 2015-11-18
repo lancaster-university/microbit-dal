@@ -1,4 +1,5 @@
 #include "MicroBit.h"
+#include <stdlib.h>   /* rand(),srand() */
 
 char MICROBIT_BLE_DEVICE_NAME[] = "BBC micro:bit [xxxxx]";
 
@@ -283,13 +284,11 @@ int MicroBit::sleep(int milliseconds)
 
 /**
   * Generate a random number in the given range.
-  * We use a simple Galois LFSR random number generator here,
-  * as a Galois LFSR is sufficient for our applications, and much more lightweight
-  * than the hardware random number generator built int the processor, which takes
-  * a long time and uses a lot of energy.
+  * We use libc's rand() which is sufficient for our applications and much
+  * more lightweight than the hardware random number generator built into
+  * the processor, which takes a long time and uses a lot of energy.
   *
-  * KIDS: You shouldn't use this is the real world to generte cryptographic keys though... 
-  * have a think why not. :-)
+  * KIDS: You shouldn't use this is the real world to generate cryptographic keys though... 
   *
   * @param max the upper range to generate a number for. This number cannot be negative
   * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_VALUE (defined in ErrorNo.h) if max is <= 0.
@@ -301,60 +300,38 @@ int MicroBit::sleep(int milliseconds)
   */
 int MicroBit::random(int max)
 {
-    uint32_t m, result;
+    unsigned long num_bins, num_rand, bin_size, defect;
+    int result;
 
     //return MICROBIT_INVALID_VALUE if max is <= 0...
     if(max <= 0)
         return MICROBIT_INVALID_PARAMETER;
 
-    // Our maximum return value is actually one less than passed
-    max--;
+    num_bins = (unsigned long) max;
+    num_rand = (unsigned long) RAND_MAX + 1;
+    bin_size = num_rand / num_bins;
+    defect   = num_rand % num_bins;
 
     do {
-        m = (uint32_t)max;
-        result = 0;
-        while(m >>= 1) {
-            // Cycle the LFSR (Linear Feedback Shift Register).
-            // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
-            // For those interested, it's documented in his paper:
-            // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
-            // https://www.schneier.com/paper-pseudorandom-sequence.html
-            // Avoid interupts (and hence fibre context switch) while we are doing this
-    
-            __disable_irq();
-
-            randomValue = ((((randomValue >> 31)
-                          ^ (randomValue >> 6)
-                          ^ (randomValue >> 4)
-                          ^ (randomValue >> 2)
-                          ^ (randomValue >> 1)
-                          ^ randomValue)
-                          & 0x0000001)
-                          << 31 )
-                          | (randomValue >> 1);
-
-            __enable_irq();
-
-            result = ((result << 1) | (randomValue & 0x00000001));
-        }
-    } while (result > (uint32_t)max);
+        result = rand();
+    } while ((num_rand - defect) <= (unsigned long)result);  // CARE: avoid overflow
 
 
-    return result;
+    return result/bin_size;
 }
 
 
 /**
   * Seed our a random number generator (RNG).
-  * We use the NRF51822 in built cryptographic random number generator to seed a Galois LFSR.
+  * We use the NRF51822 in built cryptographic random number generator to seed rand().
   * We do this as the hardware RNG is relatively high power, and use the the BLE stack internally,
-  * with a less than optimal application interface. A Galois LFSR is sufficient for our
+  * with a less than optimal application interface. rand() is sufficient for our
   * applications, and much more lightweight.
   */
 void MicroBit::seedRandom()
 {
-    randomValue = 0;
-        
+    unsigned int seed = 0;
+
     // Start the Random number generator. No need to leave it running... I hope. :-)
     NRF_RNG->TASKS_START = 1;
     
@@ -366,11 +343,13 @@ void MicroBit::seedRandom()
         // Wait for a number ot be generated.
         while ( NRF_RNG->EVENTS_VALRDY == 0);
         
-        randomValue = (randomValue << 8) | ((int) NRF_RNG->VALUE);
+        seed = (seed << 8) | ((int) NRF_RNG->VALUE);
     }
     
     // Disable the generator to save power.
     NRF_RNG->TASKS_STOP = 1;
+
+   srand(seed);
 }
 
 
