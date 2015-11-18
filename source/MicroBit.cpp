@@ -301,22 +301,19 @@ int MicroBit::sleep(int milliseconds)
   */
 int MicroBit::random(int max)
 {
-    uint32_t m;
-    uint8_t  b, bits = 0;
+    uint32_t m, result;
 
     //return MICROBIT_INVALID_VALUE if max is <= 0...
     if(max <= 0)
         return MICROBIT_INVALID_PARAMETER;
 
-    // Calculate the number of bits we need
-    m = max;
-    while (m >>= 1) {
-        bits++;
-    }
-    
+    // Our maximum return value is actually one less than passed
+    max--;
+
     do {
-        m = 0;
-        for(b=0; b<bits; b++) {
+        m = (uint32_t)max;
+        result = 0;
+        while(m >>= 1) {
             // Cycle the LFSR (Linear Feedback Shift Register).
             // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
             // For those interested, it's documented in his paper:
@@ -338,12 +335,12 @@ int MicroBit::random(int max)
 
             __enable_irq();
 
-            m = ((m << 1) | (randomValue & 0x00000001));
+            result = ((result << 1) | (randomValue & 0x00000001));
         }
-    } while (m > (uint32_t)max);
+    } while (result > (uint32_t)max);
 
 
-    return m;
+    return result;
 }
 
 
