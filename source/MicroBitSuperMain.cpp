@@ -14,7 +14,6 @@ int main()
 #if CONFIG_ENABLED(MICROBIT_DBG)
 
     // For diagnostics. Gives time to open the console window. :-) 
-    uBit.serial.baud(115200);
     for (int i=3; i>0; i--)
     {
         uBit.serial.printf("=== SUPERMAIN: Starting in %d ===\n", i);
