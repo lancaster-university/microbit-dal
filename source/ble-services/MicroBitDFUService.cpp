@@ -49,9 +49,8 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     ble.gattServer().onDataWritten(this, &MicroBitDFUService::onDataWritten);
 }
 
-void MicroBitDFUService::onButtonA(MicroBitEvent e)
+void MicroBitDFUService::onButtonA(MicroBitEvent)
 {
-    (void) e; /* -Wunused-parameter */
     if (flashCodeRequested)
     {
         releaseFlashCode();
@@ -62,9 +61,8 @@ void MicroBitDFUService::onButtonA(MicroBitEvent e)
     }
 }
 
-void MicroBitDFUService::onButtonB(MicroBitEvent e)
+void MicroBitDFUService::onButtonB(MicroBitEvent)
 {
-    (void) e; /* -Wunused-parameter */
     uBit.display.scroll("VERSION: TODO");
     showNameHistogram();
 }

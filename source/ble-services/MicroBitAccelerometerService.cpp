@@ -65,9 +65,8 @@ void MicroBitAccelerometerService::onDataWritten(const GattWriteCallbackParams *
 /**
   * Accelerometer update callback
   */
-void MicroBitAccelerometerService::accelerometerUpdate(MicroBitEvent e)
+void MicroBitAccelerometerService::accelerometerUpdate(MicroBitEvent)
 {
-    (void) e; /* -Wunused-parameter */
     if (ble.getGapState().connected)
     {
         accelerometerDataCharacteristicBuffer[0] = uBit.accelerometer.getX();

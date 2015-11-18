@@ -31,11 +31,8 @@ microbit_reset()
 /**
   * Callback when a BLE GATT disconnect occurs.
   */
-void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
+void bleDisconnectionCallback(Gap::Handle_t, Gap::DisconnectionReason_t)
 {
-    (void) handle; /* -Wunused-param */
-    (void) reason; /* -Wunused-param */
-
     uBit.ble->startAdvertising(); 
 }
 

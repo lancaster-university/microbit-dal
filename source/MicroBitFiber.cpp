@@ -533,10 +533,8 @@ Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)
   * Default exit point for all parameterised fibers.
   * Any fiber reaching the end of its entry function will return here for recycling.
   */
-void release_fiber(void * param)
+void release_fiber(void *)
 {
-    (void)param; /* -Wunused-parameter */
-
     release_fiber();
 }
 
