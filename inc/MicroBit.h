@@ -90,6 +90,7 @@ class MicroBit
     private:
     
     void                    seedRandom();
+    uint32_t                randomValue;
   
     public:
     
@@ -213,9 +214,8 @@ class MicroBit
 
     /**
       * Generate a random number in the given range.
-      * We use libc's rand() which is sufficient for our applications and much
-      * more lightweight than the hardware random number generator built into
-      * the processor, which takes a long time and uses a lot of energy.
+      * We use the NRF51822 in built random number generator here
+      * TODO: Determine if we want to, given its relatively high power consumption!
       *
       * @param max the upper range to generate a number for. This number cannot be negative
       * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_PARAMETER if max is <= 0.
