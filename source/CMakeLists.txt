@@ -83,6 +83,7 @@ target_link_libraries(microbit-dal
 )
 
 if(CMAKE_COMPILER_IS_GNUCC)
+    message("suppressing warnings from mbed-classic, ble & ble-nrf51822")
     target_compile_options(mbed-classic PRIVATE "-w")
     target_compile_options(ble PRIVATE "-w")
     target_compile_options(ble-nrf51822 PRIVATE "-w")
