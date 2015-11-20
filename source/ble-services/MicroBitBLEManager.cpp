@@ -186,12 +186,12 @@ void MicroBitBLEManager::pairingComplete(bool success)
  */
 void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
 {  
+	ManagedString prefix("BLUEZONE:");
+	ManagedString msg = prefix + deviceName;
+
 	// Stop any running animations on the display
 	display.stopAnimation();
-
-	// Display a welcome message
-	display.scroll("Hi! I'm ");
-	display.scroll(deviceName);
+	display.scroll(msg);
 
 	// Display our name, visualised as a histogram in the display to aid identification.
 	showNameHistogram(display);
@@ -200,8 +200,8 @@ void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
 	{
 		if (pairingStatus & MICROBIT_BLE_PAIR_REQUEST)
 		{
-			display.scroll("Pair: ");
-			display.scroll(passKey);
+			display.scroll("Pair: ", 90);
+			display.scroll(passKey, 90);
 		}
 
 		if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
@@ -217,6 +217,8 @@ void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
 				display.print(cross,0,0,0);
 			}
 		}
+
+		uBit.sleep(100);
 	}
 }
 
