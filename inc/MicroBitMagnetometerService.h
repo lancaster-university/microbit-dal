@@ -23,7 +23,7 @@ class MicroBitMagnetometerService
       * Create a representation of the MagnetometerService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitMagnetometerService(BLEDevice &_ble);  
+    MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, MicroBitMessageBus &messageBus);  
     
 
     private:
@@ -47,6 +47,7 @@ class MicroBitMagnetometerService
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
+    MicroBitCompass     &compass;
 
     // memory for our 8 bit control characteristics.
     int16_t             magnetometerDataCharacteristicBuffer[3];

@@ -22,7 +22,7 @@ class MicroBitAccelerometerService
       * Create a representation of the AccelerometerService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitAccelerometerService(BLEDevice &_ble);  
+    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_acclerometer, MicroBitMessageBus &messageBus);  
     
 
     private:
@@ -38,7 +38,8 @@ class MicroBitAccelerometerService
     void accelerometerUpdate(MicroBitEvent e);
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
+    BLEDevice           	&ble;
+	MicroBitAccelerometer	&accelerometer;
 
     // memory for our 8 bit control characteristics.
     uint16_t            accelerometerDataCharacteristicBuffer[3];

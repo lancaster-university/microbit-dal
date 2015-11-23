@@ -12,8 +12,8 @@
   * Create a representation of the EventService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitEventService::MicroBitEventService(BLEDevice &_ble) : 
-        ble(_ble) 
+MicroBitEventService::MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &_messageBus) : 
+        ble(_ble),messageBus(_messageBus) 
 {
     GattCharacteristic  microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent), 
     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
@@ -51,7 +51,7 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble) :
 
     ble.onDataWritten(this, &MicroBitEventService::onDataWritten);
 
-    uBit.addIdleComponent(this);
+    fiber_add_idle_component(this);
 }
 
 
@@ -79,7 +79,7 @@ void MicroBitEventService::onDataWritten(const GattWriteCallbackParams *params)
         // Read and register for all the events given...
         while (len >= 4)
         {
-            uBit.MessageBus.listen(e->type, e->reason, this, &MicroBitEventService::onMicroBitEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
+            messageBus.listen(e->type, e->reason, this, &MicroBitEventService::onMicroBitEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
             len-=4;
             e++;
@@ -111,7 +111,7 @@ void MicroBitEventService::idleTick()
 {
     if (!ble.getGapState().connected && messageBusListenerOffset >0) {
         messageBusListenerOffset = 0;  
-        uBit.MessageBus.ignore(MICROBIT_ID_ANY, MICROBIT_EVT_ANY, this, &MicroBitEventService::onMicroBitEvent);
+        messageBus.ignore(MICROBIT_ID_ANY, MICROBIT_EVT_ANY, this, &MicroBitEventService::onMicroBitEvent);
     }
 }
 
@@ -125,7 +125,7 @@ void MicroBitEventService::onRequirementsRead(GattReadAuthCallbackParams *params
     {
         // Walk through the lsit of message bus listeners.
         // We send one at a time, and our client can keep reading from this characterisitic until we return an emtpy value.
-        MicroBitListener *l = uBit.MessageBus.elementAt(messageBusListenerOffset++); 
+        MicroBitListener *l = messageBus.elementAt(messageBusListenerOffset++); 
 
         if (l != NULL)
         {

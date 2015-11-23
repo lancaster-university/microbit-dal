@@ -76,7 +76,7 @@ class MicroBitBLEManager : MicroBitComponent
       * uBit.init();
       * @endcode
       */
-    void init(ManagedString deviceName, ManagedString serialNumber, bool enableBonding);
+    void init(ManagedString deviceName, ManagedString serialNumber, MicroBitMessageBus& messageBus, bool enableBonding);
 
     /**
      * Change the output power level of the transmitter to the given value.
@@ -92,8 +92,9 @@ class MicroBitBLEManager : MicroBitComponent
      * of the micro:bit in cases where BLE is disabled during normal operation.
      *
      * @param display a MicroBitDisplay to use when displaying pairing information.
+     * @prarm authorizationButton The button to use to authorise a pairing request.
      */
-    void pairingMode(MicroBitDisplay &display);
+    void pairingMode(MicroBitDisplay &display, MicroBitButton &authorisationButton);
 
     /**
      * Makes the micro:bit discoverable via BLE, such that bonded devices can connect

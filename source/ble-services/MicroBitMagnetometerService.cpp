@@ -13,8 +13,8 @@
   * Create a representation of the MagnetometerService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble) : 
-        ble(_ble) 
+MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, MicroBitMessageBus &messageBus) : 
+        ble(_ble), compass(_compass) 
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
     GattCharacteristic  magnetometerDataCharacteristic(MicroBitMagnetometerServiceDataUUID, (uint8_t *)magnetometerDataCharacteristicBuffer, 0, 
@@ -32,7 +32,7 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble) :
     magnetometerDataCharacteristicBuffer[1] = 0;
     magnetometerDataCharacteristicBuffer[2] = 0;
     magnetometerBearingCharacteristicBuffer = 0;
-    magnetometerPeriodCharacteristicBuffer = uBit.compass.getPeriod();
+    magnetometerPeriodCharacteristicBuffer = compass.getPeriod();
 
     // Set default security requirements
     magnetometerDataCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
@@ -53,8 +53,8 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble) :
     ble.gattServer().write(magnetometerPeriodCharacteristicHandle, (const uint8_t *)&magnetometerPeriodCharacteristicBuffer, sizeof(magnetometerPeriodCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitMagnetometerService::onDataWritten);
-    uBit.MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
-    uBit.MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
+    messageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
 }
 
 /**
@@ -76,17 +76,18 @@ void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent)
 {
     if (ble.getGapState().connected)
     {
-        magnetometerDataCharacteristicBuffer[0] = uBit.compass.getX();
-        magnetometerDataCharacteristicBuffer[1] = uBit.compass.getY();
-        magnetometerDataCharacteristicBuffer[2] = uBit.compass.getZ();
-        magnetometerPeriodCharacteristicBuffer = uBit.compass.getPeriod();
+        magnetometerDataCharacteristicBuffer[0] = compass.getX();
+        magnetometerDataCharacteristicBuffer[1] = compass.getY();
+        magnetometerDataCharacteristicBuffer[2] = compass.getZ();
+        magnetometerBearingCharacteristicBuffer = (uint16_t) compass.heading();
+        magnetometerPeriodCharacteristicBuffer = compass.getPeriod();
 
         ble.gattServer().write(magnetometerPeriodCharacteristicHandle, (const uint8_t *)&magnetometerPeriodCharacteristicBuffer, sizeof(magnetometerPeriodCharacteristicBuffer));
         ble.gattServer().notify(magnetometerDataCharacteristicHandle,(uint8_t *)magnetometerDataCharacteristicBuffer, sizeof(magnetometerDataCharacteristicBuffer));
 
-        if (uBit.compass.isCalibrated())
+        if (compass.isCalibrated())
         {
-            magnetometerBearingCharacteristicBuffer = (uint16_t) uBit.compass.heading();
+            magnetometerBearingCharacteristicBuffer = (uint16_t) compass.heading();
             ble.gattServer().notify(magnetometerBearingCharacteristicHandle,(uint8_t *)&magnetometerBearingCharacteristicBuffer, sizeof(magnetometerBearingCharacteristicBuffer));
         }
     }
@@ -100,11 +101,11 @@ void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent)
 void MicroBitMagnetometerService::samplePeriodUpdateNeeded(MicroBitEvent)
 {
     // Reconfigure the compass. This might take a while...
-    uBit.compass.setPeriod(magnetometerPeriodCharacteristicBuffer);
+    compass.setPeriod(magnetometerPeriodCharacteristicBuffer);
 
     // The compass will choose the nearest sample period to that we've specified.
     // Read the ACTUAL sample period back.
-    magnetometerPeriodCharacteristicBuffer = uBit.compass.getPeriod();
+    magnetometerPeriodCharacteristicBuffer = compass.getPeriod();
 
     // Ensure this is reflected in our BLE connection.
     ble.gattServer().write(magnetometerPeriodCharacteristicHandle, (const uint8_t *)&magnetometerPeriodCharacteristicBuffer, sizeof(magnetometerPeriodCharacteristicBuffer));

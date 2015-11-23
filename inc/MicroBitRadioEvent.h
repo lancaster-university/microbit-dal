@@ -19,26 +19,40 @@
 
 class MicroBitRadioEvent 
 {
-    bool       suppressForwarding;      // A private flag used to prevent event forwarding loops.
+    bool            suppressForwarding;     // A private flag used to prevent event forwarding loops.
+    MicroBitRadio   &radio;                 // A reference to the underlying radio module to use.
 
     public:
 
     /**
      * Constructor.
      */
-    MicroBitRadioEvent();
+    MicroBitRadioEvent(MicroBitRadio &r);
 
     /**
      * Associates the given MessageBus events with the radio channel.
      * Once registered, all events matching the given registration sent to this micro:bit's 
-     * MessageBus will be automatically retrasmitted on the radio.
+     * default MessageBus will be automaticlaly retrasmitted on the radio.
      *
      * @param id The ID of the events to register.
-     * @param value the VALUE of the event to register. use MICROBIT_EVT_ANY for all event values matching the given ID.
+     * @param value the VALUE of the event to register. use MICROBIT_EVT_ANY for all event values matching the given id.
+     *
+     * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if no defult MessageBus is available.
+     */
+    int listen(uint16_t id, uint16_t value);
+
+    /**
+     * Associates the given MessageBus events with the radio channel.
+     * Once registered, all events matching the given registration sent to the given 
+     * MessageBus will be automaticlaly retrasmitted on the radio.
+     *
+     * @param id The ID of the events to register.
+     * @param value the VALUE of the event to register. use MICROBIT_EVT_ANY for all event values matching the given id.
+     * @param The message bus to listen for events on.
      *
      * @return MICROBIT_OK on success.
      */
-    int listen(uint16_t id, uint16_t value);
+    int listen(uint16_t id, uint16_t value, MicroBitMessageBus &messageBus);
 
     /**
      * Disassociates the given MessageBus events with the radio channel.
@@ -46,9 +60,20 @@ class MicroBitRadioEvent
      * @param id The ID of the events to deregister.
      * @param value the VALUE of the event to deregister. use MICROBIT_EVT_ANY for all event values matching the given ID.
      *
-     * @return MICROBIT_OK on success.
+     * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the default message bus does not exist.
      */
     int ignore(uint16_t id, uint16_t value);
+
+    /**
+     * Disassociates the given MessageBus events with the radio channel.
+     *
+     * @param id The ID of the events to deregister.
+     * @param value the VALUE of the event to deregister. use MICROBIT_EVT_ANY for all event values matching the given ID.
+     * @param The message bus to deregister on.
+     *
+     * @return MICROBIT_OK on success.
+     */
+    int ignore(uint16_t id, uint16_t value, MicroBitMessageBus &messageBus);
 
     /**
      * Protocol handler callback. This is called when the radio receives a packet marked as using the event protocol.

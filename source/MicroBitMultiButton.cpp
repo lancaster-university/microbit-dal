@@ -23,15 +23,15 @@
   * MICROBIT_BUTTON_EVT_HOLD
   * @endcode
   */  
-MicroBitMultiButton::MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2)
+MicroBitMultiButton::MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, MicroBitMessageBus &messageBus)
 {
     this->id = id;
     this->button1 = button1;
     this->button2 = button2;
     this->eventConfiguration = MICROBIT_BUTTON_SIMPLE_EVENTS;
     
-    uBit.MessageBus.listen(button1, MICROBIT_EVT_ANY, this, &MicroBitMultiButton::onButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
-    uBit.MessageBus.listen(button2, MICROBIT_EVT_ANY, this, &MicroBitMultiButton::onButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(button1, MICROBIT_EVT_ANY, this, &MicroBitMultiButton::onButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(button2, MICROBIT_EVT_ANY, this, &MicroBitMultiButton::onButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 uint16_t MicroBitMultiButton::otherSubButton(uint16_t b)
@@ -150,7 +150,6 @@ void MicroBitMultiButton::setEventConfiguration(MicroBitButtonEventConfiguration
 {
     this->eventConfiguration = config;
 }
-
 void MicroBitMultiButton::onButtonEvent(MicroBitEvent evt)
 {
     int button = evt.source;

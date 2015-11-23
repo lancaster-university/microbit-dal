@@ -18,14 +18,17 @@
 
 class MicroBitRadioDatagram 
 {
-    FrameBuffer    *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
+    MicroBitRadio   &radio;     // The underlying radio module used to send and receive data.
+    FrameBuffer     *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
 
     public:
 
     /**
      * Constructor.
+     *
+     * @param radio The underlying radio module used to send and receive data.
      */
-    MicroBitRadioDatagram();
+    MicroBitRadioDatagram(MicroBitRadio &r);
 
     /**
      * Retreives packet payload data into the given buffer.

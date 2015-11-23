@@ -138,9 +138,13 @@ MicroBitImage MicroBitSerial::readImage(int width, int height)
   */
 void MicroBitSerial::sendDisplayState()
 {
+	return;
+
+	/*	
     for(int i = 0; i < MICROBIT_DISPLAY_HEIGHT; i++)
         for(int j = 0; j < MICROBIT_DISPLAY_WIDTH; j++)
             _putc(uBit.display.image.getPixelValue(j,i));
+	*/
 }
 
 /**
@@ -153,12 +157,14 @@ void MicroBitSerial::sendDisplayState()
   */
 void MicroBitSerial::readDisplayState()
 {
+	/*
     for(int i = 0; i < MICROBIT_DISPLAY_HEIGHT; i++)
         for(int j = 0; j < MICROBIT_DISPLAY_WIDTH; j++)
         {
             int c = _getc();
             uBit.display.image.setPixelValue(j,i,c);
         }
+	*/
 }
 
 ssize_t MicroBitSerial::readChars(void* buffer, size_t length, char eof) {

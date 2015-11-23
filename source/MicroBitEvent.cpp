@@ -38,15 +38,15 @@ MicroBitEvent::MicroBitEvent()
 }
 
 /**
-  * Fires the represented event onto the message bus.
+  * Fires the represented event onto the default message bus.
   */
 void MicroBitEvent::fire(MicroBitEventLaunchMode mode)
 {
     if (mode == CREATE_AND_QUEUE)
-        uBit.MessageBus.send(*this);
+        MicroBitMessageBus::defaultMessageBus->send(*this);
 
     else if (mode == CREATE_AND_FIRE)
-        uBit.MessageBus.process(*this);
+        MicroBitMessageBus::defaultMessageBus->process(*this);
 }
 
 /**

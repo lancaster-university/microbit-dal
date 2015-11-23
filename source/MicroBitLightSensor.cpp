@@ -82,7 +82,8 @@ MicroBitLightSensor::MicroBitLightSensor() : analogTrigger()
 {
     this->chan = 0;
 
-    uBit.MessageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_LIGHT_SENSE, this, &MicroBitLightSensor::startSensing, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    if (MicroBitMessageBus::defaultMessageBus)
+        MicroBitMessageBus::defaultMessageBus->listen(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_LIGHT_SENSE, this, &MicroBitLightSensor::startSensing, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
     this->sensePin = NULL;
 }
@@ -143,5 +144,6 @@ int MicroBitLightSensor::read()
   */
 MicroBitLightSensor::~MicroBitLightSensor()
 {
-    uBit.MessageBus.ignore(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_LIGHT_SENSE, this, &MicroBitLightSensor::startSensing);
+    if (MicroBitMessageBus::defaultMessageBus)
+        MicroBitMessageBus::defaultMessageBus->ignore(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_LIGHT_SENSE, this, &MicroBitLightSensor::startSensing);
 }

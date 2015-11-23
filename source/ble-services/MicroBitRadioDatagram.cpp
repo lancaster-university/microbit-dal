@@ -14,10 +14,12 @@
 
 /**
   * Constructor.
+  *
+  * @param radio The underlying radio module used to send and receive data.
   */
-MicroBitRadioDatagram::MicroBitRadioDatagram()
+MicroBitRadioDatagram::MicroBitRadioDatagram(MicroBitRadio &r) : radio(r)
 {
-    rxQueue = NULL;
+    this->rxQueue = NULL;
 }
 
 /**
@@ -90,7 +92,7 @@ int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
     buf.protocol = MICROBIT_RADIO_PROTOCOL_DATAGRAM;
     memcpy(buf.payload, buffer, len);
 
-    return uBit.radio.send(&buf);
+    return radio.send(&buf);
 }
 
 /**
@@ -111,7 +113,7 @@ int MicroBitRadioDatagram::send(PacketBuffer data)
  */
 void MicroBitRadioDatagram::packetReceived()
 {
-    FrameBuffer *packet = uBit.radio.recv();
+    FrameBuffer *packet = radio.recv();
     int queueDepth = 0;
 
     // We add to the tail of the queue to preserve causal ordering.

@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "MicroBitComponent.h"
+#include "MicroBitMessageBus.h"
 
 #define MICROBIT_LIGHT_SENSOR_CHAN_NUM      3
 #define MICROBIT_LIGHT_SENSOR_AN_SET_TIME   4000

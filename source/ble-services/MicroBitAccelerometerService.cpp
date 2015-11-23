@@ -13,8 +13,8 @@
   * Create a representation of the AccelerometerService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble) : 
-        ble(_ble) 
+MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer, MicroBitMessageBus &messageBus) : 
+        ble(_ble), accelerometer(_accelerometer) 
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
     GattCharacteristic  accelerometerDataCharacteristic(MicroBitAccelerometerServiceDataUUID, (uint8_t *)accelerometerDataCharacteristicBuffer, 0, 
@@ -28,7 +28,7 @@ MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble) :
     accelerometerDataCharacteristicBuffer[0] = 0;
     accelerometerDataCharacteristicBuffer[1] = 0;
     accelerometerDataCharacteristicBuffer[2] = 0;
-    accelerometerPeriodCharacteristicBuffer = uBit.accelerometer.getPeriod();
+    accelerometerPeriodCharacteristicBuffer = accelerometer.getPeriod();
 
     // Set default security requirements
     accelerometerDataCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
@@ -46,7 +46,7 @@ MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble) :
     ble.gattServer().write(accelerometerPeriodCharacteristicHandle, (const uint8_t *)&accelerometerPeriodCharacteristicBuffer, sizeof(accelerometerPeriodCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitAccelerometerService::onDataWritten);
-    uBit.MessageBus.listen(MICROBIT_ID_ACCELEROMETER, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE, this, &MicroBitAccelerometerService::accelerometerUpdate,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(MICROBIT_ID_ACCELEROMETER, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE, this, &MicroBitAccelerometerService::accelerometerUpdate,  MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 /**
@@ -57,11 +57,11 @@ void MicroBitAccelerometerService::onDataWritten(const GattWriteCallbackParams *
     if (params->handle == accelerometerPeriodCharacteristicHandle && params->len >= sizeof(accelerometerPeriodCharacteristicBuffer))
     {
         accelerometerPeriodCharacteristicBuffer = *((uint16_t *)params->data);
-        uBit.accelerometer.setPeriod(accelerometerPeriodCharacteristicBuffer);
+        accelerometer.setPeriod(accelerometerPeriodCharacteristicBuffer);
 
         // The accelerometer will choose the nearest period to that requested that it can support
         // Read back the ACTUAL period it is using, and report this back.
-        accelerometerPeriodCharacteristicBuffer = uBit.accelerometer.getPeriod();
+        accelerometerPeriodCharacteristicBuffer = accelerometer.getPeriod();
         ble.gattServer().write(accelerometerPeriodCharacteristicHandle, (const uint8_t *)&accelerometerPeriodCharacteristicBuffer, sizeof(accelerometerPeriodCharacteristicBuffer));
     }
 }
@@ -73,12 +73,12 @@ void MicroBitAccelerometerService::accelerometerUpdate(MicroBitEvent)
 {
     if (ble.getGapState().connected)
     {
-		accelerometerDataCharacteristicBuffer[0] = uBit.accelerometer.getX();
-		accelerometerDataCharacteristicBuffer[1] = uBit.accelerometer.getY();
-		accelerometerDataCharacteristicBuffer[2] = uBit.accelerometer.getZ();
+        accelerometerDataCharacteristicBuffer[0] = accelerometer.getX();
+        accelerometerDataCharacteristicBuffer[1] = accelerometer.getY();
+        accelerometerDataCharacteristicBuffer[2] = accelerometer.getZ();
 
-		ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
-	}
+        ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
+    }
 }
 
 const uint8_t  MicroBitAccelerometerServiceUUID[] = {

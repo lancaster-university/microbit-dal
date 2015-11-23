@@ -30,7 +30,7 @@ class MicroBitEventService : public MicroBitComponent
       * Create a representation of the EventService
       * @param BLE The instance of a BLE device that we're running on.
       */
-    MicroBitEventService(BLEDevice &_ble);  
+    MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &_messageBus);  
    
     /**
      * Periodic callback from MicroBit scheduler.
@@ -58,6 +58,7 @@ class MicroBitEventService : public MicroBitComponent
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
+	MicroBitMessageBus	&messageBus;
 
     // memory for our event characteristics.
     EventServiceEvent   clientEventBuffer;

@@ -13,8 +13,8 @@
   * Create a representation of the TemperatureService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) : 
-        ble(_ble) 
+MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, MicroBitMessageBus &messageBus) : 
+        ble(_ble), thermometer(_thermometer) 
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
     GattCharacteristic  temperatureDataCharacteristic(MicroBitTemperatureServiceDataUUID, (uint8_t *)&temperatureDataCharacteristicBuffer, 0, 
@@ -25,7 +25,7 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) :
 
     // Initialise our characteristic values.
     temperatureDataCharacteristicBuffer = 0;
-    temperaturePeriodCharacteristicBuffer = uBit.thermometer.getPeriod();
+    temperaturePeriodCharacteristicBuffer = thermometer.getPeriod();
 
     // Set default security requirements
     temperatureDataCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
@@ -43,7 +43,7 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) :
     ble.gattServer().write(temperaturePeriodCharacteristicHandle,(uint8_t *)&temperaturePeriodCharacteristicBuffer, sizeof(temperaturePeriodCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitTemperatureService::onDataWritten);
-    uBit.MessageBus.listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 /**
@@ -53,7 +53,7 @@ void MicroBitTemperatureService::temperatureUpdate(MicroBitEvent)
 {
     if (ble.getGapState().connected)
     {
-        temperatureDataCharacteristicBuffer = uBit.thermometer.getTemperature();
+        temperatureDataCharacteristicBuffer = thermometer.getTemperature();
         ble.gattServer().notify(temperatureDataCharacteristicHandle,(uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
     }
 }
@@ -66,11 +66,11 @@ void MicroBitTemperatureService::onDataWritten(const GattWriteCallbackParams *pa
     if (params->handle == temperaturePeriodCharacteristicHandle && params->len >= sizeof(temperaturePeriodCharacteristicBuffer))
     {
         temperaturePeriodCharacteristicBuffer = *((uint16_t *)params->data);
-        uBit.thermometer.setPeriod(temperaturePeriodCharacteristicBuffer);
+        thermometer.setPeriod(temperaturePeriodCharacteristicBuffer);
 
         // The accelerometer will choose the nearest period to that requested that it can support
         // Read back the ACTUAL period it is using, and report this back.
-        temperaturePeriodCharacteristicBuffer = uBit.accelerometer.getPeriod();
+        temperaturePeriodCharacteristicBuffer = thermometer.getPeriod();
         ble.gattServer().write(temperaturePeriodCharacteristicHandle, (const uint8_t *)&temperaturePeriodCharacteristicBuffer, sizeof(temperaturePeriodCharacteristicBuffer));
     }
 }

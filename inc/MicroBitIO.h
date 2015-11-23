@@ -13,8 +13,9 @@
 class MicroBitIO
 {   
     public:
-    
-    MicroBitPin          P0;
+   
+	MicroBitPin			 pin[0];	
+	MicroBitPin          P0;
     MicroBitPin          P1;
     MicroBitPin          P2;
     MicroBitPin          P3;

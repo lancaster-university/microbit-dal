@@ -27,6 +27,7 @@
 #endif
 
 #include "nrf_soc.h"
+#include "nrf_sdm.h"
 
 /* 
  * Return to our predefined compiler settings.
@@ -56,7 +57,9 @@ MicroBitThermometer::MicroBitThermometer(uint16_t id)
     this->samplePeriod = MICROBIT_THERMOMETER_PERIOD;
     this->sampleTime = 0;
 
-    uBit.addIdleComponent(this);
+	// If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
+	// Otherwise, we do just do this on demand, when polled through our read() interface.
+    fiber_add_idle_component(this);
 }
 
 /**
@@ -130,12 +133,15 @@ int MicroBitThermometer::getPeriod()
 void MicroBitThermometer::updateTemperature()
 {
     int32_t processorTemperature;
+	uint8_t sd_enabled;
 
     // For now, we just rely on the nrf senesor to be the most accurate.
     // The compass module also has a temperature sensor, and has the lowest power consumption, so will run the cooler...
     // ...however it isn't trimmed for accuracy during manufacture, so requires calibration.
 
-    if (uBit.ble)
+    sd_softdevice_is_enabled(&sd_enabled);
+
+    if (sd_enabled)
     {
         // If Bluetooth is enabled, we need to go through the Nordic software to safely do this
         sd_temp_get(&processorTemperature);

@@ -1,7 +1,7 @@
 #include "MicroBit.h"
 
 
-/* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
+/* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
  * as a compatability option, but does not support the options used...
@@ -180,10 +180,10 @@ void MicroBitBLEManager::advertise()
   *
   * Example:
   * @code
-  * uBit.init();
+  * bleManager.init("zevug");
   * @endcode
   */
-void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, bool enableBonding)
+void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, MicroBitMessageBus& messageBus, bool enableBonding)
 {
 	ManagedString BLEName("BBC micro:bit");
 	this->deviceName = deviceName;
@@ -254,42 +254,11 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Configure the radio at our default power level
     setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER);
 
-    // Bring up any configured auxiliary services.
-#if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
+    // Bring up core BLE services.
     new MicroBitDFUService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
     DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
-#endif
+    new MicroBitEventService(*ble, messageBus);
 
-#if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
-    new MicroBitEventService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_LED_SERVICE)
-    new MicroBitLEDService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_ACCELEROMETER_SERVICE)
-    new MicroBitAccelerometerService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_MAGNETOMETER_SERVICE)
-    new MicroBitMagnetometerService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_BUTTON_SERVICE)
-    new MicroBitButtonService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_IO_PIN_SERVICE)
-    new MicroBitIOPinService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_TEMPERATURE_SERVICE)
-    new MicroBitTemperatureService(*ble);
-#endif
 
     // Configure for high speed mode where possible.
     Gap::ConnectionParams_t fast;
@@ -379,7 +348,7 @@ void MicroBitBLEManager::pairingComplete(bool success)
 	if(success)
     {
 		this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
-        uBit.addIdleComponent(this);
+        fiber_add_idle_component(this);
     }
 }
 
@@ -392,14 +361,17 @@ void MicroBitBLEManager::idleTick()
     if (ble)
         ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
 
-    uBit.removeIdleComponent(this);
+    fiber_remove_idle_component(this);
 }
 
 /**
  * Enter pairing mode. This is mode is called to initiate pairing, and to enable FOTA programming
  * of the micro:bit in cases where BLE is disabled during normal operation.
+ *
+ * @param display A reference to the display on which to show usage notes and pass code information.
+ * @prarm authorizationButton The button to use to authorise a pairing request.
  */
-void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
+void MicroBitBLEManager::pairingMode(MicroBitDisplay& display, MicroBitButton& authorisationButton)
 {
 	ManagedString namePrefix("BBC micro:bit [");
 	ManagedString namePostfix("]");
@@ -464,7 +436,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 			if (brightness >= 255)
 				fadeDirection = 0;
 
-			if (uBit.buttonA.isPressed())
+			if (authorisationButton.isPressed())
 			{
 				pairingStatus &= ~MICROBIT_BLE_PAIR_REQUEST;
 				pairingStatus |= MICROBIT_BLE_PAIR_PASSCODE;
@@ -478,15 +450,15 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 			for (int i=0; i<passKey.length(); i++)
 			{
 				display.image.print(passKey.charAt(i),0,0);
-				uBit.sleep(800);
+				fiber_sleep(800);
 				display.clear();
-				uBit.sleep(200);
+				fiber_sleep(200);
 
 				if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
 					break;
 			}
 
-			uBit.sleep(1000);
+			fiber_sleep(1000);
 		}
 
 		if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
@@ -495,7 +467,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 			{
 				MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
 				display.print(tick,0,0,0);
-                uBit.sleep(15000);
+                fiber_sleep(15000);
 		        timeInPairingMode = MICROBIT_BLE_PAIRING_TIMEOUT * 30;
 
                 /*
@@ -519,7 +491,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 			}
 		}
 
-		uBit.sleep(30);
+		MicroBit::sleep(100);
 		timeInPairingMode++;
 
 		if (timeInPairingMode >= MICROBIT_BLE_PAIRING_TIMEOUT * 30)

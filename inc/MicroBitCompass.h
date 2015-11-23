@@ -4,6 +4,7 @@
 #include "mbed.h"
 #include "MicroBitComponent.h"
 #include "MicroBitCoordinateSystem.h"
+#include "MicroBitAccelerometer.h"
 
 /**
   * Relevant pin assignments
@@ -122,12 +123,14 @@ class MicroBitCompass : public MicroBitComponent
       * Used to track asynchronous events in the event bus.
       */
 
-    uint16_t            address;                  // I2C address of the magnetmometer.
-    uint16_t            samplePeriod;             // The time between samples, in millseconds.
+    uint16_t                address;                  // I2C address of the magnetmometer.
+    uint16_t                samplePeriod;             // The time between samples, in millseconds.
 
-    CompassSample       average;                  // Centre point of sample data.
-    CompassSample       sample;                   // The latest sample data recorded.
-    DigitalIn           int1;                     // Data ready interrupt.
+    CompassSample           average;                  // Centre point of sample data.
+    CompassSample           sample;                   // The latest sample data recorded.
+    DigitalIn               int1;                     // Data ready interrupt.
+    MicroBitI2C&		    i2c;                      // The I2C interface the sensor is connected to.
+    MicroBitAccelerometer&  accelerometer;            // The accelerometer to use for tilt compensation.
 
     public:
 
@@ -149,7 +152,7 @@ class MicroBitCompass : public MicroBitComponent
       * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
       * @endcode
       */
-    MicroBitCompass(uint16_t id, uint16_t address);
+    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer &_accelerometer);
 
     /**
      * Configures the compass for the sample rate defined

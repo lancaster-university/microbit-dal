@@ -22,8 +22,9 @@ class MicroBitLEDService
       * Constructor. 
       * Create a representation of the LEDService
       * @param BLE The instance of a BLE device that we're running on.
+      * @param display The instance of a MicroBitDisplay to interface with.
       */
-    MicroBitLEDService(BLEDevice &_ble);  
+    MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display);  
     
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
@@ -39,6 +40,7 @@ class MicroBitLEDService
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
+    MicroBitDisplay     &display;
 
     // memory for our 8 bit control characteristics.
     uint8_t             matrixCharacteristicBuffer[5];

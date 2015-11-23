@@ -17,6 +17,7 @@ class MicroBitFont
     public:
     
     static const unsigned char* defaultFont;
+    static MicroBitFont systemFont;
     
     const unsigned char* characters;
     
@@ -37,6 +38,18 @@ class MicroBitFont
       * Sets the characters to defaultFont characters and asciiEnd to MICROBIT_FONT_ASCII_END.
       */
     MicroBitFont();
+
+/**
+  * Changes the current system font to the one specified.
+  * @param font the new font that will be used to render characters..
+  */
+static void setSystemFont(MicroBitFont font);
+
+/**
+  * Retreives the font object used for rendering characters on the display.
+  */
+static MicroBitFont getSystemFont();
+
 };
 
 #endif

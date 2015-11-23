@@ -9,6 +9,7 @@
 #include "nrf_gpio.h"
 
 const int timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
+MicroBitDisplay *MicroBitDisplay::defaultDisplay = NULL;
 
 /**
   * Constructor.
@@ -24,7 +25,6 @@ const int timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 
   * @endcode
   */
 MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
-    font(),
     image(x*2,y)
 {
     //set pins as output
@@ -47,7 +47,10 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
 
     this->lightSensor = NULL;
 
-    uBit.flags |= MICROBIT_FLAG_DISPLAY_RUNNING;
+    if (!this->defaultDisplay)
+        this->defaultDisplay = this;
+    
+    status |= MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
@@ -58,7 +61,7 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
   */
 void MicroBitDisplay::systemTick()
 {
-    if(!(uBit.flags & MICROBIT_FLAG_DISPLAY_RUNNING))
+    if(!(status & MICROBIT_COMPONENT_RUNNING))
         return;
 
     if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
@@ -148,7 +151,7 @@ void MicroBitDisplay::render()
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
     if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
-        renderTimer.attach_us(this, &MicroBitDisplay::renderFinish, (((brightness * 950) / (MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * uBit.getTickPeriod()));
+        renderTimer.attach_us(this, &MicroBitDisplay::renderFinish, (((brightness * 950) / (MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * scheduler_get_tick_period()));
 
     //this will take around 23us to execute
     if(brightness <= MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
@@ -934,16 +937,16 @@ void MicroBitDisplay::setDisplayMode(DisplayMode mode)
     if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
     {
         //to reduce the artifacts on the display - increase the tick
-        if(uBit.getTickPeriod() != MICROBIT_LIGHT_SENSOR_TICK_PERIOD)
-            uBit.setTickPeriod(MICROBIT_LIGHT_SENSOR_TICK_PERIOD);
+        if(scheduler_get_tick_period() != MICROBIT_LIGHT_SENSOR_TICK_PERIOD)
+            scheduler_set_tick_period(MICROBIT_LIGHT_SENSOR_TICK_PERIOD);
     }
 
     if(this->mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE && mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
     {
 
         //if we previously were in light sense mode - return to our default.
-        if(uBit.getTickPeriod() != MICROBIT_DEFAULT_TICK_PERIOD)
-            uBit.setTickPeriod(MICROBIT_DEFAULT_TICK_PERIOD);
+        if(scheduler_get_tick_period() != FIBER_TICK_PERIOD_MS)
+            scheduler_set_tick_period(FIBER_TICK_PERIOD_MS);
 
         delete this->lightSensor;
 
@@ -1000,10 +1003,10 @@ void MicroBitDisplay::rotateTo(DisplayRotation rotation)
   */
 void MicroBitDisplay::enable()
 {
-    if(!(uBit.flags & MICROBIT_FLAG_DISPLAY_RUNNING))
+    if(!(status & MICROBIT_COMPONENT_RUNNING))
     {
         setBrightness(brightness);
-        uBit.flags |= MICROBIT_FLAG_DISPLAY_RUNNING;            //set the display running flag
+    	status |= MICROBIT_COMPONENT_RUNNING;
     }
 }
 
@@ -1018,10 +1021,8 @@ void MicroBitDisplay::enable()
   */
 void MicroBitDisplay::disable()
 {
-    if(uBit.flags & MICROBIT_FLAG_DISPLAY_RUNNING)
-    {
-        uBit.flags &= ~MICROBIT_FLAG_DISPLAY_RUNNING;           //unset the display running flag
-    }
+    if(status & MICROBIT_COMPONENT_RUNNING)
+        status &= ~MICROBIT_COMPONENT_RUNNING;           //unset the display running flag
 }
 
 /**
@@ -1053,7 +1054,22 @@ void MicroBitDisplay::setErrorTimeout(int iterations)
 }
 
 /**
-  * Displays "=(" and an accompanying status code infinitely.
+  * Displays "=(" and an accompanying status code on the default display.
+  * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
+  *
+  * Example:
+  * @code 
+  * uBit.display.error(20);
+  * @endcode
+  */
+void MicroBitDisplay::panic(int statusCode)
+{
+	if(MicroBitDisplay::defaultDisplay)
+		defaultDisplay->error(statusCode);
+
+}
+/**
+  * Displays "=(" and an accompanying status code on the default display.
   * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
   *
   * Example:
@@ -1063,14 +1079,13 @@ void MicroBitDisplay::setErrorTimeout(int iterations)
   */
 void MicroBitDisplay::error(int statusCode)
 {
-    extern InterruptIn resetButton;
+    DigitalIn resetButton(MICROBIT_PIN_BUTTON_RESET);
+    resetButton.mode(PullUp);
 
     __disable_irq(); //stop ALL interrupts
 
     if(statusCode < 0 || statusCode > 255)
         statusCode = 0;
-
-    disable(); //relinquish PWMOut's control
 
     uint8_t strobeRow = 0;
     uint8_t strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
@@ -1122,10 +1137,8 @@ void MicroBitDisplay::error(int statusCode)
                 nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, ~coldata<<4 & 0xF0); //set port 0 4-7
                 nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); //set port 1 8-12
 
-                //set i to an obscene number.
-                i = 1000;
-
                 //burn cycles
+                i = 1000;
                 while(i>0)
                 {
                     // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
@@ -1155,7 +1168,7 @@ void MicroBitDisplay::error(int statusCode)
   */
 void MicroBitDisplay::setFont(MicroBitFont font)
 {
-    this->font = font;
+	MicroBitFont::setSystemFont(font);
 }
 
 /**
@@ -1163,7 +1176,7 @@ void MicroBitDisplay::setFont(MicroBitFont font)
   */
 MicroBitFont MicroBitDisplay::getFont()
 {
-    return this->font;
+	return MicroBitFont::getSystemFont();
 }
 
 /**
@@ -1201,5 +1214,5 @@ int MicroBitDisplay::readLightLevel()
   */
 MicroBitDisplay::~MicroBitDisplay()
 {
-    uBit.removeSystemComponent(this);
+    fiber_remove_system_component(this);
 }

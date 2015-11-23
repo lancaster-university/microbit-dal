@@ -150,6 +150,7 @@ class MicroBitAccelerometer : public MicroBitComponent
     MMA8653Sample   sample;             // The last sample read.
     DigitalIn       int1;               // Data ready interrupt.
     float           pitch;              // Pitch of the device, in radians.
+    MicroBitI2C&    i2c;                // The I2C interface to use.
     float           roll;               // Roll of the device, in radians.
     uint8_t         sigma;              // the number of ticks that the instantaneous gesture has been stable.
     BasicGesture    lastGesture;        // the last, stable gesture recorded.
@@ -169,7 +170,7 @@ class MicroBitAccelerometer : public MicroBitComponent
      * accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR)
      * @endcode
      */
-    MicroBitAccelerometer(uint16_t id, uint16_t address);
+    MicroBitAccelerometer(uint16_t id, uint16_t address, MicroBitI2C &_i2c);
 
     /**
      * Configures the accelerometer for G range and sample rate defined

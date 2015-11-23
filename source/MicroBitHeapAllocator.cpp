@@ -362,7 +362,7 @@ void *microbit_malloc(size_t size)
 #endif    
     
 #if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
-    panic(MICROBIT_OOM);
+	MicroBitDisplay::panic(MICROBIT_OOM);
 #endif        
 
     return NULL;

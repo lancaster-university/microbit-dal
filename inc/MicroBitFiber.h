@@ -18,7 +18,7 @@
 // stack for any long lived fibers with large stack
 
 // Fiber Scheduler Flags
-#define MICROBIT_FLAG_DATA_READY 	        0x01 
+#define MICROBIT_SCHEDULER_RUNNING	     	0x01
 
 // Fiber Flags
 #define MICROBIT_FIBER_FLAG_FOB             0x01 
@@ -70,13 +70,35 @@ struct Fiber
 
 extern Fiber *currentFiber;
 
+
 /**
   * Initialises the Fiber scheduler. 
   * Creates a Fiber context around the calling thread, and adds it to the run queue as the current thread.
   *
   * This function must be called once only from the main thread, and before any other Fiber operation.
   */
-void scheduler_init();
+void scheduler_init(MicroBitMessageBus *_messageBus);
+
+/*
+ * Reconfigures the system wide timer to the given period in milliseconds.
+ *
+ * @param speedMs the new period of the timer in milliseconds
+ * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if speedMs < 1
+ *
+ * @note this will also modify the value that is added to ticks in MiroBitFiber:scheduler_tick()
+ */
+int scheduler_set_tick_period(int speedMs);
+
+/*
+ * Returns the currently used tick speed in milliseconds
+ */
+int scheduler_get_tick_period();
+
+/**
+  * Determines if the fiber scheduler is operational.
+  * @return 1 if the fber scheduler is running, 0 otherwise.
+  */
+int fiber_scheduler_running();
 
 /**
   * Exit point for all fibers.
@@ -157,8 +179,9 @@ void scheduler_tick();
   *
   * @param id The ID field of the event to listen for (e.g. MICROBIT_ID_BUTTON_A)
   * @param value The VALUE of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
+  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not associated with a MicroBitMessageBus.
   */
-void fiber_wait_for_event(uint16_t id, uint16_t value);
+int fiber_wait_for_event(uint16_t id, uint16_t value);
 
 /**
   * Executes the given function asynchronously if necessary.
@@ -243,6 +266,36 @@ void idle();
 void idle_task();
 
 /**
+ * add a component to the array of system components which invocate the systemTick member function during a systemTick 
+ *
+ * @param component The component to add.
+ * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
+ */
+int fiber_add_system_component(MicroBitComponent *component);
+
+/**
+ * remove a component from the array of system components
+ * @param component The component to remove.
+ * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
+ */
+int fiber_remove_system_component(MicroBitComponent *component);
+
+/**
+ * add a component to the array of of idle thread components.
+ * isIdleCallbackNeeded is polled during a systemTick to determine if the idle thread should jump to the front of the queue
+ * @param component The component to add.
+ * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
+ */
+int fiber_add_idle_component(MicroBitComponent *component);
+
+/**
+ * remove a component from the array of idle thread components
+ * @param component The component to remove.
+ * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
+ */
+int fiber_remove_idle_component(MicroBitComponent *component);
+
+/**
   * Determines if the processor is executing in interrupt context.
   * @return true if any the processor is currently executing any interrupt service routine. False otherwise.
   */
@@ -265,10 +318,5 @@ extern "C" void restore_register_context(Cortex_M0_TCB *tcb);
   * When stored as an unsigned long, this gives us approx 50 days between rollover, which is ample. :-)
   */
 extern unsigned long ticks;
-
-/**
-  * This variable is used to prioritise the systems' idle fibre to execute essential tasks.
-  */
-extern uint8_t fiber_flags;
 
 #endif

@@ -519,7 +519,7 @@ int MicroBitImage::print(char c, int16_t x, int16_t y)
     unsigned char v;
     int x1, y1;
     
-    MicroBitFont font = uBit.display.getFont();
+    MicroBitFont font = MicroBitFont::getSystemFont();
     
     // Sanity check. Silently ignore anything out of bounds.
     if (x >= getWidth() || y >= getHeight() || c < MICROBIT_FONT_ASCII_START || c > font.asciiEnd)

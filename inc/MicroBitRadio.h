@@ -1,8 +1,13 @@
 #ifndef MICROBIT_RADIO_H
 #define MICROBIT_RADIO_H
 
+class MicroBitRadio;
+struct FrameBuffer;
+
 #include "mbed.h"
 #include "PacketBuffer.h"
+#include "MicroBitRadioDatagram.h"
+#include "MicroBitRadioEvent.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -46,6 +51,7 @@
 // Events
 #define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received.
 
+
 struct FrameBuffer
 {
     uint8_t         length;                             // The length of the remaining bytes in the packet. includes protocol/version/group fields, excluding the length field itself.
@@ -58,8 +64,6 @@ struct FrameBuffer
     uint8_t         rssi;                               // Received signal strength of this frame.
 };
 
-#include "MicroBitRadioDatagram.h"
-#include "MicroBitRadioEvent.h"
 
 class MicroBitRadio : MicroBitComponent
 {
@@ -72,7 +76,7 @@ class MicroBitRadio : MicroBitComponent
     public:
     MicroBitRadioDatagram   datagram;   // A simple datagram service.
     MicroBitRadioEvent      event;      // A simple event handling service.
-    static MicroBitRadio *instance;     // A singleton reference, used purely by the interrupt service routine.
+    static MicroBitRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.
 
     /**
      * Constructor.

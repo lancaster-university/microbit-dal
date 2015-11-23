@@ -33,6 +33,8 @@ class MicroBitMessageBus : public MicroBitComponent
 {
     public:
 
+	static MicroBitMessageBus	*defaultMessageBus;
+
 	/**
 	  * Default constructor.
 	  * Anticipating only one MessageBus per device, as filtering is handled within the class.

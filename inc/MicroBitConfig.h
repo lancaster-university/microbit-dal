@@ -274,6 +274,7 @@
 #ifndef MICROBIT_BLE_MAXIMUM_SCROLLTEXT
 #define MICROBIT_BLE_MAXIMUM_SCROLLTEXT     20
 #endif
+
 //
 // Accelerometer options
 //

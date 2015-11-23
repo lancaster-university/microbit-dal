@@ -13,7 +13,7 @@
   * Create a representation of the ButtonService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble) : 
+MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble, MicroBitMessageBus &messageBus) : 
         ble(_ble) 
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
@@ -43,8 +43,8 @@ MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble) :
     ble.gattServer().write(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
     ble.gattServer().write(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
 
-    uBit.MessageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, this, &MicroBitButtonService::buttonAUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
-    uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, this, &MicroBitButtonService::buttonBUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, this, &MicroBitButtonService::buttonAUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, this, &MicroBitButtonService::buttonBUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 

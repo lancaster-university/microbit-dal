@@ -18,7 +18,7 @@
   * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address) : average(), sample(), int1(MICROBIT_PIN_COMPASS_DATA_READY)
+MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer) : average(), sample(), int1(MICROBIT_PIN_COMPASS_DATA_READY), i2c(_i2c), accelerometer(_accelerometer)
 {
     this->id = id;
     this->address = address;
@@ -34,7 +34,7 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address) : average(), sam
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 
     // Indicate that we're up and running.
-    uBit.flags |= MICROBIT_FLAG_COMPASS_RUNNING;
+    status |= MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
@@ -51,7 +51,7 @@ int MicroBitCompass::writeCommand(uint8_t reg, uint8_t value)
     command[0] = reg;
     command[1] = value;
 
-    return uBit.i2c.write(address, (const char *)command, 2);
+    return i2c.write(address, (const char *)command, 2);
 }
 
 /**
@@ -69,11 +69,11 @@ int MicroBitCompass::readCommand(uint8_t reg, uint8_t* buffer, int length)
     if (buffer == NULL || length <= 0)
         return MICROBIT_INVALID_PARAMETER;
 
-    result = uBit.i2c.write(address, (const char *)&reg, 1, true);
+    result = i2c.write(address, (const char *)&reg, 1, true);
     if (result !=0)
         return MICROBIT_I2C_ERROR;
 
-    result = uBit.i2c.read(address, (char *)buffer, length);
+    result = i2c.read(address, (char *)buffer, length);
     if (result !=0)
         return MICROBIT_I2C_ERROR;
 
@@ -94,14 +94,14 @@ int MicroBitCompass::read16(uint8_t reg)
     int result;
 
     cmd[0] = reg;
-    result = uBit.i2c.write(address, (const char *)cmd, 1);
+    result = i2c.write(address, (const char *)cmd, 1);
     if (result !=0)
         return MICROBIT_I2C_ERROR;
 
     cmd[0] = 0x00;
     cmd[1] = 0x00;
 
-    result = uBit.i2c.read(address, (char *)cmd, 2);
+    result = i2c.read(address, (char *)cmd, 2);
     if (result !=0)
         return MICROBIT_I2C_ERROR;
 
@@ -153,8 +153,8 @@ int MicroBitCompass::heading()
         calibrate();
 
     // Precompute the tilt compensation parameters to improve readability.
-    float phi = uBit.accelerometer.getRollRadians();
-    float theta = uBit.accelerometer.getPitchRadians();
+    float phi = accelerometer.getRollRadians();
+    float theta = accelerometer.getPitchRadians();
     float x = (float) getX(NORTH_EAST_DOWN);
     float y = (float) getY(NORTH_EAST_DOWN);
     float z = (float) getZ(NORTH_EAST_DOWN);
@@ -314,7 +314,7 @@ int MicroBitCompass::configure()
             break;
 
         // Perform a power efficient sleep...
-        uBit.sleep(100);
+		MicroBit::sleep(100);
     }
 
     // Find the nearest sample rate to that specified.
@@ -560,7 +560,7 @@ int MicroBitCompass::isIdleCallbackNeeded()
   */
 MicroBitCompass::~MicroBitCompass()
 {
-    uBit.removeIdleComponent(this);
+    fiber_remove_idle_component(this);
 }
 
 const MAG3110SampleRateConfig MAG3110SampleRate[MAG3110_SAMPLE_RATES] = {

@@ -13,8 +13,8 @@
   * Create a representation of the LEDService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble) : 
-        ble(_ble), 
+MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display) : 
+        ble(_ble), display(_display),
         matrixCharacteristic(MicroBitLEDServiceMatrixUUID, (uint8_t *)&matrixCharacteristicBuffer, 0, sizeof(matrixCharacteristicBuffer), 
     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ)
 {
@@ -64,7 +64,7 @@ void MicroBitLEDService::onDataWritten(const GattWriteCallbackParams *params)
     {
         for (int y=0; y<params->len; y++)        
             for (int x=0; x<5; x++)        
-                uBit.display.image.setPixelValue(x, y, (data[y] & (0x01 << (4-x))) ? 255 : 0);
+                display.image.setPixelValue(x, y, (data[y] & (0x01 << (4-x))) ? 255 : 0);
     }
 
     else if (params->handle == textCharacteristicHandle) 
@@ -74,7 +74,7 @@ void MicroBitLEDService::onDataWritten(const GattWriteCallbackParams *params)
         ManagedString s((char *)params->data, params->len);
 
         // Start the string scrolling and we're done.
-        uBit.display.scrollAsync(s, (int) scrollingSpeedCharacteristicBuffer);
+        display.scrollAsync(s, (int) scrollingSpeedCharacteristicBuffer);
     }
 
     else if (params->handle == scrollingSpeedCharacteristicHandle && params->len >= sizeof(scrollingSpeedCharacteristicBuffer)) 
@@ -98,7 +98,7 @@ void MicroBitLEDService::onDataRead(GattReadAuthCallbackParams *params)
 
             for (int x=0; x<5; x++)        
             {
-                if (uBit.display.image.getPixelValue(x, y))
+                if (display.image.getPixelValue(x, y))
                     matrixCharacteristicBuffer[y] |= 0x01 << (4-x);
             }
         }

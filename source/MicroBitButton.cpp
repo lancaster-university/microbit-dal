@@ -28,7 +28,7 @@ MicroBitButton::MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventCon
     this->eventConfiguration = eventConfiguration;
     this->downStartTime = 0;
     this->sigma = 0;
-    uBit.addSystemComponent(this);
+    fiber_add_system_component(this);
 }
 
 /**
@@ -128,5 +128,5 @@ int MicroBitButton::isPressed()
   */
 MicroBitButton::~MicroBitButton()
 {
-    uBit.removeSystemComponent(this);
+    fiber_remove_system_component(this);
 }

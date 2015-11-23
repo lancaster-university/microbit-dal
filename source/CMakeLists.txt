@@ -22,6 +22,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitThermometer.cpp"
     "MicroBitIO.cpp"
     "MicroBitCompat.cpp"
+    "MicroBitDevice.cpp"
     "MicroBitImage.cpp"
     "MicroBitDisplay.cpp"
     "DynamicPwm.cpp"

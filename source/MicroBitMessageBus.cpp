@@ -6,6 +6,8 @@
 
 #include "MicroBit.h"
 
+MicroBitMessageBus* MicroBitMessageBus::defaultMessageBus = NULL;
+
 /**
   * Constructor.
   * Create a new Message Bus.
@@ -16,6 +18,9 @@ MicroBitMessageBus::MicroBitMessageBus()
     this->evt_queue_head = NULL;
     this->evt_queue_tail = NULL;
     this->queueLength = 0;
+
+	if(MicroBitMessageBus::defaultMessageBus == NULL)
+		MicroBitMessageBus::defaultMessageBus = this;
 }
 
 /**
@@ -594,5 +599,5 @@ MicroBitListener* MicroBitMessageBus::elementAt(int n)
   */
 MicroBitMessageBus::~MicroBitMessageBus()
 {
-    uBit.removeIdleComponent(this);
+    fiber_remove_idle_component(this);
 }

@@ -47,7 +47,7 @@ extern "C" void RADIO_IRQHandler(void)
         {
             uint8_t sample = NRF_RADIO->RSSISAMPLE;
 
-            uBit.radio.setRSSI(sample);
+            MicroBitRadio::instance->setRSSI(sample);
         }
 
         // Start listening and wait for the END event
@@ -61,7 +61,7 @@ extern "C" void RADIO_IRQHandler(void)
   * Initialise the MicroBitRadio. Note that this class is demand activated, so most resources are only committed
   * if send/recv or event registrations calls are made.
   */
-MicroBitRadio::MicroBitRadio(uint16_t id) : datagram()
+MicroBitRadio::MicroBitRadio(uint16_t id) : datagram(*this), event (*this)
 {
     this->id = id;
     this->status = 0;
@@ -101,7 +101,7 @@ int MicroBitRadio::setTransmitPower(int power)
  */
 int MicroBitRadio::setFrequencyBand(int band)
 {
-    if (uBit.ble)
+    if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
     if (band < 0 || band > 100)
@@ -212,7 +212,7 @@ int MicroBitRadio::enable()
         return MICROBIT_OK;
 
     // Only attempt to enable this radio mode if BLE is disabled.
-    if (uBit.ble)
+    if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
     // If this is the first time we've been enable, allocate out receive buffers.
@@ -289,7 +289,7 @@ int MicroBitRadio::enable()
     NRF_RADIO->TASKS_START = 1;
 
     // register ourselves for a callback event, in order to empty the receive queue.
-    uBit.addIdleComponent(this);
+    fiber_add_idle_component(this);
 
     // Done. Record that our RADIO is configured.
     status |= MICROBIT_RADIO_STATUS_INITIALISED;
@@ -304,7 +304,7 @@ int MicroBitRadio::enable()
 int MicroBitRadio::disable()
 {
     // Only attempt to enable.disable the radio if the protocol is alreayd running.
-    if (uBit.ble)
+    if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
     if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
@@ -318,7 +318,7 @@ int MicroBitRadio::disable()
     while(NRF_RADIO->EVENTS_DISABLED == 0);
 
     // deregister ourselves from the callback event used to empty the receive queue.
-    uBit.removeIdleComponent(this);
+    fiber_remove_idle_component(this);
 
     return MICROBIT_OK;
 }
@@ -331,7 +331,7 @@ int MicroBitRadio::disable()
   */
 int MicroBitRadio::setGroup(uint8_t group)
 {
-    if (uBit.ble)
+    if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
     // Record our group id locally
@@ -422,7 +422,7 @@ FrameBuffer* MicroBitRadio::recv()
  */
 int MicroBitRadio::send(FrameBuffer *buffer)
 {
-    if (uBit.ble)
+    if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
     if (buffer == NULL)

@@ -15,15 +15,34 @@
 
 /**
   * Constructor.
+  * @param radio The underlying radio module that this service will use.
   */
-MicroBitRadioEvent::MicroBitRadioEvent()
+MicroBitRadioEvent::MicroBitRadioEvent(MicroBitRadio &r) : radio(r)
 {
-    suppressForwarding = false;
+    this->suppressForwarding = false;
 }
 
 /**
  * Associates the given MessageBus events with the radio channel.
  * Once registered, all events matching the given registration sent to this micro:bit's 
+ * default MessageBus will be automaticlaly retrasmitted on the radio.
+ *
+ * @param id The ID of the events to register.
+ * @param value the VALUE of the event to register. use MICROBIT_EVT_ANY for all event values matching the given id.
+ *
+ * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if no defult MessageBus is available.
+ */
+int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
+{
+    if (MicroBitMessageBus::defaultMessageBus)
+        return listen(id, value, *MicroBitMessageBus::defaultMessageBus);
+
+    return MICROBIT_NO_RESOURCES;
+}
+
+/**
+ * Associates the given MessageBus events with the radio channel.
+ * Once registered, all events matching the given registration sent to the given 
  * MessageBus will be automaticlaly retrasmitted on the radio.
  *
  * @param id The ID of the events to register.
@@ -31,9 +50,9 @@ MicroBitRadioEvent::MicroBitRadioEvent()
  *
  * @return MICROBIT_OK on success.
  */
-int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
+int MicroBitRadioEvent::listen(uint16_t id, uint16_t value, MicroBitMessageBus &messageBus)
 {
-    return uBit.MessageBus.listen(id, value, this, &MicroBitRadioEvent::eventReceived, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    return messageBus.listen(id, value, this, &MicroBitRadioEvent::eventReceived, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 /**
@@ -42,12 +61,30 @@ int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
  * @param id The ID of the events to deregister.
  * @param value the VALUE of the event to deregister. use MICROBIT_EVT_ANY for all event values matching the given id.
  *
- * @return MICROBIT_OK on success.
+ * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if no default MessageBus is available.
  */
 int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value)
 {
-    return uBit.MessageBus.ignore(id, value, this, &MicroBitRadioEvent::eventReceived);
+    if (MicroBitMessageBus::defaultMessageBus)
+        return ignore(id, value, *MicroBitMessageBus::defaultMessageBus);
+
+    return MICROBIT_INVALID_PARAMETER;
 }
+
+/**
+ * Disassociates the given MessageBus events with the radio channel.
+ *
+ * @param id The ID of the events to deregister.
+ * @param value the VALUE of the event to deregister. use MICROBIT_EVT_ANY for all event values matching the given id.
+ * @param The message bus to deregister on.
+ *
+ * @return MICROBIT_OK on success.
+ */
+int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value, MicroBitMessageBus &messageBus)
+{
+    return messageBus.ignore(id, value, this, &MicroBitRadioEvent::eventReceived);
+}
+
 
 /**
  * Protocol handler callback. This is called when the radio receives a packet marked as an event
@@ -55,7 +92,7 @@ int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value)
  */
 void MicroBitRadioEvent::packetReceived()
 {
-    FrameBuffer *p = uBit.radio.recv();
+    FrameBuffer *p = radio.recv();
     MicroBitEvent *e = (MicroBitEvent *) p->payload;
 
     suppressForwarding = true;
@@ -83,6 +120,6 @@ void MicroBitRadioEvent::eventReceived(MicroBitEvent e)
     buf.protocol = MICROBIT_RADIO_PROTOCOL_EVENTBUS;
     memcpy(buf.payload, (const uint8_t *)&e, sizeof(MicroBitEvent));
 
-    uBit.radio.send(&buf);
+    radio.send(&buf);
 }
 

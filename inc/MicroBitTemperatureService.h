@@ -22,7 +22,7 @@ class MicroBitTemperatureService
       * Create a representation of the TempertureService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitTemperatureService(BLEDevice &_ble);  
+    MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, MicroBitMessageBus &messageBus);
     
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
@@ -37,7 +37,8 @@ class MicroBitTemperatureService
     private:
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
+    BLEDevice           	&ble;
+    MicroBitThermometer     &thermometer;
 
     // memory for our 8 bit temperature characteristic.
     int8_t             temperatureDataCharacteristicBuffer;

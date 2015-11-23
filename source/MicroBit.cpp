@@ -22,47 +22,13 @@
 #endif
 
 /**
-  * custom function for panic for malloc & new due to scoping issue.
-  */
-void panic(int statusCode)
-{
-    uBit.panic(statusCode);
-}
-
-/**
-  * Callback that performs a hard reset when a BLE GAP disconnect occurs.
-  * Only used when an explicit reset is invoked locally whilst a BLE connection is in progress.
-  * This allows for a clean diconnect of the BLE connection before resetting.
-  */
-void bleDisconnectionResetCallback(const Gap::DisconnectionCallbackParams_t *)
-{
-    NVIC_SystemReset();
-}
-
-/**
   * Perform a hard reset of the micro:bit.
   * If BLE connected, then try to signal a disconnect first
   */
 void
 microbit_reset()
 {
-    if(uBit.ble && uBit.ble->getGapState().connected) {
-        uBit.ble->onDisconnection(bleDisconnectionResetCallback);
-
-        uBit.ble->gap().disconnect(Gap::REMOTE_USER_TERMINATED_CONNECTION);
-        // We should be reset by the disconnection callback, so we wait to
-        // allow that to happen.  If it doesn't happen, then we fall through to the
-        // hard rest here.  (For example there is a race condition where
-        // the remote device disconnects between us testing the connection
-        // state and re-setting the disconnection callback).
-        uBit.sleep(1000);
-    }
     NVIC_SystemReset();
-}
-
-void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *)
-{
-    uBit.ble->startAdvertising();
 }
 
 void MicroBit::onABListenerRegisteredEvent(MicroBitEvent evt)
@@ -103,16 +69,16 @@ void MicroBit::onABListenerRegisteredEvent(MicroBitEvent evt)
   * @endcode
   */
 MicroBit::MicroBit() :
-    flags(0x00),
+	resetButton(MICROBIT_PIN_BUTTON_RESET),
     i2c(MICROBIT_PIN_SDA, MICROBIT_PIN_SCL),
     serial(USBTX, USBRX),
-    MessageBus(),
+    messageBus(),
     display(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_WIDTH, MICROBIT_DISPLAY_HEIGHT),
     buttonA(MICROBIT_ID_BUTTON_A,MICROBIT_PIN_BUTTON_A, MICROBIT_BUTTON_ALL_EVENTS),
     buttonB(MICROBIT_ID_BUTTON_B,MICROBIT_PIN_BUTTON_B, MICROBIT_BUTTON_ALL_EVENTS),
-    buttonAB(MICROBIT_ID_BUTTON_AB,MICROBIT_ID_BUTTON_A,MICROBIT_ID_BUTTON_B),
-    accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR),
-    compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR),
+    buttonAB(MICROBIT_ID_BUTTON_AB,MICROBIT_ID_BUTTON_A,MICROBIT_ID_BUTTON_B, messageBus), 
+    accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR, i2c),
+    compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR,i2c,accelerometer),
     thermometer(MICROBIT_ID_THERMOMETER),
     io(MICROBIT_ID_IO_P0,MICROBIT_ID_IO_P1,MICROBIT_ID_IO_P2,
        MICROBIT_ID_IO_P3,MICROBIT_ID_IO_P4,MICROBIT_ID_IO_P5,
@@ -125,6 +91,9 @@ MicroBit::MicroBit() :
     radio(MICROBIT_ID_RADIO),
     ble(NULL)
 {
+	// Bring up soft reset functionality as soon as possible.
+    resetButton.mode(PullUp);
+    resetButton.fall(this, &MicroBit::reset);
 }
 
 /**
@@ -140,25 +109,74 @@ MicroBit::MicroBit() :
   */
 void MicroBit::init()
 {
+    // Bring up our nested heap allocator.
+    microbit_heap_init();
+
+    // Bring up fiber scheduler
+    scheduler_init(&messageBus);
+    sleep(10);
+
+    // Load any stored calibration data from persistent storage.
+    MicroBitStorage s = MicroBitStorage();
+    MicroBitConfigurationBlock *b = s.getConfigurationBlock();
+
+    //if we have some calibrated data, calibrate the compass!
+    if(b->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+    {
+        if(b->compassCalibrationData != CompassSample(0,0,0))
+            compass.setCalibration(b->compassCalibrationData);
+    }
+
+    delete b;
+
+	// TODO: YUCK!!! MOVE THESE INTO THE RELEVANT COMPONENTS!!
+	
     //add the display to the systemComponent array
-    addSystemComponent(&uBit.display);
+    addSystemComponent(&display);
 
     //add the compass and accelerometer to the idle array
-    addIdleComponent(&uBit.accelerometer);
-    addIdleComponent(&uBit.compass);
-    addIdleComponent(&uBit.MessageBus);
+    addIdleComponent(&accelerometer);
+    addIdleComponent(&compass);
+    addIdleComponent(&messageBus);
 
     // Seed our random number generator
     seedRandom();
 
-    tickPeriod = MICROBIT_DEFAULT_TICK_PERIOD;
-
-    // Start refreshing the Matrix Display
-    systemTicker.attach_us(this, &MicroBit::systemTick, tickPeriod * 1000);
-
     // Register our compass calibration algorithm.
-    MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBit::compassCalibrator, MESSAGE_BUS_LISTENER_IMMEDIATE);
-    MessageBus.listen(MICROBIT_ID_MESSAGE_BUS_LISTENER, MICROBIT_ID_BUTTON_AB, this, &MicroBit::onABListenerRegisteredEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBit::compassCalibrator, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(MICROBIT_ID_MESSAGE_BUS_LISTENER, MICROBIT_ID_BUTTON_AB, this, &MicroBit::onABListenerRegisteredEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+
+#if CONFIG_ENABLED(MICROBIT_BLE_PAIRING_MODE)
+    // Test if we need to enter BLE pairing mode...
+    int i=0;
+    while (buttonA.isPressed() && buttonB.isPressed() && i<10)
+    {
+        sleep(100);
+        i++;
+
+        if (i == 10)
+        {
+            // Start the BLE stack, if it isn't already running.
+            if (!ble)
+            {
+                bleManager.init(getName(), getSerial(), messageBus, true);
+                ble = bleManager.ble;
+            }
+
+            // Enter pairing mode, using the LED matrix for any necessary pairing operations
+            bleManager.pairingMode(display, buttonA);
+        }
+    }
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
+    // Start the BLE stack, if it isn't already running.
+    if (!ble)
+    {
+        bleManager.init(getName(), getSerial(), messageBus, false);
+        ble = bleManager.ble;
+    }
+#endif
 }
 
 /**
@@ -208,8 +226,8 @@ void MicroBit::compassCalibrator(MicroBitEvent)
         cursor.on = (cursor.on + 1) % 4;
 
         // take a snapshot of the current accelerometer data.
-        int x = uBit.accelerometer.getX();
-        int y = uBit.accelerometer.getY();
+        int x = accelerometer.getX();
+        int y = accelerometer.getY();
 
         // Deterine the position of the user controlled pixel on the screen.
         if (x < -PIXEL2_THRESHOLD)
@@ -245,7 +263,7 @@ void MicroBit::compassCalibrator(MicroBitEvent)
         img.setPixelValue(cursor.x, cursor.y, 255);
 
         // Update the buffer to the screen.
-        uBit.display.image.paste(img,0,0,0);
+        display.image.paste(img,0,0,0);
 
         // test if we need to update the state at the users position.
         for (int i=0; i<PERIMETER_POINTS; i++)
@@ -264,7 +282,7 @@ void MicroBit::compassCalibrator(MicroBitEvent)
             }
         }
 
-        uBit.sleep(100);
+        sleep(100);
     }
 
     // We have enough sample data to make a fairly accurate calibration.
@@ -361,6 +379,15 @@ ManagedString MicroBit::getSerial()
   */
 void MicroBit::reset()
 {
+    if(ble && ble->getGapState().connected) {
+
+        // We have a connected BLE peer. Disconnect the BLE session.
+        ble->gap().disconnect(Gap::REMOTE_USER_TERMINATED_CONNECTION);
+
+        // Wait a little while for the connection to drop.
+        sleep(100);
+    }
+
   microbit_reset();
 }
 
@@ -387,7 +414,7 @@ int MicroBit::sleep(int milliseconds)
     if(milliseconds < 0)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (flags & MICROBIT_FLAG_SCHEDULER_RUNNING)
+    if (fiber_scheduler_running())
         fiber_sleep(milliseconds);
     else
         wait_ms(milliseconds);
@@ -418,7 +445,6 @@ int MicroBit::random(int max)
 {
     uint32_t m, result;
 
-    //return MICROBIT_INVALID_VALUE if max is <= 0...
     if(max <= 0)
         return MICROBIT_INVALID_PARAMETER;
 
@@ -468,7 +494,7 @@ void MicroBit::seedRandom()
 {
     randomValue = 0;
 
-    if(uBit.ble)
+    if(ble)
     {
         // If Bluetooth is enabled, we need to go through the Nordic software to safely do this.
         uint32_t result = sd_rand_application_vector_get((uint8_t*)&randomValue, sizeof(randomValue));
@@ -511,42 +537,6 @@ void MicroBit::seedRandom(uint32_t seed)
 
 
 /**
-  * Periodic callback. Used by MicroBitDisplay, FiberScheduler and buttons.
-  */
-void MicroBit::systemTick()
-{
-    // Scheduler callback. We do this here just as a single timer is more efficient. :-)
-    if (uBit.flags & MICROBIT_FLAG_SCHEDULER_RUNNING)
-        scheduler_tick();
-
-    //work out if any idle components need processing, if so prioritise the idle thread
-    for(int i = 0; i < MICROBIT_IDLE_COMPONENTS; i++)
-        if(idleThreadComponents[i] != NULL && idleThreadComponents[i]->isIdleCallbackNeeded())
-        {
-            fiber_flags |= MICROBIT_FLAG_DATA_READY;
-            break;
-        }
-
-    //update any components in the systemComponents array
-    for(int i = 0; i < MICROBIT_SYSTEM_COMPONENTS; i++)
-        if(systemTickComponents[i] != NULL)
-            systemTickComponents[i]->systemTick();
-}
-
-/**
-  * System tasks to be executed by the idle thread when the Micro:Bit isn't busy or when data needs to be read.
-  */
-void MicroBit::systemTasks()
-{
-    //call the idleTick member function indiscriminately
-    for(int i = 0; i < MICROBIT_IDLE_COMPONENTS; i++)
-        if(idleThreadComponents[i] != NULL)
-            idleThreadComponents[i]->idleTick();
-
-    fiber_flags &= ~MICROBIT_FLAG_DATA_READY;
-}
-
-/**
   * add a component to the array of components which invocate the systemTick member function during a systemTick
   * @param component The component to add.
   * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
@@ -554,16 +544,7 @@ void MicroBit::systemTasks()
   */
 int MicroBit::addSystemComponent(MicroBitComponent *component)
 {
-    int i = 0;
-
-    while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)
-        i++;
-
-    if(i == MICROBIT_SYSTEM_COMPONENTS)
-        return MICROBIT_NO_RESOURCES;
-
-    systemTickComponents[i] = component;
-    return MICROBIT_OK;
+	return fiber_add_system_component(component);
 }
 
 /**
@@ -574,17 +555,7 @@ int MicroBit::addSystemComponent(MicroBitComponent *component)
   */
 int MicroBit::removeSystemComponent(MicroBitComponent *component)
 {
-    int i = 0;
-
-    while(systemTickComponents[i] != component  && i < MICROBIT_SYSTEM_COMPONENTS)
-        i++;
-
-    if(i == MICROBIT_SYSTEM_COMPONENTS)
-        return MICROBIT_INVALID_PARAMETER;
-
-    systemTickComponents[i] = NULL;
-
-    return MICROBIT_OK;
+	return fiber_remove_system_component(component);
 }
 
 /**
@@ -595,17 +566,7 @@ int MicroBit::removeSystemComponent(MicroBitComponent *component)
   */
 int MicroBit::addIdleComponent(MicroBitComponent *component)
 {
-    int i = 0;
-
-    while(idleThreadComponents[i] != NULL && i < MICROBIT_IDLE_COMPONENTS)
-        i++;
-
-    if(i == MICROBIT_IDLE_COMPONENTS)
-        return MICROBIT_NO_RESOURCES;
-
-    idleThreadComponents[i] = component;
-
-    return MICROBIT_OK;
+	return fiber_add_idle_component(component);
 }
 
 /**
@@ -616,47 +577,9 @@ int MicroBit::addIdleComponent(MicroBitComponent *component)
   */
 int MicroBit::removeIdleComponent(MicroBitComponent *component)
 {
-    int i = 0;
-
-    while(idleThreadComponents[i] != component && i < MICROBIT_IDLE_COMPONENTS)
-        i++;
-
-    if(i == MICROBIT_IDLE_COMPONENTS)
-        return MICROBIT_INVALID_PARAMETER;
-
-    idleThreadComponents[i] = NULL;
-
-    return MICROBIT_OK;
+	return fiber_remove_idle_component(component);
 }
 
-/*
- * Reconfigures the ticker to the given speed in milliseconds.
- * @param speedMs the speed in milliseconds
- * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if speedUs < 1
- *
- * @note this will also modify the value that is added to ticks in MiroBitFiber:scheduler_tick()
- */
-int MicroBit::setTickPeriod(int speedMs)
-{
-    if(speedMs < 1)
-        return MICROBIT_INVALID_PARAMETER;
-
-    uBit.systemTicker.detach();
-
-    uBit.systemTicker.attach_us(this, &MicroBit::systemTick, speedMs * 1000);
-
-    tickPeriod = speedMs;
-
-    return MICROBIT_OK;
-}
-
-/*
- * Returns the currently used tick speed in milliseconds
- */
-int MicroBit::getTickPeriod()
-{
-    return tickPeriod;
-}
 
 /**
   * Determine the time since this MicroBit was last reset.
@@ -682,12 +605,11 @@ const char *MicroBit::systemVersion()
 }
 
 /**
-  * Triggers a microbit panic where an infinite loop will occur swapping between the panicFace and statusCode if provided.
-  *
+  * Triggers a microbit panic. All functionality will cease, and a sad face displayed along with an error code. 
   * @param statusCode the status code of the associated error. Status codes must be in the range 0-255.
   */
 void MicroBit::panic(int statusCode)
 {
     //show error and enter infinite while
-    uBit.display.error(statusCode);
+	display.error(statusCode);
 }

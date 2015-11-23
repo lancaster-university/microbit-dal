@@ -29,6 +29,7 @@ const unsigned char pendolino3[475] = {
 
 
 const unsigned char* MicroBitFont::defaultFont = pendolino3;
+MicroBitFont MicroBitFont::systemFont = MicroBitFont(defaultFont, MICROBIT_FONT_ASCII_END);
 
 /**
   * Constructor.
@@ -53,3 +54,21 @@ MicroBitFont::MicroBitFont()
     this->characters = defaultFont;   
     this->asciiEnd = MICROBIT_FONT_ASCII_END;   
 }    
+
+/**
+  * Changes the current system font to the one specified.
+  * @param font the new font that will be used to render characters..
+  */
+void MicroBitFont::setSystemFont(MicroBitFont font)
+{
+	MicroBitFont::systemFont = font;
+}
+
+/**
+  * Retreives the font object used for rendering characters on the display.
+  */
+MicroBitFont MicroBitFont::getSystemFont()
+{
+    return MicroBitFont::systemFont;
+}
+

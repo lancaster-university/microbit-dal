@@ -35,7 +35,7 @@ class MicroBitIOPinService : public MicroBitComponent
       * Create a representation of the IOPinService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitIOPinService(BLEDevice &_ble);  
+    MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io);  
 
     /**
      * periodic callback from MicroBit scheduler.
@@ -91,6 +91,7 @@ class MicroBitIOPinService : public MicroBitComponent
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
+    MicroBitIO          &io;
 
     // memory for our 8 bit control characteristics.
     uint32_t            ioPinServiceADCharacteristicBuffer;

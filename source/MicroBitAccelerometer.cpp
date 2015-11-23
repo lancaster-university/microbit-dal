@@ -93,7 +93,7 @@ int MicroBitAccelerometer::writeCommand(uint8_t reg, uint8_t value)
     command[0] = reg;
     command[1] = value;
 
-    return uBit.i2c.write(address, (const char *)command, 2);
+    return i2c.write(address, (const char *)command, 2);
 }
 
 /**
@@ -112,11 +112,11 @@ int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
     if (buffer == NULL || length <= 0 )
         return MICROBIT_INVALID_PARAMETER;
 
-    result = uBit.i2c.write(address, (const char *)&reg, 1, true);
+    result = i2c.write(address, (const char *)&reg, 1, true);
     if (result !=0)
         return MICROBIT_I2C_ERROR;
 
-    result = uBit.i2c.read(address, (char *)buffer, length);
+    result = i2c.read(address, (char *)buffer, length);
     if (result !=0)
         return MICROBIT_I2C_ERROR;
 
@@ -134,7 +134,7 @@ int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
  * accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR)
  * @endcode
  */
-MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address) : sample(), int1(MICROBIT_PIN_ACCEL_DATA_READY)
+MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address, MicroBitI2C& _i2c) : sample(), int1(MICROBIT_PIN_ACCEL_DATA_READY), i2c(_i2c)
 {
     // Store our identifiers.
     this->id = id;
@@ -157,7 +157,7 @@ MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address) : sa
 
     // Configure and enable the accelerometer.
     if (this->configure() == MICROBIT_OK)
-        uBit.flags |= MICROBIT_FLAG_ACCELEROMETER_RUNNING;
+        status |= MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
@@ -576,7 +576,7 @@ int MicroBitAccelerometer::isIdleCallbackNeeded()
   */
 MicroBitAccelerometer::~MicroBitAccelerometer()
 {
-    uBit.removeIdleComponent(this);
+    fiber_remove_idle_component(this);
 }
 
 const MMA8653SampleRangeConfig MMA8653SampleRange[MMA8653_SAMPLE_RANGES] = {

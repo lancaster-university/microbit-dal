@@ -6,6 +6,7 @@
 #define MICROBIT_COMPAT_H
 
 #include "ErrorNo.h"
+#include "MicroBitDevice.h"
 
 #define PI 3.14159265359
 
@@ -66,6 +67,5 @@ int string_reverse(char *s);
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 void itoa(int n, char *s);
-
 
 #endif
