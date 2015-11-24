@@ -19,6 +19,8 @@ MicroBitMessageBus::MicroBitMessageBus()
     this->evt_queue_tail = NULL;
     this->queueLength = 0;
 
+	fiber_add_idle_component(this);
+
 	if(MicroBitMessageBus::defaultMessageBus == NULL)
 		MicroBitMessageBus::defaultMessageBus = this;
 }

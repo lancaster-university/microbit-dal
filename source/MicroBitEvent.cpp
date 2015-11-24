@@ -42,11 +42,13 @@ MicroBitEvent::MicroBitEvent()
   */
 void MicroBitEvent::fire(MicroBitEventLaunchMode mode)
 {
-    if (mode == CREATE_AND_QUEUE)
-        MicroBitMessageBus::defaultMessageBus->send(*this);
-
-    else if (mode == CREATE_AND_FIRE)
-        MicroBitMessageBus::defaultMessageBus->process(*this);
+	if(MicroBitMessageBus::defaultMessageBus)
+	{
+		if (mode == CREATE_AND_QUEUE)
+			MicroBitMessageBus::defaultMessageBus->send(*this);
+		else if (mode == CREATE_AND_FIRE)
+			MicroBitMessageBus::defaultMessageBus->process(*this);
+	}
 }
 
 /**

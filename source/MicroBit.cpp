@@ -109,13 +109,11 @@ MicroBit::MicroBit() :
   */
 void MicroBit::init()
 {
-    // Bring up our nested heap allocator.
+    // Bring up the heap allocator, and reclaim as much memory from SoftDevice as possible.
     microbit_heap_init();
 
-    // Bring up fiber scheduler
+    // Bring up fiber scheduler. Wait a little while for state to stabilise.
     scheduler_init(&messageBus);
-    sleep(10);
-
     // Load any stored calibration data from persistent storage.
     MicroBitStorage s = MicroBitStorage();
     MicroBitConfigurationBlock *b = s.getConfigurationBlock();
@@ -129,15 +127,6 @@ void MicroBit::init()
 
     delete b;
 
-	// TODO: YUCK!!! MOVE THESE INTO THE RELEVANT COMPONENTS!!
-	
-    //add the display to the systemComponent array
-    addSystemComponent(&display);
-
-    //add the compass and accelerometer to the idle array
-    addIdleComponent(&accelerometer);
-    addIdleComponent(&compass);
-    addIdleComponent(&messageBus);
 
     // Seed our random number generator
     seedRandom();
@@ -228,6 +217,9 @@ void MicroBit::compassCalibrator(MicroBitEvent)
         // take a snapshot of the current accelerometer data.
         int x = accelerometer.getX();
         int y = accelerometer.getY();
+
+	// Wait a little whie for the button state to stabilise (one scheduler tick).
+    sleep(10);
 
         // Deterine the position of the user controlled pixel on the screen.
         if (x < -PIXEL2_THRESHOLD)

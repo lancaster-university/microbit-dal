@@ -49,7 +49,9 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
 
     if (!this->defaultDisplay)
         this->defaultDisplay = this;
-    
+
+	fiber_add_system_component(this);
+
     status |= MICROBIT_COMPONENT_RUNNING;
 }
 

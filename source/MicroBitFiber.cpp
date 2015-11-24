@@ -884,7 +884,7 @@ void idle()
     
     // If the above did create any useful work, enter power efficient sleep.
     if(scheduler_runqueue_empty())
-    	__WFI();
+    	__WFE();
 }
 /**
   * IDLE task.

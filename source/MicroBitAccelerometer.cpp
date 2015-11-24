@@ -157,7 +157,10 @@ MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address, Micr
 
     // Configure and enable the accelerometer.
     if (this->configure() == MICROBIT_OK)
+	{
+		fiber_add_idle_component(this);
         status |= MICROBIT_COMPONENT_RUNNING;
+	}
 }
 
 /**
