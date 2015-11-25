@@ -72,14 +72,15 @@ void MicroBitAccelerometerService::onDataWritten(const GattWriteCallbackParams *
 void MicroBitAccelerometerService::accelerometerUpdate(MicroBitEvent e)
 {
     (void) e; /* -Wunused-parameter */
+
     if (ble.getGapState().connected)
     {
-        accelerometerDataCharacteristicBuffer[0] = uBit.accelerometer.getX();
-        accelerometerDataCharacteristicBuffer[1] = uBit.accelerometer.getY();
-        accelerometerDataCharacteristicBuffer[2] = uBit.accelerometer.getZ();
+		accelerometerDataCharacteristicBuffer[0] = uBit.accelerometer.getX();
+		accelerometerDataCharacteristicBuffer[1] = uBit.accelerometer.getY();
+		accelerometerDataCharacteristicBuffer[2] = uBit.accelerometer.getZ();
 
-        ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
-    }
+		ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
+	}
 }
 
 const uint8_t  MicroBitAccelerometerServiceUUID[] = {
