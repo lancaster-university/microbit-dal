@@ -303,17 +303,46 @@ int MicroBit::sleep(int milliseconds)
   */
 int MicroBit::random(int max)
 {
+    uint32_t m, result;
+
     //return MICROBIT_INVALID_VALUE if max is <= 0...
     if(max <= 0)
         return MICROBIT_INVALID_PARAMETER;
+
+    // Our maximum return value is actually one less than passed
+    max--;
+
+    do {
+        m = (uint32_t)max;
+        result = 0;
+        while(m >>= 1) {
+            // Cycle the LFSR (Linear Feedback Shift Register).
+            // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
+            // For those interested, it's documented in his paper:
+            // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
+            // https://www.schneier.com/paper-pseudorandom-sequence.html
+            // Avoid interupts (and hence fibre context switch) while we are doing this
     
-    // Cycle the LFSR (Linear Feedback Shift Register).
-    // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
-    // For those interested, it's documented in his paper:
-    // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
-    
-    randomValue = ((((randomValue >> 31) ^ (randomValue >> 6) ^ (randomValue >> 4) ^ (randomValue >> 2) ^ (randomValue >> 1) ^ randomValue) & 0x0000001) << 31 ) | (randomValue >> 1);   
-    return randomValue % max;
+            __disable_irq();
+
+            randomValue = ((((randomValue >> 31)
+                          ^ (randomValue >> 6)
+                          ^ (randomValue >> 4)
+                          ^ (randomValue >> 2)
+                          ^ (randomValue >> 1)
+                          ^ randomValue)
+                          & 0x0000001)
+                          << 31 )
+                          | (randomValue >> 1);
+
+            __enable_irq();
+
+            result = ((result << 1) | (randomValue & 0x00000001));
+        }
+    } while (result > (uint32_t)max);
+
+
+    return result;
 }
 
 
