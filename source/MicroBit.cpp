@@ -315,30 +315,28 @@ int MicroBit::random(int max)
     do {
         m = (uint32_t)max;
         result = 0;
-        while(m >>= 1) {
+		do {
             // Cycle the LFSR (Linear Feedback Shift Register).
-            // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
+            // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneier here (a true legend in the field!), 
             // For those interested, it's documented in his paper:
             // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
             // https://www.schneier.com/paper-pseudorandom-sequence.html
-            // Avoid interupts (and hence fibre context switch) while we are doing this
-    
-            __disable_irq();
+			uint32_t rnd = randomValue;
 
-            randomValue = ((((randomValue >> 31)
-                          ^ (randomValue >> 6)
-                          ^ (randomValue >> 4)
-                          ^ (randomValue >> 2)
-                          ^ (randomValue >> 1)
-                          ^ randomValue)
+            rnd = ((((rnd >> 31)
+                          ^ (rnd >> 6)
+                          ^ (rnd >> 4)
+                          ^ (rnd >> 2)
+                          ^ (rnd >> 1)
+                          ^ rnd)
                           & 0x0000001)
                           << 31 )
-                          | (randomValue >> 1);
+                          | (rnd >> 1);
 
-            __enable_irq();
+			randomValue = rnd;
 
-            result = ((result << 1) | (randomValue & 0x00000001));
-        }
+            result = ((result << 1) | (rnd & 0x00000001));
+        } while(m >>= 1); 
     } while (result > (uint32_t)max);
 
 
