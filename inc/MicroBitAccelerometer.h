@@ -39,7 +39,42 @@
 /*
  * Accelerometer events
  */
-#define MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE        1
+#define MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE        	1
+
+/*
+ * Gesture events
+ */
+#define MICROBIT_ACCELEROMETER_EVT_TILT_UP          	1
+#define MICROBIT_ACCELEROMETER_EVT_TILT_DOWN          	2
+#define MICROBIT_ACCELEROMETER_EVT_TILT_LEFT          	3
+#define MICROBIT_ACCELEROMETER_EVT_TILT_RIGHT          	4
+#define MICROBIT_ACCELEROMETER_EVT_FACE_UP          	5
+#define MICROBIT_ACCELEROMETER_EVT_FACE_DOWN          	6
+#define MICROBIT_ACCELEROMETER_EVT_FREEFALL          	7
+#define MICROBIT_ACCELEROMETER_EVT_WHEEE          		8
+#define MICROBIT_ACCELEROMETER_EVT_SICK          		9	
+#define MICROBIT_ACCELEROMETER_EVT_UNCONSCIOUS          10
+#define MICROBIT_ACCELEROMETER_EVT_SHAKE          		11
+
+/*
+ * Gesture recogniser constants
+ */
+#define MICROBIT_ACCELEROMETER_REST_TOLERANCE		  200
+#define MICROBIT_ACCELEROMETER_TILT_TOLERANCE		  200
+#define MICROBIT_ACCELEROMETER_FREEFALL_TOLERANCE	  200
+#define MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE	  	  1000
+#define MICROBIT_ACCELEROMETER_WHEEE_TOLERANCE	  	  3000
+#define MICROBIT_ACCELEROMETER_SICK_TOLERANCE	  	  5000
+#define MICROBIT_ACCELEROMETER_UNCONSCIOUS_TOLERANCE  8000
+#define MICROBIT_ACCELEROMETER_GESTURE_DAMPING  	  10
+#define MICROBIT_ACCELEROMETER_SHAKE_DAMPING  	  	  10
+
+#define MICROBIT_ACCELEROMETER_REST_THRESHOLD	  		(MICROBIT_ACCELEROMETER_REST_TOLERANCE * MICROBIT_ACCELEROMETER_REST_TOLERANCE)
+#define MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD	  	(MICROBIT_ACCELEROMETER_FREEFALL_TOLERANCE * MICROBIT_ACCELEROMETER_FREEFALL_TOLERANCE)
+#define MICROBIT_ACCELEROMETER_WHEEE_THRESHOLD	  		(MICROBIT_ACCELEROMETER_WHEEE_TOLERANCE * MICROBIT_ACCELEROMETER_WHEEE_TOLERANCE)
+#define MICROBIT_ACCELEROMETER_SICK_THRESHOLD	  		(MICROBIT_ACCELEROMETER_SICK_TOLERANCE * MICROBIT_ACCELEROMETER_SICK_TOLERANCE)
+#define MICROBIT_ACCELEROMETER_UNCONSCIOUS_THRESHOLD 	(MICROBIT_ACCELEROMETER_UNCONSCIOUS_TOLERANCE * MICROBIT_ACCELEROMETER_UNCONSCIOUS_TOLERANCE)
+#define MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD	4
 
 struct MMA8653Sample
 {
@@ -63,6 +98,32 @@ struct MMA8653SampleRangeConfig
 extern const MMA8653SampleRangeConfig MMA8653SampleRange[];
 extern const MMA8653SampleRateConfig MMA8653SampleRate[];
 
+enum BasicGesture
+{
+	NONE,
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
+	FACE_UP,
+	FACE_DOWN,
+	FREEFALL,
+	WHEEE,
+	SICK,
+	UNCONSCIOUS,
+	SHAKE
+};
+
+struct ShakeHistory
+{
+	uint16_t		shaken:1,
+					x:1,
+					y:1,
+					z:1,
+					count:4,
+					timer:8;
+};
+
 /**
   * Class definition for MicroBit Accelerometer.
   *
@@ -76,11 +137,15 @@ class MicroBitAccelerometer : public MicroBitComponent
       * Used to track asynchronous events in the event bus.
       */
     
+    MMA8653Sample   sample;        // The last sample read.
+    DigitalIn       int1;          // Data ready interrupt.
     uint16_t        address;       // I2C address of this accelerometer.
     uint16_t        samplePeriod;  // The time between samples, in milliseconds.
     uint8_t         sampleRange;   // The sample range of the accelerometer in g.
-    MMA8653Sample   sample;        // The last sample read.
-    DigitalIn       int1;          // Data ready interrupt.
+	uint8_t			sigma;		   // the number of ticks that the instantaneous gesture has been stable.
+	BasicGesture	gesture;   	   // the current, filtered orientation of the device.
+	BasicGesture	iGesture;  	   // the last instantaneous orientation recorded.
+	ShakeHistory	shake;		   // State information needed to detect shake events.
     
     public:
     
@@ -193,6 +258,17 @@ class MicroBitAccelerometer : public MicroBitComponent
     int getZ();
 
     /**
+	  * Reads the last recorded gesture detected.
+	  * @return The last gesture detected.
+	  *
+      * Example:
+      * @code 
+      * if (uBit.accelerometer.getGesture() == SHAKE)
+      * @endcode
+      */    
+    BasicGesture getGesture();
+
+    /**
       * periodic callback from MicroBit idle thread.
       * Check if any data is ready for reading by checking the interrupt flag on the accelerometer
       */    
@@ -224,6 +300,27 @@ class MicroBitAccelerometer : public MicroBitComponent
       * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
       */
     int readCommand(uint8_t reg, uint8_t* buffer, int length);
+
+	/**
+	  * Updates the basic gesture recognizer. This performs instantaneous pose recognition, and also some low pass filtering to promote 
+	  * stability.
+	  */
+	void updateGesture();
+
+	/**
+	  * Service function. Calculates the current scalar acceleration of the device (x^2 + y^2 + z^2).
+	  * It does not, however, square root the result, as this is a relatively high cost operation.
+	  * This is left to application code should it be needed.
+	  * @return the sum of the square of the acceleration of the device across all axes.
+	  */
+	int instantaneousAcceleration2();
+
+	/**
+	  * Service function. Determines the best guess posture of the device based on instantaneous data.
+	  * This makes no use of historic data, and forms this input to th filter implemented in updateGesture().
+ 	  * @return A best guess of the curret posture of the device, based on instanataneous data.
+	  */
+	BasicGesture instantaneousPosture();
 };
 
 #endif

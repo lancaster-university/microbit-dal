@@ -144,6 +144,16 @@ MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address) : sa
     this->samplePeriod = 20;
     this->sampleRange = 2;
 
+	// Initialise gesture history
+	this->sigma = 0;
+	this->gesture = NONE;
+	this->iGesture = NONE;
+	this->shake.x = 0;
+	this->shake.y = 0;
+	this->shake.z = 0;
+	this->shake.count = 0;
+	this->shake.timer = 0;
+
     // Configure and enable the accelerometer.
     if (this->configure() == MICROBIT_OK)
         uBit.flags |= MICROBIT_FLAG_ACCELEROMETER_RUNNING;
@@ -211,11 +221,135 @@ int MicroBitAccelerometer::update()
     sample.y *= this->sampleRange;
     sample.z *= this->sampleRange;
 
+	// Update gesture tracking 
+	updateGesture();
+
     // Indicate that a new sample is available
     MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
 
     return MICROBIT_OK;
 };
+
+/**
+ * Service function. Calculates the current scalar acceleration of the device (x^2 + y^2 + z^2).
+ * It does not, however, square root the result, as this is a relatively high cost operation.
+ * This is left to application code should it be needed.
+ *
+ * @return the sum of the square of the acceleration of the device across all axes.
+ */
+int
+MicroBitAccelerometer::instantaneousAcceleration2()
+{
+	// Use pythagoras theorem to determine the combined force acting on the device.
+	return (int)sample.x*(int)sample.x + (int)sample.y*(int)sample.y + (int)sample.z*(int)sample.z;
+}
+
+/**
+ * Service function. Determines the best guess posture of the device based on instantaneous data.
+ * This makes no use of historic data (except for shake), and forms this input to the filter implemented in updateGesture().
+ *
+ * @return A best guess of the current posture of the device, based on instantaneous data.
+ */
+BasicGesture
+MicroBitAccelerometer::instantaneousPosture()
+{
+	int force = instantaneousAcceleration2();
+	bool shakeDetected = false;
+
+	// Test for shake events.
+	if ((sample.x < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.x) || (sample.x > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.x))
+	{
+		shakeDetected = true;
+		shake.x = !shake.x;
+	}
+
+	if ((sample.y < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.y) || (sample.y > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.y))
+	{
+		shakeDetected = true;
+		shake.y = !shake.y;
+	}
+
+	if ((sample.z < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.z) || (sample.z > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.z))
+	{
+		shakeDetected = true;
+		shake.z = !shake.z;
+	}
+
+	if (shakeDetected && shake.count < MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD && ++shake.count == MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD)
+		shake.shaken = 1;
+	
+	if (++shake.timer >= MICROBIT_ACCELEROMETER_SHAKE_DAMPING)
+	{
+		shake.timer = 0;
+		if (shake.count > 0)
+		{
+			if(--shake.count == 0)
+				shake.shaken = 0;
+		}
+	}	
+
+	if (shake.shaken)
+		return SHAKE;
+
+	if (force < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD)
+		return FREEFALL;
+
+	if (force > MICROBIT_ACCELEROMETER_UNCONSCIOUS_THRESHOLD)
+		return UNCONSCIOUS;
+
+	if (force > MICROBIT_ACCELEROMETER_SICK_THRESHOLD)
+		return SICK;
+
+	if (force > MICROBIT_ACCELEROMETER_WHEEE_THRESHOLD)
+		return WHEEE;
+
+	// Determine our posture.
+	if (sample.x < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+		return LEFT;
+
+	if (sample.x > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+		return RIGHT;
+
+	if (sample.y < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+		return DOWN;
+
+	if (sample.y > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+		return UP;
+
+	if (sample.z < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+		return FACE_UP;
+
+	if (sample.z > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+		return FACE_DOWN;
+
+	return NONE;
+}
+
+void
+MicroBitAccelerometer::updateGesture()
+{
+	// Determine what it looks like we're doing based on the latest sample...
+	BasicGesture g = instantaneousPosture();
+
+	// Perform some low pass filtering to remove hysteresis (data flapping) effects
+	if (g == iGesture)	
+	{
+		if (sigma < MICROBIT_ACCELEROMETER_GESTURE_DAMPING)
+			sigma++;	
+	}
+	else
+	{
+		iGesture = g;
+		sigma = 0;
+	}
+
+	// If we've reached threshold, update our record and raise the relevant event...
+	if (iGesture != gesture && sigma >= MICROBIT_ACCELEROMETER_GESTURE_DAMPING)
+	{
+		gesture = iGesture;
+    	MicroBitEvent e(MICROBIT_ID_GESTURE, gesture);
+	}	
+}
 
 /**
  * Attempts to set the sample rate of the accelerometer to the specified value (in ms).
@@ -306,6 +440,19 @@ int MicroBitAccelerometer::getZ()
     return sample.z;
 }
   
+/**
+ * Reads the last recorded gesture detected.
+ * @return The last gesture detected.
+ *
+ * Example:
+ * @code 
+ * if (uBit.accelerometer.getGesture() == SHAKE)
+ * @endcode
+ */    
+BasicGesture MicroBitAccelerometer::getGesture()
+{
+	return gesture;
+}
 
 /**
   * periodic callback from MicroBit clock.
