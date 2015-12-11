@@ -106,9 +106,7 @@ void MicroBitBLEManager::onDisconnectionCallback()
   */
 void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber)
 {   
-	ManagedString prefix("BBC micro:bit [");
-	ManagedString postfix("]");
-	ManagedString BLEName = prefix + deviceName + postfix;
+	ManagedString BLEName("BBC micro:bit");
 
 	this->deviceName = deviceName;
 
@@ -218,8 +216,20 @@ void MicroBitBLEManager::pairingComplete(bool success)
  */
 void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
 {  
+	ManagedString namePrefix("BBC micro:bit [");
+	ManagedString namePostfix("]");
+	ManagedString BLEName = namePrefix + deviceName + namePostfix;
+
 	ManagedString prefix("BLUEZONE:");
 	ManagedString msg = prefix + deviceName;
+
+	// Update the advertised name of this micro:bit to include the device name
+    ble->clearAdvertisingPayload();
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
+    ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
+    ble->setAdvertisingInterval(200);
+    ble->startAdvertising();  
 
 	// Stop any running animations on the display
 	display.stopAnimation();

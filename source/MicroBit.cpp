@@ -93,6 +93,7 @@ void MicroBit::init()
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
     // Start the BLE stack.        
     bleManager.init(this->getName(), this->getSerial());
+	  
     ble = bleManager.ble;
 #endif
 
