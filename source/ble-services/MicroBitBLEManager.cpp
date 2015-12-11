@@ -1,5 +1,26 @@
 #include "MicroBit.h"
 
+
+/* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
+ * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
+ * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
+ * as a compatability option, but does not support the options used...
+ */
+#if !defined(__arm)
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
+#include "ble.h"
+
+/* 
+ * Return to our predefined compiler settings.
+ */
+#if !defined(__arm)
+#pragma GCC diagnostic pop
+#endif
+
 #define MICROBIT_BLE_ENABLE_BONDING 	true
 #define MICROBIT_BLE_REQUIRE_MITM		true
 
@@ -97,6 +118,13 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     // automatically restart advertising after a device disconnects.
     ble->onDisconnection(bleDisconnectionCallback);
+
+	// configure the stack to hold on to CPU during critical timing events.
+	// mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures 
+	// on secure BLE channels.
+    ble_common_opt_radio_cpu_mutex_t opt;
+    opt.enable = 1;
+    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);	
 
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
