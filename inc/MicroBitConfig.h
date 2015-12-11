@@ -138,6 +138,12 @@
 #define MICROBIT_BLE_BLUEZONE       1
 #endif
 
+// Enable/Disable the use of private resolvable addresses.
+// Set '1' to enable. 
+#ifndef MICROBIT_BLE_PRIVATE_ADDRESSES
+#define MICROBIT_BLE_PRIVATE_ADDRESSES		0
+#endif
+
 // Enable/Disable BLE Service: MicroBitDFU
 // This allows over the air programming during normal operation.
 // Set '1' to enable. 

@@ -126,6 +126,11 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     opt.enable = 1;
     sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);	
 
+#if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
+	// Configure for private addresses, so kids' behaviour can't be easily tracked.
+	ble->setAddress(Gap::ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE, NULL);
+#endif	
+
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
