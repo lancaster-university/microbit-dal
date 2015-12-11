@@ -24,6 +24,11 @@
 #define MICROBIT_BLE_ENABLE_BONDING 	true
 #define MICROBIT_BLE_REQUIRE_MITM		true
 
+
+#define MICROBIT_PAIRING_MODE_TIMEOUT	90
+#define MICROBIT_PAIRING_FADE_SPEED		4
+
+
 const char* MICROBIT_BLE_MANUFACTURER = "The Cast of W1A";
 const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
 const char* MICROBIT_BLE_HARDWARE_VERSION = "1.0";
@@ -189,7 +194,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
 /**
  * A request to pair has been received from a BLE device.
- * If we're in BLUEZONE mode, display the passkey to the user.
+ * If we're in pairing mode, display the passkey to the user.
  */
 void MicroBitBLEManager::pairingRequested(ManagedString passKey)
 {
@@ -199,29 +204,31 @@ void MicroBitBLEManager::pairingRequested(ManagedString passKey)
 
 /**
  * A pairing request has been sucesfully completed.
- * If we're in BLUEZONE mode, display feedback to the user.
+ * If we're in pairing mode, display feedback to the user.
  */
 void MicroBitBLEManager::pairingComplete(bool success)
 {
-	this->pairingStatus &= ~MICROBIT_BLE_PAIR_REQUEST;
-	this->pairingStatus |= MICROBIT_BLE_PAIR_COMPLETE;
+	this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
 	if(success)
 		this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
 }
 
 /**
- * Enter BLUEZONE mode. This is mode is called to initiate pairing, and to enable FOTA programming
+ * Enter pairing mode. This is mode is called to initiate pairing, and to enable FOTA programming
  * of the micro:bit in cases where BLE is disabled during normal operation.
  */
-void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
+void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 {  
 	ManagedString namePrefix("BBC micro:bit [");
 	ManagedString namePostfix("]");
 	ManagedString BLEName = namePrefix + deviceName + namePostfix;
 
-	ManagedString prefix("BLUEZONE:");
-	ManagedString msg = prefix + deviceName;
+	ManagedString msg("PAIRING MODE!");
+
+	int timeInPairingMode = 0;
+	int brightness = 255;
+	int fadeDirection = 0;
 
 	// Update the advertised name of this micro:bit to include the device name
     ble->clearAdvertisingPayload();
@@ -242,8 +249,47 @@ void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
 	{
 		if (pairingStatus & MICROBIT_BLE_PAIR_REQUEST)
 		{
-			display.scroll("Pair: ", 90);
-			display.scroll(passKey, 90);
+			timeInPairingMode = 0;
+			MicroBitImage arrow("0,0,255,0,0\n0,255,0,0,0\n255,255,255,255,255\n0,255,0,0,0\n0,0,255,0,0\n");
+			display.print(arrow,0,0,0);
+
+			if (fadeDirection == 0)
+				brightness -= MICROBIT_PAIRING_FADE_SPEED;
+			else
+				brightness += MICROBIT_PAIRING_FADE_SPEED;
+
+			if (brightness <= 40)
+				display.clear();
+
+			if (brightness <= 0)
+				fadeDirection = 1;
+
+			if (brightness >= 255)
+				fadeDirection = 0;
+
+			if (uBit.buttonA.isPressed())
+			{
+				pairingStatus &= ~MICROBIT_BLE_PAIR_REQUEST;
+				pairingStatus |= MICROBIT_BLE_PAIR_PASSCODE;
+			}
+		}
+
+		if (pairingStatus & MICROBIT_BLE_PAIR_PASSCODE)
+		{
+			timeInPairingMode = 0;
+			display.setBrightness(255);
+			for (int i=0; i<passKey.length(); i++)
+			{
+				display.image.print(passKey.charAt(i),0,0);
+				uBit.sleep(800);
+				display.clear();
+				uBit.sleep(200);
+
+				if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
+					break;
+			}
+
+			uBit.sleep(1000);
 		}
 
 		if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
@@ -260,7 +306,11 @@ void MicroBitBLEManager::bluezone(MicroBitDisplay &display)
 			}
 		}
 
-		uBit.sleep(100);
+		uBit.sleep(30);
+		timeInPairingMode++;
+
+		if (timeInPairingMode >= MICROBIT_PAIRING_MODE_TIMEOUT * 30)
+			microbit_reset();
 	}
 }
 

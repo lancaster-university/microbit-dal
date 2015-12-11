@@ -37,7 +37,7 @@ int main()
     // Provide time for all threaded initialisers to complete.
     uBit.sleep(100);
 
-#if CONFIG_ENABLED(MICROBIT_BLE_BLUEZONE)
+#if CONFIG_ENABLED(MICROBIT_BLE_PAIRING_MODE)
     // Test if we need to enter BLE pairing mode...
     int i=0;
     while (uBit.buttonA.isPressed() && uBit.buttonB.isPressed() && i<10)
@@ -51,8 +51,8 @@ int main()
 			if (!uBit.ble)
 				uBit.bleManager.init(uBit.getName(), uBit.getSerial());
 
-            // Enter BLUE ZONE mode, using the LED matrix for any necessary paiing operations
-			uBit.bleManager.bluezone(uBit.display);
+            // Enter pairing mode, using the LED matrix for any necessary pairing operations
+			uBit.bleManager.pairingMode(uBit.display);
 
         }
     }

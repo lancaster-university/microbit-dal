@@ -123,7 +123,7 @@
 // by enabling/disabling the options below. 
 //
 // n.b. The minimum set of services to enable over the air programming of the device will
-// still be brought up in 'BLUEZONE' mode regardless of the settings below.
+// still be brought up in pairing mode regardless of the settings below.
 //
 
 // Enable/Disable BLE during normal operation.
@@ -132,10 +132,10 @@
 #define MICROBIT_BLE_ENABLED        1
 #endif
 
-// Enable/Disable BLUEZONE mode at power up.
+// Enable/Disable BLE pairing mode mode at power up.
 // Set '1' to enable. 
-#ifndef MICROBIT_BLE_BLUEZONE
-#define MICROBIT_BLE_BLUEZONE       1
+#ifndef MICROBIT_BLE_PAIRING_MODE
+#define MICROBIT_BLE_PAIRING_MODE	1
 #endif
 
 // Enable/Disable the use of private resolvable addresses.
