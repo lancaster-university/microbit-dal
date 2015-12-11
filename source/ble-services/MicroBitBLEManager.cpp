@@ -19,9 +19,8 @@ static MicroBitBLEManager *manager = NULL;
 /**
   * Callback when a BLE GATT disconnect occurs.
   */
-static void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
+static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
-    (void) handle; /* -Wunused-param */
     (void) reason; /* -Wunused-param */
 
     if (manager)
@@ -153,7 +152,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(200));
+    ble->setAdvertisingInterval(200);
     ble->startAdvertising();  
 }
 
