@@ -31,9 +31,8 @@ microbit_reset()
 /**
   * Callback when a BLE GATT disconnect occurs.
   */
-void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
+void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
-    (void) handle; /* -Wunused-param */
     (void) reason; /* -Wunused-param */
 
     uBit.ble->startAdvertising(); 
@@ -167,7 +166,7 @@ void MicroBit::init()
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)MICROBIT_BLE_DEVICE_NAME, sizeof(MICROBIT_BLE_DEVICE_NAME));
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble->setAdvertisingInterval(Gap::MSEC_TO_ADVERTISEMENT_DURATION_UNITS(200));
+    ble->setAdvertisingInterval(200);
     ble->startAdvertising();  
 #endif    
 

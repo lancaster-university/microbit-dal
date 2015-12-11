@@ -302,7 +302,7 @@ extern MicroBit uBit;
 // BLE callback when an active GATT session with another device is terminated.
 // Used to reset state and restart advertising ourselves.
 //
-void bleDisconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason);
+void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason);
 
 // Entry point for application programs. Called after the super-main function
 // has initialized the device and runtime environment.
