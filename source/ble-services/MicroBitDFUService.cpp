@@ -79,6 +79,9 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
             uBit.serial.printf("  ACTIVATING BOOTLOADER.\n");
 #endif
 
+			// Perform an explicit disconnection to assist our peer to reconnect to the DFU service
+			ble.disconnect(Gap::LOCAL_HOST_TERMINATED_CONNECTION);
+
 			// Call bootloader_start implicitly trough a event handler call
 			// it is a work around for bootloader_start not being public in sdk 8.1
 			ble_dfu_t p_dfu;

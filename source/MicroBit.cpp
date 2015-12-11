@@ -14,6 +14,9 @@ void panic(int statusCode)
 void
 microbit_reset()
 {
+	if (uBit.ble)
+		uBit.ble->disconnect(Gap::LOCAL_HOST_TERMINATED_CONNECTION);		
+
     NVIC_SystemReset();
 }
 
