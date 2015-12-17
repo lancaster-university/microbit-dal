@@ -3,11 +3,17 @@
 
 #include "mbed.h"
 #include "MicroBitComponent.h"
+#include "MicroBitCoordinateSystem.h"
 
 /**
   * Relevant pin assignments
   */
 #define MICROBIT_PIN_ACCEL_DATA_READY          P0_28
+
+/**
+  * Status flags
+  */
+#define MICROBIT_ACCEL_PITCH_ROLL_VALID           0x01
 
 /*
  * I2C constants
@@ -60,6 +66,7 @@ struct MMA8653SampleRangeConfig
     uint8_t         xyz_data_cfg;
 };
 
+
 extern const MMA8653SampleRangeConfig MMA8653SampleRange[];
 extern const MMA8653SampleRateConfig MMA8653SampleRate[];
 
@@ -81,6 +88,8 @@ class MicroBitAccelerometer : public MicroBitComponent
     uint8_t         sampleRange;   // The sample range of the accelerometer in g.
     MMA8653Sample   sample;        // The last sample read.
     DigitalIn       int1;          // Data ready interrupt.
+    float           pitch;         // Pitch of the device, in radians.
+    float           roll;          // Roll of the device, in radians.
     
     public:
     
@@ -158,7 +167,7 @@ class MicroBitAccelerometer : public MicroBitComponent
 
     /**
       * Reads the X axis value of the latest update from the accelerometer.
-      * Currently limited to +/- 2g
+      * @param system The coordinate system to use. By default, a simple cartesian system is provided.
       * @return The force measured in the X axis, in milli-g.
       *
       * Example:
@@ -166,11 +175,10 @@ class MicroBitAccelerometer : public MicroBitComponent
       * uBit.accelerometer.getX();
       * @endcode
       */
-    int getX();
+    int getX(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
     
     /**
       * Reads the Y axis value of the latest update from the accelerometer.
-      * Currently limited to +/- 2g
       * @return The force measured in the Y axis, in milli-g.
       *
       * Example:
@@ -178,11 +186,10 @@ class MicroBitAccelerometer : public MicroBitComponent
       * uBit.accelerometer.getY();
       * @endcode
       */    
-    int getY();
+    int getY(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
     
     /**
       * Reads the Z axis value of the latest update from the accelerometer.
-      * Currently limited to +/- 2g
       * @return The force measured in the Z axis, in milli-g.
       *
       * Example:
@@ -190,7 +197,31 @@ class MicroBitAccelerometer : public MicroBitComponent
       * uBit.accelerometer.getZ();
       * @endcode
       */    
-    int getZ();
+    int getZ(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+
+    /**
+      * Provides a rotation compensated pitch of the device, based on the latest update from the accelerometer.
+      * @return The pitch of the device, in degrees.
+      *
+      * Example:
+      * @code 
+      * uBit.accelerometer.getPitch();
+      * @endcode
+      */    
+    int getPitch();
+    float getPitchRadians();
+
+    /**
+      * Provides a rotation compensated roll of the device, based on the latest update from the accelerometer.
+      * @return The roll of the device, in degrees.
+      *
+      * Example:
+      * @code 
+      * uBit.accelerometer.getRoll();
+      * @endcode
+      */    
+    int getRoll();
+    float getRollRadians();
 
     /**
       * periodic callback from MicroBit idle thread.
@@ -224,6 +255,13 @@ class MicroBitAccelerometer : public MicroBitComponent
       * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
       */
     int readCommand(uint8_t reg, uint8_t* buffer, int length);
+
+    /**
+      * Recalculate roll and pitch values for the current sample.
+      * We only do this at most once per sample, as the necessary trigonemteric functions are rather
+      * heavyweight for a CPU without a floating point unit...
+      */
+    void recalculatePitchRoll();
 };
 
 #endif
