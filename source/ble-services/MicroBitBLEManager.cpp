@@ -233,8 +233,10 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 	// Update the advertised name of this micro:bit to include the device name
     ble->clearAdvertisingPayload();
 
+#if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
 	// Always configure for public addresses in pairing mode...
 	ble->setAddress(Gap::ADDR_TYPE_PUBLIC, NULL);
+#endif	
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());

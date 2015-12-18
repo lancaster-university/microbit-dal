@@ -141,7 +141,7 @@
 // Enable/Disable the use of private resolvable addresses.
 // Set '1' to enable. 
 #ifndef MICROBIT_BLE_PRIVATE_ADDRESSES
-#define MICROBIT_BLE_PRIVATE_ADDRESSES		1
+#define MICROBIT_BLE_PRIVATE_ADDRESSES		0
 #endif
 
 // Enable/Disable BLE Service: MicroBitDFU
