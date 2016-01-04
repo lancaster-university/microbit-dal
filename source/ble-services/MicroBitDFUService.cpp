@@ -44,7 +44,8 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
         ble(_ble) 
 {
     // Opcodes can be issued here to control the MicroBitDFU Service, as defined above.
-    WriteOnlyGattCharacteristic<uint8_t> microBitDFUServiceControlCharacteristic(MicroBitDFUServiceControlCharacteristicUUID, &controlByte);
+    GattCharacteristic  microBitDFUServiceControlCharacteristic(MicroBitDFUServiceControlCharacteristicUUID, &controlByte, 0, sizeof(uint8_t), 
+    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     controlByte = 0x00;
     
@@ -58,6 +59,7 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
 
     microBitDFUServiceControlCharacteristicHandle = microBitDFUServiceControlCharacteristic.getValueHandle();
 
+    ble.gattServer().write(microBitDFUServiceControlCharacteristicHandle, &controlByte, sizeof(uint8_t));
     ble.gattServer().onDataWritten(this, &MicroBitDFUService::onDataWritten);
 }
 
