@@ -9,14 +9,33 @@ void panic(int statusCode)
 }
 
 /**
+  * Callback that performs a hard reset when a BLE GAP disconnect occurs.
+  * Only used when an explicit reset is invoked locally whilst a BLE connection is in progress.
+  * This allows for a clean diconnect of the BLE connection before resetting.
+  */
+void bleDisconnectionResetCallback(const Gap::DisconnectionCallbackParams_t *)
+{
+    NVIC_SystemReset();
+}
+
+/**
   * Perform a hard reset of the micro:bit.
+  * If BLE connected, then try to signal a disconnect first
   */
 void
 microbit_reset()
 {
-	if (uBit.ble)
-		uBit.ble->disconnect(Gap::LOCAL_HOST_TERMINATED_CONNECTION);		
+    if(uBit.ble && uBit.ble->getGapState().connected) {
+        uBit.ble->onDisconnection(bleDisconnectionResetCallback);
 
+        uBit.ble->gap().disconnect(Gap::REMOTE_USER_TERMINATED_CONNECTION);
+        // We should be reset by the disconnection callback, so we wait to
+        // allow that to happen.  If it doesn't happen, then we fall through to the
+        // hard rest here.  (For example there is a race condition where
+        // the remote device disconnects between us testing the connection
+        // state and re-setting the disconnection callback).
+        uBit.sleep(1000);
+    }
     NVIC_SystemReset();
 }
 
