@@ -32,6 +32,11 @@ MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble) :
     
     matrixCharacteristic.setReadAuthorizationCallback(this, &MicroBitLEDService::onDataRead);
             
+    // Set default security requirements
+    matrixCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    textCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    scrollingSpeedCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+
     GattCharacteristic *characteristics[] = {&matrixCharacteristic, &textCharacteristic, &scrollingSpeedCharacteristic};
     GattService         service(MicroBitLEDServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 

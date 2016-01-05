@@ -1,214 +1,106 @@
 /**
-  * Class definition for a MicroBit Device Firmware Update loader.
-  *
-  * This is actually just a frontend to a memory resident nordic DFU loader.
-  * Here we deal with the MicroBit 'pairing' functionality with BLE devices, and
-  * very basic authentication and authorization. 
-  *
-  * This implementation is not intended to be fully secure, but rather intends to:
-  *
-  * 1. Provide a simple mechanism to identify an individual MicroBit amongst a classroom of others
-  * 2. Allow BLE devices to discover and cache a passcode that can be used to flash the device over BLE.
-  * 3. Provide a BLE escape route for programs that 'brick' the MicroBit. 
-  *
-  * Represents the device as a whole, and includes member variables to that reflect the components of the system.
-  */
-  
+ * Class definition for a MicroBit Device Firmware Update loader.
+ *
+ * This is actually just a frontend to a memory resident nordic DFU loader.
+ *
+ * We rely on the BLE standard pairing processes to provide encryption and authentication.
+ * We assume any device that is paied with the micro:bit is authorized to reprogram the device.
+ *
+ */
+
 #include "MicroBit.h"
 #include "ble/UUID.h"
 
+#if !defined(__arm)
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
+/* 
+ * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
+ * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
+ * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
+ * as a compatability option, but does not support the options used...
+ */
+extern "C" {
+#include "dfu_app_handler.h"
+}
+
+/* 
+ * Return to our predefined compiler settings.
+ */
+#if !defined(__arm)
+#pragma GCC diagnostic pop
+#endif
+
+
 /**
-  * Constructor. 
-  * Create a representation of a MicroBit device.
-  * @param messageBus callback function to receive MicroBitMessageBus events.
-  */
+ * Constructor. 
+ * Create a representation of a MicroBit device.
+ * @param messageBus callback function to receive MicroBitMessageBus events.
+ */
 MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) : 
-        ble(_ble) 
+    ble(_ble) 
 {
     // Opcodes can be issued here to control the MicroBitDFU Service, as defined above.
-    WriteOnlyGattCharacteristic<uint8_t> microBitDFUServiceControlCharacteristic(MicroBitDFUServiceControlCharacteristicUUID, &controlByte);
-
-    // Read/Write characteristic to enable unlocking and discovery of the MicroBit's flashcode.
-    GattCharacteristic  microBitDFUServiceFlashCodeCharacteristic(MicroBitDFUServiceFlashCodeCharacteristicUUID, (uint8_t *)&flashCode, 0, sizeof(uint32_t),
-    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
-
-    authenticated = false;
-    flashCodeRequested = false;
+    GattCharacteristic  microBitDFUServiceControlCharacteristic(MicroBitDFUServiceControlCharacteristicUUID, &controlByte, 0, sizeof(uint8_t), 
+            GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     controlByte = 0x00;
-    flashCode = 0x00;
-    
-    GattCharacteristic *characteristics[] = {&microBitDFUServiceControlCharacteristic, &microBitDFUServiceFlashCodeCharacteristic};
+
+    // Set default security requirements
+    microBitDFUServiceControlCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+
+    GattCharacteristic *characteristics[] = {&microBitDFUServiceControlCharacteristic};
     GattService         service(MicroBitDFUServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
     ble.addService(service);
 
     microBitDFUServiceControlCharacteristicHandle = microBitDFUServiceControlCharacteristic.getValueHandle();
-    microBitDFUServiceFlashCodeCharacteristicHandle = microBitDFUServiceFlashCodeCharacteristic.getValueHandle();
 
+    ble.gattServer().write(microBitDFUServiceControlCharacteristicHandle, &controlByte, sizeof(uint8_t));
     ble.gattServer().onDataWritten(this, &MicroBitDFUService::onDataWritten);
 }
 
-void MicroBitDFUService::onButtonA(MicroBitEvent e)
-{
-    (void) e; /* -Wunused-parameter */
-    if (flashCodeRequested)
-    {
-        releaseFlashCode();
-        uBit.display.scroll("");
-        showTick();
-        flashCodeRequested = false;
-        authenticated = true;
-    }
-}
-
-void MicroBitDFUService::onButtonB(MicroBitEvent e)
-{
-    (void) e; /* -Wunused-parameter */
-    uBit.display.scroll("VERSION: TODO");
-    showNameHistogram();
-}
-
-/**
-  * Begin the pairing process. Typically called when device is powered up with buttons held down.
-  * Scroll a description on the display, then displays the device ID code as a histogram on the matrix display.
-  */
-void MicroBitDFUService::pair()
-{
-    uBit.MessageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, this, &MicroBitDFUService::onButtonA);
-    uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, this, &MicroBitDFUService::onButtonB);
-
-    uBit.display.scroll("BLUE ZONE...");
-    showNameHistogram();
-    
-    while(1)
-    {    
-        if (flashCodeRequested)
-            uBit.display.scroll("PAIR?");
-            
-        // If our peer disconnects, drop all state.
-        if ((authenticated || flashCodeRequested) && !ble.getGapState().connected)
-        {
-            authenticated = false;
-            flashCodeRequested = false;
-            flashCode = 0x00;
-        }
-
-        uBit.sleep(500);
-    }
-}
 
 
 /**
-  * Callback. Invoked when any of our attributes are written via BLE.
-  */
+ * Callback. Invoked when any of our attributes are written via BLE.
+ */
 void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
 {
     if (params->handle == microBitDFUServiceControlCharacteristicHandle)
     {
-        if (params->len < 1)
-            return;
-        
-        switch(params->data[0])
+        if(params->len > 0 && params->data[0] == MICROBIT_DFU_OPCODE_START_DFU)
         {
-            case MICROBIT_DFU_OPCODE_START_DFU:
-            
-                if (authenticated)
-                {
-                    uBit.display.scroll("");
-                    uBit.display.clear();
+            uBit.display.stopAnimation();
+            uBit.display.clear();
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
-                    uBit.serial.printf("  ACTIVATING BOOTLOADER.\n");
+            uBit.serial.printf("  ACTIVATING BOOTLOADER.\n");
 #endif
-                    bootloader_start();    
-                }   
-            
-                break;
-            
-            case MICROBIT_DFU_OPCODE_START_PAIR:
-#if CONFIG_ENABLED(MICROBIT_DBG)
-                uBit.serial.printf("  PAIRING REQUESTED.\n");
-#endif
-                flashCodeRequested = true;
-                break;
-                                
+
+            // Perform an explicit disconnection to assist our peer to reconnect to the DFU service
+            ble.disconnect(Gap::LOCAL_HOST_TERMINATED_CONNECTION);
+
+            // Call bootloader_start implicitly trough a event handler call
+            // it is a work around for bootloader_start not being public in sdk 8.1
+            ble_dfu_t p_dfu;
+            ble_dfu_evt_t p_evt;
+
+            p_dfu.conn_handle = params->connHandle;
+            p_evt.ble_dfu_evt_type = BLE_DFU_START;
+
+            dfu_app_on_dfu_evt(&p_dfu, &p_evt);
         }
     }
-    
-    if (params->handle == microBitDFUServiceFlashCodeCharacteristicHandle) 
-    {
-        if (params->len >= 4)
-        {            
-            uint32_t lockCode=0;
-            memcpy(&lockCode, params->data, 4);
-            if (lockCode == NRF_FICR->DEVICEID[0])
-            {
-#if CONFIG_ENABLED(MICROBIT_DBG)
-                uBit.serial.printf("MicroBitDFU: FLASHCODE AUTHENTICATED\n");                
-#endif
-                authenticated = true;
-            }else{
-                authenticated = false;
-            }
-        }      
-    }
-}
-
-/**
-  * Displays the device's ID code as a histogram on the LED matrix display.
-  */
-void MicroBitDFUService::showTick()
-{
-    uBit.display.stopAnimation();
-    
-    uBit.display.image.setPixelValue(0,3, 255);
-    uBit.display.image.setPixelValue(1,4, 255);
-    uBit.display.image.setPixelValue(2,3, 255);
-    uBit.display.image.setPixelValue(3,2, 255);
-    uBit.display.image.setPixelValue(4,1, 255);
 }
 
 
 /**
-  * Displays the device's ID code as a histogram on the LED matrix display.
-  */
-void MicroBitDFUService::showNameHistogram()
-{
-    uBit.display.stopAnimation();
-
-    uint32_t n = NRF_FICR->DEVICEID[1];
-    int ld = 1;
-    int d = MICROBIT_DFU_HISTOGRAM_HEIGHT;
-    int h;
-
-    uBit.display.clear();
-    for (int i=0; i<MICROBIT_DFU_HISTOGRAM_WIDTH;i++)
-    {
-        h = (n % d) / ld;
-
-        n -= h;
-        d *= MICROBIT_DFU_HISTOGRAM_HEIGHT;
-        ld *= MICROBIT_DFU_HISTOGRAM_HEIGHT;
-
-        for (int j=0; j<h+1; j++)
-            uBit.display.image.setPixelValue(MICROBIT_DFU_HISTOGRAM_WIDTH-i-1, MICROBIT_DFU_HISTOGRAM_HEIGHT-j-1, 255);
-    }       
-}
-
-/**
-  * Displays the device's ID code as a histogram on the LED matrix display.
-  */
-void MicroBitDFUService::releaseFlashCode()
-{
-    flashCode = NRF_FICR->DEVICEID[0];
-
-    ble.gattServer().notify(microBitDFUServiceFlashCodeCharacteristicHandle,(uint8_t *)&flashCode, sizeof(uint32_t));
-}
-
-/**
-  * UUID definitions for BLE Services and Characteristics.
-  */
+ * UUID definitions for BLE Services and Characteristics.
+ */
 
 const uint8_t              MicroBitDFUServiceUUID[] = {
     0xe9,0x5d,0x93,0xb0,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
@@ -218,6 +110,3 @@ const uint8_t              MicroBitDFUServiceControlCharacteristicUUID[] = {
     0xe9,0x5d,0x93,0xb1,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
 
-const uint8_t              MicroBitDFUServiceFlashCodeCharacteristicUUID[] = {
-    0xe9,0x5d,0x93,0xb2,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
-};
