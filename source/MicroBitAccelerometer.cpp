@@ -237,8 +237,7 @@ int MicroBitAccelerometer::update()
  *
  * @return the sum of the square of the acceleration of the device across all axes.
  */
-    int
-MicroBitAccelerometer::instantaneousAccelerationSquared()
+int MicroBitAccelerometer::instantaneousAccelerationSquared()
 {
     // Use pythagoras theorem to determine the combined force acting on the device.
     return (int)sample.x*(int)sample.x + (int)sample.y*(int)sample.y + (int)sample.z*(int)sample.z;
@@ -250,8 +249,7 @@ MicroBitAccelerometer::instantaneousAccelerationSquared()
  *
  * @return A best guess of the current posture of the device, based on instantaneous data.
  */
-    BasicGesture
-MicroBitAccelerometer::instantaneousPosture()
+BasicGesture MicroBitAccelerometer::instantaneousPosture()
 {
     int force = instantaneousAccelerationSquared();
     bool shakeDetected = false;
@@ -297,7 +295,7 @@ MicroBitAccelerometer::instantaneousPosture()
         return GESTURE_SHAKE;
 
     if (force < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD)
-        return FREEFALL;
+        return GESTURE_FREEFALL;
 
     if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD)
         return GESTURE_3G;
@@ -330,8 +328,7 @@ MicroBitAccelerometer::instantaneousPosture()
     return GESTURE_NONE;
 }
 
-    void
-MicroBitAccelerometer::updateGesture()
+void MicroBitAccelerometer::updateGesture()
 {
     // Determine what it looks like we're doing based on the latest sample...
     BasicGesture g = instantaneousPosture();
