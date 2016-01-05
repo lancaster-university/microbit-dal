@@ -42,6 +42,7 @@
 #define MICROBIT_ID_IO_P20              25          //SDA
 
 #define MICROBIT_ID_BUTTON_AB           26          // Button A+B multibutton
+#define MICROBIT_ID_GESTURE             27          // Gesture events 
 
 #define MICROBIT_ID_NOTIFY              1023          // Notfication channel, for general purpose synchronisation 
 #define MICROBIT_ID_NOTIFY_ONE          1022          // Notfication channel, for general purpose synchronisation 
