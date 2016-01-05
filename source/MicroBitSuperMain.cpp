@@ -10,7 +10,7 @@ int main()
     // Bring up soft reset button.
     resetButton.mode(PullUp);
     resetButton.fall(microbit_reset);
-    
+
 #if CONFIG_ENABLED(MICROBIT_DBG)
 
     // For diagnostics. Gives time to open the console window. :-) 
@@ -30,7 +30,7 @@ int main()
 
     // Bring up fiber scheduler
     scheduler_init();
-    
+
     // Bring up random number generator, BLE, display and system timers.    
     uBit.init();
 
@@ -44,27 +44,26 @@ int main()
     {
         uBit.sleep(100);
         i++;
-        
+
         if (i == 10)
         {
-			// Bring up the BLE stack if it isn't alredy done.
-			if (!uBit.ble)
-				uBit.bleManager.init(uBit.getName(), uBit.getSerial());
+            // Bring up the BLE stack if it isn't alredy done.
+            if (!uBit.ble)
+                uBit.bleManager.init(uBit.getName(), uBit.getSerial());
 
             // Enter pairing mode, using the LED matrix for any necessary pairing operations
-			uBit.bleManager.pairingMode(uBit.display);
-
+            uBit.bleManager.pairingMode(uBit.display);
         }
     }
 #endif
-       
+
     app_main();
 
     // If app_main exits, there may still be other fibers running, registered event handlers etc.
     // Simply release this fiber, which will mean we enter the scheduler. Worse case, we then
     // sit in the idle task forever, in a power efficient sleep.
     release_fiber();
-   
+
     // We should never get here, but just in case.
     while(1);
 }

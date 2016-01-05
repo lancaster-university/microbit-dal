@@ -2,6 +2,14 @@
 #define MICROBIT_IMAGE_H
 
 #include "mbed.h"
+#include "RefCounted.h"
+
+struct ImageData : RefCounted
+{
+    uint16_t width;     // Width in pixels
+    uint16_t height;    // Height in pixels
+    uint8_t data[0];    // 2D array representing the bitmap image
+};
 
 /**
   * Class definition for a MicroBitImage.
@@ -11,9 +19,7 @@
   */
 class MicroBitImage
 {
-    int16_t width;                               // Width of the bitmap, in pixels.
-    int16_t height;                              // Height of the bitmap, in pixels.
-    int16_t *ref;                                // Reference count.
+    ImageData *ptr;     // Pointer to payload data
     
     
     /**
@@ -32,7 +38,34 @@ class MicroBitImage
     
     public:
     static MicroBitImage EmptyImage;    // Shared representation of a null image.
-    uint8_t *bitmap;                    // 2D array representing the bitmap image.    
+
+    /**
+      * Get current ptr, do not decr() it, and set the current instance to empty image.
+      * This is to be used by specialized runtimes which pass ImageData around.
+      */
+    ImageData *leakData();
+
+    /**
+      * Return a 2D array representing the bitmap image.
+      */
+    uint8_t *getBitmap()
+    {
+        return ptr->data;
+    }
+    
+    /**
+      * Constructor. 
+      * Create an image from a specially prepared constant array, with no copying. Will call ptr->incr().
+      *
+      * @param ptr The literal - first two bytes should be 0xff, then width, 0, height, 0, and the bitmap. Width and height are 16 bit. The literal has to be 4-byte aligned.
+      * 
+      * Example:
+      * @code 
+      * static const uint8_t heart[] __attribute__ ((aligned (4))) = { 0xff, 0xff, 10, 0, 5, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
+      * MicroBitImage i((ImageData*)(void*)heart);
+      * @endcode
+      */
+    MicroBitImage(ImageData *ptr);
     
     /**
       * Default Constructor. 
@@ -325,7 +358,10 @@ class MicroBitImage
       * i.getWidth(); //equals 10...
       * @endcode
       */
-    int getWidth();
+    int getWidth() const
+    {
+        return ptr->width;
+    }
 
     /**
       * Gets the height of this image.
@@ -339,8 +375,28 @@ class MicroBitImage
       * i.getHeight(); //equals 5...
       * @endcode
       */
-    int getHeight();
+    int getHeight() const
+    {
+        return ptr->height;
+    }
     
+    /**
+      * Gets number of bytes in the bitmap, ie., width * height.
+      *
+      * @return The size of the bitmap.
+      * 
+      * Example:
+      * @code
+      * const uint8_t heart[] = { 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
+      * MicroBitImage i(10,5,heart);
+      * i.getSize(); //equals 50...
+      * @endcode
+      */
+    int getSize() const
+    {
+        return ptr->width * ptr->height;
+    }
+
     /**
       * Converts the bitmap to a csv string.
       *
@@ -352,7 +408,7 @@ class MicroBitImage
       * @endcode
       */
     ManagedString toString();
-    
+
     /**
       * Crops the image to the given dimensions
       *
@@ -372,6 +428,17 @@ class MicroBitImage
       */
     MicroBitImage crop(int startx, int starty, int finx, int finy);
 
+    /**
+      * Check if image is read-only (i.e., residing in flash).
+      */
+    bool isReadOnly();
+
+    /**
+      * Create a copy of the image bitmap. Used particularly, when isReadOnly() is true.
+      *
+      * @return an instance of MicroBitImage which can be modified independently of the current instance
+      */
+    MicroBitImage clone();
 };
 
 #endif

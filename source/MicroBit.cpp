@@ -39,6 +39,13 @@ microbit_reset()
     NVIC_SystemReset();
 }
 
+void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
+{
+    (void) reason; /* -Wunused-param */
+
+    uBit.ble->startAdvertising(); 
+}
+
 
 /**
   * Constructor. 
@@ -174,7 +181,7 @@ ManagedString MicroBit::getSerial()
     ManagedString s1 = ManagedString(n1);
     ManagedString s2 = ManagedString(n2);
 
-    return s1+s2;
+    return s1 + s2;
 }
 
 /**
@@ -242,17 +249,44 @@ int MicroBit::sleep(int milliseconds)
   */
 int MicroBit::random(int max)
 {
+    uint32_t m, result;
+
     //return MICROBIT_INVALID_VALUE if max is <= 0...
     if(max <= 0)
         return MICROBIT_INVALID_PARAMETER;
-    
-    // Cycle the LFSR (Linear Feedback Shift Register).
-    // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneider here (a true legend in the field!), 
-    // For those interested, it's documented in his paper:
-    // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
-    
-    randomValue = ((((randomValue >> 31) ^ (randomValue >> 6) ^ (randomValue >> 4) ^ (randomValue >> 2) ^ (randomValue >> 1) ^ randomValue) & 0x0000001) << 31 ) | (randomValue >> 1);   
-    return randomValue % max;
+
+    // Our maximum return value is actually one less than passed
+    max--;
+
+    do {
+        m = (uint32_t)max;
+        result = 0;
+		do {
+            // Cycle the LFSR (Linear Feedback Shift Register).
+            // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneier here (a true legend in the field!), 
+            // For those interested, it's documented in his paper:
+            // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
+            // https://www.schneier.com/paper-pseudorandom-sequence.html
+			uint32_t rnd = randomValue;
+
+            rnd = ((((rnd >> 31)
+                          ^ (rnd >> 6)
+                          ^ (rnd >> 4)
+                          ^ (rnd >> 2)
+                          ^ (rnd >> 1)
+                          ^ rnd)
+                          & 0x0000001)
+                          << 31 )
+                          | (rnd >> 1);
+
+			randomValue = rnd;
+
+            result = ((result << 1) | (rnd & 0x00000001));
+        } while(m >>= 1); 
+    } while (result > (uint32_t)max);
+
+
+    return result;
 }
 
 

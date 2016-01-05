@@ -126,7 +126,7 @@ void MicroBitDisplay::render()
                 y = height - 1 - t;
         }
         
-        if(image.bitmap[y*(width*2)+x])
+        if(image.getBitmap()[y*(width*2)+x])
             coldata |= (1 << i);
     }
                     
@@ -175,7 +175,7 @@ void MicroBitDisplay::renderGreyscale()
                 y = height - 1 - t;
         }
         
-        if(min(image.bitmap[y * (width * 2) + x],brightness) & greyscaleBitMsk)
+        if(min(image.getBitmap()[y * (width * 2) + x],brightness) & greyscaleBitMsk)
             coldata |= (1 << i);
     }            
     //write the new bit pattern
