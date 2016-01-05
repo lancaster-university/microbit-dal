@@ -1,15 +1,5 @@
 #include "MicroBit.h"
 
-char MICROBIT_BLE_DEVICE_NAME[] = "BBC micro:bit [xxxxx]";
-
-#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED) && CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-const char* MICROBIT_BLE_MANUFACTURER = "The Cast of W1A";
-const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
-const char* MICROBIT_BLE_HARDWARE_VERSION = "1.0";
-const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
-const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
-#endif
-
 /**
   * custom function for panic for malloc & new due to scoping issue.
   */
@@ -19,24 +9,43 @@ void panic(int statusCode)
 }
 
 /**
-  * Perform a hard reset of the micro:bit.
+  * Callback that performs a hard reset when a BLE GAP disconnect occurs.
+  * Only used when an explicit reset is invoked locally whilst a BLE connection is in progress.
+  * This allows for a clean diconnect of the BLE connection before resetting.
   */
-void
-microbit_reset()
+void bleDisconnectionResetCallback(const Gap::DisconnectionCallbackParams_t *)
 {
     NVIC_SystemReset();
 }
 
-
 /**
-  * Callback when a BLE GATT disconnect occurs.
+  * Perform a hard reset of the micro:bit.
+  * If BLE connected, then try to signal a disconnect first
   */
+void
+microbit_reset()
+{
+    if(uBit.ble && uBit.ble->getGapState().connected) {
+        uBit.ble->onDisconnection(bleDisconnectionResetCallback);
+
+        uBit.ble->gap().disconnect(Gap::REMOTE_USER_TERMINATED_CONNECTION);
+        // We should be reset by the disconnection callback, so we wait to
+        // allow that to happen.  If it doesn't happen, then we fall through to the
+        // hard rest here.  (For example there is a race condition where
+        // the remote device disconnects between us testing the connection
+        // state and re-setting the disconnection callback).
+        uBit.sleep(1000);
+    }
+    NVIC_SystemReset();
+}
+
 void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
     (void) reason; /* -Wunused-param */
 
     uBit.ble->startAdvertising(); 
 }
+
 
 /**
   * Constructor. 
@@ -75,7 +84,8 @@ MicroBit::MicroBit() :
        MICROBIT_ID_IO_P9,MICROBIT_ID_IO_P10,MICROBIT_ID_IO_P11,
        MICROBIT_ID_IO_P12,MICROBIT_ID_IO_P13,MICROBIT_ID_IO_P14,
        MICROBIT_ID_IO_P15,MICROBIT_ID_IO_P16,MICROBIT_ID_IO_P19,
-       MICROBIT_ID_IO_P20)
+       MICROBIT_ID_IO_P20),
+	bleManager()
 {   
 }
 
@@ -106,79 +116,25 @@ void MicroBit::init()
     // Seed our random number generator
     seedRandom();
 
-    // Generate the name for our device.
-    this->deriveName();
-
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
     // Start the BLE stack.        
-    ble = new BLEDevice();
-    ble->init();
-    ble->onDisconnection(bleDisconnectionCallback);
-
-    // Bring up any configured auxiliary services.
-#if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
-    ble_firmware_update_service = new MicroBitDFUService(*ble);
+    bleManager.init(this->getName(), this->getSerial());
+	  
+    ble = bleManager.ble;
 #endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    // Create a temporary, so that compiler doesn't delete the pointer before DeviceInformationService copies it
-    ManagedString tmp = getSerial();
-    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, tmp.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
-    new MicroBitEventService(*ble);
-#endif    
-    
-#if CONFIG_ENABLED(MICROBIT_BLE_LED_SERVICE) 
-    new MicroBitLEDService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_ACCELEROMETER_SERVICE) 
-    new MicroBitAccelerometerService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_MAGNETOMETER_SERVICE) 
-    new MicroBitMagnetometerService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_BUTTON_SERVICE) 
-    new MicroBitButtonService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_IO_PIN_SERVICE) 
-    new MicroBitIOPinService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_TEMPERATURE_SERVICE) 
-    new MicroBitTemperatureService(*ble);
-#endif
-
-    // Configure for high speed mode where possible.
-    Gap::ConnectionParams_t fast;
-    ble->getPreferredConnectionParams(&fast);
-    fast.minConnectionInterval = 8; // 10 ms
-    fast.maxConnectionInterval = 16; // 20 ms
-    fast.slaveLatency = 0;
-    ble->setPreferredConnectionParams(&fast);
-
-    // Setup advertising.
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)MICROBIT_BLE_DEVICE_NAME, sizeof(MICROBIT_BLE_DEVICE_NAME));
-    ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble->setAdvertisingInterval(200);
-    ble->startAdvertising();  
-#endif    
 
     // Start refreshing the Matrix Display
     systemTicker.attach(this, &MicroBit::systemTick, MICROBIT_DISPLAY_REFRESH_PERIOD);     
 }
 
 /**
-  * Derives the friendly name for this device, autogenerated from our hardware Device ID.
+  * Return the friendly name for this device.
+  *
+  * @return A string representing the friendly name of this device.
   */
-void MicroBit::deriveName()
+ManagedString MicroBit::getName()
 {
+    char nameBuffer[MICROBIT_NAME_LENGTH];
     const uint8_t codebook[MICROBIT_NAME_LENGTH][MICROBIT_NAME_CODE_LETTERS] = 
     {
         {'z', 'v', 'g', 'p', 't'},  
@@ -188,13 +144,12 @@ void MicroBit::deriveName()
         {'z', 'v', 'g', 'p', 't'}
     };
 
-    char *name = MICROBIT_BLE_DEVICE_NAME+15;
-
-    // We count right to left, so fast forward the pointer.
+    // We count right to left, so create a pointer to the end of the buffer.
+	char *name = nameBuffer;
     name += MICROBIT_NAME_LENGTH;
 
+	// Derive our name from the nrf51822's unique ID.
     uint32_t n = NRF_FICR->DEVICEID[1];
-    
     int ld = 1;
     int d = MICROBIT_NAME_CODE_LETTERS;
     int h;
@@ -207,16 +162,8 @@ void MicroBit::deriveName()
         ld *= MICROBIT_NAME_CODE_LETTERS;
         *--name = codebook[i][h];
     }
-}
 
-/**
-  * Return the friendly name for this device.
-  *
-  * @return A string representing the friendly name of this device.
-  */
-ManagedString MicroBit::getName()
-{
-    return ManagedString(MICROBIT_BLE_DEVICE_NAME+15, MICROBIT_NAME_LENGTH);
+    return ManagedString(nameBuffer, MICROBIT_NAME_LENGTH);
 }
 
 /**

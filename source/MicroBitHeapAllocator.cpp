@@ -127,20 +127,23 @@ microbit_create_sd_heap(HeapDefinition &heap)
 {
 #if CONFIG_ENABLED(MICROBIT_HEAP_REUSE_SD)
 
-    // OK, see how much of the RAM assigned to Soft Device we can reclaim.
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
+    // Reclaim RAM from unusused areas on the BLE stack GATT table.
     heap.heap_start = (uint32_t *)MICROBIT_HEAP_BASE_BLE_ENABLED;
     heap.heap_end = (uint32_t *)MICROBIT_HEAP_SD_LIMIT;
 #else    
+    // Reclaim all the RAM normally reserved for the Nordic SoftDevice.
     heap.heap_start = (uint32_t *)MICROBIT_HEAP_BASE_BLE_DISABLED;
     heap.heap_end = (uint32_t *)MICROBIT_HEAP_SD_LIMIT;
 #endif
 
     microbit_initialise_heap(heap);
-    return MICROBIT_OK;
 #else
-    return MICROBIT_NOT_SUPPORTED;
+    heap.heap_start = 0;
+    heap.heap_end = 0;
 #endif
+
+    return MICROBIT_OK;
 }
 
 int

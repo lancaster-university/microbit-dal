@@ -27,6 +27,10 @@ MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble) :
     // Initialise our characteristic values.
     buttonADataCharacteristicBuffer = 0;
     buttonBDataCharacteristicBuffer = 0;
+
+    // Set default security requirements
+    buttonADataCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    buttonBDataCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
     
     GattCharacteristic *characteristics[] = {&buttonADataCharacteristic, &buttonBDataCharacteristic};
     GattService         service(MicroBitButtonServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
