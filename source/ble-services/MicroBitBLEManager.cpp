@@ -14,7 +14,7 @@
 
 #include "ble.h"
 
-/* 
+/*
  * Return to our predefined compiler settings.
  */
 #if !defined(__arm)
@@ -37,8 +37,8 @@ const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
 
 /*
  * Many of the mbed interfaces we need to use only support callbacks to plain C functions, rather than C++ methods.
- * So, we maintain a pointer to the MicroBitBLEManager that's in use. Ths way, we can still access resources on the micro:bit 
- * whilst keeping the code modular. 
+ * So, we maintain a pointer to the MicroBitBLEManager that's in use. Ths way, we can still access resources on the micro:bit
+ * whilst keeping the code modular.
  */
 static MicroBitBLEManager *manager = NULL;
 
@@ -73,15 +73,15 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
 }
 
 /**
-  * Constructor. 
+  * Constructor.
   *
   * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
   * Note that the BLE stack *cannot*  be brought up in a static context.
   * (the software simply hangs or corrupts itself).
   * Hence, we bring it up in an explicit init() method, rather than in the constructor.
   */
-MicroBitBLEManager::MicroBitBLEManager() 
-{   
+MicroBitBLEManager::MicroBitBLEManager()
+{
 	manager = this;
 	this->ble = NULL;
 	this->pairingStatus = 0;
@@ -93,53 +93,53 @@ MicroBitBLEManager::MicroBitBLEManager()
   * this callback to restart advertising.
   */
 void MicroBitBLEManager::onDisconnectionCallback()
-{   
+{
 	if(ble)
-    	ble->startAdvertising();  
+    	ble->startAdvertising();
 }
 
 /**
   * Post constructor initialisation method.
-  * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a 
+  * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a
   * static context, so we bring it up here rather than in the constructor.
   * n.b. This method *must* be called in main() or later, not before.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.init();
   * @endcode
   */
 void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber)
-{   
+{
 	ManagedString BLEName("BBC micro:bit");
 
 	this->deviceName = deviceName;
 
-    // Start the BLE stack.        
+    // Start the BLE stack.
     ble = new BLEDevice();
     ble->init();
 
     // automatically restart advertising after a device disconnects.
     ble->onDisconnection(bleDisconnectionCallback);
 
-	// configure the stack to hold on to CPU during critical timing events.
-	// mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures 
-	// on secure BLE channels.
+    // configure the stack to hold on to CPU during critical timing events.
+    // mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures
+    // on secure BLE channels.
     ble_common_opt_radio_cpu_mutex_t opt;
     opt.enable = 1;
-    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);	
+    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
 
 #if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
 	// Configure for private addresses, so kids' behaviour can't be easily tracked.
 	ble->setAddress(Gap::ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE, NULL);
-#endif	
+#endif
 
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
     ble->securityManager().init(MICROBIT_BLE_ENABLE_BONDING, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
-    // Bring up any configured auxiliary services.
+  // Bring up any configured auxiliary services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
 #endif
@@ -150,29 +150,29 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
     new MicroBitEventService(*ble);
-#endif    
-    
-#if CONFIG_ENABLED(MICROBIT_BLE_LED_SERVICE) 
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_LED_SERVICE)
     new MicroBitLEDService(*ble);
 #endif
 
-#if CONFIG_ENABLED(MICROBIT_BLE_ACCELEROMETER_SERVICE) 
+#if CONFIG_ENABLED(MICROBIT_BLE_ACCELEROMETER_SERVICE)
     new MicroBitAccelerometerService(*ble);
 #endif
 
-#if CONFIG_ENABLED(MICROBIT_BLE_MAGNETOMETER_SERVICE) 
+#if CONFIG_ENABLED(MICROBIT_BLE_MAGNETOMETER_SERVICE)
     new MicroBitMagnetometerService(*ble);
 #endif
 
-#if CONFIG_ENABLED(MICROBIT_BLE_BUTTON_SERVICE) 
+#if CONFIG_ENABLED(MICROBIT_BLE_BUTTON_SERVICE)
     new MicroBitButtonService(*ble);
 #endif
 
-#if CONFIG_ENABLED(MICROBIT_BLE_IO_PIN_SERVICE) 
+#if CONFIG_ENABLED(MICROBIT_BLE_IO_PIN_SERVICE)
     new MicroBitIOPinService(*ble);
 #endif
 
-#if CONFIG_ENABLED(MICROBIT_BLE_TEMPERATURE_SERVICE) 
+#if CONFIG_ENABLED(MICROBIT_BLE_TEMPERATURE_SERVICE)
     new MicroBitTemperatureService(*ble);
 #endif
 
@@ -189,7 +189,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
-    ble->startAdvertising();  
+    ble->startAdvertising();
 }
 
 /**
@@ -219,7 +219,7 @@ void MicroBitBLEManager::pairingComplete(bool success)
  * of the micro:bit in cases where BLE is disabled during normal operation.
  */
 void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
-{  
+{
 	ManagedString namePrefix("BBC micro:bit [");
 	ManagedString namePostfix("]");
 	ManagedString BLEName = namePrefix + deviceName + namePostfix;
@@ -237,7 +237,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
-    ble->startAdvertising();  
+    ble->startAdvertising();
 
 	// Stop any running animations on the display
 	display.stopAnimation();
@@ -336,6 +336,5 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
 
         for (int j=0; j<h+1; j++)
             display.image.setPixelValue(MICROBIT_DFU_HISTOGRAM_WIDTH-i-1, MICROBIT_DFU_HISTOGRAM_HEIGHT-j-1, 255);
-    }       
+    }
 }
-
