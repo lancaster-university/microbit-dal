@@ -11,9 +11,9 @@ uint8_t DynamicPwm::lastUsed = NO_PWMS+1; //set it to out of range i.e. 4 so we 
   * @param pin The pin to start running PWM on
   * @param oldPin The pin to stop running PWM on
   * @param channel_number The GPIOTE channel being used to drive this PWM channel
-  */  
+  */
 void gpiote_reinit(PinName pin, PinName oldPin, uint8_t channel_number)
-{        
+{
     // Connect GPIO input buffers and configure PWM_OUTPUT_PIN_NUMBER as an output.
     NRF_GPIO->PIN_CNF[pin] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
                             | (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos)
@@ -37,14 +37,14 @@ void gpiote_reinit(PinName pin, PinName oldPin, uint8_t channel_number)
     __NOP();
     __NOP();
     __NOP();
-    
-    NRF_TIMER2->CC[channel_number] = 0;  
+
+    NRF_TIMER2->CC[channel_number] = 0;
 }
 
 /**
   * An internal constructor used when allocating a new DynamicPwm representation
   * @param pin the name of the pin for the pwm to target
-  * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.) 
+  * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
   * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
   * @param period the frequency of the pwm channel in us.
   */
@@ -64,15 +64,15 @@ DynamicPwm::DynamicPwm(PinName pin, PwmPersistence persistence) : PwmOut(pin)
   * @endcode
   */
 void DynamicPwm::redirect(PinName pin)
-{   
-    gpiote_reinit(pin, _pwm.pin, (uint8_t)_pwm.pwm);  
+{
+    gpiote_reinit(pin, _pwm.pin, (uint8_t)_pwm.pwm);
     this->_pwm.pin = pin;
 }
 
 /**
   * Retrieves a pointer to the first available free pwm channel - or the first one that can be reallocated.
   * @param pin the name of the pin for the pwm to target
-  * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.) 
+  * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
   * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
   *
   * Example:
@@ -90,29 +90,33 @@ DynamicPwm* DynamicPwm::allocate(PinName pin, PwmPersistence persistence)
             lastUsed = i;
             pwms[i] = new DynamicPwm(pin, persistence);
             return pwms[i];
-        }   
+        }
     }
-    
+
     //no blank spot.. try to find a transient PWM
-    for(int i = 0; i < NO_PWMS; i++)
+    int channelIterator = (lastUsed + 1 > NO_PWMS - 1) ? 0 : lastUsed + 1;
+
+    while(channelIterator != lastUsed)
     {
-        if(pwms[i]->flags & PWM_PERSISTENCE_TRANSIENT && i != lastUsed)
+        if(pwms[channelIterator]->flags & PWM_PERSISTENCE_TRANSIENT)
         {
-            lastUsed = i;
-            pwms[i]->flags = persistence;
-            pwms[i]->redirect(pin);
-            return pwms[i];
-        }   
+            lastUsed = channelIterator;
+            pwms[channelIterator]->flags = persistence;
+            pwms[channelIterator]->redirect(pin);
+            return pwms[channelIterator];
+        }
+
+        channelIterator = (channelIterator + 1 > NO_PWMS - 1) ? 0 : channelIterator + 1;
     }
-    
+
     //if we haven't found a free one, we must try to allocate the last used...
     if(pwms[lastUsed]->flags & PWM_PERSISTENCE_TRANSIENT)
     {
         pwms[lastUsed]->flags = persistence;
         pwms[lastUsed]->redirect(pin);
         return pwms[lastUsed];
-    } 
-    
+    }
+
     //well if we have no transient channels - we can't give any away! :( return null
     return (DynamicPwm*)NULL;
 }
@@ -130,9 +134,9 @@ void DynamicPwm::release()
 {
     //free the pwm instance.
     NRF_GPIOTE->CONFIG[(uint8_t) _pwm.pwm] = 0;
-    pwmout_free(&_pwm); 
+    pwmout_free(&_pwm);
     this->flags = PWM_PERSISTENCE_TRANSIENT;
-    
+
     //set the pointer to this object to null...
     for(int i =0; i < NO_PWMS; i++)
         if(pwms[i] == this)
@@ -153,7 +157,7 @@ void DynamicPwm::release()
   */
 PinName DynamicPwm::getPinName()
 {
-    return _pwm.pin;   
+    return _pwm.pin;
 }
 
 /**
@@ -164,7 +168,7 @@ PinName DynamicPwm::getPinName()
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
   * pwm->setPeriodUs(1000); // period now is 1ms
   * @endcode
-  * 
+  *
   * @note The display uses the pwm module, if you change this value the display may flicker.
   */
 void DynamicPwm::setPeriodUs(int period)
