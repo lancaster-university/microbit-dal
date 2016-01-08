@@ -62,5 +62,9 @@
 #define MES_DEVICE_GESTURE_DEVICE_SHAKEN    3
 #define MES_DEVICE_DISPLAY_OFF              4
 #define MES_DEVICE_DISPLAY_ON               5
+// Should these be added here or to new event ID?
+#define MES_DEVICE_INCOMING_CALL            6
+#define MES_DEVICE_INCOMING_MESSAGE         7
+
 
 #endif
