@@ -31,13 +31,6 @@
 #define MES_CAMERA_EVT_TOGGLE_FRONT_REAR    7
 
 
-#define MES_AUDIO_RECORDER_ID                   1003
-#define MES_AUDIO_RECORDER_EVT_LAUNCH           0
-#define MES_AUDIO_RECORDER_EVT_START_CAPTURE    1
-#define MES_AUDIO_RECORDER_EVT_STOP_CAPTURE     2
-#define MES_AUDIO_RECORDER_EVT_STOP             3
-
-
 #define MES_ALERTS_ID                       1004
 #define MES_ALERT_EVT_DISPLAY_TOAST         0
 #define MES_ALERT_EVT_VIBRATE               1
