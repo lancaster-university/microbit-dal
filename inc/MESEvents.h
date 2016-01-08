@@ -54,15 +54,6 @@
 #define MES_SIGNAL_STRENGTH_EVT_THREE_BAR   3
 #define MES_SIGNAL_STRENGTH_EVT_FOUR_BAR    4
 
-#define MES_PLAY_CONTROLLER_ID      1102
-#define MES_BUTTON_UP               0
-#define MES_BUTTON_DOWN             1
-#define MES_BUTTON_RIGHT            2
-#define MES_BUTTON_LEFT             3
-#define MES_BUTTON_A                4
-#define MES_BUTTON_B                5
-#define MES_BUTTON_C                6
-#define MES_BUTTON_D                7
 
 #define MES_DEVICE_INFO_ID                  1103
 #define MES_DEVICE_ORIENTATION_LANDSCAPE    0
