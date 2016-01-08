@@ -48,10 +48,9 @@ void gpiote_reinit(PinName pin, PinName oldPin, uint8_t channel_number)
   * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
   * @param period the frequency of the pwm channel in us.
   */
-DynamicPwm::DynamicPwm(PinName pin, PwmPersistence persistence, int period) : PwmOut(pin)
+DynamicPwm::DynamicPwm(PinName pin, PwmPersistence persistence) : PwmOut(pin)
 {
     this->flags = persistence;
-    this->setPeriodUs(period);
 }
 
 /**
@@ -75,14 +74,13 @@ void DynamicPwm::redirect(PinName pin)
   * @param pin the name of the pin for the pwm to target
   * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.) 
   * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
-  * @param period the frequency of the pwm channel in us.
   *
   * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
   * @endcode
   */
-DynamicPwm* DynamicPwm::allocate(PinName pin, PwmPersistence persistence, int period)
+DynamicPwm* DynamicPwm::allocate(PinName pin, PwmPersistence persistence)
 {
     //try to find a blank spot first
     for(int i = 0; i < NO_PWMS; i++)
@@ -90,7 +88,7 @@ DynamicPwm* DynamicPwm::allocate(PinName pin, PwmPersistence persistence, int pe
         if(pwms[i] == NULL)
         {
             lastUsed = i;
-            pwms[i] = new DynamicPwm(pin, persistence, period);
+            pwms[i] = new DynamicPwm(pin, persistence);
             return pwms[i];
         }   
     }

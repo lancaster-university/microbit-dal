@@ -4,7 +4,6 @@
 #define MICROBIT_DYNAMIC_PWM_H
 
 #define NO_PWMS 3
-#define MICROBIT_DISPLAY_PWM_PERIOD 1000
 
 enum PwmPersistence
 {
@@ -31,9 +30,8 @@ class DynamicPwm : public PwmOut
       * @param pin the name of the pin for the pwm to target
       * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.) 
       * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
-      * @param period the frequency of the pwm channel in us.
       */
-    DynamicPwm(PinName pin, PwmPersistence persistence = PWM_PERSISTENCE_TRANSIENT, int period = MICROBIT_DISPLAY_PWM_PERIOD);
+    DynamicPwm(PinName pin, PwmPersistence persistence = PWM_PERSISTENCE_TRANSIENT);
     
     public: 
     
@@ -62,7 +60,7 @@ class DynamicPwm : public PwmOut
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
       * @endcode
       */
-    static DynamicPwm* allocate(PinName pin, PwmPersistence persistence = PWM_PERSISTENCE_TRANSIENT, int period = MICROBIT_DISPLAY_PWM_PERIOD);
+    static DynamicPwm* allocate(PinName pin, PwmPersistence persistence = PWM_PERSISTENCE_TRANSIENT);
     
     /**
       * Frees this DynamicPwm instance if the pointer is valid.
