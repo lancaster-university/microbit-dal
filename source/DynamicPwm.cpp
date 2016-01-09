@@ -4,6 +4,8 @@ DynamicPwm* DynamicPwm::pwms[NO_PWMS] = { NULL };
 
 uint8_t DynamicPwm::lastUsed = NO_PWMS+1; //set it to out of range i.e. 4 so we know it hasn't been used yet.
 
+uint16_t DynamicPwm::sharedPeriod = 0; //set the shared period to an unknown state
+
 /**
   * Reassigns an already operational PWM channel to the given pin
   * #HACK #BODGE # YUCK #MBED_SHOULD_DO_THIS
@@ -147,6 +149,30 @@ void DynamicPwm::release()
 }
 
 /**
+  * A lightweight wrapper around the super class' write in order to capture the value
+  *
+  * @param value the duty cycle percentage in floating point format.
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
+  *
+  * Example:
+  * @code
+  * DynamicPwm* pwm = DynamicPwm::allocate();
+  * pwm->write(0.5);
+  * @endcode
+  */
+int DynamicPwm::write(float value){
+
+    if(value < 0)
+        return MICROBIT_INVALID_PARAMETER;
+
+    PwmOut::write(value);
+    lastValue = value;
+
+    return MICROBIT_OK;
+}
+
+/**
   * Retreives the pin name associated with this DynamicPwm instance.
   *
   * Example:
@@ -161,17 +187,88 @@ PinName DynamicPwm::getPinName()
 }
 
 /**
+  * Retreives the last value that has been written to this DynamicPwm instance.
+  * The value is in the range 0-1024
+  *
+  * Example:
+  * @code
+  * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
+  * pwm->getValue();
+  * @endcode
+  */
+int DynamicPwm::getValue()
+{
+    return (float)lastValue * float(MICROBIT_PIN_MAX_OUTPUT);
+}
+
+/**
+  * Retreives the current period in use by the entire PWM module
+  *
+  * Example:
+  * @code
+  * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
+  * pwm->getPeriod();
+  * @endcode
+  */
+int DynamicPwm::getPeriodUs()
+{
+    return sharedPeriod;
+}
+
+/**
+  * Retreives the current period in use by the entire PWM module
+  *
+  * Example:
+  * @code
+  * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
+  * pwm->getPeriod();
+  * @endcode
+  */
+int DynamicPwm::getPeriod()
+{
+    return getPeriodUs() / 1000;
+}
+
+/**
   * Sets the period used by the WHOLE PWM module. Any changes to the period will AFFECT ALL CHANNELS.
+  *
+  * @param period the desired period in microseconds.
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
   *
   * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
   * pwm->setPeriodUs(1000); // period now is 1ms
   * @endcode
-  *
-  * @note The display uses the pwm module, if you change this value the display may flicker.
   */
-void DynamicPwm::setPeriodUs(int period)
+int DynamicPwm::setPeriodUs(int period)
 {
+    if(period < 0)
+        return MICROBIT_INVALID_PARAMETER;
+
+    //#HACK this forces mbed to update the pulse width calculation.
     period_us(period);
+    write(lastValue);
+    sharedPeriod = period;
+
+    return MICROBIT_OK;
+}
+
+/**
+  * Sets the period used by the WHOLE PWM module. Any changes to the period will AFFECT ALL CHANNELS.
+  *
+  * @param period the desired period in microseconds.
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
+  *
+  * Example:
+  * @code
+  * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
+  * pwm->setPeriod(1); // period now is 1ms
+  * @endcode
+  */
+int DynamicPwm::setPeriod(int period)
+{
+    return setPeriodUs(period * 1000);
 }
