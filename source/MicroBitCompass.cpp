@@ -130,10 +130,10 @@ int MicroBitCompass::read8(uint8_t reg)
 
 /**
  * Gets the current heading of the device, relative to magnetic north.
- * If he compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
- * Users wishing to implekent their own calibration algorithms should listen for this event,
- * and implement their evnet handler using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensure that
- * calibration is complete before the user program continues. 
+ * If the compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
+ * Users wishing to implement their own calibration algorithms should listen for this event,
+ * using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensures that calibration is complete before 
+ * the user program continues. 
  * 
  * @return the current heading, in degrees. Or MICROBIT_CALIBRATION_IN_PROGRESS if the compass is calibrating. 
  *
@@ -153,14 +153,13 @@ int MicroBitCompass::heading()
         calibrate();
 
     // Precompute the tilt compensation parameters to improve readability.
-    
     float phi = uBit.accelerometer.getRollRadians();
     float theta = uBit.accelerometer.getPitchRadians();
     float x = (float) getX(NORTH_EAST_DOWN);
     float y = (float) getY(NORTH_EAST_DOWN);
     float z = (float) getZ(NORTH_EAST_DOWN);
 
-    // precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
+    // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
     float sinPhi = sin(phi);
     float cosPhi = cos(phi);
     float sinTheta = sin(theta);
@@ -390,7 +389,7 @@ int MicroBitCompass::whoAmI()
 }
 
 /**
- * Reads the currently die temperature of the compass. 
+ * Reads the current die temperature of the compass. 
  * @return the temperature in degrees celsius, or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
  */
 int MicroBitCompass::readTemperature()
@@ -408,13 +407,14 @@ int MicroBitCompass::readTemperature()
 /**
   * Perform a calibration of the compass.
   * 
-  * This method will be clled automatically if a user attmepts to read a compass value when
+  * This method will be called automatically if a user attempts to read a compass value when
   * the compass is uncalibrated. It can also be called at any time by the user.
   * 
   * Any old calibration data is deleted.
   * The method will only return once the compass has been calibrated.
   *
-  * @return MICROBIT_OK, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
+  * @return MICROBIT_OK, MICROBIT_I2C_ERROR if the magnetometer could not be accessed,
+  * or MICROBIT_CALIBRATION_REQUIRED if the calibration algorithm failed to complete succesfully.
   * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
   */
 int MicroBitCompass::calibrate()
@@ -447,7 +447,7 @@ int MicroBitCompass::calibrate()
   * This will fire MICROBIT_COMPASS_EVT_CAL_START.
   * @return MICROBIT_OK, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
   *
-  * @note *** THIS FUNCITON IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
+  * @note *** THIS FUNCTION IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
   * @note *** PLEASE USE THE calibrate() FUNCTION INSTEAD ***
   */
 int MicroBitCompass::calibrateStart()
@@ -455,14 +455,13 @@ int MicroBitCompass::calibrateStart()
     return calibrate();
 }   
 
- 
 /**
-  * Perform the asynchronous calibration of the compass.
-  * This will fire MICROBIT_COMPASS_EVT_CAL_START and MICROBIT_COMPASS_EVT_CAL_END when finished.
-  *
-  * @note *** THIS FUNCITON IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
-  * @note *** PLEASE USE THE calibrate() FUNCTION INSTEAD ***
-  */
+ * Perform the asynchronous calibration of the compass.
+ * This will fire MICROBIT_COMPASS_EVT_CAL_START and MICROBIT_COMPASS_EVT_CAL_END when finished.
+ *
+ * @note *** THIS FUNCITON IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
+ * @note *** PLEASE USE THE calibrate() FUNCTION INSTEAD ***
+ */
 void MicroBitCompass::calibrateAsync()
 {    
     calibrate();
@@ -472,7 +471,7 @@ void MicroBitCompass::calibrateAsync()
   * Complete the calibration of the compass.
   * This will fire MICROBIT_COMPASS_EVT_CAL_END.
   *
-  * @note *** THIS FUNCITON IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
+  * @note *** THIS FUNCTION IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
   */     
 void MicroBitCompass::calibrateEnd()
 {
@@ -481,11 +480,11 @@ void MicroBitCompass::calibrateEnd()
 
 /**
   * Configure the compass to use the given calibration data.
-  * Claibration data is essenutially the perceived zero offset of each axis of the compass.
-  * After calibration should now take into account trimming errors in the deivce, hard iron offsets on the device 
-  * and local magnetic effects present at the time of claibration.
+  * Calibration data is comprised of the perceived zero offset of each axis of the compass.
+  * After calibration this should now take into account trimming errors in the magnetometer, 
+  * and any "hard iron" offsets on the device.
   *
-  * @param The x, y and z xero offsets to use as calibration data
+  * @param The x, y and z zero offsets to use as calibration data.
   */     
 void MicroBitCompass::setCalibration(CompassSample calibration)
 {

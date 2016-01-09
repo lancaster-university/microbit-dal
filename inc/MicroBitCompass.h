@@ -166,21 +166,21 @@ class MicroBitCompass : public MicroBitComponent
     int getPeriod();
 
     /**
-      * Gets the current heading of the device, relative to magnetic north.
-      * If he compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
-      * Users wishing to implekent their own calibration algorithms should listen for this event,
-      * and implement their evnet handler using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensure that
-      * calibration is complete before the user program continues. 
-      * 
-      * @return the current heading, in degrees. Or MICROBIT_COMPASS_IS_CALIBRATING if the compass is calibrating. 
-      *
-      * Example:
-      * @code
-      * uBit.compass.heading();
-      * @endcode
-      */
+     * Gets the current heading of the device, relative to magnetic north.
+     * If the compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
+     * Users wishing to implement their own calibration algorithms should listen for this event,
+     * using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensures that calibration is complete before 
+     * the user program continues. 
+     * 
+     * @return the current heading, in degrees. Or MICROBIT_CALIBRATION_IN_PROGRESS if the compass is calibrating. 
+     *
+     * Example:
+     * @code
+     * uBit.compass.heading();
+     * @endcode
+     */
     int heading();
-    
+
     /**
       * Attempts to determine the 8 bit ID from the magnetometer. 
       * @return the id of the compass (magnetometer), or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
@@ -193,36 +193,36 @@ class MicroBitCompass : public MicroBitComponent
     int whoAmI();
 
     /**
-      * Reads the X axis value of the latest update from the compass.
-      * @return The magnetic force measured in the X axis, in no specific units.
-      *
-      * Example:
-      * @code
-      * uBit.compass.getX();
-      * @endcode
-      */
+     * Reads the X axis value of the latest update from the compass.
+     * @return The magnetic force measured in the X axis, in nano teslas.
+     *
+     * Example:
+     * @code
+     * uBit.compass.getX();
+     * @endcode
+     */
     int getX(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
     
     /**
-      * Reads the Y axis value of the latest update from the compass.
-      * @return The magnetic force measured in the Y axis, in no specific units.
-      *
-      * Example:
-      * @code
-      * uBit.compass.getY();
-      * @endcode
-      */    
+     * Reads the Y axis value of the latest update from the compass.
+     * @return The magnetic force measured in the Y axis, in nano teslas.
+     *
+     * Example:
+     * @code
+     * uBit.compass.getY();
+     * @endcode
+     */     
     int getY(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
     
     /**
-      * Reads the Z axis value of the latest update from the compass.
-      * @return The magnetic force measured in the Z axis, in no specific units.
-      *
-      * Example:
-      * @code
-      * uBit.compass.getZ();
-      * @endcode
-      */    
+     * Reads the Z axis value of the latest update from the compass.
+     * @return The magnetic force measured in the Z axis, in nano teslas.
+     *
+     * Example:
+     * @code
+     * uBit.compass.getZ();
+     * @endcode
+     */     
     int getZ(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);    
 
     /**
@@ -237,7 +237,7 @@ class MicroBitCompass : public MicroBitComponent
     int getFieldStrength();
 
     /**
-      * Reads the currently die temperature of the compass. 
+      * Reads the current die temperature of the compass. 
       * @return the temperature in degrees celsius, or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
       */
     int readTemperature();
@@ -245,13 +245,14 @@ class MicroBitCompass : public MicroBitComponent
     /**
      * Perform a calibration of the compass.
      * 
-     * This method will be clled automatically if a user attmepts to read a compass value when
+     * This method will be called automatically if a user attempts to read a compass value when
      * the compass is uncalibrated. It can also be called at any time by the user.
      * 
      * Any old calibration data is deleted.
      * The method will only return once the compass has been calibrated.
      *
-     * @return MICROBIT_OK, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
+     * @return MICROBIT_OK, MICROBIT_I2C_ERROR if the magnetometer could not be accessed,
+     * or MICROBIT_CALIBRATION_REQUIRED if the calibration algorithm failed to complete succesfully.
      * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
      */
     int calibrate();
