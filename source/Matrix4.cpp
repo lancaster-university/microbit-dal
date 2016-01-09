@@ -238,26 +238,6 @@ Matrix4 Matrix4::invert()
 }
 
 /**
-* Prints this matrix to the console.
-*
-* Example:
-* @code
-* matrix.print();
-* @endcode
-*/
-void Matrix4::print()
-{
-	for (int r = 0; r < height(); r++)
-	{
-		for (int c = 0; c < width(); c++)
-		{
-			uBit.serial.printf("%d\t", (int)get(r, c));
-		}
-		uBit.serial.printf("\n");
-	}
-}
-
-/**
 * Destructor.
 */
 Matrix4::~Matrix4()

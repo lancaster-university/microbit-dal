@@ -135,16 +135,6 @@ public:
 	Matrix4 invert();
 
 	/**
-	* Prints this matrix to the console.
-	*
-	* Example:
-	* @code
-	* matrix.print();
-	* @endcode
-	*/
-	void print();
-
-	/**
 	* Destructor.
 	*/
 	~Matrix4();
