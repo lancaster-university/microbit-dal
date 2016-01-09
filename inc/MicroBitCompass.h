@@ -286,11 +286,11 @@ class MicroBitCompass : public MicroBitComponent
 
     /**
      * Configure the compass to use the given calibration data.
-     * Claibration data is essenutially the perceived zero offset of each axis of the compass.
-     * After calibration should now take into account trimming errors in the deivce, hard iron offsets on the device 
-     * and local magnetic effects present at the time of claibration.
+     * Calibration data is comprised of the perceived zero offset of each axis of the compass.
+     * After calibration this should now take into account trimming errors in the magnetometer, 
+     * and any "hard iron" offsets on the device.
      *
-     * @param The x, y and z xero offsets to use as calibration data
+     * @param The x, y and z zero offsets to use as calibration data.
      */     
     void setCalibration(CompassSample calibration);
 

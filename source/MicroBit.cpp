@@ -257,7 +257,7 @@ void MicroBit::compassCalibrator(MicroBitEvent)
             if (perimeter[i].on)
                 img.setPixelValue(perimeter[i].x, perimeter[i].y, 255);
 
-        // Update the flashing pixel at the users position, if 
+        // Update the pixel at the users position.
         img.setPixelValue(cursor.x, cursor.y, 255);
 
         // Update the buffer to the screen.
