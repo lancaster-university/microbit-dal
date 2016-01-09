@@ -260,19 +260,19 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
     // 
     // If we see enough zero crossings in succession (MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD), then we decide that the device
     // has been shaken. 
-    if ((sample.x < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.x) || (sample.x > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.x))
+    if ((getX() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.x) || (getX() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.x))
     {
         shakeDetected = true;
         shake.x = !shake.x;
     }
 
-    if ((sample.y < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.y) || (sample.y > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.y))
+    if ((getY() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.y) || (getY() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.y))
     {
         shakeDetected = true;
         shake.y = !shake.y;
     }
 
-    if ((sample.z < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.z) || (sample.z > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.z))
+    if ((getZ() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.z) || (getZ() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.z))
     {
         shakeDetected = true;
         shake.z = !shake.z;
@@ -307,22 +307,22 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
         return GESTURE_8G;
 
     // Determine our posture.
-    if (sample.x < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getX() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_LEFT;
 
-    if (sample.x > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getX() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_RIGHT;
 
-    if (sample.y < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getY() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_DOWN;
 
-    if (sample.y > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getY() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_UP;
 
-    if (sample.z < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getZ() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_FACE_UP;
 
-    if (sample.z > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getZ() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_FACE_DOWN;
 
     return GESTURE_NONE;
