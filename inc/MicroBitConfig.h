@@ -39,7 +39,7 @@
 
 // The proportion of SRAM available on the mbed heap to reserve for the micro:bit heap.
 #ifndef MICROBIT_HEAP_SIZE
-#define MICROBIT_HEAP_SIZE				0.25
+#define MICROBIT_HEAP_SIZE				0.9
 #endif
 
 // if defined, reuse the 8K of SRAM reserved for SoftDevice (Nordic's memory resident BLE stack) as heap memory.

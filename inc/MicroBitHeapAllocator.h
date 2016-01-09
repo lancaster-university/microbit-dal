@@ -92,6 +92,14 @@ inline void* operator new(size_t size) throw(std::bad_alloc)
 }
 
 /**
+  * Overrides the 'new' operator globally, and redirects calls to the micro:bit theap allocator.
+  */
+inline void* operator new[](size_t size) throw(std::bad_alloc)
+{   
+    return microbit_malloc(size);
+}
+
+/**
   * Overrides the 'delete' operator globally, and redirects calls to the micro:bit theap allocator.
   */
 inline void operator delete(void *ptr) throw()
