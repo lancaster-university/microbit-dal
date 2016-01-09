@@ -147,7 +147,7 @@ int MicroBitPin::setAnalogValue(int value)
 
     //perform a write with an extra check! :)
     if(((DynamicPwm *)pin)->getPinName() == name)
-        ((DynamicPwm *)pin)->write(level);
+        return ((DynamicPwm *)pin)->write(level);
 
     return MICROBIT_OK;
 }
@@ -257,8 +257,7 @@ int MicroBitPin::setAnalogPeriodUs(int period)
     if (!(status & IO_STATUS_ANALOG_OUT))
         return MICROBIT_NOT_SUPPORTED;
 
-    ((DynamicPwm *)pin)->setPeriodUs(period);
-    return MICROBIT_OK;
+    return ((DynamicPwm *)pin)->setPeriodUs(period);
 }
 
 /**
@@ -271,4 +270,29 @@ int MicroBitPin::setAnalogPeriodUs(int period)
 int MicroBitPin::setAnalogPeriod(int period)
 {
     return setAnalogPeriodUs(period*1000);
+}
+
+/**
+  * Retrieves the PWM period of the analog output.
+  *
+  * @return the period on success, or MICROBIT_NOT_SUPPORTED if the
+  * given pin is not configured as an analog output.
+  */
+int MicroBitPin::getAnalogPeriodUs()
+{
+    if (!(status & IO_STATUS_ANALOG_OUT))
+        return MICROBIT_NOT_SUPPORTED;
+
+    return ((DynamicPwm *)pin)->getPeriodUs();
+}
+
+/**
+  * Retrieves the PWM period of the analog output.
+  *
+  * @return the period on success, or MICROBIT_NOT_SUPPORTED if the
+  * given pin is not configured as an analog output.
+  */
+int MicroBitPin::getAnalogPeriod()
+{
+    return getAnalogPeriodUs()/1000;
 }
