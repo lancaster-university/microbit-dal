@@ -7,6 +7,7 @@
 #include "MicroBitHeapAllocator.h"
 #include "MicroBitPanic.h"
 #include "ErrorNo.h"
+#include "Matrix4.h"
 #include "MicroBitCompat.h"
 #include "MicroBitComponent.h"
 #include "ManagedType.h"
@@ -62,7 +63,9 @@ class MicroBit
     private:
     
     void                    seedRandom();
+    void                    compassCalibrator(MicroBitEvent e);
     uint32_t                randomValue;
+
   
     public:
     

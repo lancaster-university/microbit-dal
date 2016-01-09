@@ -138,6 +138,7 @@ MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address) : sa
 {
     // Store our identifiers.
     this->id = id;
+    this->status = 0;
     this->address = address;
 
     // Update our internal state for 50Hz at +/- 2g (50Hz has a period af 20ms).
@@ -205,10 +206,6 @@ int MicroBitAccelerometer::update()
     sample.y *= 8;
     sample.z *= 8;
 
-    // Invert the x and y axes, so that the reference frame aligns with micro:bit expectations
-    sample.x = -sample.x;
-    sample.y = -sample.y;
-
 #if CONFIG_ENABLED(USE_ACCEL_LSB)
     // Add in LSB values.
     sample.x += (data[1] / 64);
@@ -220,6 +217,9 @@ int MicroBitAccelerometer::update()
     sample.x *= this->sampleRange;
     sample.y *= this->sampleRange;
     sample.z *= this->sampleRange;
+
+    // Indicate that pitch and roll data is now stale, and needs to be recalculated if needed.
+    status &= ~MICROBIT_ACCEL_PITCH_ROLL_VALID;
 
     // Update gesture tracking 
     updateGesture();
@@ -260,19 +260,19 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
     // 
     // If we see enough zero crossings in succession (MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD), then we decide that the device
     // has been shaken. 
-    if ((sample.x < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.x) || (sample.x > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.x))
+    if ((getX() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.x) || (getX() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.x))
     {
         shakeDetected = true;
         shake.x = !shake.x;
     }
 
-    if ((sample.y < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.y) || (sample.y > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.y))
+    if ((getY() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.y) || (getY() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.y))
     {
         shakeDetected = true;
         shake.y = !shake.y;
     }
 
-    if ((sample.z < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.z) || (sample.z > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.z))
+    if ((getZ() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.z) || (getZ() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.z))
     {
         shakeDetected = true;
         shake.z = !shake.z;
@@ -307,22 +307,22 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
         return GESTURE_8G;
 
     // Determine our posture.
-    if (sample.x < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getX() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_LEFT;
 
-    if (sample.x > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getX() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_RIGHT;
 
-    if (sample.y < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getY() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_DOWN;
 
-    if (sample.y > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getY() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_UP;
 
-    if (sample.z < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getZ() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_FACE_UP;
 
-    if (sample.z > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getZ() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return GESTURE_FACE_DOWN;
 
     return GESTURE_NONE;
@@ -398,48 +398,142 @@ int MicroBitAccelerometer::getRange()
 }
 
 /**
- * Reads the X axis value of the latest update from the accelerometer.
- * Currently limited to +/- 2g
- * @return The force measured in the X axis, in milli-g.
- *
- * Example:
- * @code 
- * uBit.accelerometer.getX();
- * @endcode
+  * Reads the X axis value of the latest update from the accelerometer.
+  * @param system The coordinate system to use. By default, a simple cartesian system is provided.
+  * @return The force measured in the X axis, in milli-g.
+  *
+  * Example:
+  * @code 
+  * uBit.accelerometer.getX();
+  * uBit.accelerometer.getX(RAW);
+  * @endcode
+  */
+int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
+{
+    switch (system)
+    {
+        case SIMPLE_CARTESIAN:
+            return -sample.x;
+                
+        case NORTH_EAST_DOWN:
+            return sample.y;
+
+        case RAW:
+        default:
+            return sample.x;
+    }
+}
+
+/**
+  * Reads the Y axis value of the latest update from the accelerometer.
+  * @param system The coordinate system to use. By default, a simple cartesian system is provided.
+  * @return The force measured in the Y axis, in milli-g.
+  *
+  * Example:
+  * @code 
+  * uBit.accelerometer.getY();
+  * uBit.accelerometer.getY(RAW);
+  * @endcode
+  */  
+int MicroBitAccelerometer::getY(MicroBitCoordinateSystem system)
+{
+    switch (system)
+    {
+        case SIMPLE_CARTESIAN:
+            return -sample.y;
+                
+        case NORTH_EAST_DOWN:
+            return -sample.x;
+
+        case RAW:
+        default:
+            return sample.y;
+    }
+}
+
+/**
+  * Reads the Z axis value of the latest update from the accelerometer.
+  * @param system The coordinate system to use. By default, a simple cartesian system is provided.
+  * @return The force measured in the Z axis, in milli-g.
+  *
+  * Example:
+  * @code 
+  * uBit.accelerometer.getZ();
+  * uBit.accelerometer.getZ(RAW);
+  * @endcode
+  */       
+int MicroBitAccelerometer::getZ(MicroBitCoordinateSystem system)
+{
+    switch (system)
+    {
+        case NORTH_EAST_DOWN:
+            return -sample.z;
+
+        case SIMPLE_CARTESIAN:
+        case RAW:
+        default:
+            return sample.z;
+    }
+}
+  
+/**
+  * Provides a rotation compensated pitch of the device, based on the latest update from the accelerometer.
+  * @return The pitch of the device, in degrees.
+  *
+  * Example:
+  * @code 
+  * uBit.accelerometer.getPitch();
+  * @endcode
+  */    
+int MicroBitAccelerometer::getPitch()
+{
+    return (int) ((360*getPitchRadians()) / (2*PI));
+}
+
+float MicroBitAccelerometer::getPitchRadians()
+{
+    if (!(status & MICROBIT_ACCEL_PITCH_ROLL_VALID))
+        recalculatePitchRoll();
+
+    return pitch;
+}
+
+/**
+  * Provides a rotation compensated roll of the device, based on the latest update from the accelerometer.
+  * @return The roll of the device, in degrees.
+  *
+  * Example:
+  * @code 
+  * uBit.accelerometer.getRoll();
+  * @endcode
+  */    
+int MicroBitAccelerometer::getRoll()
+{
+    return (int) ((360*getRollRadians()) / (2*PI));
+}
+
+float MicroBitAccelerometer::getRollRadians()
+{
+    if (!(status & MICROBIT_ACCEL_PITCH_ROLL_VALID))
+        recalculatePitchRoll();
+
+    return roll;
+}
+
+/**
+ * Recalculate roll and pitch values for the current sample.
+ * We only do this at most once per sample, as the necessary trigonemteric functions are rather
+ * heavyweight for a CPU without a floating point unit...
  */
-int MicroBitAccelerometer::getX()
+void MicroBitAccelerometer::recalculatePitchRoll()
 {
-    return sample.x;
-}
+    float x = (float) getX(NORTH_EAST_DOWN);
+    float y = (float) getY(NORTH_EAST_DOWN);
+    float z = (float) getZ(NORTH_EAST_DOWN);
 
-/**
- * Reads the Y axis value of the latest update from the accelerometer.
- * Currently limited to +/- 2g
- * @return The force measured in the Y axis, in milli-g.
- *
- * Example:
- * @code 
- * uBit.accelerometer.getY();
- * @endcode
- */  
-int MicroBitAccelerometer::getY()
-{
-    return sample.y;
-}
-
-/**
- * Reads the Z axis value of the latest update from the accelerometer.
- * Currently limited to +/- 2g
- * @return The force measured in the Z axis, in milli-g.
- *
- * Example:
- * @code 
- * uBit.accelerometer.getZ();
- * @endcode
- */       
-int MicroBitAccelerometer::getZ()
-{
-    return sample.z;
+    roll = atan2(getY(NORTH_EAST_DOWN), getZ(NORTH_EAST_DOWN));
+    pitch = atan(-x / (y*sin(roll) + z*cos(roll)));
+    status |= MICROBIT_ACCEL_PITCH_ROLL_VALID;
 }
 
 /**

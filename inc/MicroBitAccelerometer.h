@@ -3,11 +3,17 @@
 
 #include "mbed.h"
 #include "MicroBitComponent.h"
+#include "MicroBitCoordinateSystem.h"
 
 /**
  * Relevant pin assignments
  */
 #define MICROBIT_PIN_ACCEL_DATA_READY          P0_28
+
+/**
+  * Status flags
+  */
+#define MICROBIT_ACCEL_PITCH_ROLL_VALID           0x01
 
 /*
  * I2C constants
@@ -95,6 +101,7 @@ struct MMA8653SampleRangeConfig
     uint8_t         xyz_data_cfg;
 };
 
+
 extern const MMA8653SampleRangeConfig MMA8653SampleRange[];
 extern const MMA8653SampleRateConfig MMA8653SampleRate[];
 
@@ -133,20 +140,22 @@ struct ShakeHistory
 class MicroBitAccelerometer : public MicroBitComponent
 {
     /**
-     * Unique, enumerated ID for this component. 
-     * Used to track asynchronous events in the event bus.
-     */
-
-    MMA8653Sample   sample;             // The last sample read.
-    DigitalIn       int1;               // Data ready interrupt.
+      * Unique, enumerated ID for this component. 
+      * Used to track asynchronous events in the event bus.
+      */
+    
     uint16_t        address;            // I2C address of this accelerometer.
     uint16_t        samplePeriod;       // The time between samples, in milliseconds.
     uint8_t         sampleRange;        // The sample range of the accelerometer in g.
+    MMA8653Sample   sample;             // The last sample read.
+    DigitalIn       int1;               // Data ready interrupt.
+    float           pitch;              // Pitch of the device, in radians.
+    float           roll;               // Roll of the device, in radians.
     uint8_t         sigma;              // the number of ticks that the instantaneous gesture has been stable.
     BasicGesture    lastGesture;        // the last, stable gesture recorded. 
     BasicGesture    currentGesture;     // the instantaneous, unfiltered gesture detected.
     ShakeHistory    shake;              // State information needed to detect shake events.
-
+    
     public:
 
     /**
@@ -222,40 +231,62 @@ class MicroBitAccelerometer : public MicroBitComponent
     int whoAmI();
 
     /**
-     * Reads the X axis value of the latest update from the accelerometer.
-     * Currently limited to +/- 2g
-     * @return The force measured in the X axis, in milli-g.
-     *
-     * Example:
-     * @code 
-     * uBit.accelerometer.getX();
-     * @endcode
-     */
-    int getX();
+      * Reads the X axis value of the latest update from the accelerometer.
+      * @param system The coordinate system to use. By default, a simple cartesian system is provided.
+      * @return The force measured in the X axis, in milli-g.
+      *
+      * Example:
+      * @code 
+      * uBit.accelerometer.getX();
+      * @endcode
+      */
+    int getX(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+    
+    /**
+      * Reads the Y axis value of the latest update from the accelerometer.
+      * @return The force measured in the Y axis, in milli-g.
+      *
+      * Example:
+      * @code 
+      * uBit.accelerometer.getY();
+      * @endcode
+      */    
+    int getY(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+    
+    /**
+      * Reads the Z axis value of the latest update from the accelerometer.
+      * @return The force measured in the Z axis, in milli-g.
+      *
+      * Example:
+      * @code 
+      * uBit.accelerometer.getZ();
+      * @endcode
+      */    
+    int getZ(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
 
     /**
-     * Reads the Y axis value of the latest update from the accelerometer.
-     * Currently limited to +/- 2g
-     * @return The force measured in the Y axis, in milli-g.
-     *
-     * Example:
-     * @code 
-     * uBit.accelerometer.getY();
-     * @endcode
-     */    
-    int getY();
+      * Provides a rotation compensated pitch of the device, based on the latest update from the accelerometer.
+      * @return The pitch of the device, in degrees.
+      *
+      * Example:
+      * @code 
+      * uBit.accelerometer.getPitch();
+      * @endcode
+      */    
+    int getPitch();
+    float getPitchRadians();
 
     /**
-     * Reads the Z axis value of the latest update from the accelerometer.
-     * Currently limited to +/- 2g
-     * @return The force measured in the Z axis, in milli-g.
-     *
-     * Example:
-     * @code 
-     * uBit.accelerometer.getZ();
-     * @endcode
-     */    
-    int getZ();
+      * Provides a rotation compensated roll of the device, based on the latest update from the accelerometer.
+      * @return The roll of the device, in degrees.
+      *
+      * Example:
+      * @code 
+      * uBit.accelerometer.getRoll();
+      * @endcode
+      */    
+    int getRoll();
+    float getRollRadians();
 
     /**
      * Reads the last recorded gesture detected.
@@ -302,6 +333,14 @@ class MicroBitAccelerometer : public MicroBitComponent
     int readCommand(uint8_t reg, uint8_t* buffer, int length);
 
     /**
+     * Recalculate roll and pitch values for the current sample.
+     * We only do this at most once per sample, as the necessary trigonemteric functions are rather
+     * heavyweight for a CPU without a floating point unit...
+     */
+    void recalculatePitchRoll();
+
+    /**
+     *
      * Updates the basic gesture recognizer. This performs instantaneous pose recognition, and also some low pass filtering to promote 
      * stability.
      */

@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "MicroBitComponent.h"
+#include "MicroBitCoordinateSystem.h"
 
 /**
   * Relevant pin assignments
@@ -52,11 +53,13 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
 /*
  * Compass events
  */
-#define MICROBIT_COMPASS_EVT_CAL_REQUIRED       1
-#define MICROBIT_COMPASS_EVT_CAL_START          2
-#define MICROBIT_COMPASS_EVT_CAL_END            3
+#define MICROBIT_COMPASS_EVT_CAL_REQUIRED       1               // DEPRECATED
+#define MICROBIT_COMPASS_EVT_CAL_START          2               // DEPRECATED
+#define MICROBIT_COMPASS_EVT_CAL_END            3               // DEPRECATED
+
 #define MICROBIT_COMPASS_EVT_DATA_UPDATE        4
 #define MICROBIT_COMPASS_EVT_CONFIG_NEEDED      5
+#define MICROBIT_COMPASS_EVT_CALIBRATE          6
 
 /*
  * Status Bits
@@ -64,8 +67,10 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
 #define MICROBIT_COMPASS_STATUS_CALIBRATED      1
 #define MICROBIT_COMPASS_STATUS_CALIBRATING     2
  
- 
-#define MICROBIT_COMPASS_CALIBRATE_PERIOD       10000
+/*
+ * Term to convert sample data into SI units
+ */
+#define MAG3110_NORMALIZE_SAMPLE(x) (100*x)
 
 /*
  * MAG3110 MAGIC ID value
@@ -75,15 +80,22 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
 
 struct CompassSample
 {
-    int16_t         x;
-    int16_t         y;
-    int16_t         z;
+    int     x;
+    int     y;
+    int     z;
     
     CompassSample()
     {
         this->x = 0;
         this->y = 0;
         this->z = 0;   
+    }
+
+    CompassSample(int x, int y, int z)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = z;   
     }
 };
 
@@ -102,13 +114,10 @@ class MicroBitCompass : public MicroBitComponent
       
     uint16_t            address;                  // I2C address of the magnetmometer.  
     uint16_t            samplePeriod;             // The time between samples, in millseconds.
-    unsigned long       eventStartTime;           // used to store the current system clock when async calibration has started
 
-    CompassSample       minSample;      // Calibration sample.
-    CompassSample       maxSample;      // Calibration sample.
-    CompassSample       average;        // Centre point of sample data.
-    CompassSample       sample;         // The latest sample data recorded.
-    DigitalIn           int1;           // Data ready interrupt.
+    CompassSample       average;                  // Centre point of sample data.
+    CompassSample       sample;                   // The latest sample data recorded.
+    DigitalIn           int1;                     // Data ready interrupt.
 
     public:
             
@@ -157,17 +166,21 @@ class MicroBitCompass : public MicroBitComponent
     int getPeriod();
 
     /**
-      * Gets the current heading of the device, relative to magnetic north.
-      * @return the current heading, in degrees. Or MICROBIT_COMPASS_IS_CALIBRATING if the compass is calibrating. 
-      * Or MICROBIT_COMPASS_CALIBRATE_REQUIRED if the compass requires calibration.
-      *
-      * Example:
-      * @code
-      * uBit.compass.heading();
-      * @endcode
-      */
+     * Gets the current heading of the device, relative to magnetic north.
+     * If the compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
+     * Users wishing to implement their own calibration algorithms should listen for this event,
+     * using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensures that calibration is complete before 
+     * the user program continues. 
+     * 
+     * @return the current heading, in degrees. Or MICROBIT_CALIBRATION_IN_PROGRESS if the compass is calibrating. 
+     *
+     * Example:
+     * @code
+     * uBit.compass.heading();
+     * @endcode
+     */
     int heading();
-    
+
     /**
       * Attempts to determine the 8 bit ID from the magnetometer. 
       * @return the id of the compass (magnetometer), or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
@@ -180,65 +193,114 @@ class MicroBitCompass : public MicroBitComponent
     int whoAmI();
 
     /**
-      * Reads the X axis value of the latest update from the compass.
-      * @return The magnetic force measured in the X axis, in no specific units.
-      *
-      * Example:
-      * @code
-      * uBit.compass.getX();
-      * @endcode
-      */
-    int getX();
+     * Reads the X axis value of the latest update from the compass.
+     * @return The magnetic force measured in the X axis, in nano teslas.
+     *
+     * Example:
+     * @code
+     * uBit.compass.getX();
+     * @endcode
+     */
+    int getX(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
     
     /**
-      * Reads the Y axis value of the latest update from the compass.
-      * @return The magnetic force measured in the Y axis, in no specific units.
-      *
-      * Example:
-      * @code
-      * uBit.compass.getY();
-      * @endcode
-      */    
-    int getY();
+     * Reads the Y axis value of the latest update from the compass.
+     * @return The magnetic force measured in the Y axis, in nano teslas.
+     *
+     * Example:
+     * @code
+     * uBit.compass.getY();
+     * @endcode
+     */     
+    int getY(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
     
     /**
-      * Reads the Z axis value of the latest update from the compass.
-      * @return The magnetic force measured in the Z axis, in no specific units.
-      *
-      * Example:
-      * @code
-      * uBit.compass.getZ();
-      * @endcode
-      */    
-    int getZ();    
+     * Reads the Z axis value of the latest update from the compass.
+     * @return The magnetic force measured in the Z axis, in nano teslas.
+     *
+     * Example:
+     * @code
+     * uBit.compass.getZ();
+     * @endcode
+     */     
+    int getZ(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);    
 
     /**
-      * Reads the currently die temperature of the compass. 
+     * Determines the overall magnetic field strength based on the latest update from the compass.
+     * @return The magnetic force measured across all axes, in nano teslas.
+     *
+     * Example:
+     * @code
+     * uBit.compass.getFieldStrength();
+     * @endcode
+     */     
+    int getFieldStrength();
+
+    /**
+      * Reads the current die temperature of the compass. 
       * @return the temperature in degrees celsius, or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
       */
     int readTemperature();
 
     /**
+     * Perform a calibration of the compass.
+     * 
+     * This method will be called automatically if a user attempts to read a compass value when
+     * the compass is uncalibrated. It can also be called at any time by the user.
+     * 
+     * Any old calibration data is deleted.
+     * The method will only return once the compass has been calibrated.
+     *
+     * @return MICROBIT_OK, MICROBIT_I2C_ERROR if the magnetometer could not be accessed,
+     * or MICROBIT_CALIBRATION_REQUIRED if the calibration algorithm failed to complete succesfully.
+     * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
+     */
+    int calibrate();
+
+    /**
       * Perform the asynchronous calibration of the compass.
       * This will fire MICROBIT_COMPASS_EVT_CAL_START and MICROBIT_COMPASS_EVT_CAL_END when finished.
       * @return MICROBIT_OK, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
-      * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
+      *
+      * @note *** THIS FUNCITON IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
+      * @note *** PLEASE USE THE calibrate() FUNCTION INSTEAD ***
       */
     void calibrateAsync();  
 
     /**
       * Perform a calibration of the compass.
       * This will fire MICROBIT_COMPASS_EVT_CAL_START.
-      * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
+      *
+      * @note *** THIS FUNCITON IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
+      * @note *** PLEASE USE THE calibrate() FUNCTION INSTEAD ***
       */
     int calibrateStart();    
 
     /**
       * Complete the calibration of the compass.
       * This will fire MICROBIT_COMPASS_EVT_CAL_END.
-      * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
+      *
+      * @note *** THIS FUNCITON IS NOW DEPRECATED AND WILL BE REMOVED IN THE NEXT MAJOR RELEASE ***
       */    
     void calibrateEnd();    
+
+    /**
+     * Configure the compass to use the given calibration data.
+     * Calibration data is comprised of the perceived zero offset of each axis of the compass.
+     * After calibration this should now take into account trimming errors in the magnetometer, 
+     * and any "hard iron" offsets on the device.
+     *
+     * @param The x, y and z zero offsets to use as calibration data.
+     */     
+    void setCalibration(CompassSample calibration);
+
+    /**
+     * Provides the calibration data currently in use by the compass.
+     * More specifically, the x, y and z zero offsets of the compass.
+     *
+     * @return The x, y and z xero offsets of the compass. 
+     */     
+    CompassSample getCalibration();
 
     /**
       * Periodic callback from MicroBit idle thread.
