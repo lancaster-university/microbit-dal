@@ -1,4 +1,4 @@
-#include "MicroBit.h"
+#include "hal/DynamicPwm.h"
 
 DynamicPwm* DynamicPwm::pwms[NO_PWMS] = { NULL };
 

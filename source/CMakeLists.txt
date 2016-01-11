@@ -24,7 +24,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitCompat.cpp"
     "MicroBitImage.cpp"
     "MicroBitDisplay.cpp"
-    "DynamicPwm.cpp"
+    "hal/DynamicPwm.cpp"
     "MicroBitPin.cpp"
     "MicroBitSerial.cpp"
     "MicroBitHeapAllocator.cpp"
@@ -40,6 +40,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "ble-services/MicroBitButtonService.cpp"
     "ble-services/MicroBitIOPinService.cpp"
     "ble-services/MicroBitTemperatureService.cpp"
+    "hal/DebouncedPin.cpp"
 )
 
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)

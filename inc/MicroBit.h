@@ -15,7 +15,7 @@
 #include "MicroBitImage.h"	
 #include "MicroBitFont.h"
 #include "MicroBitEvent.h"
-#include "DynamicPwm.h"
+#include "hal/DynamicPwm.h"
 #include "MicroBitI2C.h"
 #include "MESEvents.h"
 
