@@ -31,16 +31,11 @@
 #define MES_CAMERA_EVT_TOGGLE_FRONT_REAR    7
 
 
-#define MES_AUDIO_RECORDER_ID                   1003
-#define MES_AUDIO_RECORDER_EVT_LAUNCH           0
-#define MES_AUDIO_RECORDER_EVT_START_CAPTURE    1
-#define MES_AUDIO_RECORDER_EVT_STOP_CAPTURE     2
-#define MES_AUDIO_RECORDER_EVT_STOP             3
-
-
 #define MES_ALERTS_ID                       1004
+// TODO Multiple DISPLAY_TOAST event values
 #define MES_ALERT_EVT_DISPLAY_TOAST         0
 #define MES_ALERT_EVT_VIBRATE               1
+// TODO PLAY_SOUND and ALARMN to be combined
 #define MES_ALERT_EVT_PLAY_SOUND            2
 #define MES_ALERT_EVT_PLAY_RINGTONE         3
 #define MES_ALERT_EVT_FIND_MY_PHONE         4
@@ -61,15 +56,6 @@
 #define MES_SIGNAL_STRENGTH_EVT_THREE_BAR   3
 #define MES_SIGNAL_STRENGTH_EVT_FOUR_BAR    4
 
-#define MES_PLAY_CONTROLLER_ID      1102
-#define MES_BUTTON_UP               0
-#define MES_BUTTON_DOWN             1
-#define MES_BUTTON_RIGHT            2
-#define MES_BUTTON_LEFT             3
-#define MES_BUTTON_A                4
-#define MES_BUTTON_B                5
-#define MES_BUTTON_C                6
-#define MES_BUTTON_D                7
 
 #define MES_DEVICE_INFO_ID                  1103
 #define MES_DEVICE_ORIENTATION_LANDSCAPE    0
@@ -78,5 +64,8 @@
 #define MES_DEVICE_GESTURE_DEVICE_SHAKEN    3
 #define MES_DEVICE_DISPLAY_OFF              4
 #define MES_DEVICE_DISPLAY_ON               5
+#define MES_DEVICE_INCOMING_CALL            6
+#define MES_DEVICE_INCOMING_MESSAGE         7
+
 
 #endif
