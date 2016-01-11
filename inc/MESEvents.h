@@ -32,8 +32,10 @@
 
 
 #define MES_ALERTS_ID                       1004
+// TODO Multiple DISPLAY_TOAST event values
 #define MES_ALERT_EVT_DISPLAY_TOAST         0
 #define MES_ALERT_EVT_VIBRATE               1
+// TODO PLAY_SOUND and ALARMN to be combined
 #define MES_ALERT_EVT_PLAY_SOUND            2
 #define MES_ALERT_EVT_PLAY_RINGTONE         3
 #define MES_ALERT_EVT_FIND_MY_PHONE         4
@@ -62,7 +64,6 @@
 #define MES_DEVICE_GESTURE_DEVICE_SHAKEN    3
 #define MES_DEVICE_DISPLAY_OFF              4
 #define MES_DEVICE_DISPLAY_ON               5
-// Should these be added here or to new event ID?
 #define MES_DEVICE_INCOMING_CALL            6
 #define MES_DEVICE_INCOMING_MESSAGE         7
 
