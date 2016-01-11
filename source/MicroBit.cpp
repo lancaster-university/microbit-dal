@@ -102,9 +102,6 @@ MicroBit::MicroBit() :
   */
 void MicroBit::init()
 {   
-    // Set the default baud rate for the serial port.`
-    uBit.serial.baud(115200);
-        
     //add the display to the systemComponent array
     addSystemComponent(&uBit.display);
     
