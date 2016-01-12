@@ -120,9 +120,21 @@ int MicroBitPin::getDigitalValue()
     return ((DigitalIn *)pin)->read();
 }
 
+int MicroBitPin::obtainAnalogChannel()
+{
+    // Move into an analogue input state if necessary, if we are no longer the focus of a DynamicPWM instance, allocate ourselves again!
+    if (!(status & IO_STATUS_ANALOG_OUT) || !(((DynamicPwm *)pin)->getPinName() == name)){
+        disconnect();
+        pin = (void *)DynamicPwm::allocate(name);
+        status |= IO_STATUS_ANALOG_OUT;
+    }
+
+    return MICROBIT_OK;
+}
+
 /**
  * Configures this IO pin as an analog/pwm output, and change the output value to the given level.
- * @param value the level to set on the output pin, in the range 0 - 1024
+ * @param value the level to set on the output pin, in the range 0 - 1023
  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
  * if the given pin does not have analog capability.
  */
@@ -132,26 +144,57 @@ int MicroBitPin::setAnalogValue(int value)
     if(!(PIN_CAPABILITY_ANALOG & capability))
         return MICROBIT_NOT_SUPPORTED;
 
-    //sanitise the brightness level
+    //sanitise the level value
     if(value < 0 || value > MICROBIT_PIN_MAX_OUTPUT)
         return MICROBIT_INVALID_PARAMETER;
 
     float level = (float)value / float(MICROBIT_PIN_MAX_OUTPUT);
 
-    // Move into an analogue input state if necessary, if we are no longer the focus of a DynamicPWM instance, allocate ourselves again!
-    if (!(status & IO_STATUS_ANALOG_OUT) || !(((DynamicPwm *)pin)->getPinName() == name)){
-        disconnect();
-        pin = (void *)DynamicPwm::allocate(name);
-        status |= IO_STATUS_ANALOG_OUT;
-    }
-
-    //perform a write with an extra check! :)
-    if(((DynamicPwm *)pin)->getPinName() == name)
+    //obtain use of the DynamicPwm instance, if it has changed / configure if we do not have one
+    if(obtainAnalogChannel() == MICROBIT_OK)
         return ((DynamicPwm *)pin)->write(level);
 
     return MICROBIT_OK;
 }
 
+/**
+ * Configures this IO pin as an analog/pwm output if it isn't already, configures the period to be 20ms,
+ * and sets the duty cycle between 0.05 and 0.1 (i.e. 5% or 10%) based on the value given to this method.
+ *
+ * A value of 180 sets the duty cycle to be 10%, and a value of 0 sets the duty cycle to be 5% by default.
+ *
+ * This range can be modified to fine tune, and also tolerate different servos.
+ *
+ * @param value the level to set on the output pin, in the range 0 - 180
+ * @param range which gives the span of possible values the i.e. lower and upper bounds center ± range/2 (Defaults to: MICROBIT_PIN_DEFAULT_SERVO_RANGE)
+ * @param center the center point from which to calculate the lower and upper bounds  (Defaults to: MICROBIT_PIN_DEFAULT_SERVO_CENTER)
+ * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
+ * if the given pin does not have analog capability.
+ */
+int MicroBitPin::setServoValue(int value, int range, int center)
+{
+    //check if this pin has an analogue mode...
+    if(!(PIN_CAPABILITY_ANALOG & capability))
+        return MICROBIT_NOT_SUPPORTED;
+
+    //sanitise the servo level
+    if(value < 0 || range < 1 || center < 1)
+        return MICROBIT_INVALID_PARAMETER;
+
+    //clip - just in case
+    if(value > MICROBIT_PIN_MAX_SERVO_RANGE)
+        value = MICROBIT_PIN_MAX_SERVO_RANGE;
+
+    //calculate the lower bound based on the midpoint
+    int lower = (center - (range / 2)) * 1000;
+
+    value = value * 1000;
+
+    //add the percentage of the range based on the value between 0 and 180
+    int scaled = lower + (range * (value / MICROBIT_PIN_MAX_SERVO_RANGE));
+
+    return setServoPulseUs(scaled / 1000);
+}
 
 /**
  * Configures this IO pin as an analogue input (if necessary and possible).
@@ -243,6 +286,37 @@ int MicroBitPin::isTouched()
     }
 
     return ((MicroBitButton *)pin)->isPressed();
+}
+
+/**
+ * Configures this IO pin as an analog/pwm output if it isn't already, configures the period to be 20ms,
+ * and sets the pulse width, based on the value it is given
+ *
+ * @param pulseWidth the desired pulse width in microseconds.
+ * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
+ * if the given pin does not have analog capability.
+ */
+int MicroBitPin::setServoPulseUs(int pulseWidth)
+{
+    //check if this pin has an analogue mode...
+    if(!(PIN_CAPABILITY_ANALOG & capability))
+        return MICROBIT_NOT_SUPPORTED;
+
+    //sanitise the pulse width
+    if(pulseWidth < 0)
+        return MICROBIT_INVALID_PARAMETER;
+
+    //Check we still have the control over the DynamicPwm instance
+    if(obtainAnalogChannel() == MICROBIT_OK)
+    {
+        //check if the period is set to 20ms
+        if(((DynamicPwm *)pin)->getPeriodUs() != MICROBIT_DEFAULT_PWM_PERIOD)
+            ((DynamicPwm *)pin)->setPeriodUs(MICROBIT_DEFAULT_PWM_PERIOD);
+
+        ((DynamicPwm *)pin)->pulsewidth_us(pulseWidth);
+    }
+
+    return MICROBIT_OK;
 }
 
 /**
