@@ -7,7 +7,8 @@ enable_language(ASM)
 
 set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitSuperMain.cpp"
-    "MicroBitI2C.cpp"
+    "hal/MicroBitHal.cpp"
+    "hal/MicroBitI2C.cpp"
     "MicroBitMultiButton.cpp"
     "MicroBitFont.cpp"
     "MicroBit.cpp"

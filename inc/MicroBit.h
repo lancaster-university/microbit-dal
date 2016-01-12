@@ -3,7 +3,8 @@
 
 #include "mbed.h"
 
-#include "MicroBitConfig.h"  
+#include "MicroBitConfig.h"
+#include "hal/MicroBitHal.h"
 #include "MicroBitHeapAllocator.h"
 #include "MicroBitPanic.h"
 #include "ErrorNo.h"
@@ -16,7 +17,6 @@
 #include "MicroBitFont.h"
 #include "MicroBitEvent.h"
 #include "DynamicPwm.h"
-#include "MicroBitI2C.h"
 #include "MESEvents.h"
 
 #include "MicroBitButton.h"
@@ -49,16 +49,12 @@
 #define NRF51822_RNG_ADDRESS            0x4000D000
 
 
-// mbed pin assignments of core components.
-#define MICROBIT_PIN_SDA                P0_30
-#define MICROBIT_PIN_SCL                P0_0
-
 /**
   * Class definition for a MicroBit device.
   *
   * Represents the device as a whole, and includes member variables to that reflect the components of the system.
   */
-class MicroBit
+class MicroBit : public MicroBitHal
 {                                  
     private:
     
@@ -74,9 +70,6 @@ class MicroBit
 
     // Periodic callback
     Ticker                  systemTicker;
-
-    // I2C Interface
-    MicroBitI2C             i2c;  
     
     // Serial Interface
     MicroBitSerial          serial;   
