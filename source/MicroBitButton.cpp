@@ -100,3 +100,11 @@ int MicroBitButton::isPressed()
 {
     return status & MICROBIT_BUTTON_STATE ? 1 : 0;
 }
+
+/**
+  * Destructor for MicroBitButton, so that we deregister ourselves as a systemComponent
+  */
+MicroBitButton::~MicroBitButton()
+{
+    uBit.removeSystemComponent(this);
+}

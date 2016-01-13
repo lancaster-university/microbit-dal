@@ -96,6 +96,10 @@ class MicroBitButton : public MicroBitComponent
       */
     virtual void systemTick();
 
+    /**
+      * Destructor for MicroBitButton, so that we deregister ourselves as a systemComponent
+      */
+    ~MicroBitButton();
 };
 
 #endif
