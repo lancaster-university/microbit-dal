@@ -250,7 +250,7 @@ void MicroBit::compassCalibrator(MicroBitEvent)
 
     // The result contains the approximate zero point of each axis, but doubled.
     // Halve each sample, and record this as the compass calibration data.
-    CompassSample cal = {(int)(Beta.get(0,0) / 2), (int)(Beta.get(1,0) / 2), (int)(Beta.get(2,0) / 2)};
+    CompassSample cal ((int)(Beta.get(0,0) / 2), (int)(Beta.get(1,0) / 2), (int)(Beta.get(2,0) / 2));
     compass.setCalibration(cal);
 
     // Show a smiley to indicate that we're done, and continue on with the user program.
