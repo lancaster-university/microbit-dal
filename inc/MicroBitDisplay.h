@@ -562,6 +562,11 @@ public:
       * Captures the bitmap currently being rendered on the display.
       */
     MicroBitImage screenShot();
+
+    /**
+      * Destructor for MicroBitDisplay, so that we deregister ourselves as a systemComponent
+      */
+    ~MicroBitDisplay();
 };
 
 #endif

@@ -537,6 +537,14 @@ int MicroBitCompass::isIdleCallbackNeeded()
     return int1;
 }
 
+/**
+  * Destructor for MicroBitMessageBus, so that we deregister ourselves as an idleComponent
+  */
+MicroBitCompass::~MicroBitCompass()
+{
+    uBit.removeIdleComponent(this);
+}
+
 const MAG3110SampleRateConfig MAG3110SampleRate[MAG3110_SAMPLE_RATES] = {
     {12500,      0x00},        // 80 Hz
     {25000,      0x20},        // 40 Hz

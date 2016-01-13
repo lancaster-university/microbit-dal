@@ -310,6 +310,11 @@ class MicroBitAccelerometer : public MicroBitComponent
      */
     virtual int isIdleCallbackNeeded();
 
+    /**
+      * Destructor for MicroBitButton, so that we deregister ourselves as an idleComponent
+      */
+    ~MicroBitAccelerometer();
+
     private:
     /**
      * Issues a standard, 2 byte I2C command write to the accelerometer.

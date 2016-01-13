@@ -328,6 +328,11 @@ class MicroBitCompass : public MicroBitComponent
       */
     virtual int isIdleCallbackNeeded();
 
+    /**
+      * Destructor for MicroBitCompass, so that we deregister ourselves as an idleComponent
+      */
+    ~MicroBitCompass();
+
     private:
 
     /**

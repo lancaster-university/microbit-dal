@@ -1080,3 +1080,11 @@ MicroBitImage MicroBitDisplay::screenShot()
 {
     return image.crop(0,0,MICROBIT_DISPLAY_WIDTH,MICROBIT_DISPLAY_HEIGHT);
 }
+
+/**
+  * Destructor for MicroBitDisplay, so that we deregister ourselves as a systemComponent
+  */
+MicroBitDisplay::~MicroBitDisplay()
+{
+    uBit.removeSystemComponent(this);
+}

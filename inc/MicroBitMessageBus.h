@@ -223,6 +223,11 @@ class MicroBitMessageBus : public MicroBitComponent
       */
     MicroBitListener *elementAt(int n);
 
+    /**
+      * Destructor for MicroBitMessageBus, so that we deregister ourselves as an idleComponent
+      */
+    ~MicroBitMessageBus();
+
 	private:
 
     /**

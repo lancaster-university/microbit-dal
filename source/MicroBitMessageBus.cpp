@@ -585,3 +585,11 @@ MicroBitListener* MicroBitMessageBus::elementAt(int n)
 
     return l;
 }
+
+/**
+  * Destructor for MicroBitMessageBus, so that we deregister ourselves as an idleComponent
+  */
+MicroBitMessageBus::~MicroBitMessageBus()
+{
+    uBit.removeIdleComponent(this);
+}

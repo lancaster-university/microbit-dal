@@ -571,6 +571,14 @@ int MicroBitAccelerometer::isIdleCallbackNeeded()
     return !int1;
 }
 
+/**
+  * Destructor for MicroBitAccelerometer, so that we deregister ourselves as an idleComponent
+  */
+MicroBitAccelerometer::~MicroBitAccelerometer()
+{
+    uBit.removeIdleComponent(this);
+}
+
 const MMA8653SampleRangeConfig MMA8653SampleRange[MMA8653_SAMPLE_RANGES] = {
     {2, 0},
     {4, 1},
