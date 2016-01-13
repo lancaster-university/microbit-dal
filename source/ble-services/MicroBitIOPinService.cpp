@@ -30,6 +30,11 @@ MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble) :
     ioPinServiceADCharacteristicBuffer = 0;
     ioPinServiceIOCharacteristicBuffer = 0;
     memset(ioPinServiceIOData, 0, sizeof(ioPinServiceIOData));
+
+    // Set default security requirements
+    ioPinServiceADCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    ioPinServiceIOCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    ioPinServiceDataCharacteristic->requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
        
     GattCharacteristic *characteristics[] = {&ioPinServiceADCharacteristic, &ioPinServiceIOCharacteristic, ioPinServiceDataCharacteristic};
     GattService         service(MicroBitIOPinServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));

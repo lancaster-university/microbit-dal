@@ -17,19 +17,19 @@ const float timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {0.000010, 0.000047,
   *
   * @param x the width of the display in pixels.
   * @param y the height of the display in pixels.
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
   * @endcode
   */
-MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) : 
+MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
     font(),
     image(x*2,y)
 {
     //set pins as output
     nrf_gpio_range_cfg_output(MICROBIT_DISPLAY_COLUMN_START,MICROBIT_DISPLAY_COLUMN_START + MICROBIT_DISPLAY_COLUMN_COUNT + MICROBIT_DISPLAY_ROW_COUNT);
-    
+
     this->id = id;
     this->width = x;
     this->height = y;
@@ -38,46 +38,46 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
     this->rotation = MICROBIT_DISPLAY_ROTATION_0;
     this->greyscaleBitMsk = 0x01;
     this->timingCount = 0;
-    
+
     this->setBrightness(MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS);
 
     this->mode = DISPLAY_MODE_BLACK_AND_WHITE;
     this->animationMode = ANIMATION_MODE_NONE;
-    
+
     uBit.flags |= MICROBIT_FLAG_DISPLAY_RUNNING;
 }
 
 /**
   * Internal frame update method, used to strobe the display.
   *
-  * TODO: Write a more efficient, complementary variation of this method for the case where 
+  * TODO: Write a more efficient, complementary variation of this method for the case where
   * MICROBIT_DISPLAY_ROW_COUNT > MICROBIT_DISPLAY_COLUMN_COUNT.
-  */   
+  */
 void MicroBitDisplay::systemTick()
-{   
+{
     if(!(uBit.flags & MICROBIT_FLAG_DISPLAY_RUNNING))
         return;
-        
-    // Move on to the next row. 
+
+    // Move on to the next row.
     strobeBitMsk <<= 1;
     strobeRow++;
-        
+
     //reset the row counts and bit mask when we have hit the max.
     if(strobeRow == MICROBIT_DISPLAY_ROW_COUNT){
         strobeRow = 0;
-        strobeBitMsk = 0x20;   
+        strobeBitMsk = 0x20;
     }
-      
+
     if(mode == DISPLAY_MODE_BLACK_AND_WHITE)
         render();
-    
+
     if(mode == DISPLAY_MODE_GREYSCALE)
     {
         greyscaleBitMsk = 0x01;
         timingCount = 0;
         renderGreyscale();
     }
-    
+
     // Update text and image animations if we need to.
     this->animationUpdate();
 }
@@ -87,60 +87,60 @@ void MicroBitDisplay::renderFinish()
     //kept inline to reduce overhead
     //clear the old bit pattern for this row.
     //clear port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0 | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F)); 
-    
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0 | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
+
     // clear port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | 0x1F); 
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | 0x1F);
 }
 
 void MicroBitDisplay::render()
-{   
+{
     // Simple optimisation. If display is at zero brightness, there's nothign to do.
     if(brightness == 0)
         return;
 
     int coldata = 0;
-    
+
     // Calculate the bitpattern to write.
     for (int i = 0; i<MICROBIT_DISPLAY_COLUMN_COUNT; i++)
     {
         int x = matrixMap[i][strobeRow].x;
         int y = matrixMap[i][strobeRow].y;
-        int t = x;        
-        
+        int t = x;
+
         if(rotation == MICROBIT_DISPLAY_ROTATION_90)
         {
                 x = width - 1 - y;
                 y = t;
         }
-                
+
         if(rotation == MICROBIT_DISPLAY_ROTATION_180)
         {
                 x = width - 1 - x;
                 y = height - 1 - y;
         }
-                
+
         if(rotation == MICROBIT_DISPLAY_ROTATION_270)
         {
                 x = y;
                 y = height - 1 - t;
         }
-        
+
         if(image.getBitmap()[y*(width*2)+x])
             coldata |= (1 << i);
     }
-                    
+
     //write the new bit pattern
     //set port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F)); 
-    
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
+
     //set port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); 
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F));
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
     if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
         renderTimer.attach(this, &MicroBitDisplay::renderFinish, (((float)brightness) / ((float)MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * (float)MICROBIT_DISPLAY_REFRESH_PERIOD);
-    
+
     //this will take around 23us to execute
     if(brightness <= MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
         renderFinish();
@@ -149,47 +149,47 @@ void MicroBitDisplay::render()
 void MicroBitDisplay::renderGreyscale()
 {
     int coldata = 0;
-    
+
     // Calculate the bitpattern to write.
     for (int i = 0; i<MICROBIT_DISPLAY_COLUMN_COUNT; i++)
     {
         int x = matrixMap[i][strobeRow].x;
         int y = matrixMap[i][strobeRow].y;
-        int t = x;        
-        
+        int t = x;
+
         if(rotation == MICROBIT_DISPLAY_ROTATION_90)
         {
                 x = width - 1 - y;
                 y = t;
         }
-                
+
         if(rotation == MICROBIT_DISPLAY_ROTATION_180)
         {
                 x = width - 1 - x;
                 y = height - 1 - y;
         }
-                
+
         if(rotation == MICROBIT_DISPLAY_ROTATION_270)
         {
                 x = y;
                 y = height - 1 - t;
         }
-        
+
         if(min(image.getBitmap()[y * (width * 2) + x],brightness) & greyscaleBitMsk)
             coldata |= (1 << i);
-    }            
+    }
     //write the new bit pattern
     //set port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F)); 
-    
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
+
     //set port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); 
+    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F));
 
     if(timingCount > MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH-1)
         return;
 
     greyscaleBitMsk <<= 1;
-    
+
     renderTimer.attach(this,&MicroBitDisplay::renderGreyscale, timings[timingCount++]);
 }
 
@@ -198,29 +198,29 @@ void MicroBitDisplay::renderGreyscale()
   */
 void
 MicroBitDisplay::animationUpdate()
-{   
+{
     // If there's no ongoing animation, then nothing to do.
     if (animationMode == ANIMATION_MODE_NONE)
         return;
-    
-    animationTick += FIBER_TICK_PERIOD_MS; 
-    
+
+    animationTick += FIBER_TICK_PERIOD_MS;
+
     if(animationTick >= animationDelay)
     {
         animationTick = 0;
-        
+
         if (animationMode == ANIMATION_MODE_SCROLL_TEXT)
             this->updateScrollText();
-        
+
         if (animationMode == ANIMATION_MODE_PRINT_TEXT)
             this->updatePrintText();
 
         if (animationMode == ANIMATION_MODE_SCROLL_IMAGE)
             this->updateScrollImage();
-            
+
         if (animationMode == ANIMATION_MODE_ANIMATE_IMAGE)
             this->updateAnimateImage();
-            
+
         if(animationMode == ANIMATION_MODE_PRINT_CHARACTER)
         {
             animationMode = ANIMATION_MODE_NONE;
@@ -243,18 +243,18 @@ void MicroBitDisplay::sendAnimationCompleteEvent()
 }
 
 /**
-  * Internal scrollText update method. 
+  * Internal scrollText update method.
   * Shift the screen image by one pixel to the left. If necessary, paste in the next char.
-  */   
+  */
 void MicroBitDisplay::updateScrollText()
-{    
+{
     image.shiftLeft(1);
     scrollingPosition++;
-    
+
     if (scrollingPosition == width + MICROBIT_DISPLAY_SPACING)
-    {        
+    {
         scrollingPosition = 0;
-        
+
         image.print(scrollingChar < scrollingText.length() ? scrollingText.charAt(scrollingChar) : ' ',width,0);
 
         if (scrollingChar > scrollingText.length())
@@ -268,36 +268,36 @@ void MicroBitDisplay::updateScrollText()
 }
 
 /**
-  * Internal printText update method. 
+  * Internal printText update method.
   * Paste in the next char in the string.
-  */   
+  */
 void MicroBitDisplay::updatePrintText()
-{        
+{
     image.print(printingChar < printingText.length() ? printingText.charAt(printingChar) : ' ',0,0);
 
     if (printingChar > printingText.length())
     {
-        animationMode = ANIMATION_MODE_NONE;   
+        animationMode = ANIMATION_MODE_NONE;
 
         this->sendAnimationCompleteEvent();
         return;
     }
-    
+
     printingChar++;
 }
 
 /**
-  * Internal scrollImage update method. 
+  * Internal scrollImage update method.
   * Paste the stored bitmap at the appropriate point.
-  */   
+  */
 void MicroBitDisplay::updateScrollImage()
-{   
-    image.clear();     
+{
+    image.clear();
 
     if ((image.paste(scrollingImage, scrollingImagePosition, 0, 0) == 0) && scrollingImageRendered)
     {
-        animationMode = ANIMATION_MODE_NONE;  
-        this->sendAnimationCompleteEvent();     
+        animationMode = ANIMATION_MODE_NONE;
+        this->sendAnimationCompleteEvent();
 
         return;
     }
@@ -307,27 +307,27 @@ void MicroBitDisplay::updateScrollImage()
 }
 
 /**
-  * Internal animateImage update method. 
+  * Internal animateImage update method.
   * Paste the stored bitmap at the appropriate point and stop on the last frame.
-  */   
+  */
 void MicroBitDisplay::updateAnimateImage()
-{   
+{
     //wait until we have rendered the last position to give a continuous animation.
     if (scrollingImagePosition <= -scrollingImage.getWidth() + (MICROBIT_DISPLAY_WIDTH + scrollingImageStride) && scrollingImageRendered)
     {
-        animationMode = ANIMATION_MODE_NONE;  
+        animationMode = ANIMATION_MODE_NONE;
         this->clear();
-        this->sendAnimationCompleteEvent();     
+        this->sendAnimationCompleteEvent();
         return;
     }
-    
+
     if(scrollingImagePosition > 0)
         image.shiftLeft(-scrollingImageStride);
-        
+
     image.paste(scrollingImage, scrollingImagePosition, 0, 0);
-        
+
     scrollingImageRendered = true;
-        
+
     scrollingImagePosition += scrollingImageStride;
 }
 
@@ -347,7 +347,7 @@ void MicroBitDisplay::stopAnimation()
         // Wake up aall fibers that may blocked on the animation (if any).
         MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_DISPLAY_EVT_FREE);
     }
-    
+
     // Clear the display and setup the animation timers.
     this->image.clear();
 }
@@ -356,7 +356,7 @@ void MicroBitDisplay::stopAnimation()
   * Blocks the current fiber until the display is available (i.e. not effect is being displayed).
   * Animations are queued until their time to display.
   *
-  */ 
+  */
 void MicroBitDisplay::waitForFreeDisplay()
 {
     // If there's an ongoing animation, wait for our turn to display.
@@ -371,9 +371,9 @@ void MicroBitDisplay::waitForFreeDisplay()
   * @param c The character to display.
   * @param delay Optional parameter - the time for which to show the character. Zero displays the character forever.
   * @return MICROBIT_OK, MICROBIT_BUSY is the screen is in use, or MICROBIT_INVALID_PARAMETER.
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * uBit.display.printAsync('p');
   * uBit.display.printAsync('p',100);
   * @endcode
@@ -422,7 +422,7 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
     //sanitise this value
     if(delay <= 0 )
         return MICROBIT_INVALID_PARAMETER;
-    
+
     if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
     {
         printingChar = 0;
@@ -431,7 +431,7 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
         animationTick = 0;
 
         animationMode = ANIMATION_MODE_PRINT_TEXT;
-    } 
+    }
     else
     {
         return MICROBIT_BUSY;
@@ -448,7 +448,7 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
   * @param i The image to display.
   * @param x The horizontal position on the screen to display the image (default 0)
   * @param y The vertical position on the screen to display the image (default 0)
-  * @param alpha Treats the brightness level '0' as transparent (default 0) 
+  * @param alpha Treats the brightness level '0' as transparent (default 0)
   * @param delay The time to delay between characters, in milliseconds. set to 0 to display forever. (default 0).
   *
   * Example:
@@ -487,9 +487,9 @@ int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int de
   * @param c The character to display.
   * @param delay The time to delay between characters, in milliseconds. Must be > 0.
   * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * uBit.display.print('p');
   * uBit.display.print('p',100);
   * @endcode
@@ -537,7 +537,7 @@ int MicroBitDisplay::print(ManagedString s, int delay)
     //sanitise this value
     if(delay <= 0 )
         return MICROBIT_INVALID_PARAMETER;
-    
+
     // If there's an ongoing animation, wait for our turn to display.
     this->waitForFreeDisplay();
 
@@ -613,7 +613,7 @@ int MicroBitDisplay::scrollAsync(ManagedString s, int delay)
     //sanitise this value
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
-    
+
     // If the display is free, it's our turn to display.
     if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
     {
@@ -649,7 +649,7 @@ int MicroBitDisplay::scrollAsync(ManagedString s, int delay)
   * @endcode
   */
 int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
-{   
+{
     //sanitise the delay value
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
@@ -682,9 +682,9 @@ int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
   * @param s The string to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
   * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * uBit.display.scrollString("abc123",100);
   * @endcode
   */
@@ -706,12 +706,12 @@ int MicroBitDisplay::scroll(ManagedString s, int delay)
 
         // Wait for completion.
         fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
-    } 
+    }
     else
     {
         return MICROBIT_CANCELLED;
     }
-    
+
     return MICROBIT_OK;
 }
 
@@ -731,11 +731,11 @@ int MicroBitDisplay::scroll(ManagedString s, int delay)
   * @endcode
   */
 int MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
-{   
+{
     //sanitise the delay value
     if(delay <= 0)
         return MICROBIT_INVALID_PARAMETER;
-    
+
     // If there's an ongoing animation, wait for our turn to display.
     this->waitForFreeDisplay();
 
@@ -789,7 +789,7 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
         stride = -stride;
 
         //calculate starting position which is offset by the stride
-        scrollingImagePosition = (startingPosition == MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS) ? MICROBIT_DISPLAY_WIDTH + stride : startingPosition; 
+        scrollingImagePosition = (startingPosition == MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS) ? MICROBIT_DISPLAY_WIDTH + stride : startingPosition;
         scrollingImageStride = stride;
         scrollingImage = image;
         scrollingImageRendered = false;
@@ -858,14 +858,14 @@ int MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int sta
   * Sets the display brightness to the specified level.
   * @param b The brightness to set the brightness to, in the range 0..255.
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * uBit.display.setBrightness(255); //max brightness
   * @endcode
-  */  
+  */
 int MicroBitDisplay::setBrightness(int b)
-{  
+{
     //sanitise the brightness level
     if(b < 0 || b > 255)
         return MICROBIT_INVALID_PARAMETER;
@@ -878,26 +878,26 @@ int MicroBitDisplay::setBrightness(int b)
 /**
   * Sets the mode of the display.
   * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, or DISPLAY_MODE_NORMAL)
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * uBit.display.setDisplayMode(DISPLAY_MODE_GREYSCALE); //per pixel brightness
   * @endcode
-  */  
+  */
 void MicroBitDisplay::setDisplayMode(DisplayMode mode)
-{   
+{
     this->mode = mode;
 }
 
 /**
   * Fetches the current brightness of this display.
   * @return the brightness of this display, in the range 0..255.
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * uBit.display.getBrightness(); //the current brightness
   * @endcode
-  */  
+  */
 int MicroBitDisplay::getBrightness()
 {
     return this->brightness;
@@ -908,10 +908,10 @@ int MicroBitDisplay::getBrightness()
   * Axis aligned values only.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.display.rotateTo(MICROBIT_DISPLAY_ROTATION_180); //rotates 180 degrees from original orientation
   * @endcode
-  */   
+  */
 void MicroBitDisplay::rotateTo(DisplayRotation rotation)
 {
     this->rotation = rotation;
@@ -921,7 +921,7 @@ void MicroBitDisplay::rotateTo(DisplayRotation rotation)
   * Enables the display, should only be called if the display is disabled.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.display.enable(); //reenables the display mechanics
   * @endcode
   */
@@ -933,13 +933,13 @@ void MicroBitDisplay::enable()
         uBit.flags |= MICROBIT_FLAG_DISPLAY_RUNNING;            //set the display running flag
     }
 }
-    
+
 /**
   * Disables the display, should only be called if the display is enabled.
   * Display must be disabled to avoid MUXing of edge connector pins.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.display.disable(); //disables the display
   * @endcode
   */
@@ -948,7 +948,7 @@ void MicroBitDisplay::disable()
     if(uBit.flags & MICROBIT_FLAG_DISPLAY_RUNNING)
     {
         uBit.flags &= ~MICROBIT_FLAG_DISPLAY_RUNNING;           //unset the display running flag
-    }   
+    }
 }
 
 /**
@@ -956,13 +956,13 @@ void MicroBitDisplay::disable()
   * Simplifies the process, you can also use uBit.display.image.clear
   *
   * Example:
-  * @code 
+  * @code
   * uBit.display.clear(); //clears the display
   * @endcode
-  */ 
+  */
 void MicroBitDisplay::clear()
 {
-    image.clear();  
+    image.clear();
 }
 
 /**
@@ -970,12 +970,12 @@ void MicroBitDisplay::clear()
   * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.display.error(20);
   * @endcode
   */
 void MicroBitDisplay::error(int statusCode)
-{   
+{
     extern InterruptIn resetButton;
 
     __disable_irq(); //stop ALL interrupts
@@ -984,16 +984,16 @@ void MicroBitDisplay::error(int statusCode)
         statusCode = 0;
 
     disable(); //relinquish PWMOut's control
-    
+
     uint8_t strobeRow = 0;
     uint8_t strobeBitMsk = 0x20;
-    
+
     //point to the font stored in Flash
     const unsigned char * fontLocation = MicroBitFont::defaultFont;
-    
+
     //get individual digits of status code, and place it into a single array/
     const uint8_t* chars[MICROBIT_DISPLAY_ERROR_CHARS] = { panicFace, fontLocation+((((statusCode/100 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode/10 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode % 10)+48)-MICROBIT_FONT_ASCII_START) * 5)};
-    
+
     //enter infinite loop.
     while(1)
     {
@@ -1001,42 +1001,42 @@ void MicroBitDisplay::error(int statusCode)
         for(int characterCount = 0; characterCount < MICROBIT_DISPLAY_ERROR_CHARS; characterCount++)
         {
             int outerCount = 0;
-            
+
             //display the current character
             while(outerCount < 500)
             {
                 int coldata = 0;
-        
+
                 int i = 0;
-        
+
                 //if we have hit the row limit - reset both the bit mask and the row variable
                 if(strobeRow == 3)
                 {
-                    strobeRow = 0; 
+                    strobeRow = 0;
                     strobeBitMsk = 0x20;
-                }    
-        
+                }
+
                 // Calculate the bitpattern to write.
                 for (i = 0; i<MICROBIT_DISPLAY_COLUMN_COUNT; i++)
                 {
-                    
+
                     int bitMsk = 0x10 >> matrixMap[i][strobeRow].x; //chars are right aligned but read left to right
                     int y = matrixMap[i][strobeRow].y;
-                         
+
                     if(chars[characterCount][y] & bitMsk)
                         coldata |= (1 << i);
                 }
-                
+
                 nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0); //clear port 0 4-7
                 nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | 0x1F); // clear port 1 8-12
-                
+
                 //write the new bit pattern
                 nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, ~coldata<<4 & 0xF0); //set port 0 4-7
                 nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); //set port 1 8-12
-            
+
                 //set i to an obscene number.
                 i = 1000;
-                
+
                 //burn cycles
                 while(i>0)
                 {
@@ -1046,9 +1046,9 @@ void MicroBitDisplay::error(int statusCode)
 
                     i--;
                 }
-                
+
                 //update the bit mask and row count
-                strobeBitMsk <<= 1;    
+                strobeBitMsk <<= 1;
                 strobeRow++;
                 outerCount++;
             }
@@ -1079,4 +1079,12 @@ MicroBitFont MicroBitDisplay::getFont()
 MicroBitImage MicroBitDisplay::screenShot()
 {
     return image.crop(0,0,MICROBIT_DISPLAY_WIDTH,MICROBIT_DISPLAY_HEIGHT);
+}
+
+/**
+  * Destructor for MicroBitDisplay, so that we deregister ourselves as a systemComponent
+  */
+MicroBitDisplay::~MicroBitDisplay()
+{
+    uBit.removeSystemComponent(this);
 }

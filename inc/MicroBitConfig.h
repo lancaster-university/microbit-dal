@@ -39,7 +39,7 @@
 
 // The proportion of SRAM available on the mbed heap to reserve for the micro:bit heap.
 #ifndef MICROBIT_HEAP_SIZE
-#define MICROBIT_HEAP_SIZE				0.95
+#define MICROBIT_HEAP_SIZE				0.9
 #endif
 
 // if defined, reuse the 8K of SRAM reserved for SoftDevice (Nordic's memory resident BLE stack) as heap memory.
@@ -123,7 +123,7 @@
 // by enabling/disabling the options below. 
 //
 // n.b. The minimum set of services to enable over the air programming of the device will
-// still be brought up in 'BLUEZONE' mode regardless of the settings below.
+// still be brought up in pairing mode regardless of the settings below.
 //
 
 // Enable/Disable BLE during normal operation.
@@ -132,10 +132,16 @@
 #define MICROBIT_BLE_ENABLED        1
 #endif
 
-// Enable/Disable BLUEZONE mode at power up.
+// Enable/Disable BLE pairing mode mode at power up.
 // Set '1' to enable. 
-#ifndef MICROBIT_BLE_BLUEZONE
-#define MICROBIT_BLE_BLUEZONE       1
+#ifndef MICROBIT_BLE_PAIRING_MODE
+#define MICROBIT_BLE_PAIRING_MODE	1
+#endif
+
+// Enable/Disable the use of private resolvable addresses.
+// Set '1' to enable. 
+#ifndef MICROBIT_BLE_PRIVATE_ADDRESSES
+#define MICROBIT_BLE_PRIVATE_ADDRESSES		0
 #endif
 
 // Enable/Disable BLE Service: MicroBitDFU
@@ -247,7 +253,7 @@
 // Selects the default brightness for the display
 // in the region of zero (off) to 255 (full brightness)
 #ifndef MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS 
-#define MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS     ((MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS - MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS) / 2)
+#define MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS     MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS
 #endif
 
 // Selects the default scroll speed for the display.

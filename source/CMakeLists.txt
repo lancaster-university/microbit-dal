@@ -17,6 +17,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitEvent.cpp"
     "MicroBitFiber.cpp"
     "ManagedString.cpp"
+    "Matrix4.cpp"
     "MicroBitAccelerometer.cpp"
     "MicroBitThermometer.cpp"
     "MicroBitIO.cpp"
@@ -30,6 +31,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitListener.cpp"
     "RefCounted.cpp"
     "MemberFunctionCallback.cpp"
+    "ble-services/MicroBitBLEManager.cpp"
     "ble-services/MicroBitDFUService.cpp"
     "ble-services/MicroBitEventService.cpp"
     "ble-services/MicroBitLEDService.cpp"
@@ -83,8 +85,9 @@ target_link_libraries(microbit-dal
 )
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    message("suppressing warnings from mbed-classic, ble & ble-nrf51822")
+    message("suppressing ALL warnings from mbed-classic, ble, ble-nrf51822 & nrf51-sdk")
     target_compile_options(mbed-classic PRIVATE "-w")
     target_compile_options(ble PRIVATE "-w")
     target_compile_options(ble-nrf51822 PRIVATE "-w")
+    target_compile_options(nrf51-sdk PRIVATE "-w")
 endif()
