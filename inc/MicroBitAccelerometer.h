@@ -57,7 +57,7 @@
 #define MICROBIT_ACCELEROMETER_EVT_FACE_UP                  5
 #define MICROBIT_ACCELEROMETER_EVT_FACE_DOWN                6
 #define MICROBIT_ACCELEROMETER_EVT_FREEFALL                 7
-#define MICROBIT_ACCELEROMETER_EVT_3G                       8    
+#define MICROBIT_ACCELEROMETER_EVT_3G                       8
 #define MICROBIT_ACCELEROMETER_EVT_6G                       9
 #define MICROBIT_ACCELEROMETER_EVT_8G                       10
 #define MICROBIT_ACCELEROMETER_EVT_SHAKE                    11
@@ -140,10 +140,10 @@ struct ShakeHistory
 class MicroBitAccelerometer : public MicroBitComponent
 {
     /**
-      * Unique, enumerated ID for this component. 
+      * Unique, enumerated ID for this component.
       * Used to track asynchronous events in the event bus.
       */
-    
+
     uint16_t        address;            // I2C address of this accelerometer.
     uint16_t        samplePeriod;       // The time between samples, in milliseconds.
     uint8_t         sampleRange;        // The sample range of the accelerometer in g.
@@ -152,20 +152,20 @@ class MicroBitAccelerometer : public MicroBitComponent
     float           pitch;              // Pitch of the device, in radians.
     float           roll;               // Roll of the device, in radians.
     uint8_t         sigma;              // the number of ticks that the instantaneous gesture has been stable.
-    BasicGesture    lastGesture;        // the last, stable gesture recorded. 
+    BasicGesture    lastGesture;        // the last, stable gesture recorded.
     BasicGesture    currentGesture;     // the instantaneous, unfiltered gesture detected.
     ShakeHistory    shake;              // State information needed to detect shake events.
-    
+
     public:
 
     /**
-     * Constructor. 
+     * Constructor.
      * Create an accelerometer representation with the given ID.
      * @param id the ID of the new object.
-     * @param address the default base address of the accelerometer. 
+     * @param address the default base address of the accelerometer.
      *
      * Example:
-     * @code 
+     * @code
      * accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR)
      * @endcode
      */
@@ -199,7 +199,7 @@ class MicroBitAccelerometer : public MicroBitComponent
     int setPeriod(int period);
 
     /**
-     * Reads the currently configured sample rate of the accelerometer. 
+     * Reads the currently configured sample rate of the accelerometer.
      * @return The time between samples, in milliseconds.
      */
     int getPeriod();
@@ -214,17 +214,17 @@ class MicroBitAccelerometer : public MicroBitComponent
     int setRange(int range);
 
     /**
-     * Reads the currently configured sample range of the accelerometer. 
+     * Reads the currently configured sample range of the accelerometer.
      * @return The sample range, in g.
      */
     int getRange();
 
     /**
-     * Attempts to determine the 8 bit ID from the accelerometer. 
+     * Attempts to determine the 8 bit ID from the accelerometer.
      * @return the 8 bit ID returned by the accelerometer, or MICROBIT_I2C_ERROR if the request fails.
      *
      * Example:
-     * @code 
+     * @code
      * uBit.accelerometer.whoAmI();
      * @endcode
      */
@@ -236,32 +236,32 @@ class MicroBitAccelerometer : public MicroBitComponent
       * @return The force measured in the X axis, in milli-g.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.accelerometer.getX();
       * @endcode
       */
     int getX(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
-    
+
     /**
       * Reads the Y axis value of the latest update from the accelerometer.
       * @return The force measured in the Y axis, in milli-g.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.accelerometer.getY();
       * @endcode
-      */    
+      */
     int getY(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
-    
+
     /**
       * Reads the Z axis value of the latest update from the accelerometer.
       * @return The force measured in the Z axis, in milli-g.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.accelerometer.getZ();
       * @endcode
-      */    
+      */
     int getZ(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
 
     /**
@@ -269,10 +269,10 @@ class MicroBitAccelerometer : public MicroBitComponent
       * @return The pitch of the device, in degrees.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.accelerometer.getPitch();
       * @endcode
-      */    
+      */
     int getPitch();
     float getPitchRadians();
 
@@ -281,10 +281,10 @@ class MicroBitAccelerometer : public MicroBitComponent
       * @return The roll of the device, in degrees.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.accelerometer.getRoll();
       * @endcode
-      */    
+      */
     int getRoll();
     float getRollRadians();
 
@@ -293,16 +293,16 @@ class MicroBitAccelerometer : public MicroBitComponent
      * @return The last gesture detected.
      *
      * Example:
-     * @code 
+     * @code
      * if (uBit.accelerometer.getGesture() == SHAKE)
      * @endcode
-     */    
+     */
     BasicGesture getGesture();
 
     /**
      * periodic callback from MicroBit idle thread.
      * Check if any data is ready for reading by checking the interrupt flag on the accelerometer
-     */    
+     */
     virtual void idleTick();
 
     /**
@@ -341,7 +341,7 @@ class MicroBitAccelerometer : public MicroBitComponent
 
     /**
      *
-     * Updates the basic gesture recognizer. This performs instantaneous pose recognition, and also some low pass filtering to promote 
+     * Updates the basic gesture recognizer. This performs instantaneous pose recognition, and also some low pass filtering to promote
      * stability.
      */
     void updateGesture();

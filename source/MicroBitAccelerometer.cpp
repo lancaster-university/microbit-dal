@@ -48,32 +48,32 @@ int MicroBitAccelerometer::configure()
     // Now configure the accelerometer accordingly.
     // First place the device into standby mode, so it can be configured.
     result = writeCommand(MMA8653_CTRL_REG1, 0x00);
-    if (result != 0) 
+    if (result != 0)
         return MICROBIT_I2C_ERROR;
 
     // Enable high precisiosn mode. This consumes a bit more power, but still only 184 uA!
     result = writeCommand(MMA8653_CTRL_REG2, 0x10);
-    if (result != 0) 
+    if (result != 0)
         return MICROBIT_I2C_ERROR;
 
     // Enable the INT1 interrupt pin.
     result = writeCommand(MMA8653_CTRL_REG4, 0x01);
-    if (result != 0) 
+    if (result != 0)
         return MICROBIT_I2C_ERROR;
 
     // Select the DATA_READY event source to be routed to INT1
     result = writeCommand(MMA8653_CTRL_REG5, 0x01);
-    if (result != 0) 
+    if (result != 0)
         return MICROBIT_I2C_ERROR;
 
     // Configure for the selected g range.
     result = writeCommand(MMA8653_XYZ_DATA_CFG, actualSampleRange->xyz_data_cfg);
-    if (result != 0) 
+    if (result != 0)
         return MICROBIT_I2C_ERROR;
 
     // Bring the device back online, with 10bit wide samples at the requested frequency.
     result = writeCommand(MMA8653_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
-    if (result != 0) 
+    if (result != 0)
         return MICROBIT_I2C_ERROR;
 
     return MICROBIT_OK;
@@ -124,13 +124,13 @@ int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
 }
 
 /**
- * Constructor. 
+ * Constructor.
  * Create an accelerometer representation with the given ID.
  * @param id the ID of the new object.
- * @param address the default base address of the accelerometer. 
+ * @param address the default base address of the accelerometer.
  *
  * Example:
- * @code 
+ * @code
  * accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR)
  * @endcode
  */
@@ -161,11 +161,11 @@ MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address) : sa
 }
 
 /**
- * Attempts to determine the 8 bit ID from the accelerometer. 
+ * Attempts to determine the 8 bit ID from the accelerometer.
  * @return the 8 bit ID returned by the accelerometer, or MICROBIT_I2C_ERROR if the request fails.
  *
  * Example:
- * @code 
+ * @code
  * uBit.accelerometer.whoAmI();
  * @endcode
  */
@@ -174,7 +174,7 @@ int MicroBitAccelerometer::whoAmI()
     uint8_t data;
     int result;
 
-    result = readCommand(MMA8653_WHOAMI, &data, 1);    
+    result = readCommand(MMA8653_WHOAMI, &data, 1);
     if (result !=0)
         return MICROBIT_I2C_ERROR;
 
@@ -197,7 +197,7 @@ int MicroBitAccelerometer::update()
         return MICROBIT_I2C_ERROR;
 
     // read MSB values...
-    sample.x = data[0]; 
+    sample.x = data[0];
     sample.y = data[2];
     sample.z = data[4];
 
@@ -221,7 +221,7 @@ int MicroBitAccelerometer::update()
     // Indicate that pitch and roll data is now stale, and needs to be recalculated if needed.
     status &= ~MICROBIT_ACCEL_PITCH_ROLL_VALID;
 
-    // Update gesture tracking 
+    // Update gesture tracking
     updateGesture();
 
     // Indicate that a new sample is available
@@ -257,9 +257,9 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
     // Test for shake events.
     // We detect a shake by measuring zero crossings in each axis. In other words, if we see a strong acceleration to the left followed by
     // a string acceleration to the right, then we can infer a shake. Similarly, we can do this for each acxis (left/right, up/down, in/out).
-    // 
+    //
     // If we see enough zero crossings in succession (MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD), then we decide that the device
-    // has been shaken. 
+    // has been shaken.
     if ((getX() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.x) || (getX() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.x))
     {
         shakeDetected = true;
@@ -289,7 +289,7 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
             if(--shake.count == 0)
                 shake.shaken = 0;
         }
-    }	
+    }
 
     if (shake.shaken)
         return GESTURE_SHAKE;
@@ -334,10 +334,10 @@ void MicroBitAccelerometer::updateGesture()
     BasicGesture g = instantaneousPosture();
 
     // Perform some low pass filtering to reduce jitter from any detected effects
-    if (g == currentGesture)	
+    if (g == currentGesture)
     {
         if (sigma < MICROBIT_ACCELEROMETER_GESTURE_DAMPING)
-            sigma++;	
+            sigma++;
     }
     else
     {
@@ -350,7 +350,7 @@ void MicroBitAccelerometer::updateGesture()
     {
         lastGesture = currentGesture;
         MicroBitEvent e(MICROBIT_ID_GESTURE, lastGesture);
-    }	
+    }
 }
 
 /**
@@ -367,7 +367,7 @@ int MicroBitAccelerometer::setPeriod(int period)
 }
 
 /**
- * Reads the currently configured sample rate of the accelerometer. 
+ * Reads the currently configured sample rate of the accelerometer.
  * @return The time between samples, in milliseconds.
  */
 int MicroBitAccelerometer::getPeriod()
@@ -389,7 +389,7 @@ int MicroBitAccelerometer::setRange(int range)
 }
 
 /**
- * Reads the currently configured sample range of the accelerometer. 
+ * Reads the currently configured sample range of the accelerometer.
  * @return The sample range, in g.
  */
 int MicroBitAccelerometer::getRange()
@@ -403,7 +403,7 @@ int MicroBitAccelerometer::getRange()
   * @return The force measured in the X axis, in milli-g.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.accelerometer.getX();
   * uBit.accelerometer.getX(RAW);
   * @endcode
@@ -414,7 +414,7 @@ int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
     {
         case SIMPLE_CARTESIAN:
             return -sample.x;
-                
+
         case NORTH_EAST_DOWN:
             return sample.y;
 
@@ -430,18 +430,18 @@ int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
   * @return The force measured in the Y axis, in milli-g.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.accelerometer.getY();
   * uBit.accelerometer.getY(RAW);
   * @endcode
-  */  
+  */
 int MicroBitAccelerometer::getY(MicroBitCoordinateSystem system)
 {
     switch (system)
     {
         case SIMPLE_CARTESIAN:
             return -sample.y;
-                
+
         case NORTH_EAST_DOWN:
             return -sample.x;
 
@@ -457,11 +457,11 @@ int MicroBitAccelerometer::getY(MicroBitCoordinateSystem system)
   * @return The force measured in the Z axis, in milli-g.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.accelerometer.getZ();
   * uBit.accelerometer.getZ(RAW);
   * @endcode
-  */       
+  */
 int MicroBitAccelerometer::getZ(MicroBitCoordinateSystem system)
 {
     switch (system)
@@ -475,16 +475,16 @@ int MicroBitAccelerometer::getZ(MicroBitCoordinateSystem system)
             return sample.z;
     }
 }
-  
+
 /**
   * Provides a rotation compensated pitch of the device, based on the latest update from the accelerometer.
   * @return The pitch of the device, in degrees.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.accelerometer.getPitch();
   * @endcode
-  */    
+  */
 int MicroBitAccelerometer::getPitch()
 {
     return (int) ((360*getPitchRadians()) / (2*PI));
@@ -503,10 +503,10 @@ float MicroBitAccelerometer::getPitchRadians()
   * @return The roll of the device, in degrees.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.accelerometer.getRoll();
   * @endcode
-  */    
+  */
 int MicroBitAccelerometer::getRoll()
 {
     return (int) ((360*getRollRadians()) / (2*PI));
@@ -541,10 +541,10 @@ void MicroBitAccelerometer::recalculatePitchRoll()
  * @return The last gesture detected.
  *
  * Example:
- * @code 
+ * @code
  * if (uBit.accelerometer.getGesture() == SHAKE)
  * @endcode
- */    
+ */
 BasicGesture MicroBitAccelerometer::getGesture()
 {
     return lastGesture;
@@ -553,7 +553,7 @@ BasicGesture MicroBitAccelerometer::getGesture()
 /**
  * periodic callback from MicroBit clock.
  * Check if any data is ready for reading by checking the interrupt flag on the accelerometer
- */  
+ */
 void MicroBitAccelerometer::idleTick()
 {
     // Poll interrupt line from accelerometer.
@@ -572,18 +572,18 @@ int MicroBitAccelerometer::isIdleCallbackNeeded()
 }
 
 const MMA8653SampleRangeConfig MMA8653SampleRange[MMA8653_SAMPLE_RANGES] = {
-    {2, 0}, 
-    {4, 1}, 
+    {2, 0},
+    {4, 1},
     {8, 2}
 };
 
 const MMA8653SampleRateConfig MMA8653SampleRate[MMA8653_SAMPLE_RATES] = {
-    {1250,      0x00},        
-    {2500,      0x08}, 
-    {5000,      0x10}, 
-    {10000,     0x18}, 
-    {20000,     0x20}, 
-    {80000,     0x28},  
+    {1250,      0x00},
+    {2500,      0x08},
+    {5000,      0x10},
+    {10000,     0x18},
+    {20000,     0x20},
+    {80000,     0x28},
     {160000,    0x30},
     {640000,    0x38}
 };
