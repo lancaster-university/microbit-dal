@@ -3,7 +3,7 @@
 
 #include "mbed.h"
 
-#include "MicroBitConfig.h"  
+#include "MicroBitConfig.h"
 #include "MicroBitHeapAllocator.h"
 #include "MicroBitPanic.h"
 #include "ErrorNo.h"
@@ -12,7 +12,7 @@
 #include "MicroBitComponent.h"
 #include "ManagedType.h"
 #include "ManagedString.h"
-#include "MicroBitImage.h"	
+#include "MicroBitImage.h"
 #include "MicroBitFont.h"
 #include "MicroBitEvent.h"
 #include "DynamicPwm.h"
@@ -59,16 +59,16 @@
   * Represents the device as a whole, and includes member variables to that reflect the components of the system.
   */
 class MicroBit
-{                                  
+{
     private:
-    
+
     void                    seedRandom();
     void                    compassCalibrator(MicroBitEvent e);
     uint32_t                randomValue;
 
-  
+
     public:
-    
+
     // Map of device state.
     uint32_t                flags;
 
@@ -76,43 +76,43 @@ class MicroBit
     Ticker                  systemTicker;
 
     // I2C Interface
-    MicroBitI2C             i2c;  
-    
+    MicroBitI2C             i2c;
+
     // Serial Interface
-    MicroBitSerial          serial;   
+    MicroBitSerial          serial;
 
     // Array of components which are iterated during a system tick
     MicroBitComponent*      systemTickComponents[MICROBIT_SYSTEM_COMPONENTS];
-    
+
     // Array of components which are iterated during idle thread execution, isIdleCallbackNeeded is polled during a systemTick.
     MicroBitComponent*      idleThreadComponents[MICROBIT_IDLE_COMPONENTS];
 
     // Device level Message Bus abstraction
-    MicroBitMessageBus      MessageBus;     
-    
+    MicroBitMessageBus      MessageBus;
+
     // Member variables to represent each of the core components on the device.
     MicroBitDisplay         display;
     MicroBitButton          buttonA;
     MicroBitButton          buttonB;
-    MicroBitMultiButton     buttonAB;    
+    MicroBitMultiButton     buttonAB;
     MicroBitAccelerometer   accelerometer;
     MicroBitCompass         compass;
     MicroBitThermometer     thermometer;
 
     //An object of available IO pins on the device
     MicroBitIO              io;
-    
+
     // Bluetooth related member variables.
 	MicroBitBLEManager		bleManager;
     BLEDevice               *ble;
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of a MicroBit device as a global singleton.
       * @param messageBus callback function to receive MicroBitMessageBus events.
       *
       * Exposed objects:
-      * @code 
+      * @code
       * uBit.systemTicker; //the Ticker callback that performs routines like updating the display.
       * uBit.MessageBus; //The message bus where events are fired.
       * uBit.display; //The display object for the LED matrix.
@@ -124,16 +124,16 @@ class MicroBit
       * uBit.io.P*; //Where P* is P0 to P16, P19 & P20 on the edge connector
       * @endcode
       */
-    MicroBit();  
+    MicroBit();
 
     /**
       * Post constructor initialisation method.
-      * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a 
+      * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a
       * static context, so we bring it up here rather than in the constructor.
       * n.b. This method *must* be called in main() or later, not before.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.init();
       * @endcode
       */
@@ -157,7 +157,7 @@ class MicroBit
       * Will reset the micro:bit when called.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.reset();
       * @endcode
       */
@@ -168,15 +168,15 @@ class MicroBit
       * If the scheduler is running, this will deschedule the current fiber and perform
       * a power efficent, concurrent sleep operation.
       * If the scheduler is disabled or we're running in an interrupt context, this
-      * will revert to a busy wait. 
-      * 
+      * will revert to a busy wait.
+      *
       * @note Values of 6 and below tend to lose resolution - do you really need to sleep for this short amount of time?
       *
       * @param milliseconds the amount of time, in ms, to wait for. This number cannot be negative.
-      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER milliseconds is less than zero. 
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER milliseconds is less than zero.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.sleep(20); //sleep for 20ms
       * @endcode
       */
@@ -191,7 +191,7 @@ class MicroBit
       * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_PARAMETER if max is <= 0.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.random(200); //a number between 0 and 199
       * @endcode
       */
@@ -202,27 +202,27 @@ class MicroBit
       * provide a power efficient sense of time.
       */
     void systemTick();
-    
+
     /**
       * System tasks to be executed by the idle thread when the Micro:Bit isn't busy or when data needs to be read.
       */
     void systemTasks();
 
     /**
-      * add a component to the array of system components which invocate the systemTick member function during a systemTick 
+      * add a component to the array of system components which invocate the systemTick member function during a systemTick
       *
       * @param component The component to add.
       * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
       */
     int addSystemComponent(MicroBitComponent *component);
-    
+
     /**
       * remove a component from the array of system components
       * @param component The component to remove.
       * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
       */
     int removeSystemComponent(MicroBitComponent *component);
-    
+
     /**
       * add a component to the array of of idle thread components.
       * isIdleCallbackNeeded is polled during a systemTick to determine if the idle thread should jump to the front of the queue
@@ -230,7 +230,7 @@ class MicroBit
       * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
       */
     int addIdleComponent(MicroBitComponent *component);
-    
+
     /**
       * remove a component from the array of idle thread components
       * @param component The component to remove.
@@ -245,7 +245,7 @@ class MicroBit
       * TODO: handle overflow case.
       */
     unsigned long systemTime();
-    
+
     /**
       * Determine the version of the micro:bit runtime currently in use.
       *
@@ -256,7 +256,7 @@ class MicroBit
 
     /**
       * Triggers a microbit panic where an infinite loop will occur swapping between the panicFace and statusCode if provided.
-      * 
+      *
       * @param statusCode the status code of the associated error. Status codes must be in the range 0-255.
       */
     void panic(int statusCode = 0);
@@ -274,4 +274,3 @@ extern "C" void app_main();
 
 
 #endif
-
