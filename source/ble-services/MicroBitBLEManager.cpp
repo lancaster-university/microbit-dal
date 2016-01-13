@@ -139,7 +139,17 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
     ble->securityManager().init(MICROBIT_BLE_ENABLE_BONDING, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
-  // Bring up any configured auxiliary services.
+    // Configure a whitelist to filter all traffic from unbonded devices. Most BLE stacks only permit one connection at a time,
+    // so this prevents denial of service attacks.
+    BLEProtocol::Address_t bondedAddresses[4];
+    Gap::Whitelist_t whitelist;
+    whitelist.addresses = bondedAddresses;
+    whitelist.capacity = 4;
+
+    ble->securityManager().getAddressesFromBondTable(whitelist);
+    ble->gap().setWhitelist(whitelist);
+
+    // Bring up any configured auxiliary services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
 #endif
@@ -189,7 +199,9 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
-    ble->startAdvertising();
+
+    if (whitelist.size > 0)
+        ble->startAdvertising();
 }
 
 /**
@@ -229,6 +241,14 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 	int timeInPairingMode = 0;
 	int brightness = 255;
 	int fadeDirection = 0;
+
+    // Clear the whitelist, so we're discoverable by all BLE devices.
+    BLEProtocol::Address_t addresses[4];
+    Gap::Whitelist_t whitelist;
+    whitelist.addresses = addresses;
+    whitelist.capacity = 4;
+    whitelist.size = 0;
+    ble->gap().setWhitelist(whitelist);
 
 	// Update the advertised name of this micro:bit to include the device name
     ble->clearAdvertisingPayload();
