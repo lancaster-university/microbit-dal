@@ -73,7 +73,7 @@ enum AnimationMode {
 
 enum DisplayMode {
     DISPLAY_MODE_BLACK_AND_WHITE,
-    DISPLAY_MODE_GREYSCALE    
+    DISPLAY_MODE_GREYSCALE
 };
 
 enum DisplayRotation {
@@ -172,24 +172,24 @@ class MicroBitDisplay : public MicroBitComponent
       *  Periodic callback, that we use to perform any animations we have running.
       */
     void animationUpdate();
-    
+
     /**
       *  Called by the display in an interval determined by the brightness of the display, to give an impression
       *  of brightness.
       */
     void renderFinish();
-    
+
     /**
       * Translates a bit mask to a bit mask suitable for the nrf PORT0 and PORT1.
       * Brightness has two levels on, or off.
       */
     void render();
-    
+
     /**
       * Translates a bit mask into a timer interrupt that gives the appearence of greyscale.
       */
     void renderGreyscale();
-    
+
     /**
       * Internal scrollText update method.
       * Shift the screen image by one pixel to the left. If necessary, paste in the next char.
@@ -224,7 +224,7 @@ class MicroBitDisplay : public MicroBitComponent
     /**
       * Blocks the current fiber until the display is available (i.e. not effect is being displayed).
       * Animations are queued until their time to display.
-      */ 
+      */
     void waitForFreeDisplay();
 
 public:
@@ -255,16 +255,16 @@ public:
       * Frame update method, invoked periodically to strobe the display.
       */
     virtual void systemTick();
-    
+
     /**
      * Prints the given character to the display, if it is not in use.
      *
      * @param c The character to display.
      * @param delay Optional parameter - the time for which to show the character. Zero displays the character forever.
      * @return MICROBIT_OK, MICROBIT_BUSY is the screen is in use, or MICROBIT_INVALID_PARAMETER.
-     * 
+     *
      * Example:
-     * @code 
+     * @code
      * uBit.display.printAsync('p');
      * uBit.display.printAsync('p',100);
      * @endcode
@@ -294,7 +294,7 @@ public:
      * @param i The image to display.
      * @param x The horizontal position on the screen to display the image (default 0)
      * @param y The vertical position on the screen to display the image (default 0)
-     * @param alpha Treats the brightness level '0' as transparent (default 0) 
+     * @param alpha Treats the brightness level '0' as transparent (default 0)
      * @param delay The time to delay between characters, in milliseconds. set to 0 to display forever. (default 0).
      *
      * Example:
@@ -334,7 +334,7 @@ public:
       * @endcode
       */
     int print(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
-    
+
     /**
       * Prints the given image to the display.
       * Blocks the calling thread until all the text has been displayed.
@@ -350,7 +350,7 @@ public:
       * @endcode
       */
     int print(MicroBitImage i, int x, int y, int alpha, int delay = 0);
-    
+
     /**
       * Scrolls the given string to the display, from right to left.
       * Uses the given delay between characters.
@@ -474,14 +474,14 @@ public:
     /**
       * Sets the mode of the display.
       * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, or DISPLAY_MODE_NORMAL)
-      * 
+      *
       * Example:
-      * @code 
+      * @code
       * uBit.display.setDisplayMode(DISPLAY_MODE_GREYSCALE); //per pixel brightness
       * @endcode
-      */  
+      */
     void setDisplayMode(DisplayMode mode);
-    
+
     /**
       * Fetches the current brightness of this display.
       * @return the brightness of this display, in the range 0..255.
@@ -557,7 +557,7 @@ public:
       * Retreives the font object used for rendering characters on the display.
       */
     MicroBitFont getFont();
-    
+
     /**
       * Captures the bitmap currently being rendered on the display.
       */
@@ -565,4 +565,3 @@ public:
 };
 
 #endif
-

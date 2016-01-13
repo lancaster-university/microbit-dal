@@ -18,7 +18,7 @@
   * MicroBit platform. It serves a number of purposes:
   *
   * 1) It provides an eventing abstraction that is independent of the underlying substrate.
-  * 2) It provides a mechanism to decouple user code from trusted system code 
+  * 2) It provides a mechanism to decouple user code from trusted system code
   *    i.e. the basis of a message passing nano kernel.
   * 3) It allows a common high level eventing abstraction across a range of hardware types.e.g. buttons, BLE...
   * 4) It provides a mechanims for extensibility - new devices added via I/O pins can have OO based
@@ -34,23 +34,23 @@ class MicroBitMessageBus : public MicroBitComponent
     public:
 
 	/**
-	  * Default constructor. 
+	  * Default constructor.
 	  * Anticipating only one MessageBus per device, as filtering is handled within the class.
 	  */
-    MicroBitMessageBus();    
+    MicroBitMessageBus();
 
 	/**
 	  * Queues the given event to be sent to all registered recipients.
 	  *
-	  * @param The event to send. 
+	  * @param The event to send.
 	  *
 	  * n.b. THIS IS NOW WRAPPED BY THE MicroBitEvent CLASS FOR CONVENIENCE...
 	  *
 	  * Example:
-      * @code 
+      * @code
 	  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,ticks,false);
 	  * evt.fire();
-	  * //OR YOU CAN DO THIS...  
+	  * //OR YOU CAN DO THIS...
 	  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN);
       * @endcode
 	  */
@@ -63,7 +63,7 @@ class MicroBitMessageBus : public MicroBitComponent
       * IT IS RECOMMENDED THAT ALL EXTERNAL CODE USE THE send() FUNCTIONS INSTEAD OF THIS FUNCTION,
       * or the constructors provided by MicroBitEvent.
 	  *
-	  * @param evt The event to send. 
+	  * @param evt The event to send.
       * @param urgent The type of listeners to process (optional). If set to true, only listeners defined as urgent and non-blocking will be processed
       * otherwise, all other (standard) listeners will be processed.
       * @return 1 if all matching listeners were processed, 0 if further processing is required.
@@ -72,19 +72,19 @@ class MicroBitMessageBus : public MicroBitComponent
 
 	/**
 	  * Register a listener function.
-	  * 
-	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
+	  *
+	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered.
 	  * Use MICROBIT_ID_ANY to receive events from all components.
 	  *
-	  * @param value The value of messages to listen for. Events with any other values will be filtered. 
+	  * @param value The value of messages to listen for. Events with any other values will be filtered.
 	  * Use MICROBIT_EVT_ANY to receive events of any value.
 	  *
 	  * @param handler The function to call when an event is received.
       *
       * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
-	  * 
+	  *
       * Example:
-      * @code 
+      * @code
       * void onButtonBClick()
       * {
       * 	//do something
@@ -93,22 +93,22 @@ class MicroBitMessageBus : public MicroBitComponent
       * @endcode
 	  */
 	int listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
-	
+
 	/**
 	  * Register a listener function.
-	  * 
-	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
+	  *
+	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered.
 	  * Use MICROBIT_ID_ANY to receive events from all components.
 	  *
-	  * @param value The value of messages to listen for. Events with any other values will be filtered. 
+	  * @param value The value of messages to listen for. Events with any other values will be filtered.
 	  * Use MICROBIT_EVT_ANY to receive events of any value.
 	  *
 	  * @param hander The function to call when an event is received.
       *
       * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
-	  * 
+	  *
       * Example:
-      * @code 
+      * @code
       * void onButtonBClick(void *arg)
       * {
       * 	//do something
@@ -120,26 +120,26 @@ class MicroBitMessageBus : public MicroBitComponent
 
 	/**
 	  * Register a listener function.
-	  * 
-	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
+	  *
+	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered.
 	  * Use MICROBIT_ID_ANY to receive events from all components.
 	  *
-	  * @param value The value of messages to listen for. Events with any other values will be filtered. 
+	  * @param value The value of messages to listen for. Events with any other values will be filtered.
 	  * Use MICROBIT_EVT_ANY to receive events of any value.
 	  *
 	  * @param hander The function to call when an event is received.
       *
       * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
-	  * 
+	  *
       * Example:
-      * @code 
+      * @code
       * void SomeClass::onButtonBClick()
       * {
       * 	//do something
       * }
       *
       * SomeClass s = new SomeClass();
-      * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick); 
+      * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick);
       * @endcode
 	  */
     template <typename T>
@@ -149,7 +149,7 @@ class MicroBitMessageBus : public MicroBitComponent
 	/**
 	  * Unregister a listener function.
       * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
-	  * 
+	  *
 	  * @param id The Event ID used to register the listener.
 	  * @param value The Event VALUE used to register the listener.
 	  * @param handler The function used to register the listener.
@@ -158,21 +158,21 @@ class MicroBitMessageBus : public MicroBitComponent
       *
 	  *
       * Example:
-      * @code 
+      * @code
       * void onButtonBClick()
       * {
       * 	//do something
       * }
       *
-      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
       * @endcode
 	  */
 	int ignore(int id, int value, void (*handler)(MicroBitEvent));
-	
+
 	/**
 	  * Unregister a listener function.
       * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
-	  * 
+	  *
 	  * @param id The Event ID used to register the listener.
 	  * @param value The Event VALUE used to register the listener.
 	  * @param handler The function used to register the listener.
@@ -180,13 +180,13 @@ class MicroBitMessageBus : public MicroBitComponent
       * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
 	  *
       * Example:
-      * @code 
+      * @code
       * void onButtonBClick(void *arg)
       * {
       * 	//do something
       * }
       *
-      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
       * @endcode
 	  */
 	int ignore(int id, int value, void (*handler)(MicroBitEvent, void*));
@@ -194,7 +194,7 @@ class MicroBitMessageBus : public MicroBitComponent
 	/**
 	  * Unregister a listener function.
       * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
-	  * 
+	  *
 	  * @param id The Event ID used to register the listener.
 	  * @param value The Event VALUE used to register the listener.
 	  * @param handler The function used to register the listener.
@@ -202,15 +202,15 @@ class MicroBitMessageBus : public MicroBitComponent
       * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
 	  *
       * Example:
-      * @code 
-      * 
+      * @code
+      *
       * void SomeClass::onButtonBClick()
       * {
       * 	//do something
       * }
       *
       * SomeClass s = new SomeClass();
-      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick); 
+      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick);
       * @endcode
 	  */
     template <typename T>
@@ -250,7 +250,7 @@ class MicroBitMessageBus : public MicroBitComponent
     MicroBitEventQueueItem      *evt_queue_tail;    // Tail of queued events to be processed.
     uint16_t                    nonce_val;          // The last nonce issued.
     uint16_t                    queueLength;        // The number of events currently waiting to be processed.
-            
+
     void queueEvent(MicroBitEvent &evt);
     MicroBitEventQueueItem* dequeueEvent();
 
@@ -262,10 +262,10 @@ class MicroBitMessageBus : public MicroBitComponent
   * A registration function to allow C++ member funcitons (methods) to be registered as an event
   * listener.
   *
-  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
+  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered.
   * Use MICROBIT_ID_ANY to receive events from all components.
   *
-  * @param value The value of messages to listen for. Events with any other values will be filtered. 
+  * @param value The value of messages to listen for. Events with any other values will be filtered.
   * Use MICROBIT_EVT_ANY to receive events of any value.
   *
   * @param object The object on which the method should be invoked.
@@ -291,7 +291,7 @@ int MicroBitMessageBus::listen(uint16_t id, uint16_t value, T* object, void (T::
 /**
  * Unregister a listener function.
  * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
- * 
+ *
  * @param id The Event ID used to register the listener.
  * @param value The Event VALUE used to register the listener.
  * @param handler The function used to register the listener.
@@ -299,13 +299,13 @@ int MicroBitMessageBus::listen(uint16_t id, uint16_t value, T* object, void (T::
  * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
  *
  * Example:
- * @code 
+ * @code
  * void onButtonBClick(void *arg)
  * {
  * 	//do something
  * }
  *
- * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+ * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
  * @endcode
  */
 template <typename T>
@@ -322,5 +322,3 @@ int MicroBitMessageBus::ignore(uint16_t id, uint16_t value, T* object, void (T::
 
 
 #endif
-
-

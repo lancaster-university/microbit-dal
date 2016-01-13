@@ -7,7 +7,7 @@
 #include "MicroBit.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a new Message Bus.
   */
 MicroBitMessageBus::MicroBitMessageBus()
@@ -30,7 +30,7 @@ void async_callback(void *param)
 
     // OK, now we need to decide how to behave depending on our configuration.
     // If this a fiber f already active within this listener then check our
-    // configuration to determine the correct course of action. 
+    // configuration to determine the correct course of action.
     //
 
     if (listener->flags & MESSAGE_BUS_LISTENER_BUSY)
@@ -47,7 +47,7 @@ void async_callback(void *param)
         }
     }
 
-    // Determine the calling convention for the callback, and invoke... 
+    // Determine the calling convention for the callback, and invoke...
     // C++ is really bad at this! Especially as the ARM compiler is yet to support C++ 11 :-/
 
     // Record that we have a fiber going into this listener...
@@ -91,7 +91,7 @@ void async_callback(void *param)
   * Queue the given event for processing at a later time.
   * Add the given event at the tail of our queue.
   *
-  * @param The event to queue. 
+  * @param The event to queue.
   */
 void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
 {
@@ -99,7 +99,7 @@ void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
 
     MicroBitEventQueueItem *prev = evt_queue_tail;
 
-    // Now process all handler regsitered as URGENT. 
+    // Now process all handler regsitered as URGENT.
     // These pre-empt the queue, and are useful for fast, high priority services.
     processingComplete = this->process(evt, true);
 
@@ -125,7 +125,7 @@ void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
     {
         item->next = evt_queue_head;
         evt_queue_head = item;
-    } 
+    }
     else
     {
         item->next = prev->next;
@@ -142,18 +142,18 @@ void MicroBitMessageBus::queueEvent(MicroBitEvent &evt)
 
 /**
   * Extract the next event from the front of the event queue (if present).
-  * @return 
+  * @return
   *
-  * @param The event to queue. 
+  * @param The event to queue.
   */
 MicroBitEventQueueItem* MicroBitMessageBus::dequeueEvent()
 {
     MicroBitEventQueueItem *item = NULL;
 
     __disable_irq();
- 
+
     if (evt_queue_head != NULL)
-    { 
+    {
         item = evt_queue_head;
         evt_queue_head = item->next;
 
@@ -162,7 +162,7 @@ MicroBitEventQueueItem* MicroBitMessageBus::dequeueEvent()
 
         queueLength--;
     }
-    
+
     __enable_irq();
 
 
@@ -188,7 +188,7 @@ int MicroBitMessageBus::deleteMarkedListeners()
         {
             if (p == NULL)
                 listeners = l->next;
-            else 
+            else
                 p->next = l->next;
 
             // delete the listener.
@@ -212,7 +212,7 @@ int MicroBitMessageBus::deleteMarkedListeners()
   * Periodic callback from MicroBit.
   * Process at least one event from the event queue, if it is not empty.
   * We then continue processing events until something appears on the runqueue.
-  */  
+  */
 void MicroBitMessageBus::idleTick()
 {
     // Clear out any listeners marked for deletion
@@ -231,7 +231,7 @@ void MicroBitMessageBus::idleTick()
 
         // If we have created some useful work to do, we stop processing.
         // This helps to minimise the number of blocked fibers we create at any point in time, therefore
-        // also reducing the RAM footprint. 
+        // also reducing the RAM footprint.
         if(!scheduler_runqueue_empty())
             break;
 
@@ -242,26 +242,26 @@ void MicroBitMessageBus::idleTick()
 
 /**
   * Indicates whether or not we have any background work to do.
-  * @ return 1 if there are any events waitingto be processed, 0 otherwise. 
+  * @ return 1 if there are any events waitingto be processed, 0 otherwise.
   */
 int MicroBitMessageBus::isIdleCallbackNeeded()
 {
-    return !(evt_queue_head == NULL);  
+    return !(evt_queue_head == NULL);
 }
 
 /**
   * Queues the given event to be sent to all registered recipients.
   *
-  * @param The event to send. 
+  * @param The event to send.
   *
   * n.b. THIS IS NOW WRAPPED BY THE MicroBitEvent CLASS FOR CONVENIENCE...
   *
   * Example:
-  * @code 
+  * @code
   * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,ticks,CREATE_ONLY);
   * evt.fire();
   *
-  * //OR YOU CAN DO THIS...  
+  * //OR YOU CAN DO THIS...
   * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN);
   * @endcode
   */
@@ -299,7 +299,7 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
             {
                 l->evt = evt;
 
-                // OK, if this handler has regisitered itself as non-blocking, we just execute it directly... 
+                // OK, if this handler has regisitered itself as non-blocking, we just execute it directly...
                 // This is normally only done for trusted system components.
                 // Otherwise, we invoke it in a 'fork on block' context, that will automatically create a fiber
                 // should the event handler attempt a blocking operation, but doesn't have the overhead
@@ -323,11 +323,11 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
 
 /**
   * Register a listener function.
-  * 
-  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered. 
+  *
+  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered.
   * Use MICROBIT_ID_ANY to receive events from all components.
   *
-  * @param value The value of messages to listen for. Events with any other values will be filtered. 
+  * @param value The value of messages to listen for. Events with any other values will be filtered.
   * Use MICROBIT_VALUE_ANY to receive events of any value.
   *
   * @param handler The function to call when an event is received.
@@ -335,7 +335,7 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
   * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
   *
   * Example:
-  * @code 
+  * @code
   * void onButtonBClick(MicroBitEvent evt)
   * {
   * 	//do something
@@ -344,7 +344,7 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
   * @endcode
   */
 
-int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags) 
+int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags)
 {
 	if (handler == NULL)
 		return MICROBIT_INVALID_PARAMETER;
@@ -360,7 +360,7 @@ int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent)
 
 }
 
-int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg, uint16_t flags) 
+int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg, uint16_t flags)
 {
 	if (handler == NULL)
 		return MICROBIT_INVALID_PARAMETER;
@@ -378,20 +378,20 @@ int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent,
 /**
  * Unregister a listener function.
  * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
- * 
+ *
  * @param id The Event ID used to register the listener.
  * @param value The Event VALUE used to register the listener.
  * @param handler The function used to register the listener.
  *
  *
  * Example:
- * @code 
+ * @code
  * void onButtonBClick()
  * {
  * 	//do something
  * }
  *
- * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+ * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
  * @endcode
  */
 int MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent))
@@ -408,20 +408,20 @@ int MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent)
 /**
  * Unregister a listener function.
  * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
- * 
+ *
  * @param id The Event ID used to register the listener.
  * @param value The Event VALUE used to register the listener.
  * @param handler The function used to register the listener.
  *
  *
  * Example:
- * @code 
+ * @code
  * void onButtonBClick(void *arg)
  * {
  * 	//do something
  * }
  *
- * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); 
+ * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
  * @endcode
  */
 int MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent, void*))
@@ -464,7 +464,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
 
         if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb))
         {
-            // We have a perfect match for this event listener already registered. 
+            // We have a perfect match for this event listener already registered.
             // If it's marked for deletion, we simply resurrect the listener, and we're done.
             // Either way, we return an error code, as the *new* listener should be released...
             if(l->flags & MESSAGE_BUS_LISTENER_DELETING)
@@ -484,7 +484,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
 		return MICROBIT_OK;
 	}
 
-	// We maintain an ordered list of listeners. 
+	// We maintain an ordered list of listeners.
 	// The chain is held stictly in increasing order of ID (first level), then value code (second level).
 	// Find the correct point in the chain for this event.
 	// Adding a listener is a rare occurance, so we just walk the list...
@@ -544,7 +544,7 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
     {
         if ((listener->flags & MESSAGE_BUS_LISTENER_METHOD) == (l->flags & MESSAGE_BUS_LISTENER_METHOD))
         {
-            if(((listener->flags & MESSAGE_BUS_LISTENER_METHOD) && (*l->cb_method == *listener->cb_method)) || 
+            if(((listener->flags & MESSAGE_BUS_LISTENER_METHOD) && (*l->cb_method == *listener->cb_method)) ||
               ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
             {
                 if ((listener->id == MICROBIT_ID_ANY || listener->id == l->id) && (listener->value == MICROBIT_EVT_ANY || listener->value == l->value))
@@ -585,4 +585,3 @@ MicroBitListener* MicroBitMessageBus::elementAt(int n)
 
     return l;
 }
-
