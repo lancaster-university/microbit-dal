@@ -294,7 +294,7 @@ void MicroBitDisplay::updateScrollImage()
 {
     image.clear();
 
-    if ((image.paste(scrollingImage, scrollingImagePosition, 0, 0) == 0) && scrollingImageRendered)
+    if (((image.paste(scrollingImage, scrollingImagePosition, 0, 0) == 0) && scrollingImageRendered) || scrollingImageStride == 0)
     {
         animationMode = ANIMATION_MODE_NONE;
         this->sendAnimationCompleteEvent();
@@ -325,6 +325,12 @@ void MicroBitDisplay::updateAnimateImage()
         image.shiftLeft(-scrollingImageStride);
 
     image.paste(scrollingImage, scrollingImagePosition, 0, 0);
+
+    if(scrollingImageStride == 0)
+    {
+        animationMode = ANIMATION_MODE_NONE;
+        this->sendAnimationCompleteEvent();
+    }
 
     scrollingImageRendered = true;
 
@@ -662,7 +668,7 @@ int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
         scrollingImage = image;
         scrollingImageRendered = false;
 
-        animationDelay = delay;
+        animationDelay = stride == 0 ? 0 : delay;
         animationTick = 0;
         animationMode = ANIMATION_MODE_SCROLL_IMAGE;
     }
@@ -794,7 +800,7 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
         scrollingImage = image;
         scrollingImageRendered = false;
 
-        animationDelay = delay;
+        animationDelay = stride == 0 ? 0 : delay;
         animationTick = delay-1;
         animationMode = ANIMATION_MODE_ANIMATE_IMAGE;
     }
