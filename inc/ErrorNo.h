@@ -30,7 +30,10 @@ enum ErrorCode{
     MICROBIT_CANCELLED = -1007,
 
     // I2C Communication error occured (typically I2C module on processor has locked up.)
-    MICROBIT_I2C_ERROR = -1010
+    MICROBIT_I2C_ERROR = -1010,
+
+    // The serial bus is currently in use by another fiber.
+    MICROBIT_SERIAL_IN_USE = -1011
 };
 
 /**
