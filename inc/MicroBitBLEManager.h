@@ -75,6 +75,15 @@ class MicroBitBLEManager
     void init(ManagedString deviceName, ManagedString serialNumber);
 
     /**
+     * Change the output power level of the transmitter to the given value.
+     *
+     * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest. 
+     * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
+     *
+     */
+    int setTransmitPower(int power);
+    
+    /**
      * Enter pairing mode. This is mode is called to initiate pairing, and to enable FOTA programming
      * of the micro:bit in cases where BLE is disabled during normal operation.
      *

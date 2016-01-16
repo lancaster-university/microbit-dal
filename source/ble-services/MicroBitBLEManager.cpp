@@ -25,6 +25,7 @@
 #define MICROBIT_BLE_REQUIRE_MITM		true
 
 #define MICROBIT_PAIRING_FADE_SPEED		4
+#define MICROBIT_BLE_POWER_LEVELS       8
 
 
 const char* MICROBIT_BLE_MANUFACTURER = "The Cast of W1A";
@@ -32,7 +33,7 @@ const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
 const char* MICROBIT_BLE_HARDWARE_VERSION = "1.0";
 const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
-
+const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 
 /*
  * Many of the mbed interfaces we need to use only support callbacks to plain C functions, rather than C++ methods.
@@ -220,8 +221,26 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     if (whitelist.size > 0)
 #endif        
         ble->startAdvertising();
-
 }
+
+/**
+ * Change the output power level of the transmitter to the given value.
+ *
+ * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest. 
+ * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
+ *
+ */
+int MicroBitBLEManager::setTransmitPower(int power)
+{
+    if (power < 0 || power >= MICROBIT_BLE_POWER_LEVELS)
+        return MICROBIT_INVALID_PARAMETER;
+
+    if (ble->gap().setTxPower(MICROBIT_BLE_POWER_LEVEL[power]) != NRF_SUCCESS)
+        return MICROBIT_NOT_SUPPORTED;
+
+    return MICROBIT_OK;
+}
+
 
 /**
  * A request to pair has been received from a BLE device.
