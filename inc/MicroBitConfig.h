@@ -157,6 +157,14 @@
 #define MICROBIT_BLE_ADVERTISING_TIMEOUT    0
 #endif
 
+// Defines default power level of the BLE radio transmitter.
+// Valid values are in the range 0..7 inclusive, with 0 being the lowest power and 7 the highest power.
+// Based on trials undertaken by the BBC, the radio is normally set to its lowest power level
+// to best protect children's privacy. 
+#ifndef MICROBIT_BLE_DEFAULT_TX_POWER
+#define MICROBIT_BLE_DEFAULT_TX_POWER       0
+#endif
+
 // Enable/Disable BLE Service: MicroBitDFU
 // This allows over the air programming during normal operation.
 // Set '1' to enable. 

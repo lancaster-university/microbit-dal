@@ -154,6 +154,9 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
 #endif    
 
+    // Configure the radio at our default power level
+    setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER); 
+
     // Bring up any configured auxiliary services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
