@@ -129,13 +129,13 @@
 // Enable/Disable BLE during normal operation.
 // Set '1' to enable. 
 #ifndef MICROBIT_BLE_ENABLED
-#define MICROBIT_BLE_ENABLED        1
+#define MICROBIT_BLE_ENABLED                1
 #endif
 
 // Enable/Disable BLE pairing mode mode at power up.
 // Set '1' to enable. 
 #ifndef MICROBIT_BLE_PAIRING_MODE
-#define MICROBIT_BLE_PAIRING_MODE	1
+#define MICROBIT_BLE_PAIRING_MODE	        1
 #endif
 
 // Enable/Disable the use of private resolvable addresses.
@@ -144,11 +144,24 @@
 #define MICROBIT_BLE_PRIVATE_ADDRESSES		0
 #endif
 
+// Enable/Disbale the use of BLE whitelisting.
+// If enabled, the micro:bit will only respond to conneciton requests from
+// known, bonded devices.
+#ifndef MICROBIT_BLE_WHITELIST
+#define MICROBIT_BLE_WHITELIST              1
+#endif
+
+// Define the period of time for which the BLE stack will advertise (seconds)
+// Afer this period, advertising will cease. Set to '0' for no timeout (always advertise).
+#ifndef MICROBIT_BLE_ADVERTISING_TIMEOUT
+#define MICROBIT_BLE_ADVERTISING_TIMEOUT    0
+#endif
+
 // Enable/Disable BLE Service: MicroBitDFU
 // This allows over the air programming during normal operation.
 // Set '1' to enable. 
 #ifndef MICROBIT_BLE_DFU_SERVICE
-#define MICROBIT_BLE_DFU_SERVICE    1
+#define MICROBIT_BLE_DFU_SERVICE            1
 #endif
 
 // Enable/Disable BLE Service: MicroBitEventService

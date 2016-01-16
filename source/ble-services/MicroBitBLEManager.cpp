@@ -24,8 +24,6 @@
 #define MICROBIT_BLE_ENABLE_BONDING 	true
 #define MICROBIT_BLE_REQUIRE_MITM		true
 
-
-#define MICROBIT_PAIRING_MODE_TIMEOUT	90
 #define MICROBIT_PAIRING_FADE_SPEED		4
 
 
@@ -34,6 +32,7 @@ const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
 const char* MICROBIT_BLE_HARDWARE_VERSION = "1.0";
 const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
+
 
 /*
  * Many of the mbed interfaces we need to use only support callbacks to plain C functions, rather than C++ methods.
@@ -50,7 +49,7 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
     (void) reason; /* -Wunused-param */
 
     if (manager)
-	    manager->onDisconnectionCallback();
+	    manager->advertise();
 
 }
 
@@ -88,14 +87,14 @@ MicroBitBLEManager::MicroBitBLEManager()
 }
 
 /**
-  * Method that is called whenever a BLE device disconnects from us.
-  * The nordic stack stops dvertising whenever a device connects, so we use
-  * this callback to restart advertising.
+  * Makes the micro:bit discoverable via BLE, such that bonded devices can connect
+  * When called, the micro:bit will begin advertising for a predefined period, thereby allowing
+  * bonded devices to connect.
   */
-void MicroBitBLEManager::onDisconnectionCallback()
+void MicroBitBLEManager::advertise()
 {
-	if(ble)
-    	ble->startAdvertising();
+    if(ble)
+        ble->gap().startAdvertising();
 }
 
 /**
@@ -131,7 +130,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
 #if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
 	// Configure for private addresses, so kids' behaviour can't be easily tracked.
-	ble->setAddress(Gap::ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE, NULL);
+	ble->gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
 #endif
 
     // Setup our security requirements.
@@ -139,8 +138,9 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
     ble->securityManager().init(MICROBIT_BLE_ENABLE_BONDING, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
-    // Configure a whitelist to filter all traffic from unbonded devices. Most BLE stacks only permit one connection at a time,
-    // so this prevents denial of service attacks.
+#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
+    // Configure a whitelist to filter all connection requetss from unbonded devices. 
+    // Most BLE stacks only permit one connection at a time, so this prevents denial of service attacks.
     BLEProtocol::Address_t bondedAddresses[4];
     Gap::Whitelist_t whitelist;
     whitelist.addresses = bondedAddresses;
@@ -148,6 +148,10 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     ble->securityManager().getAddressesFromBondTable(whitelist);
     ble->gap().setWhitelist(whitelist);
+
+    ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
+    ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
+#endif    
 
     // Bring up any configured auxiliary services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
@@ -195,13 +199,28 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->setPreferredConnectionParams(&fast);
 
     // Setup advertising.
+#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED);
+#else
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+#endif
+
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
 
+#if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
+    ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
+#endif
+
+    // If we have whitelisting enabled, then prevent only enable advertising of we have any binded devices...
+    // This is to further protect kids' privacy. If no-one initiates BLE, then the device is unreachable.
+    // If whiltelisting is disabled, then we always advertise.
+#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     if (whitelist.size > 0)
+#endif        
         ble->startAdvertising();
+
 }
 
 /**
@@ -242,13 +261,16 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 	int brightness = 255;
 	int fadeDirection = 0;
 
-    // Clear the whitelist, so we're discoverable by all BLE devices.
+    // Clear the whitelist (if we have one), so that we're discoverable by all BLE devices.
+#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     BLEProtocol::Address_t addresses[4];
     Gap::Whitelist_t whitelist;
     whitelist.addresses = addresses;
     whitelist.capacity = 4;
     whitelist.size = 0;
     ble->gap().setWhitelist(whitelist);
+    ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_IGNORE_WHITELIST);
+#endif
 
 	// Update the advertised name of this micro:bit to include the device name
     ble->clearAdvertisingPayload();
@@ -257,7 +279,9 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
-    ble->startAdvertising();
+
+    ble->gap().setAdvertisingTimeout(0);
+    ble->gap().startAdvertising();
 
 	// Stop any running animations on the display
 	display.stopAnimation();
@@ -330,7 +354,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 		uBit.sleep(30);
 		timeInPairingMode++;
 
-		if (timeInPairingMode >= MICROBIT_PAIRING_MODE_TIMEOUT * 30)
+		if (timeInPairingMode >= MICROBIT_BLE_PAIRING_TIMEOUT * 30)
 			microbit_reset();
 	}
 }

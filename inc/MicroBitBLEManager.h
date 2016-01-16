@@ -33,10 +33,12 @@
 #include "MicroBitTemperatureService.h"
 #include "ExternalEvents.h"
 
-#define MICROBIT_BLE_PAIR_REQUEST		0x01
-#define MICROBIT_BLE_PAIR_COMPLETE		0x02
-#define MICROBIT_BLE_PAIR_PASSCODE		0x04
-#define MICROBIT_BLE_PAIR_SUCCESSFUL	0x08
+#define MICROBIT_BLE_PAIR_REQUEST               0x01
+#define MICROBIT_BLE_PAIR_COMPLETE              0x02
+#define MICROBIT_BLE_PAIR_PASSCODE              0x04
+#define MICROBIT_BLE_PAIR_SUCCESSFUL            0x08
+
+#define MICROBIT_BLE_PAIRING_TIMEOUT	        90
 
 /**
   * Class definition for the MicroBitBLEManager.
@@ -81,36 +83,36 @@ class MicroBitBLEManager
     void pairingMode(MicroBitDisplay &display);
 
     /**
-     * Method that is called whenever a BLE device disconnects from us.
-     * The nordic stack stops dvertising whenever a device connects, so we use
-     * this callback to restart advertising.
+     * Makes the micro:bit discoverable via BLE, such that bonded devices can connect
+     * When called, the micro:bit will begin advertising for a predefined period, 
+     * (MICROBIT_BLE_ADVERTISING_TIMEOUT seconds) thereby allowing bonded devices to connect.
      */
-    void onDisconnectionCallback();
-
-	/**
-	 * Displays the device's ID code as a histogram on the LED matrix display.
-	 */
-	void			showNameHistogram(MicroBitDisplay &display);
+    void advertise();
 
 	/**
 	 * A request to pair has been received from a BLE device.
 	 * If we're in pairing mode, display the passkey to the user.
 	 */
-	void			pairingRequested(ManagedString passKey);
+	void pairingRequested(ManagedString passKey);
 
 	/**
 	 * A pairing request has been sucesfully completed.
 	 * If we're in pairing mode, display feedback to the user.
 	 */
-	void			pairingComplete(bool success);
+	void pairingComplete(bool success);
 
-	private:
+    private:
+
+	/**
+	 * Displays the device's ID code as a histogram on the LED matrix display.
+	 */
+	void showNameHistogram(MicroBitDisplay &display);
+
 	int				pairingStatus;
 	ManagedString	passKey;
 	ManagedString	deviceName;
 
 };
-
 
 #endif
 
