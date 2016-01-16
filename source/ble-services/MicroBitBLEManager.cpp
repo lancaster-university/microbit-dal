@@ -26,6 +26,7 @@
 
 #define MICROBIT_PAIRING_FADE_SPEED		4
 #define MICROBIT_BLE_POWER_LEVELS       8
+#define MICROBIT_BLE_MAXIMUM_BONDS      4
 
 
 const char* MICROBIT_BLE_MANUFACTURER = "The Cast of W1A";
@@ -142,10 +143,10 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     // Configure a whitelist to filter all connection requetss from unbonded devices. 
     // Most BLE stacks only permit one connection at a time, so this prevents denial of service attacks.
-    BLEProtocol::Address_t bondedAddresses[4];
+    BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
     Gap::Whitelist_t whitelist;
     whitelist.addresses = bondedAddresses;
-    whitelist.capacity = 4;
+    whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
 
     ble->securityManager().getAddressesFromBondTable(whitelist);
     ble->gap().setWhitelist(whitelist);
@@ -244,13 +245,39 @@ int MicroBitBLEManager::setTransmitPower(int power)
     return MICROBIT_OK;
 }
 
+/**
+ * Determines the number of devices currently bonded with this micro:bit
+ * @return The number of active bonds.
+ */
+int MicroBitBLEManager::getBondCount()
+{
+    BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
+    Gap::Whitelist_t whitelist;
+    whitelist.addresses = bondedAddresses;
+    whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
+    ble->securityManager().getAddressesFromBondTable(whitelist);
+
+    return whitelist.size;
+}
 
 /**
  * A request to pair has been received from a BLE device.
  * If we're in pairing mode, display the passkey to the user.
+ * Also, purge the binding table if it has reached capacity.
  */
 void MicroBitBLEManager::pairingRequested(ManagedString passKey)
 {
+    // Firstly, determine if there is free space in the bonding table.
+    // If not, clear it out to make room.
+    
+    // TODO: It would be much better to implement some sort of LRU/NFU policy here,
+    // but this isn't currently supported in mbed, so we'd need to layer break...
+
+    // If we're full, empty the bond table.
+    if (getBondCount() >= MICROBIT_BLE_MAXIMUM_BONDS)
+        ble->securityManager().purgeAllBondingState();
+    
+    // Update our mode to display the passkey. 
 	this->passKey = passKey;
 	this->pairingStatus = MICROBIT_BLE_PAIR_REQUEST;
 }
@@ -283,12 +310,14 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 	int brightness = 255;
 	int fadeDirection = 0;
 
+    ble->gap().stopAdvertising();
+
     // Clear the whitelist (if we have one), so that we're discoverable by all BLE devices.
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
-    BLEProtocol::Address_t addresses[4];
+    BLEProtocol::Address_t addresses[MICROBIT_BLE_MAXIMUM_BONDS];
     Gap::Whitelist_t whitelist;
     whitelist.addresses = addresses;
-    whitelist.capacity = 4;
+    whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
     whitelist.size = 0;
     ble->gap().setWhitelist(whitelist);
     ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_IGNORE_WHITELIST);
@@ -365,6 +394,21 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 			{
 				MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
 				display.print(tick,0,0,0);
+                uBit.sleep(5000);
+
+                /*
+                 * Disabled, as the API to return the number of active bonds is not reliable at present...
+                 *
+                display.clear();
+                ManagedString c(getBondCount());
+                ManagedString c2("/");
+                ManagedString c3(MICROBIT_BLE_MAXIMUM_BONDS);
+                ManagedString c4("USED");
+
+                display.scroll(c+c2+c3+c4);
+                *
+                *
+                */
 			}
 			else
 			{
