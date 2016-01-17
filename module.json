@@ -15,8 +15,9 @@
   "homepage": "https://developer.mbed.org/teams/Lancaster-University/code/microbit/",
   "dependencies": {
     "mbed-classic": "~0.0.4",
-    "ble": "lancaster-university/BLE_API#v2.1.11",
-    "ble-nrf51822": "lancaster-university/nrf51822#v2.2.5"
+    "ble": "lancaster-university/BLE_API#v2.5.0+mb",
+    "ble-nrf51822": "lancaster-university/nrf51822#v2.5.0+mb",
+    "nrf51-sdk":"lancaster-university/nrf51-sdk#v2.2.0+mb"
   },
   "extraIncludes": [
     "inc"
