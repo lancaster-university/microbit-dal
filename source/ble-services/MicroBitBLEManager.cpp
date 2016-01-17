@@ -24,9 +24,9 @@
 #define MICROBIT_BLE_ENABLE_BONDING 	true
 #define MICROBIT_BLE_REQUIRE_MITM		true
 
-
-#define MICROBIT_PAIRING_MODE_TIMEOUT	90
 #define MICROBIT_PAIRING_FADE_SPEED		4
+#define MICROBIT_BLE_POWER_LEVELS       8
+#define MICROBIT_BLE_MAXIMUM_BONDS      4
 
 
 const char* MICROBIT_BLE_MANUFACTURER = "The Cast of W1A";
@@ -34,6 +34,7 @@ const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
 const char* MICROBIT_BLE_HARDWARE_VERSION = "1.0";
 const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
+const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 
 /*
  * Many of the mbed interfaces we need to use only support callbacks to plain C functions, rather than C++ methods.
@@ -50,8 +51,17 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
     (void) reason; /* -Wunused-param */
 
     if (manager)
-	    manager->onDisconnectionCallback();
+	    manager->advertise();
 
+}
+
+/**
+  * Callback when a BLE GATT connect occurs.
+  */
+static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
+{
+    // Ensure that there's no stale, cached information in the client... invalidate all characteristics.
+    sd_ble_gatts_service_changed(reason->handle, 0x000c, 0xffff); 
 }
 
 static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::Passkey_t passkey)
@@ -88,14 +98,14 @@ MicroBitBLEManager::MicroBitBLEManager()
 }
 
 /**
-  * Method that is called whenever a BLE device disconnects from us.
-  * The nordic stack stops dvertising whenever a device connects, so we use
-  * this callback to restart advertising.
+  * Makes the micro:bit discoverable via BLE, such that bonded devices can connect
+  * When called, the micro:bit will begin advertising for a predefined period, thereby allowing
+  * bonded devices to connect.
   */
-void MicroBitBLEManager::onDisconnectionCallback()
+void MicroBitBLEManager::advertise()
 {
-	if(ble)
-    	ble->startAdvertising();
+    if(ble)
+        ble->gap().startAdvertising();
 }
 
 /**
@@ -121,6 +131,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     // automatically restart advertising after a device disconnects.
     ble->onDisconnection(bleDisconnectionCallback);
+    ble->onConnection(bleConnectionCallback);
 
     // configure the stack to hold on to CPU during critical timing events.
     // mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures
@@ -131,7 +142,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
 #if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
 	// Configure for private addresses, so kids' behaviour can't be easily tracked.
-	ble->setAddress(Gap::ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE, NULL);
+	ble->gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
 #endif
 
     // Setup our security requirements.
@@ -139,7 +150,25 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
     ble->securityManager().init(MICROBIT_BLE_ENABLE_BONDING, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
-  // Bring up any configured auxiliary services.
+#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
+    // Configure a whitelist to filter all connection requetss from unbonded devices. 
+    // Most BLE stacks only permit one connection at a time, so this prevents denial of service attacks.
+    BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
+    Gap::Whitelist_t whitelist;
+    whitelist.addresses = bondedAddresses;
+    whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
+
+    ble->securityManager().getAddressesFromBondTable(whitelist);
+    ble->gap().setWhitelist(whitelist);
+
+    ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
+    ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
+#endif    
+
+    // Configure the radio at our default power level
+    setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER); 
+
+    // Bring up any configured auxiliary services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
 #endif
@@ -185,19 +214,80 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->setPreferredConnectionParams(&fast);
 
     // Setup advertising.
+#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED);
+#else
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+#endif
+
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
-    ble->startAdvertising();
+
+#if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
+    ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
+#endif
+
+    // If we have whitelisting enabled, then prevent only enable advertising of we have any binded devices...
+    // This is to further protect kids' privacy. If no-one initiates BLE, then the device is unreachable.
+    // If whiltelisting is disabled, then we always advertise.
+#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
+    if (whitelist.size > 0)
+#endif        
+        ble->startAdvertising();
+}
+
+/**
+ * Change the output power level of the transmitter to the given value.
+ *
+ * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest. 
+ * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
+ *
+ */
+int MicroBitBLEManager::setTransmitPower(int power)
+{
+    if (power < 0 || power >= MICROBIT_BLE_POWER_LEVELS)
+        return MICROBIT_INVALID_PARAMETER;
+
+    if (ble->gap().setTxPower(MICROBIT_BLE_POWER_LEVEL[power]) != NRF_SUCCESS)
+        return MICROBIT_NOT_SUPPORTED;
+
+    return MICROBIT_OK;
+}
+
+/**
+ * Determines the number of devices currently bonded with this micro:bit
+ * @return The number of active bonds.
+ */
+int MicroBitBLEManager::getBondCount()
+{
+    BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
+    Gap::Whitelist_t whitelist;
+    whitelist.addresses = bondedAddresses;
+    whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
+    ble->securityManager().getAddressesFromBondTable(whitelist);
+
+    return whitelist.size;
 }
 
 /**
  * A request to pair has been received from a BLE device.
  * If we're in pairing mode, display the passkey to the user.
+ * Also, purge the binding table if it has reached capacity.
  */
 void MicroBitBLEManager::pairingRequested(ManagedString passKey)
 {
+    // Firstly, determine if there is free space in the bonding table.
+    // If not, clear it out to make room.
+    
+    // TODO: It would be much better to implement some sort of LRU/NFU policy here,
+    // but this isn't currently supported in mbed, so we'd need to layer break...
+
+    // If we're full, empty the bond table.
+    if (getBondCount() >= MICROBIT_BLE_MAXIMUM_BONDS)
+        ble->securityManager().purgeAllBondingState();
+    
+    // Update our mode to display the passkey. 
 	this->passKey = passKey;
 	this->pairingStatus = MICROBIT_BLE_PAIR_REQUEST;
 }
@@ -230,6 +320,19 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 	int brightness = 255;
 	int fadeDirection = 0;
 
+    ble->gap().stopAdvertising();
+
+    // Clear the whitelist (if we have one), so that we're discoverable by all BLE devices.
+#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
+    BLEProtocol::Address_t addresses[MICROBIT_BLE_MAXIMUM_BONDS];
+    Gap::Whitelist_t whitelist;
+    whitelist.addresses = addresses;
+    whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
+    whitelist.size = 0;
+    ble->gap().setWhitelist(whitelist);
+    ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_IGNORE_WHITELIST);
+#endif
+
 	// Update the advertised name of this micro:bit to include the device name
     ble->clearAdvertisingPayload();
 
@@ -237,7 +340,9 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
-    ble->startAdvertising();
+
+    ble->gap().setAdvertisingTimeout(0);
+    ble->gap().startAdvertising();
 
 	// Stop any running animations on the display
 	display.stopAnimation();
@@ -299,6 +404,21 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 			{
 				MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
 				display.print(tick,0,0,0);
+                uBit.sleep(5000);
+
+                /*
+                 * Disabled, as the API to return the number of active bonds is not reliable at present...
+                 *
+                display.clear();
+                ManagedString c(getBondCount());
+                ManagedString c2("/");
+                ManagedString c3(MICROBIT_BLE_MAXIMUM_BONDS);
+                ManagedString c4("USED");
+
+                display.scroll(c+c2+c3+c4);
+                *
+                *
+                */
 			}
 			else
 			{
@@ -310,7 +430,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 		uBit.sleep(30);
 		timeInPairingMode++;
 
-		if (timeInPairingMode >= MICROBIT_PAIRING_MODE_TIMEOUT * 30)
+		if (timeInPairingMode >= MICROBIT_BLE_PAIRING_TIMEOUT * 30)
 			microbit_reset();
 	}
 }
