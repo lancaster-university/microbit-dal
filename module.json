@@ -1,6 +1,6 @@
 {
   "name": "microbit-dal",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "license": "Apache2",
   "description": "The runtime library for the BBC micro:bit, developed by Lancaster University",
   "keywords": [
@@ -17,7 +17,7 @@
     "mbed-classic": "~0.0.4",
     "ble": "lancaster-university/BLE_API#v2.5.0+mb",
     "ble-nrf51822": "lancaster-university/nrf51822#v2.5.0+mb",
-    "nrf51-sdk":"lancaster-university/nrf51-sdk#v2.2.0+mb"
+    "nrf51-sdk": "lancaster-university/nrf51-sdk#v2.2.0+mb"
   },
   "extraIncludes": [
     "inc"
