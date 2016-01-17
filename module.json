@@ -1,6 +1,6 @@
 {
   "name": "microbit-dal",
-  "version": "1.4.4",
+  "version": "1.4.6",
   "license": "Apache2",
   "description": "The runtime library for the BBC micro:bit, developed by Lancaster University",
   "keywords": [

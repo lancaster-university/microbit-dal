@@ -17,8 +17,8 @@
 #define MICROBIT_BUTTON_EVT_HOLD                5
 #define MICROBIT_BUTTON_EVT_DOUBLE_CLICK        6
 
-#define MICROBIT_BUTTON_LONG_CLICK_TIME         1000  
-#define MICROBIT_BUTTON_HOLD_TIME               1500  
+#define MICROBIT_BUTTON_LONG_CLICK_TIME         1000
+#define MICROBIT_BUTTON_HOLD_TIME               1500
 
 #define MICROBIT_BUTTON_STATE                   1
 #define MICROBIT_BUTTON_STATE_HOLD_TRIGGERED    2
@@ -47,27 +47,27 @@ class MicroBitButton : public MicroBitComponent
 {
     PinName name;                                           // mbed pin name of this pin.
     DigitalIn pin;                                          // The mbed object looking after this pin at any point in time (may change!).
-    
+
     unsigned long downStartTime;                            // used to store the current system clock when a button down event occurs
     uint8_t sigma;                                          // integration of samples over time. We use this for debouncing, and noise tolerance for touch sensing
     MicroBitButtonEventConfiguration eventConfiguration;    // Do we want to generate high level event (clicks), or defer this to another service.
-    
+
     public:
 
     /**
-      * Constructor. 
+      * Constructor.
       * Create a pin representation with the given ID.
       * @param id the ID of the new MicroBitButton object.
       * @param name the physical pin on the processor that this butotn is connected to.
       * @param mode the configuration of internal pullups/pulldowns, as define in the mbed PinMode class. PullNone by default.
       *
       * Example:
-      * @code 
+      * @code
       * buttonA(MICROBIT_ID_BUTTON_A,MICROBIT_PIN_BUTTON_A); //a number between 0 and 200 inclusive
       * @endcode
       *
       * Possible Events:
-      * @code 
+      * @code
       * MICROBIT_BUTTON_EVT_DOWN
       * MICROBIT_BUTTON_EVT_UP
       * MICROBIT_BUTTON_EVT_CLICK
@@ -77,25 +77,29 @@ class MicroBitButton : public MicroBitComponent
       * @endcode
       */
     MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventConfiguration eventConfiguration = MICROBIT_BUTTON_ALL_EVENTS, PinMode mode = PullNone);
-    
+
     /**
       * Tests if this Button is currently pressed.
       * @return 1 if this button is pressed, 0 otherwise.
       *
       * Example:
-      * @code 
+      * @code
       * if(uBit.buttonA.isPressed())
       *     print("Pressed!");
       * @endcode
       */
     int isPressed();
-    
+
     /**
       * periodic callback from MicroBit clock.
       * Check for state change for this button, and fires a hold event if button is pressed.
-      */  
+      */
     virtual void systemTick();
-    
+
+    /**
+      * Destructor for MicroBitButton, so that we deregister ourselves as a systemComponent
+      */
+    ~MicroBitButton();
 };
 
 #endif

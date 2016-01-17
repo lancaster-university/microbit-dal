@@ -5,7 +5,7 @@
   */
 void panic(int statusCode)
 {
-    uBit.panic(statusCode);   
+    uBit.panic(statusCode);
 }
 
 /**
@@ -43,30 +43,30 @@ void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
     (void) reason; /* -Wunused-param */
 
-    uBit.ble->startAdvertising(); 
+    uBit.ble->startAdvertising();
 }
 
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a representation of a MicroBit device as a global singleton.
   * @param messageBus callback function to receive MicroBitMessageBus events.
   *
   * Exposed objects:
-  * @code 
+  * @code
   * uBit.systemTicker; //the Ticker callback that performs routines like updating the display.
   * uBit.MessageBus; //The message bus where events are fired.
   * uBit.display; //The display object for the LED matrix.
   * uBit.buttonA; //The buttonA object for button a.
   * uBit.buttonB; //The buttonB object for button b.
-  * uBit.buttonAB; //The buttonAB object for button a+b multi press.  
+  * uBit.buttonAB; //The buttonAB object for button a+b multi press.
   * uBit.resetButton; //The resetButton used for soft resets.
   * uBit.accelerometer; //The object that represents the inbuilt accelerometer
   * uBit.compass; //The object that represents the inbuilt compass(magnetometer)
   * uBit.io.P*; //Where P* is P0 to P16, P19 & P20 on the edge connector
   * @endcode
   */
-MicroBit::MicroBit() : 
+MicroBit::MicroBit() :
     flags(0x00),
     i2c(MICROBIT_PIN_SDA, MICROBIT_PIN_SCL),
     serial(USBTX, USBRX),
@@ -74,7 +74,7 @@ MicroBit::MicroBit() :
     display(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_WIDTH, MICROBIT_DISPLAY_HEIGHT),
     buttonA(MICROBIT_ID_BUTTON_A,MICROBIT_PIN_BUTTON_A, MICROBIT_BUTTON_SIMPLE_EVENTS),
     buttonB(MICROBIT_ID_BUTTON_B,MICROBIT_PIN_BUTTON_B, MICROBIT_BUTTON_SIMPLE_EVENTS),
-    buttonAB(MICROBIT_ID_BUTTON_AB,MICROBIT_ID_BUTTON_A,MICROBIT_ID_BUTTON_B), 
+    buttonAB(MICROBIT_ID_BUTTON_AB,MICROBIT_ID_BUTTON_A,MICROBIT_ID_BUTTON_B),
     accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR),
     compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR),
     thermometer(MICROBIT_ID_THERMOMETER),
@@ -86,25 +86,25 @@ MicroBit::MicroBit() :
        MICROBIT_ID_IO_P15,MICROBIT_ID_IO_P16,MICROBIT_ID_IO_P19,
        MICROBIT_ID_IO_P20),
 	bleManager()
-{   
+{
 }
 
 /**
   * Post constructor initialisation method.
-  * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a 
+  * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a
   * static context, so we bring it up here rather than in the constructor.
   * n.b. This method *must* be called in main() or later, not before.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.init();
   * @endcode
   */
 void MicroBit::init()
-{   
+{
     //add the display to the systemComponent array
     addSystemComponent(&uBit.display);
-    
+
     //add the compass and accelerometer to the idle array
     addIdleComponent(&uBit.accelerometer);
     addIdleComponent(&uBit.compass);
@@ -114,14 +114,14 @@ void MicroBit::init()
     seedRandom();
 
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
-    // Start the BLE stack.        
+    // Start the BLE stack.
     bleManager.init(this->getName(), this->getSerial());
-	  
+
     ble = bleManager.ble;
 #endif
 
     // Start refreshing the Matrix Display
-    systemTicker.attach(this, &MicroBit::systemTick, MICROBIT_DISPLAY_REFRESH_PERIOD);     
+    systemTicker.attach(this, &MicroBit::systemTick, MICROBIT_DISPLAY_REFRESH_PERIOD);
 
     // Register our compass calibration algorithm.
     MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBit::compassCalibrator, MESSAGE_BUS_LISTENER_IMMEDIATE);
@@ -146,7 +146,7 @@ void MicroBit::compassCalibrator(MicroBitEvent)
     const int PIXEL2_THRESHOLD = 800;
 
 	Matrix4 X(PERIMETER_POINTS, 4);
-    Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {4,1,0}, {4,2,0}, {4,3,0}, {3,4,0}, {2,4,0}, {1,4,0}, {0,3,0}, {0,2,0}, {0,1,0}}; 
+    Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {4,1,0}, {4,2,0}, {4,3,0}, {3,4,0}, {2,4,0}, {1,4,0}, {0,3,0}, {0,2,0}, {0,1,0}};
     Point cursor = {2,2,0};
 
     MicroBitImage img(5,5);
@@ -186,7 +186,7 @@ void MicroBit::compassCalibrator(MicroBitEvent)
             cursor.x = 4;
         else if (x > PIXEL1_THRESHOLD)
             cursor.x = 3;
-        else 
+        else
             cursor.x = 2;
 
         if (y < -PIXEL2_THRESHOLD)
@@ -244,13 +244,13 @@ void MicroBit::compassCalibrator(MicroBitEvent)
 		Y.set(i, 0, v);
 	}
 
-    // Now perform a Least Squares Approximation. 
+    // Now perform a Least Squares Approximation.
 	Matrix4 XT = X.transpose();
 	Matrix4 Beta = XT.multiply(X).invert().multiply(XT).multiply(Y);
 
     // The result contains the approximate zero point of each axis, but doubled.
     // Halve each sample, and record this as the compass calibration data.
-    CompassSample cal = {(int)(Beta.get(0,0) / 2), (int)(Beta.get(1,0) / 2), (int)(Beta.get(2,0) / 2)};
+    CompassSample cal ((int)(Beta.get(0,0) / 2), (int)(Beta.get(1,0) / 2), (int)(Beta.get(2,0) / 2));
     compass.setCalibration(cal);
 
     // Show a smiley to indicate that we're done, and continue on with the user program.
@@ -267,11 +267,11 @@ void MicroBit::compassCalibrator(MicroBitEvent)
 ManagedString MicroBit::getName()
 {
     char nameBuffer[MICROBIT_NAME_LENGTH];
-    const uint8_t codebook[MICROBIT_NAME_LENGTH][MICROBIT_NAME_CODE_LETTERS] = 
+    const uint8_t codebook[MICROBIT_NAME_LENGTH][MICROBIT_NAME_CODE_LETTERS] =
     {
-        {'z', 'v', 'g', 'p', 't'},  
+        {'z', 'v', 'g', 'p', 't'},
         {'u', 'o', 'i', 'e', 'a'},
-        {'z', 'v', 'g', 'p', 't'},  
+        {'z', 'v', 'g', 'p', 't'},
         {'u', 'o', 'i', 'e', 'a'},
         {'z', 'v', 'g', 'p', 't'}
     };
@@ -309,7 +309,7 @@ ManagedString MicroBit::getSerial()
     int n1 = NRF_FICR->DEVICEID[1] & 0xffff;
     int n2 = (NRF_FICR->DEVICEID[1] >> 16) & 0xffff;
 
-    // Simply concat the two numbers. 
+    // Simply concat the two numbers.
     ManagedString s1 = ManagedString(n1);
     ManagedString s2 = ManagedString(n2);
 
@@ -320,7 +320,7 @@ ManagedString MicroBit::getSerial()
   * Will reset the micro:bit when called.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.reset();
   * @endcode
   */
@@ -334,15 +334,15 @@ void MicroBit::reset()
   * If the scheduler is running, this will deschedule the current fiber and perform
   * a power efficent, concurrent sleep operation.
   * If the scheduler is disabled or we're running in an interrupt context, this
-  * will revert to a busy wait. 
+  * will revert to a busy wait.
   *
   * @note Values of below below the scheduling period (typical 6ms) tend to lose resolution.
-  * 
+  *
   * @param milliseconds the amount of time, in ms, to wait for. This number cannot be negative.
-  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER milliseconds is less than zero. 
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER milliseconds is less than zero.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.sleep(20); //sleep for 20ms
   * @endcode
   */
@@ -351,7 +351,7 @@ int MicroBit::sleep(int milliseconds)
     //sanity check, we can't time travel... (yet?)
     if(milliseconds < 0)
         return MICROBIT_INVALID_PARAMETER;
-        
+
     if (flags & MICROBIT_FLAG_SCHEDULER_RUNNING)
         fiber_sleep(milliseconds);
     else
@@ -368,14 +368,14 @@ int MicroBit::sleep(int milliseconds)
   * than the hardware random number generator built int the processor, which takes
   * a long time and uses a lot of energy.
   *
-  * KIDS: You shouldn't use this is the real world to generte cryptographic keys though... 
+  * KIDS: You shouldn't use this is the real world to generte cryptographic keys though...
   * have a think why not. :-)
   *
   * @param max the upper range to generate a number for. This number cannot be negative
   * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_VALUE (defined in ErrorNo.h) if max is <= 0.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.random(200); //a number between 0 and 199
   * @endcode
   */
@@ -395,7 +395,7 @@ int MicroBit::random(int max)
         result = 0;
 		do {
             // Cycle the LFSR (Linear Feedback Shift Register).
-            // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneier here (a true legend in the field!), 
+            // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneier here (a true legend in the field!),
             // For those interested, it's documented in his paper:
             // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
             // https://www.schneier.com/paper-pseudorandom-sequence.html
@@ -414,7 +414,7 @@ int MicroBit::random(int max)
 			randomValue = rnd;
 
             result = ((result << 1) | (rnd & 0x00000001));
-        } while(m >>= 1); 
+        } while(m >>= 1);
     } while (result > (uint32_t)max);
 
 
@@ -432,21 +432,21 @@ int MicroBit::random(int max)
 void MicroBit::seedRandom()
 {
     randomValue = 0;
-        
+
     // Start the Random number generator. No need to leave it running... I hope. :-)
     NRF_RNG->TASKS_START = 1;
-    
+
     for(int i = 0; i < 4 ;i++)
     {
         // Clear the VALRDY EVENT
         NRF_RNG->EVENTS_VALRDY = 0;
-        
+
         // Wait for a number ot be generated.
         while ( NRF_RNG->EVENTS_VALRDY == 0);
-        
+
         randomValue = (randomValue << 8) | ((int) NRF_RNG->VALUE);
     }
-    
+
     // Disable the generator to save power.
     NRF_RNG->TASKS_STOP = 1;
 }
@@ -456,11 +456,11 @@ void MicroBit::seedRandom()
   * Periodic callback. Used by MicroBitDisplay, FiberScheduler and buttons.
   */
 void MicroBit::systemTick()
-{   
+{
     // Scheduler callback. We do this here just as a single timer is more efficient. :-)
     if (uBit.flags & MICROBIT_FLAG_SCHEDULER_RUNNING)
-        scheduler_tick();  
-    
+        scheduler_tick();
+
     //work out if any idle components need processing, if so prioritise the idle thread
     for(int i = 0; i < MICROBIT_IDLE_COMPONENTS; i++)
         if(idleThreadComponents[i] != NULL && idleThreadComponents[i]->isIdleCallbackNeeded())
@@ -468,7 +468,7 @@ void MicroBit::systemTick()
             fiber_flags |= MICROBIT_FLAG_DATA_READY;
             break;
         }
-        
+
     //update any components in the systemComponents array
     for(int i = 0; i < MICROBIT_SYSTEM_COMPONENTS; i++)
         if(systemTickComponents[i] != NULL)
@@ -479,17 +479,17 @@ void MicroBit::systemTick()
   * System tasks to be executed by the idle thread when the Micro:Bit isn't busy or when data needs to be read.
   */
 void MicroBit::systemTasks()
-{   
-    //call the idleTick member function indiscriminately 
+{
+    //call the idleTick member function indiscriminately
     for(int i = 0; i < MICROBIT_IDLE_COMPONENTS; i++)
         if(idleThreadComponents[i] != NULL)
             idleThreadComponents[i]->idleTick();
-    
+
     fiber_flags &= ~MICROBIT_FLAG_DATA_READY;
 }
 
 /**
-  * add a component to the array of components which invocate the systemTick member function during a systemTick 
+  * add a component to the array of components which invocate the systemTick member function during a systemTick
   * @param component The component to add.
   * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
   * @note this will be converted into a dynamic list of components
@@ -497,14 +497,14 @@ void MicroBit::systemTasks()
 int MicroBit::addSystemComponent(MicroBitComponent *component)
 {
     int i = 0;
-    
-    while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)  
+
+    while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)
         i++;
-    
+
     if(i == MICROBIT_SYSTEM_COMPONENTS)
         return MICROBIT_NO_RESOURCES;
-        
-    systemTickComponents[i] = component;    
+
+    systemTickComponents[i] = component;
     return MICROBIT_OK;
 }
 
@@ -517,10 +517,10 @@ int MicroBit::addSystemComponent(MicroBitComponent *component)
 int MicroBit::removeSystemComponent(MicroBitComponent *component)
 {
     int i = 0;
-    
-    while(systemTickComponents[i] != component  && i < MICROBIT_SYSTEM_COMPONENTS)  
+
+    while(systemTickComponents[i] != component  && i < MICROBIT_SYSTEM_COMPONENTS)
         i++;
-    
+
     if(i == MICROBIT_SYSTEM_COMPONENTS)
         return MICROBIT_INVALID_PARAMETER;
 
@@ -530,7 +530,7 @@ int MicroBit::removeSystemComponent(MicroBitComponent *component)
 }
 
 /**
-  * add a component to the array of components which invocate the systemTick member function during a systemTick 
+  * add a component to the array of components which invocate the systemTick member function during a systemTick
   * @param component The component to add.
   * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
   * @note this will be converted into a dynamic list of components
@@ -538,14 +538,14 @@ int MicroBit::removeSystemComponent(MicroBitComponent *component)
 int MicroBit::addIdleComponent(MicroBitComponent *component)
 {
     int i = 0;
-    
-    while(idleThreadComponents[i] != NULL && i < MICROBIT_IDLE_COMPONENTS)  
+
+    while(idleThreadComponents[i] != NULL && i < MICROBIT_IDLE_COMPONENTS)
         i++;
-    
+
     if(i == MICROBIT_IDLE_COMPONENTS)
         return MICROBIT_NO_RESOURCES;
-        
-    idleThreadComponents[i] = component;    
+
+    idleThreadComponents[i] = component;
 
     return MICROBIT_OK;
 }
@@ -559,10 +559,10 @@ int MicroBit::addIdleComponent(MicroBitComponent *component)
 int MicroBit::removeIdleComponent(MicroBitComponent *component)
 {
     int i = 0;
-    
-    while(idleThreadComponents[i] != component && i < MICROBIT_IDLE_COMPONENTS)  
+
+    while(idleThreadComponents[i] != component && i < MICROBIT_IDLE_COMPONENTS)
         i++;
-    
+
     if(i == MICROBIT_IDLE_COMPONENTS)
         return MICROBIT_INVALID_PARAMETER;
 
@@ -596,7 +596,7 @@ const char *MicroBit::systemVersion()
 
 /**
   * Triggers a microbit panic where an infinite loop will occur swapping between the panicFace and statusCode if provided.
-  * 
+  *
   * @param statusCode the status code of the associated error. Status codes must be in the range 0-255.
   */
 void MicroBit::panic(int statusCode)
@@ -604,4 +604,3 @@ void MicroBit::panic(int statusCode)
     //show error and enter infinite while
     uBit.display.error(statusCode);
 }
-
