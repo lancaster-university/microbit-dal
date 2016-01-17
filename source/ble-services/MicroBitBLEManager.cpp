@@ -55,6 +55,15 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 
 }
 
+/**
+  * Callback when a BLE GATT connect occurs.
+  */
+static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
+{
+    // Ensure that there's no stale, cached information in the client... invalidate all characteristics.
+    sd_ble_gatts_service_changed(reason->handle, 0x000c, 0xffff); 
+}
+
 static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::Passkey_t passkey)
 {
     (void) handle; /* -Wunused-param */
@@ -122,6 +131,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     // automatically restart advertising after a device disconnects.
     ble->onDisconnection(bleDisconnectionCallback);
+    ble->onConnection(bleConnectionCallback);
 
     // configure the stack to hold on to CPU during critical timing events.
     // mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures
