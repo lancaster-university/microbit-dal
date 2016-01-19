@@ -81,12 +81,16 @@ void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent e)
         magnetometerDataCharacteristicBuffer[0] = uBit.compass.getX();
         magnetometerDataCharacteristicBuffer[1] = uBit.compass.getY();
         magnetometerDataCharacteristicBuffer[2] = uBit.compass.getZ();
-        magnetometerBearingCharacteristicBuffer = (uint16_t) uBit.compass.heading();
         magnetometerPeriodCharacteristicBuffer = uBit.compass.getPeriod();
 
         ble.gattServer().write(magnetometerPeriodCharacteristicHandle, (const uint8_t *)&magnetometerPeriodCharacteristicBuffer, sizeof(magnetometerPeriodCharacteristicBuffer));
         ble.gattServer().notify(magnetometerDataCharacteristicHandle,(uint8_t *)magnetometerDataCharacteristicBuffer, sizeof(magnetometerDataCharacteristicBuffer));
-        ble.gattServer().notify(magnetometerBearingCharacteristicHandle,(uint8_t *)&magnetometerBearingCharacteristicBuffer, sizeof(magnetometerBearingCharacteristicBuffer));
+
+        if (uBit.compass.isCalibrated())
+        {
+            magnetometerBearingCharacteristicBuffer = (uint16_t) uBit.compass.heading();
+            ble.gattServer().notify(magnetometerBearingCharacteristicHandle,(uint8_t *)&magnetometerBearingCharacteristicBuffer, sizeof(magnetometerBearingCharacteristicBuffer));
+        }
     }
 }
 
