@@ -62,7 +62,6 @@ class MicroBit
 {
     private:
 
-    void                    seedRandom();
     void                    compassCalibrator(MicroBitEvent e);
     uint32_t                randomValue;
 
@@ -181,6 +180,28 @@ class MicroBit
       * @endcode
       */
     int sleep(int milliseconds);
+
+    /**
+      * Seed the pseudo random number generator using the hardware generator.
+      *
+      * Example:
+      * @code
+      * uBit.seedRandom();
+      * @endcode
+      */
+    void seedRandom();
+
+    /**
+      * Seed the pseudo random number generator using the given value.
+      *
+      * @param seed The 32-bit value to seed the generator with.
+      *
+      * Example:
+      * @code
+      * uBit.seedRandom(0x12345678);
+      * @endcode
+      */
+    void seedRandom(uint32_t seed);
 
     /**
       * Generate a random number in the given range.
