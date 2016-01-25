@@ -60,10 +60,8 @@ microbit_reset()
     NVIC_SystemReset();
 }
 
-void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
+void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *)
 {
-    (void) reason; /* -Wunused-param */
-
     uBit.ble->startAdvertising();
 }
 

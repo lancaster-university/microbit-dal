@@ -49,10 +49,8 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) :
 /**
   * Temperature update callback
   */
-void MicroBitTemperatureService::temperatureUpdate(MicroBitEvent e)
+void MicroBitTemperatureService::temperatureUpdate(MicroBitEvent)
 {
-    (void) e; /* -Wunused-parameter */
-
     if (ble.getGapState().connected)
     {
         temperatureDataCharacteristicBuffer = uBit.thermometer.getTemperature();

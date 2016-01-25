@@ -63,8 +63,6 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     ble.gattServer().onDataWritten(this, &MicroBitDFUService::onDataWritten);
 }
 
-
-
 /**
  * Callback. Invoked when any of our attributes are written via BLE.
  */
