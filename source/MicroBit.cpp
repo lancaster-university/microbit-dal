@@ -1,4 +1,25 @@
+/* 
+ * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
+ * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
+ * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
+ * as a compatability option, but does not support the options used...
+ */
+#if !defined(__arm)
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
 #include "MicroBit.h"
+
+#include "nrf_soc.h"
+
+/*
+ * Return to our predefined compiler settings.
+ */
+#if !defined(__arm)
+#pragma GCC diagnostic pop
+#endif
 
 /**
   * custom function for panic for malloc & new due to scoping issue.
@@ -85,7 +106,8 @@ MicroBit::MicroBit() :
        MICROBIT_ID_IO_P12,MICROBIT_ID_IO_P13,MICROBIT_ID_IO_P14,
        MICROBIT_ID_IO_P15,MICROBIT_ID_IO_P16,MICROBIT_ID_IO_P19,
        MICROBIT_ID_IO_P20),
-	bleManager()
+    bleManager(),
+    ble(NULL)
 {
 }
 
@@ -433,22 +455,45 @@ void MicroBit::seedRandom()
 {
     randomValue = 0;
 
-    // Start the Random number generator. No need to leave it running... I hope. :-)
-    NRF_RNG->TASKS_START = 1;
-
-    for(int i = 0; i < 4 ;i++)
+    if(uBit.ble)
     {
-        // Clear the VALRDY EVENT
-        NRF_RNG->EVENTS_VALRDY = 0;
+        // If Bluetooth is enabled, we need to go through the Nordic software to safely do this.
+        uint32_t result = sd_rand_application_vector_get((uint8_t*)&randomValue, sizeof(randomValue));
 
-        // Wait for a number ot be generated.
-        while ( NRF_RNG->EVENTS_VALRDY == 0);
-
-        randomValue = (randomValue << 8) | ((int) NRF_RNG->VALUE);
+        // If we couldn't get the random bytes then at least make the seed non-zero.
+        if (result != NRF_SUCCESS)
+            randomValue = 0xBBC5EED;
     }
+    else
+    {
+        // Othwerwise we can access the hardware RNG directly.
 
-    // Disable the generator to save power.
-    NRF_RNG->TASKS_STOP = 1;
+        // Start the Random number generator. No need to leave it running... I hope. :-)
+        NRF_RNG->TASKS_START = 1;
+
+        for(int i = 0; i < 4; i++)
+        {
+            // Clear the VALRDY EVENT
+            NRF_RNG->EVENTS_VALRDY = 0;
+
+            // Wait for a number ot be generated.
+            while(NRF_RNG->EVENTS_VALRDY == 0);
+
+            randomValue = (randomValue << 8) | ((int) NRF_RNG->VALUE);
+        }
+
+        // Disable the generator to save power.
+        NRF_RNG->TASKS_STOP = 1;
+    }
+}
+
+
+/**
+  * Seed our pseudo random number generator (PRNG) using the given 32-bit value.
+  */
+void MicroBit::seedRandom(uint32_t seed)
+{
+    randomValue = seed;
 }
 
 
