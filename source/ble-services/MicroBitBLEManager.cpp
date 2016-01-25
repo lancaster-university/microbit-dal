@@ -52,7 +52,6 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 
     if (manager)
 	    manager->advertise();
-
 }
 
 /**
@@ -60,7 +59,16 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
   */
 static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
 {
+
     // Ensure that there's no stale, cached information in the client... invalidate all characteristics.
+    uint16_t len = 8;
+
+    // Configure the ServiceChanged characteristic to receive service changed indications
+    // TODO: This is really a workaround as we can't maintain persistent state on the micro:bit across USB
+    // reprogramming flashes.... yet.
+    uint8_t data[] = {0x0B,0x00,0x02,0x00,0x02,0x00,0xB8,0x46};
+
+    sd_ble_gatts_sys_attr_set(reason->handle, data, len, BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS); 
     sd_ble_gatts_service_changed(reason->handle, 0x000c, 0xffff); 
 }
 
