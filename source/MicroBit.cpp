@@ -133,13 +133,6 @@ void MicroBit::init()
     // Seed our random number generator
     seedRandom();
 
-#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
-    // Start the BLE stack.
-    bleManager.init(this->getName(), this->getSerial());
-
-    ble = bleManager.ble;
-#endif
-
     // Start refreshing the Matrix Display
     systemTicker.attach(this, &MicroBit::systemTick, MICROBIT_DISPLAY_REFRESH_PERIOD);
 
