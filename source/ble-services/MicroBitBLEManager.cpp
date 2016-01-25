@@ -127,7 +127,7 @@ void MicroBitBLEManager::advertise()
   * uBit.init();
   * @endcode
   */
-void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber)
+void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, bool enableBonding)
 {
 	ManagedString BLEName("BBC micro:bit");
 
@@ -156,7 +156,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
-    ble->securityManager().init(MICROBIT_BLE_ENABLE_BONDING, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
+    ble->securityManager().init(enableBonding, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     // Configure a whitelist to filter all connection requetss from unbonded devices. 

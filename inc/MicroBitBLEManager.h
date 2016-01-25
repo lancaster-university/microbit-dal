@@ -72,7 +72,7 @@ class MicroBitBLEManager
       * uBit.init();
       * @endcode
       */
-    void init(ManagedString deviceName, ManagedString serialNumber);
+    void init(ManagedString deviceName, ManagedString serialNumber, bool enableBonding);
 
     /**
      * Change the output power level of the transmitter to the given value.

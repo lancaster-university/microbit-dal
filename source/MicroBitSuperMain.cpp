@@ -46,13 +46,25 @@ int main()
 
         if (i == 10)
         {
-            // Bring up the BLE stack if it isn't alredy done.
+            // Start the BLE stack, if it isn't already running.
             if (!uBit.ble)
-                uBit.bleManager.init(uBit.getName(), uBit.getSerial());
+            {
+                uBit.bleManager.init(uBit.getName(), uBit.getSerial(), true);
+                uBit.ble = uBit.bleManager.ble;
+            }
 
             // Enter pairing mode, using the LED matrix for any necessary pairing operations
             uBit.bleManager.pairingMode(uBit.display);
         }
+    }
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
+    // Start the BLE stack, if it isn't already running.
+    if (!uBit.ble)
+    {
+        uBit.bleManager.init(uBit.getName(), uBit.getSerial(), false);
+        uBit.ble = uBit.bleManager.ble;
     }
 #endif
 
