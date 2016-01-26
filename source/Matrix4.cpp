@@ -30,7 +30,7 @@ Matrix4::Matrix4(int rows, int cols)
 	int size = rows * cols;
 
 	if (size > 0)
-		data = new double[size];
+		data = new float[size];
 	else
 		data = NULL;
 }
@@ -55,7 +55,7 @@ Matrix4::Matrix4(const Matrix4 &matrix)
 
 	if (size > 0)
 	{
-		data = new double[size];
+		data = new float[size];
 		for (int i = 0; i < size; i++)
 			data[i] = matrix.data[i];
 	}
@@ -105,10 +105,10 @@ int Matrix4::height()
 *
 * Example:
 * @code
-* double v = matrix.get(1,2);
+* float v = matrix.get(1,2);
 * @endcode
 */
-double Matrix4::get(int row, int col)
+float Matrix4::get(int row, int col)
 {
 	if (row < 0 || col < 0 || row >= rows || col >= cols)
 		return 0;
@@ -128,7 +128,7 @@ double Matrix4::get(int row, int col)
 * matrix.set(1,2,42.0);
 * @endcode
 */
-void Matrix4::set(int row, int col, double v)
+void Matrix4::set(int row, int col, float v)
 {
 	if (row < 0 || col < 0 || row >= rows || col >= cols)
 		return;
@@ -165,21 +165,24 @@ Matrix4 Matrix4::transpose()
 * Matrix result = matrixA.multiply(matrixB);
 * @endcode
 */
-Matrix4 Matrix4::multiply(Matrix4 &matrix)
+Matrix4 Matrix4::multiply(Matrix4 &matrix, bool transpose)
 {
-	if (width() != matrix.height())
+    int w = transpose ? height() : width();
+    int h = transpose ? width() : height();
+        
+	if (w != matrix.height())
 		return Matrix4(0, 0);
 
-	Matrix4 result(height(), matrix.width());
+	Matrix4 result(h, matrix.width());
 
 	for (int r = 0; r < result.height(); r++)
 	{
 		for (int c = 0; c < result.width(); c++)
 		{
-			double v = 0.0;
+			float v = 0.0;
 
-			for (int i = 0; i < width(); i++)
-				v += get(r, i) * matrix.get(i, c);
+			for (int i = 0; i < w; i++)
+				v += (transpose ? get(i, r) : get(r, i)) * matrix.get(i, c);
 
 			result.set(r, c, v);
 		}
@@ -224,7 +227,7 @@ Matrix4 Matrix4::invert()
 	result.data[14] = -data[0] * data[5] * data[14] + data[0] * data[6] * data[13] + data[4] * data[1] * data[14] - data[4] * data[2] * data[13] - data[12] * data[1] * data[6] + data[12] * data[2] * data[5];
 	result.data[15] = data[0] * data[5] * data[10] - data[0] * data[6] * data[9] - data[4] * data[1] * data[10] + data[4] * data[2] * data[9] + data[8] * data[1] * data[6] - data[8] * data[2] * data[5];
 
-	double det = data[0] * result.data[0] + data[1] * result.data[4] + data[2] * result.data[8] + data[3] * result.data[12];
+	float det = data[0] * result.data[0] + data[1] * result.data[4] + data[2] * result.data[8] + data[3] * result.data[12];
 
 	if (det == 0)
 		return Matrix4(0, 0);

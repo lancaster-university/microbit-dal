@@ -15,7 +15,7 @@
 */
 class Matrix4
 {
-	double   *data;         // Linear buffer representing the matrix.
+	float   *data;         // Linear buffer representing the matrix.
 	int     rows;           // The number of rows in the matrix.
 	int     cols;           // The number of columns in the matrix.
 
@@ -80,10 +80,10 @@ public:
 	*
 	* Example:
 	* @code
-	* double v = matrix.get(1,2);
+	* float v = matrix.get(1,2);
 	* @endcode
 	*/
-	double get(int row, int col);
+	float get(int row, int col);
 
 	/**
 	* Writes the matrix element at the given position.
@@ -97,7 +97,7 @@ public:
 	* matrix.set(1,2,42.0);
 	* @endcode
 	*/
-	void set(int row, int col, double v);
+	void set(int row, int col, float v);
 
 	/**
 	* Transposes this matrix.
@@ -119,7 +119,18 @@ public:
 	* Matrix result = matrixA.multiply(matrixB);
 	* @endcode
 	*/
-	Matrix4 multiply(Matrix4 &matrix);
+	Matrix4 multiply(Matrix4 &matrix, bool transpose = false);
+
+	/**
+	* Multiplies the transpose of this matrix with the given matrix (if possible).
+	* @return the resultant matrix. An empty matrix is returned if the operation canot be completed.
+	*
+	* Example:
+	* @code
+	* Matrix result = matrixA.multiplyT(matrixB);
+	* @endcode
+	*/
+	Matrix4 multiplyT(Matrix4 &matrix);
 
 	/**
 	* Performs an optimisaed inversion of a 4x4 matrix.
@@ -139,5 +150,10 @@ public:
 	*/
 	~Matrix4();
 };
+
+inline Matrix4 Matrix4::multiplyT(Matrix4 &matrix)
+{
+    return multiply(matrix, true);
+}
 
 #endif
