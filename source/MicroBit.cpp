@@ -248,10 +248,6 @@ void MicroBit::compassCalibrator(MicroBitEvent)
 
     // We have enough sample data to make a fairly accurate calibration.
     // We use a Least Mean Squares approximation, as detailed in Freescale application note AN2426.
-    uBit.serial.printf("Input Data\n");
-    for (int i=0; i<PERIMETER_POINTS; i++)
-        uBit.serial.printf("%d : %d : %d : %d\n", (int)X.get(i,0), (int)X.get(i,1), (int)X.get(i,2), (int)X.get(i, 3));
-
 
     // Firstly, calculate the square of each sample.
 	Matrix4 Y(X.height(), 1);
@@ -262,26 +258,9 @@ void MicroBit::compassCalibrator(MicroBitEvent)
 	}
 
     // Now perform a Least Squares Approximation.
-    // Method1
-	//Matrix4 XT = X.transpose();
-	//Matrix4 Beta = XT.multiply(X).invert().multiply(XT).multiply(Y);
-
-    //uBit.serial.printf("Output Data1\n");
-    //uBit.serial.printf("%d : %d : %d [%d]\n", (int)(Beta.get(0,0)/2), (int)(Beta.get(1,0)/2), (int)(Beta.get(2,0)/2), (int)Beta.get(3, 0));
-
-    // Method2
-	//Matrix4 Alpha2 = XT.multiply(X).invert();
-	//Matrix4 Gamma2 = XT.multiply(Y);
-	//Matrix4 Beta2 = Alpha2.multiply(Gamma2);
-    //uBit.serial.printf("Output Data2\n");
-    //uBit.serial.printf("%d : %d : %d [%d]\n", (int)(Beta2.get(0,0)/2), (int)(Beta2.get(1,0)/2), (int)(Beta2.get(2,0)/2), (int)Beta2.get(3, 0));
-
-    // Method3
 	Matrix4 Alpha = X.multiplyT(X).invert();
 	Matrix4 Gamma = X.multiplyT(Y);
 	Matrix4 Beta = Alpha.multiply(Gamma);
-    uBit.serial.printf("Output Data\n");
-    uBit.serial.printf("%d : %d : %d [%d]\n", (int)(Beta.get(0,0)/2), (int)(Beta.get(1,0)/2), (int)(Beta.get(2,0)/2), (int)Beta.get(3, 0));
 
     // The result contains the approximate zero point of each axis, but doubled.
     // Halve each sample, and record this as the compass calibration data.
