@@ -253,13 +253,14 @@ void MicroBit::compassCalibrator(MicroBitEvent)
 	Matrix4 Y(X.height(), 1);
 	for (int i = 0; i < X.height(); i++)
 	{
-		double v = X.get(i, 0)*X.get(i, 0) + X.get(i, 1)*X.get(i, 1) + X.get(i, 2)*X.get(i, 2);
+		float v = X.get(i, 0)*X.get(i, 0) + X.get(i, 1)*X.get(i, 1) + X.get(i, 2)*X.get(i, 2);
 		Y.set(i, 0, v);
 	}
 
     // Now perform a Least Squares Approximation.
-	Matrix4 XT = X.transpose();
-	Matrix4 Beta = XT.multiply(X).invert().multiply(XT).multiply(Y);
+	Matrix4 Alpha = X.multiplyT(X).invert();
+	Matrix4 Gamma = X.multiplyT(Y);
+	Matrix4 Beta = Alpha.multiply(Gamma);
 
     // The result contains the approximate zero point of each axis, but doubled.
     // Halve each sample, and record this as the compass calibration data.
