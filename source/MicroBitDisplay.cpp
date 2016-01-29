@@ -44,6 +44,8 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
     this->mode = DISPLAY_MODE_BLACK_AND_WHITE;
     this->animationMode = ANIMATION_MODE_NONE;
 
+    this->lightSensor = NULL;
+
     uBit.flags |= MICROBIT_FLAG_DISPLAY_RUNNING;
 }
 
@@ -922,6 +924,25 @@ int MicroBitDisplay::setBrightness(int b)
   */
 void MicroBitDisplay::setDisplayMode(DisplayMode mode)
 {
+    if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    {
+        //to reduce the artifacts on the display - increase the tick
+        if(uBit.getTickPeriod() != MICROBIT_LIGHT_SENSOR_TICK_PERIOD)
+            uBit.setTickPeriod(MICROBIT_LIGHT_SENSOR_TICK_PERIOD);
+    }
+
+    if(this->mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE && mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    {
+
+        //if we previously were in light sense mode - return to our default.
+        if(uBit.getTickPeriod() != MICROBIT_DEFAULT_TICK_PERIOD)
+            uBit.setTickPeriod(MICROBIT_DEFAULT_TICK_PERIOD);
+
+        delete this->lightSensor;
+
+        this->lightSensor = NULL;
+    }
+
     this->mode = mode;
 }
 
@@ -1124,6 +1145,28 @@ MicroBitFont MicroBitDisplay::getFont()
 MicroBitImage MicroBitDisplay::screenShot()
 {
     return image.crop(0,0,MICROBIT_DISPLAY_WIDTH,MICROBIT_DISPLAY_HEIGHT);
+}
+
+/**
+  * Constructs an instance of a MicroBitLightSensor if not already configured
+  * and sets the display mode to DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE.
+  *
+  * This also changes the tickPeriod to MICROBIT_LIGHT_SENSOR_TICK_SPEED so
+  * that the display does not suffer from artifacts.
+  *
+  * @note this will return 0 on the first call to this method, a light reading
+  * will be available after the display has activated the light sensor for the
+  * first time.
+  */
+int MicroBitDisplay::readLightLevel()
+{
+    if(mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    {
+        setDisplayMode(DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE);
+        this->lightSensor = new MicroBitLightSensor();
+    }
+
+    return this->lightSensor->read();
 }
 
 /**

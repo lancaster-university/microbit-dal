@@ -160,6 +160,9 @@ class MicroBitDisplay : public MicroBitComponent
     // The number of pixels the image is shifted on the display in each quantum.
     int8_t scrollingImageStride;
 
+    // A pointer to an instance of light sensor, if in use
+    MicroBitLightSensor* lightSensor;
+
     // Flag to indicate if image has been rendered to screen yet (or not)
     bool scrollingImageRendered;
 
@@ -573,6 +576,19 @@ public:
       * Captures the bitmap currently being rendered on the display.
       */
     MicroBitImage screenShot();
+
+    /**
+      * Constructs an instance of a MicroBitLightSensor if not already configured
+      * and sets the display mode to DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE.
+      *
+      * This also changes the tickPeriod to MICROBIT_LIGHT_SENSOR_TICK_SPEED so
+      * that the display does not suffer from artifacts.
+      *
+      * @note this will return 0 on the first call to this method, a light reading
+      * will be available after the display has activated the light sensor for the
+      * first time.
+      */
+    int readLightLevel();
 
     /**
       * Destructor for MicroBitDisplay, so that we deregister ourselves as a systemComponent
