@@ -181,8 +181,8 @@ void scheduler_tick()
     Fiber *t;
 
     // increment our real-time counter.
-    ticks += FIBER_TICK_PERIOD_MS;
-    
+    ticks += uBit.getTickPeriod();
+
     // Check the sleep queue, and wake up any fibers as necessary.
     while (f != NULL)
     {

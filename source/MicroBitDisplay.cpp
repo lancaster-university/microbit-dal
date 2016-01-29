@@ -145,7 +145,7 @@ void MicroBitDisplay::render()
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
     if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
-        renderTimer.attach(this, &MicroBitDisplay::renderFinish, (((float)brightness) / ((float)MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * (float)MICROBIT_DISPLAY_REFRESH_PERIOD);
+        renderTimer.attach_us(this, &MicroBitDisplay::renderFinish, (((brightness * 100) / (MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * uBit.getTickPeriod()));
 
     //this will take around 23us to execute
     if(brightness <= MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)

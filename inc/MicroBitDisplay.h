@@ -1,12 +1,6 @@
 #ifndef MICROBIT_DISPLAY_H
 #define MICROBIT_DISPLAY_H
 
-
-/**
-  * Core Configuration settings.
-  */
-#define MICROBIT_DISPLAY_REFRESH_PERIOD     ((float)FIBER_TICK_PERIOD_MS / (float)1000)
-
 /**
   * MessageBus Event Codes
   */

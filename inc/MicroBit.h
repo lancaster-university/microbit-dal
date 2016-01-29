@@ -46,12 +46,14 @@
 #define MICROBIT_NAME_CODE_LETTERS              5
 
 // Random number generator
-#define NRF51822_RNG_ADDRESS            0x4000D000
+#define NRF51822_RNG_ADDRESS                    0x4000D000
 
 
 // mbed pin assignments of core components.
-#define MICROBIT_PIN_SDA                P0_30
-#define MICROBIT_PIN_SCL                P0_0
+#define MICROBIT_PIN_SDA                        P0_30
+#define MICROBIT_PIN_SCL                        P0_0
+
+#define MICROBIT_DEFAULT_TICK_PERIOD            FIBER_TICK_PERIOD_MS
 
 /**
   * Class definition for a MicroBit device.
@@ -73,6 +75,8 @@ class MicroBit
 
     // Periodic callback
     Ticker                  systemTicker;
+
+    int                     tickPeriod;
 
     // I2C Interface
     MicroBitI2C             i2c;
@@ -258,6 +262,21 @@ class MicroBit
       * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
       */
     int removeIdleComponent(MicroBitComponent *component);
+
+
+    /*
+     * Reconfigures the ticker to the given speed in milliseconds.
+     * @param speedMs the speed in milliseconds
+     * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if speedUs < 1
+     *
+     * @note this will also modify the value that is added to ticks in MiroBitFiber:scheduler_tick()
+     */
+    int setTickPeriod(int speedMs);
+
+    /*
+     * Returns the currently used tick speed in milliseconds
+     */
+    int getTickPeriod();
 
     /**
       * Determine the time since this MicroBit was last reset.
