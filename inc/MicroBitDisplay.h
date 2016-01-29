@@ -12,6 +12,7 @@
   */
 #define MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE         1
 #define MICROBIT_DISPLAY_EVT_FREE                       2
+#define MICROBIT_DISPLAY_EVT_LIGHT_SENSE                4
 
 /**
   * I/O configurations for common devices.
@@ -43,6 +44,7 @@
 #define MICROBIT_DISPLAY_COLUMN_COUNT       9
 #define MICROBIT_DISPLAY_COLUMN_PINS        P0_4, P0_5, P0_6, P0_7, P0_8, P0_9, P0_10, P0_11, P0_12
 #define MICROBIT_DISPLAY_COLUMN_START       P0_4
+#define MICROBIT_DISPLAY_ROW_START          P0_13
 #endif
 
 //
@@ -54,6 +56,8 @@
 #define MICROBIT_DISPLAY_ERROR_CHARS            4
 #define MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH    8
 #define MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS    -255
+
+#define MICROBIT_DISPLAY_ROW_RESET              0x20
 
 #include "mbed.h"
 #include "ManagedString.h"
@@ -73,7 +77,8 @@ enum AnimationMode {
 
 enum DisplayMode {
     DISPLAY_MODE_BLACK_AND_WHITE,
-    DISPLAY_MODE_GREYSCALE
+    DISPLAY_MODE_GREYSCALE,
+    DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE
 };
 
 enum DisplayRotation {
@@ -184,6 +189,12 @@ class MicroBitDisplay : public MicroBitComponent
       * Brightness has two levels on, or off.
       */
     void render();
+
+    /**
+      * Renders the current image, and drops the fourth frame to allow for
+      * sensors that require the display to operate.
+      */
+    void renderWithLightSense();
 
     /**
       * Translates a bit mask into a timer interrupt that gives the appearence of greyscale.
@@ -473,7 +484,7 @@ public:
 
     /**
       * Sets the mode of the display.
-      * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, or DISPLAY_MODE_NORMAL)
+      * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, DISPLAY_MODE_BLACK_AND_WHITE, DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
       *
       * Example:
       * @code
@@ -481,6 +492,12 @@ public:
       * @endcode
       */
     void setDisplayMode(DisplayMode mode);
+
+    /**
+      * Gets the mode of the display.
+      * @return the current mode of the display
+      */
+    int getDisplayMode();
 
     /**
       * Fetches the current brightness of this display.

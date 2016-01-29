@@ -34,7 +34,7 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
     this->width = x;
     this->height = y;
     this->strobeRow = 0;
-    this->strobeBitMsk = 0x20;
+    this->strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     this->rotation = MICROBIT_DISPLAY_ROTATION_0;
     this->greyscaleBitMsk = 0x01;
     this->timingCount = 0;
@@ -58,6 +58,12 @@ void MicroBitDisplay::systemTick()
     if(!(uBit.flags & MICROBIT_FLAG_DISPLAY_RUNNING))
         return;
 
+    if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    {
+        renderWithLightSense();
+        return;
+    }
+
     // Move on to the next row.
     strobeBitMsk <<= 1;
     strobeRow++;
@@ -65,7 +71,7 @@ void MicroBitDisplay::systemTick()
     //reset the row counts and bit mask when we have hit the max.
     if(strobeRow == MICROBIT_DISPLAY_ROW_COUNT){
         strobeRow = 0;
-        strobeBitMsk = 0x20;
+        strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     }
 
     if(mode == DISPLAY_MODE_BLACK_AND_WHITE)
@@ -144,6 +150,30 @@ void MicroBitDisplay::render()
     //this will take around 23us to execute
     if(brightness <= MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
         renderFinish();
+}
+
+void MicroBitDisplay::renderWithLightSense()
+{
+    //reset the row counts and bit mask when we have hit the max.
+    if(strobeRow == MICROBIT_DISPLAY_ROW_COUNT + 1)
+    {
+
+        MicroBitEvent(id, MICROBIT_DISPLAY_EVT_LIGHT_SENSE);
+
+        strobeRow = 0;
+        strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
+    }
+    else
+    {
+
+        render();
+        this->animationUpdate();
+
+        // Move on to the next row.
+        strobeBitMsk <<= 1;
+        strobeRow++;
+    }
+
 }
 
 void MicroBitDisplay::renderGreyscale()
@@ -883,7 +913,7 @@ int MicroBitDisplay::setBrightness(int b)
 
 /**
   * Sets the mode of the display.
-  * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, or DISPLAY_MODE_NORMAL)
+  * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, DISPLAY_MODE_BLACK_AND_WHITE, DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
   *
   * Example:
   * @code
@@ -893,6 +923,15 @@ int MicroBitDisplay::setBrightness(int b)
 void MicroBitDisplay::setDisplayMode(DisplayMode mode)
 {
     this->mode = mode;
+}
+
+/**
+  * Gets the mode of the display.
+  * @return the current mode of the display
+  */
+int MicroBitDisplay::getDisplayMode()
+{
+    return this->mode;
 }
 
 /**
@@ -992,7 +1031,7 @@ void MicroBitDisplay::error(int statusCode)
     disable(); //relinquish PWMOut's control
 
     uint8_t strobeRow = 0;
-    uint8_t strobeBitMsk = 0x20;
+    uint8_t strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
 
     //point to the font stored in Flash
     const unsigned char * fontLocation = MicroBitFont::defaultFont;
@@ -1019,7 +1058,7 @@ void MicroBitDisplay::error(int statusCode)
                 if(strobeRow == 3)
                 {
                     strobeRow = 0;
-                    strobeBitMsk = 0x20;
+                    strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
                 }
 
                 // Calculate the bitpattern to write.
