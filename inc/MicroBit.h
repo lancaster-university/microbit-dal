@@ -24,6 +24,7 @@
 #include "MicroBitCompass.h"
 #include "MicroBitAccelerometer.h"
 #include "MicroBitThermometer.h"
+#include "MicroBitLightSensor.h"
 #include "MicroBitMultiButton.h"
 
 #include "MicroBitSerial.h"
