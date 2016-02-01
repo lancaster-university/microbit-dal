@@ -150,6 +150,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble = new BLEDevice();
     ble->init();
 
+
     // automatically restart advertising after a device disconnects.
     ble->onDisconnection(bleDisconnectionCallback);
     ble->onConnection(bleConnectionCallback);
@@ -164,6 +165,18 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
     ble->securityManager().init(enableBonding, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
+
+    // If we're in pairing mode, review the size of the bond table.
+    if (enableBonding)
+    {
+        // TODO: It would be much better to implement some sort of LRU/NFU policy here,
+        // but this isn't currently supported in mbed, so we'd need to layer break...
+        int bonds = getBondCount();
+
+        // If we're full, empty the bond table.
+        if (bonds >= MICROBIT_BLE_MAXIMUM_BONDS)
+            ble->securityManager().purgeAllBondingState();
+    }
 
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     // Configure a whitelist to filter all connection requetss from unbonded devices. 
@@ -292,16 +305,6 @@ int MicroBitBLEManager::getBondCount()
  */
 void MicroBitBLEManager::pairingRequested(ManagedString passKey)
 {
-    // Firstly, determine if there is free space in the bonding table.
-    // If not, clear it out to make room.
-    
-    // TODO: It would be much better to implement some sort of LRU/NFU policy here,
-    // but this isn't currently supported in mbed, so we'd need to layer break...
-
-    // If we're full, empty the bond table.
-    if (getBondCount() >= MICROBIT_BLE_MAXIMUM_BONDS)
-        ble->securityManager().purgeAllBondingState();
-    
     // Update our mode to display the passkey. 
 	this->passKey = passKey;
 	this->pairingStatus = MICROBIT_BLE_PAIR_REQUEST;
