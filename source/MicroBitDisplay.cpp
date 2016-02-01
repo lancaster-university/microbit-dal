@@ -34,7 +34,7 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
     this->width = x;
     this->height = y;
     this->strobeRow = 0;
-    this->strobeBitMsk = 0x20;
+    this->strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     this->rotation = MICROBIT_DISPLAY_ROTATION_0;
     this->greyscaleBitMsk = 0x01;
     this->timingCount = 0;
@@ -43,6 +43,8 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
 
     this->mode = DISPLAY_MODE_BLACK_AND_WHITE;
     this->animationMode = ANIMATION_MODE_NONE;
+
+    this->lightSensor = NULL;
 
     uBit.flags |= MICROBIT_FLAG_DISPLAY_RUNNING;
 }
@@ -58,6 +60,12 @@ void MicroBitDisplay::systemTick()
     if(!(uBit.flags & MICROBIT_FLAG_DISPLAY_RUNNING))
         return;
 
+    if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    {
+        renderWithLightSense();
+        return;
+    }
+
     // Move on to the next row.
     strobeBitMsk <<= 1;
     strobeRow++;
@@ -65,7 +73,7 @@ void MicroBitDisplay::systemTick()
     //reset the row counts and bit mask when we have hit the max.
     if(strobeRow == MICROBIT_DISPLAY_ROW_COUNT){
         strobeRow = 0;
-        strobeBitMsk = 0x20;
+        strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     }
 
     if(mode == DISPLAY_MODE_BLACK_AND_WHITE)
@@ -139,11 +147,35 @@ void MicroBitDisplay::render()
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
     if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
-        renderTimer.attach(this, &MicroBitDisplay::renderFinish, (((float)brightness) / ((float)MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * (float)MICROBIT_DISPLAY_REFRESH_PERIOD);
+        renderTimer.attach_us(this, &MicroBitDisplay::renderFinish, (((brightness * 100) / (MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * uBit.getTickPeriod()));
 
     //this will take around 23us to execute
     if(brightness <= MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
         renderFinish();
+}
+
+void MicroBitDisplay::renderWithLightSense()
+{
+    //reset the row counts and bit mask when we have hit the max.
+    if(strobeRow == MICROBIT_DISPLAY_ROW_COUNT + 1)
+    {
+
+        MicroBitEvent(id, MICROBIT_DISPLAY_EVT_LIGHT_SENSE);
+
+        strobeRow = 0;
+        strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
+    }
+    else
+    {
+
+        render();
+        this->animationUpdate();
+
+        // Move on to the next row.
+        strobeBitMsk <<= 1;
+        strobeRow++;
+    }
+
 }
 
 void MicroBitDisplay::renderGreyscale()
@@ -883,7 +915,7 @@ int MicroBitDisplay::setBrightness(int b)
 
 /**
   * Sets the mode of the display.
-  * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, or DISPLAY_MODE_NORMAL)
+  * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, DISPLAY_MODE_BLACK_AND_WHITE, DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
   *
   * Example:
   * @code
@@ -892,7 +924,35 @@ int MicroBitDisplay::setBrightness(int b)
   */
 void MicroBitDisplay::setDisplayMode(DisplayMode mode)
 {
+    if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    {
+        //to reduce the artifacts on the display - increase the tick
+        if(uBit.getTickPeriod() != MICROBIT_LIGHT_SENSOR_TICK_PERIOD)
+            uBit.setTickPeriod(MICROBIT_LIGHT_SENSOR_TICK_PERIOD);
+    }
+
+    if(this->mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE && mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    {
+
+        //if we previously were in light sense mode - return to our default.
+        if(uBit.getTickPeriod() != MICROBIT_DEFAULT_TICK_PERIOD)
+            uBit.setTickPeriod(MICROBIT_DEFAULT_TICK_PERIOD);
+
+        delete this->lightSensor;
+
+        this->lightSensor = NULL;
+    }
+
     this->mode = mode;
+}
+
+/**
+  * Gets the mode of the display.
+  * @return the current mode of the display
+  */
+int MicroBitDisplay::getDisplayMode()
+{
+    return this->mode;
 }
 
 /**
@@ -992,7 +1052,7 @@ void MicroBitDisplay::error(int statusCode)
     disable(); //relinquish PWMOut's control
 
     uint8_t strobeRow = 0;
-    uint8_t strobeBitMsk = 0x20;
+    uint8_t strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
 
     //point to the font stored in Flash
     const unsigned char * fontLocation = MicroBitFont::defaultFont;
@@ -1019,7 +1079,7 @@ void MicroBitDisplay::error(int statusCode)
                 if(strobeRow == 3)
                 {
                     strobeRow = 0;
-                    strobeBitMsk = 0x20;
+                    strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
                 }
 
                 // Calculate the bitpattern to write.
@@ -1085,6 +1145,28 @@ MicroBitFont MicroBitDisplay::getFont()
 MicroBitImage MicroBitDisplay::screenShot()
 {
     return image.crop(0,0,MICROBIT_DISPLAY_WIDTH,MICROBIT_DISPLAY_HEIGHT);
+}
+
+/**
+  * Constructs an instance of a MicroBitLightSensor if not already configured
+  * and sets the display mode to DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE.
+  *
+  * This also changes the tickPeriod to MICROBIT_LIGHT_SENSOR_TICK_SPEED so
+  * that the display does not suffer from artifacts.
+  *
+  * @note this will return 0 on the first call to this method, a light reading
+  * will be available after the display has activated the light sensor for the
+  * first time.
+  */
+int MicroBitDisplay::readLightLevel()
+{
+    if(mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    {
+        setDisplayMode(DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE);
+        this->lightSensor = new MicroBitLightSensor();
+    }
+
+    return this->lightSensor->read();
 }
 
 /**

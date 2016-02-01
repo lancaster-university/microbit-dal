@@ -39,6 +39,11 @@
 #define MICROBIT_BLE_PAIR_SUCCESSFUL            0x08
 
 #define MICROBIT_BLE_PAIRING_TIMEOUT	        90
+#define MICROBIT_BLE_POWER_LEVELS               8
+#define MICROBIT_BLE_MAXIMUM_BONDS              4
+#define MICROBIT_BLE_ENABLE_BONDING 	        true
+#define MICROBIT_BLE_REQUIRE_MITM		        true
+extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
 /**
   * Class definition for the MicroBitBLEManager.

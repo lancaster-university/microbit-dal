@@ -1,4 +1,4 @@
-/* 
+/*
  * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
@@ -105,6 +105,7 @@ MicroBit::MicroBit() :
        MICROBIT_ID_IO_P15,MICROBIT_ID_IO_P16,MICROBIT_ID_IO_P19,
        MICROBIT_ID_IO_P20),
     bleManager(),
+    radio(MICROBIT_ID_RADIO),
     ble(NULL)
 {
 }
@@ -133,8 +134,10 @@ void MicroBit::init()
     // Seed our random number generator
     seedRandom();
 
+    tickPeriod = MICROBIT_DEFAULT_TICK_PERIOD;
+
     // Start refreshing the Matrix Display
-    systemTicker.attach(this, &MicroBit::systemTick, MICROBIT_DISPLAY_REFRESH_PERIOD);
+    systemTicker.attach_us(this, &MicroBit::systemTick, tickPeriod * 1000);
 
     // Register our compass calibration algorithm.
     MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBit::compassCalibrator, MESSAGE_BUS_LISTENER_IMMEDIATE);
@@ -606,6 +609,35 @@ int MicroBit::removeIdleComponent(MicroBitComponent *component)
     idleThreadComponents[i] = NULL;
 
     return MICROBIT_OK;
+}
+
+/*
+ * Reconfigures the ticker to the given speed in milliseconds.
+ * @param speedMs the speed in milliseconds
+ * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if speedUs < 1
+ *
+ * @note this will also modify the value that is added to ticks in MiroBitFiber:scheduler_tick()
+ */
+int MicroBit::setTickPeriod(int speedMs)
+{
+    if(speedMs < 1)
+        return MICROBIT_INVALID_PARAMETER;
+
+    uBit.systemTicker.detach();
+
+    uBit.systemTicker.attach_us(this, &MicroBit::systemTick, speedMs * 1000);
+
+    tickPeriod = speedMs;
+
+    return MICROBIT_OK;
+}
+
+/*
+ * Returns the currently used tick speed in milliseconds
+ */
+int MicroBit::getTickPeriod()
+{
+    return tickPeriod;
 }
 
 /**

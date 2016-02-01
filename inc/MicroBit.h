@@ -24,6 +24,7 @@
 #include "MicroBitCompass.h"
 #include "MicroBitAccelerometer.h"
 #include "MicroBitThermometer.h"
+#include "MicroBitLightSensor.h"
 #include "MicroBitMultiButton.h"
 
 #include "MicroBitSerial.h"
@@ -34,6 +35,7 @@
 #include "MicroBitMessageBus.h"
 
 #include "MicroBitBLEManager.h"
+#include "MicroBitRadio.h"
 
 // MicroBit::flags values
 #define MICROBIT_FLAG_SCHEDULER_RUNNING         0x00000001
@@ -46,12 +48,14 @@
 #define MICROBIT_NAME_CODE_LETTERS              5
 
 // Random number generator
-#define NRF51822_RNG_ADDRESS            0x4000D000
+#define NRF51822_RNG_ADDRESS                    0x4000D000
 
 
 // mbed pin assignments of core components.
-#define MICROBIT_PIN_SDA                P0_30
-#define MICROBIT_PIN_SCL                P0_0
+#define MICROBIT_PIN_SDA                        P0_30
+#define MICROBIT_PIN_SCL                        P0_0
+
+#define MICROBIT_DEFAULT_TICK_PERIOD            FIBER_TICK_PERIOD_MS
 
 /**
   * Class definition for a MicroBit device.
@@ -65,6 +69,8 @@ class MicroBit
     void                    compassCalibrator(MicroBitEvent e);
     uint32_t                randomValue;
 
+    //the current tick period in MS
+    int                     tickPeriod;
 
     public:
 
@@ -103,6 +109,7 @@ class MicroBit
 
     // Bluetooth related member variables.
 	MicroBitBLEManager		bleManager;
+    MicroBitRadio           radio;
     BLEDevice               *ble;
 
     /**
@@ -258,6 +265,21 @@ class MicroBit
       * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
       */
     int removeIdleComponent(MicroBitComponent *component);
+
+
+    /*
+     * Reconfigures the ticker to the given speed in milliseconds.
+     * @param speedMs the speed in milliseconds
+     * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if speedUs < 1
+     *
+     * @note this will also modify the value that is added to ticks in MiroBitFiber:scheduler_tick()
+     */
+    int setTickPeriod(int speedMs);
+
+    /*
+     * Returns the currently used tick speed in milliseconds
+     */
+    int getTickPeriod();
 
     /**
       * Determine the time since this MicroBit was last reset.
