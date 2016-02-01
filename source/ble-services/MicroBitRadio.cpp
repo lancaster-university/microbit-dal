@@ -45,7 +45,7 @@ extern "C" void RADIO_IRQHandler(void)
 MicroBitRadio::MicroBitRadio(uint16_t id) : datagram()
 {
     this->id = id;
-	this->status = 0;
+    this->status = 0;
 	this->group = 0;
 	this->queueDepth = 0;
     this->rxQueue = NULL;
@@ -322,7 +322,7 @@ void MicroBitRadio::idleTick()
 
 /**
   * Determines the number of packets ready to be processed.
-  * @return The number of packets in the receive buffer, or MICROBIT_NOT_SUPPORTED if the microbitRadio has not been enabled.
+  * @return The number of packets in the receive buffer.
   */
 int MicroBitRadio::dataReady()
 {

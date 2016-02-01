@@ -104,7 +104,7 @@ class MicroBit
 
     // Bluetooth related member variables.
 	MicroBitBLEManager		bleManager;
-	MicroBitRadio		    radio;
+    MicroBitRadio           radio;
     BLEDevice               *ble;
 
     /**
