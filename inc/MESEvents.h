@@ -68,4 +68,27 @@
 #define MES_DEVICE_INCOMING_MESSAGE         8
 
 
+#define MES_DPAD_CONTROLLER_ID              1104
+#define MES_DPAD_BUTTON_A_DOWN              1
+#define MES_DPAD_BUTTON_A_UP                2
+#define MES_DPAD_BUTTON_B_DOWN              3
+#define MES_DPAD_BUTTON_B_UP                4
+#define MES_DPAD_BUTTON_C_DOWN              5
+#define MES_DPAD_BUTTON_C_UP                6
+#define MES_DPAD_BUTTON_D_DOWN              7
+#define MES_DPAD_BUTTON_D_UP                8
+#define MES_DPAD_BUTTON_1_DOWN              9
+#define MES_DPAD_BUTTON_1_UP                10 
+#define MES_DPAD_BUTTON_2_DOWN              11
+#define MES_DPAD_BUTTON_2_UP                12
+#define MES_DPAD_BUTTON_3_DOWN              13
+#define MES_DPAD_BUTTON_3_UP                14
+#define MES_DPAD_BUTTON_4_DOWN              15
+#define MES_DPAD_BUTTON_4_UP                16
+
+//
+// Events that typically use radio broadcast:
+//
+#define MES_BROADCAST_GENERAL_ID            2000
+
 #endif
