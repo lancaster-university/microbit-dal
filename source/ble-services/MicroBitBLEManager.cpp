@@ -50,6 +50,13 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 {
     (void) reason; /* -Wunused-param */
 
+    // configure the stack to release CPU during critical timing events.
+    // mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures
+    // on secure BLE channels.
+    ble_common_opt_radio_cpu_mutex_t opt;
+    opt.enable = 0;
+    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
+
     if (manager)
 	    manager->advertise();
 }
@@ -59,6 +66,12 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
   */
 static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
 {
+    // configure the stack to hold on to CPU during critical timing events.
+    // mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures
+    // on secure BLE channels.
+    ble_common_opt_radio_cpu_mutex_t opt;
+    opt.enable = 1;
+    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
 
     // Ensure that there's no stale, cached information in the client... invalidate all characteristics.
     uint16_t len = 8;
@@ -141,12 +154,6 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->onDisconnection(bleDisconnectionCallback);
     ble->onConnection(bleConnectionCallback);
 
-    // configure the stack to hold on to CPU during critical timing events.
-    // mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures
-    // on secure BLE channels.
-    ble_common_opt_radio_cpu_mutex_t opt;
-    opt.enable = 1;
-    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
 
 #if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
 	// Configure for private addresses, so kids' behaviour can't be easily tracked.
