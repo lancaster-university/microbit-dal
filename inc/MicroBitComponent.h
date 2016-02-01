@@ -44,6 +44,7 @@
 #define MICROBIT_ID_GESTURE             27          // Gesture events
 
 #define MICROBIT_ID_THERMOMETER         28
+#define MICROBIT_ID_SERIAL              29
 
 #define MICROBIT_ID_NOTIFY              1023          // Notfication channel, for general purpose synchronisation
 #define MICROBIT_ID_NOTIFY_ONE          1022          // Notfication channel, for general purpose synchronisation
