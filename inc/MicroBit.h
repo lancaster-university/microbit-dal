@@ -34,6 +34,7 @@
 #include "MicroBitMessageBus.h"
 
 #include "MicroBitBLEManager.h"
+#include "MicroBitRadio.h"
 
 // MicroBit::flags values
 #define MICROBIT_FLAG_SCHEDULER_RUNNING         0x00000001
@@ -103,6 +104,7 @@ class MicroBit
 
     // Bluetooth related member variables.
 	MicroBitBLEManager		bleManager;
+	MicroBitRadio		    radio;
     BLEDevice               *ble;
 
     /**

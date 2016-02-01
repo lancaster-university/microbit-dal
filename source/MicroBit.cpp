@@ -105,6 +105,7 @@ MicroBit::MicroBit() :
        MICROBIT_ID_IO_P15,MICROBIT_ID_IO_P16,MICROBIT_ID_IO_P19,
        MICROBIT_ID_IO_P20),
     bleManager(),
+    radio(MICROBIT_ID_RADIO),
     ble(NULL)
 {
 }
