@@ -21,13 +21,7 @@
 #pragma GCC diagnostic pop
 #endif
 
-#define MICROBIT_BLE_ENABLE_BONDING 	true
-#define MICROBIT_BLE_REQUIRE_MITM		true
-
 #define MICROBIT_PAIRING_FADE_SPEED		4
-#define MICROBIT_BLE_POWER_LEVELS       8
-#define MICROBIT_BLE_MAXIMUM_BONDS      4
-
 
 const char* MICROBIT_BLE_MANUFACTURER = NULL;
 const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
