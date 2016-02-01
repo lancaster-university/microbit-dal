@@ -1,17 +1,12 @@
 #ifndef MICROBIT_DISPLAY_H
 #define MICROBIT_DISPLAY_H
 
-
-/**
-  * Core Configuration settings.
-  */
-#define MICROBIT_DISPLAY_REFRESH_PERIOD     ((float)FIBER_TICK_PERIOD_MS / (float)1000)
-
 /**
   * MessageBus Event Codes
   */
 #define MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE         1
 #define MICROBIT_DISPLAY_EVT_FREE                       2
+#define MICROBIT_DISPLAY_EVT_LIGHT_SENSE                4
 
 /**
   * I/O configurations for common devices.
@@ -43,6 +38,7 @@
 #define MICROBIT_DISPLAY_COLUMN_COUNT       9
 #define MICROBIT_DISPLAY_COLUMN_PINS        P0_4, P0_5, P0_6, P0_7, P0_8, P0_9, P0_10, P0_11, P0_12
 #define MICROBIT_DISPLAY_COLUMN_START       P0_4
+#define MICROBIT_DISPLAY_ROW_START          P0_13
 #endif
 
 //
@@ -54,6 +50,8 @@
 #define MICROBIT_DISPLAY_ERROR_CHARS            4
 #define MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH    8
 #define MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS    -255
+
+#define MICROBIT_DISPLAY_ROW_RESET              0x20
 
 #include "mbed.h"
 #include "ManagedString.h"
@@ -73,7 +71,8 @@ enum AnimationMode {
 
 enum DisplayMode {
     DISPLAY_MODE_BLACK_AND_WHITE,
-    DISPLAY_MODE_GREYSCALE
+    DISPLAY_MODE_GREYSCALE,
+    DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE
 };
 
 enum DisplayRotation {
@@ -161,6 +160,9 @@ class MicroBitDisplay : public MicroBitComponent
     // The number of pixels the image is shifted on the display in each quantum.
     int8_t scrollingImageStride;
 
+    // A pointer to an instance of light sensor, if in use
+    MicroBitLightSensor* lightSensor;
+
     // Flag to indicate if image has been rendered to screen yet (or not)
     bool scrollingImageRendered;
 
@@ -184,6 +186,12 @@ class MicroBitDisplay : public MicroBitComponent
       * Brightness has two levels on, or off.
       */
     void render();
+
+    /**
+      * Renders the current image, and drops the fourth frame to allow for
+      * sensors that require the display to operate.
+      */
+    void renderWithLightSense();
 
     /**
       * Translates a bit mask into a timer interrupt that gives the appearence of greyscale.
@@ -473,7 +481,7 @@ public:
 
     /**
       * Sets the mode of the display.
-      * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, or DISPLAY_MODE_NORMAL)
+      * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, DISPLAY_MODE_BLACK_AND_WHITE, DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
       *
       * Example:
       * @code
@@ -481,6 +489,12 @@ public:
       * @endcode
       */
     void setDisplayMode(DisplayMode mode);
+
+    /**
+      * Gets the mode of the display.
+      * @return the current mode of the display
+      */
+    int getDisplayMode();
 
     /**
       * Fetches the current brightness of this display.
@@ -562,6 +576,19 @@ public:
       * Captures the bitmap currently being rendered on the display.
       */
     MicroBitImage screenShot();
+
+    /**
+      * Constructs an instance of a MicroBitLightSensor if not already configured
+      * and sets the display mode to DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE.
+      *
+      * This also changes the tickPeriod to MICROBIT_LIGHT_SENSOR_TICK_SPEED so
+      * that the display does not suffer from artifacts.
+      *
+      * @note this will return 0 on the first call to this method, a light reading
+      * will be available after the display has activated the light sensor for the
+      * first time.
+      */
+    int readLightLevel();
 
     /**
       * Destructor for MicroBitDisplay, so that we deregister ourselves as a systemComponent
