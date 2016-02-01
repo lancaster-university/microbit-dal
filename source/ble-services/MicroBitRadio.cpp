@@ -364,7 +364,7 @@ int MicroBitRadio::send(PacketBuffer *buffer)
     if (buffer == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (buffer->length > MICROBIT_RADIO_MAX_PACKET_SIZE + 3)
+    if (buffer->length > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
 
     // Firstly, disable the Radio interrupt. We want to wait until the trasmission completes.

@@ -39,7 +39,7 @@ int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
     PacketBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    int l = min(len, p->length - 3);
+    int l = min(len, p->length - MICROBIT_RADIO_HEADER_SIZE - 1);
 
     // Fill in the buffer provided, if possible.
     memcpy(buf, p->payload, l);
@@ -60,7 +60,7 @@ ManagedString MicroBitRadioDatagram::recv()
     PacketBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    ManagedString s((const char *)p->payload, p->length - 3);
+    ManagedString s((const char *)p->payload, p->length - MICROBIT_RADIO_HEADER_SIZE - 1);
 
     delete p;
     return s;
@@ -76,12 +76,12 @@ ManagedString MicroBitRadioDatagram::recv()
  */
 int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
 {
-    if (buffer == NULL || len < 0 || len > MICROBIT_RADIO_MAX_PACKET_SIZE + 3)
+    if (buffer == NULL || len < 0 || len > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
  
     PacketBuffer buf;
 
-    buf.length = len+3;
+    buf.length = len + MICROBIT_RADIO_HEADER_SIZE - 1;
     buf.version = 1;
     buf.group = 0;
     buf.protocol = MICROBIT_RADIO_PROTOCOL_DATAGRAM;

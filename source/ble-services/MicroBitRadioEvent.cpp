@@ -77,7 +77,7 @@ void MicroBitRadioEvent::eventReceived(MicroBitEvent e)
 
     PacketBuffer buf;
 
-    buf.length = sizeof(MicroBitEvent)+3;
+    buf.length = sizeof(MicroBitEvent) + MICROBIT_RADIO_HEADER_SIZE - 1;
     buf.version = 1;
     buf.group = 0;
     buf.protocol = MICROBIT_RADIO_PROTOCOL_EVENTBUS;
