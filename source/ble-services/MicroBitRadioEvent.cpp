@@ -31,7 +31,7 @@ MicroBitRadioEvent::MicroBitRadioEvent()
  *
  * @return MICROBIT_OK on success.
  */
-int MicroBitRadioEvent::registerEvent(uint16_t id, uint16_t value)
+int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
 {
     return uBit.MessageBus.listen(id, value, this, &MicroBitRadioEvent::eventReceived, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
@@ -44,7 +44,7 @@ int MicroBitRadioEvent::registerEvent(uint16_t id, uint16_t value)
  *
  * @return MICROBIT_OK on success.
  */
-int MicroBitRadioEvent::deregisterEvent(uint16_t id, uint16_t value)
+int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value)
 {
     return uBit.MessageBus.ignore(id, value, this, &MicroBitRadioEvent::eventReceived);
 }
