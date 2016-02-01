@@ -105,10 +105,10 @@ MicroBitLightSensor::MicroBitLightSensor() : analogTrigger()
   *
   * Where each number represents a different section on the 5 x 5 matrix display.
   *
-  * @return returns a value in the range 0 - 100 where 0 is dark, and 100
+  * @return returns a value in the range 0 - 255 where 0 is dark, and 255
   * is very bright
   *
-  * @note currently returns a value in the range 0 - 100 where 0 is dark, and 100
+  * @note currently returns a value in the range 0 - 255 where 0 is dark, and 255
   * is very bright perhaps we should normalise the returned values into an SI unit!
   * TODO.
   */
@@ -127,7 +127,11 @@ int MicroBitLightSensor::read()
 
     int inverted = (MICROBIT_LIGHT_SENSOR_MAX_VALUE - average) + MICROBIT_LIGHT_SENSOR_MIN_VALUE;
 
-    int normalised = ((inverted - MICROBIT_LIGHT_SENSOR_MIN_VALUE) * 100) / (MICROBIT_LIGHT_SENSOR_MAX_VALUE - MICROBIT_LIGHT_SENSOR_MIN_VALUE);
+    int a = 0;
+
+    int b = 255;
+
+    int normalised = a + ((((inverted - MICROBIT_LIGHT_SENSOR_MIN_VALUE)) * (b - a))/ (MICROBIT_LIGHT_SENSOR_MAX_VALUE - MICROBIT_LIGHT_SENSOR_MIN_VALUE));
 
     return normalised;
 }

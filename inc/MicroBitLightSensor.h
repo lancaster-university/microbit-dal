@@ -85,10 +85,10 @@ class MicroBitLightSensor
       *
       * Where each number represents a different section on the 5 x 5 matrix display.
       *
-      * @return returns a value in the range 0 - 100 where 0 is dark, and 100
+      * @return returns a value in the range 0 - 255 where 0 is dark, and 255
       * is very bright
       *
-      * @note currently returns a value in the range 0 - 100 where 0 is dark, and 100
+      * @note currently returns a value in the range 0 - 255 where 0 is dark, and 255
       * is very bright perhaps we should normalise the returned values into an SI unit!
       * TODO.
       */
