@@ -75,11 +75,15 @@ int MicroBitRadio::setTransmitPower(int power)
  * Change the transmission and reception band of the radio to the given channel
  *
  * @param band a frequency band in the range 0 - 100. Each step is 1MHz wide, based at 2400MHz.
- * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
+ * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range, 
+ * or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
  *
  */
 int MicroBitRadio::setFrequencyBand(int band)
 {
+    if (uBit.ble)
+        return MICROBIT_NOT_SUPPORTED;
+
     if (band < 0 || band > 100)
         return MICROBIT_INVALID_PARAMETER;
 
@@ -270,13 +274,17 @@ int MicroBitRadio::disable()
   * Sets the radio to listen to packets sent with the given group id.
   *
   * @param group The group to join. A micro:bit can only listen to one group ID at any time.
-  * @return MICROBIT_OK on success.
+  * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */
 int MicroBitRadio::setGroup(uint8_t group)
 {
-    // Record our group id locally, and also append it to the address of this device,
-    // to allow the RADIO module to filter for us.
+    if (uBit.ble)
+        return MICROBIT_NOT_SUPPORTED;
+
+    // Record our group id locally
     this->group = group;
+
+    // Also append it to the address of this device, to allow the RADIO module to filter for us.
     NRF_RADIO->PREFIX0 = (uint32_t)group;
 
     return MICROBIT_OK;
@@ -357,10 +365,13 @@ PacketBuffer* MicroBitRadio::recv()
  * The call will wait until the transmission of the packet has completed before returning.
  *
  * @param data The packet contents to transmit.
- * @return MICROBIT_OK on success.
+ * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running. 
  */
 int MicroBitRadio::send(PacketBuffer *buffer)
 {
+    if (uBit.ble)
+        return MICROBIT_NOT_SUPPORTED;
+
     if (buffer == NULL)
         return MICROBIT_INVALID_PARAMETER;
 

@@ -92,7 +92,8 @@ class MicroBitRadio : MicroBitComponent
      * Change the transmission and reception band of the radio to the given channel
      *
      * @param band a frequency band in the range 0 - 100. Each step is 1MHz wide, based at 2400MHz.
-     * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
+     * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range, 
+     * or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
      *
      */
     int setFrequencyBand(int band);
@@ -129,7 +130,7 @@ class MicroBitRadio : MicroBitComponent
      * Sets the radio to listen to packets sent with the given group id.
      *
      * @param group The group to join. A micro:bit can only listen to one group ID at any time.
-     * @return MICROBIT_OK on success.
+     * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
      */
     int setGroup(uint8_t group);
 
@@ -165,7 +166,7 @@ class MicroBitRadio : MicroBitComponent
      * The call will wait until the transmission of the packet has completed before returning.
      *
      * @param data The packet contents to transmit.
-     * @return MICROBIT_OK on success.
+     * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
      */
     int send(PacketBuffer *buffer);
 };
