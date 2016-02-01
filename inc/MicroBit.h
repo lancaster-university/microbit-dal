@@ -68,6 +68,8 @@ class MicroBit
     void                    compassCalibrator(MicroBitEvent e);
     uint32_t                randomValue;
 
+    //the current tick period in MS
+    int                     tickPeriod;
 
     public:
 
@@ -76,8 +78,6 @@ class MicroBit
 
     // Periodic callback
     Ticker                  systemTicker;
-
-    int                     tickPeriod;
 
     // I2C Interface
     MicroBitI2C             i2c;

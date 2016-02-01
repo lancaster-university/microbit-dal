@@ -8,6 +8,9 @@
 #define MICROBIT_LIGHT_SENSOR_AN_SET_TIME   4000
 #define MICROBIT_LIGHT_SENSOR_TICK_PERIOD   5
 
+#define MICROBIT_LIGHT_SENSOR_MAX_VALUE     338
+#define MICROBIT_LIGHT_SENSOR_MIN_VALUE     75
+
 /**
   * Class definition for MicroBitLightSensor.
   *
@@ -82,10 +85,12 @@ class MicroBitLightSensor
       *
       * Where each number represents a different section on the 5 x 5 matrix display.
       *
-      * @note currently values are inverted to how one would think:
-      *     - Lower is brighter
-      *     - Higher is darker
-      * TODO: Normalise the returned values into an SI unit!
+      * @return returns a value in the range 0 - 100 where 0 is dark, and 100
+      * is very bright
+      *
+      * @note currently returns a value in the range 0 - 100 where 0 is dark, and 100
+      * is very bright perhaps we should normalise the returned values into an SI unit!
+      * TODO.
       */
     int read();
 
