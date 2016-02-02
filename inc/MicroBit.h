@@ -36,6 +36,7 @@
 
 #include "MicroBitBLEManager.h"
 #include "MicroBitRadio.h"
+#include "MicroBitStorage.h"
 
 // MicroBit::flags values
 #define MICROBIT_FLAG_SCHEDULER_RUNNING         0x00000001
