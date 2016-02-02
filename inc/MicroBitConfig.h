@@ -1,28 +1,28 @@
 /**
   * Compile time configuration options for the micro:bit runtime.
   */
-  
+
 #ifndef MICROBIT_CONFIG_H
 #define MICROBIT_CONFIG_H
 
 #include "mbed.h"
 
 //
-// Memory configuration 
+// Memory configuration
 //
 
 // Physical address of the top of SRAM.
-#ifndef MICROBIT_SRAM_END		
+#ifndef MICROBIT_SRAM_END
 #define MICROBIT_SRAM_END		0x20004000
 #endif
 
 // Physical address of the top of the system stack (on mbed-classic this is the top of SRAM)
-#ifndef CORTEX_M0_STACK_BASE    
-#define CORTEX_M0_STACK_BASE    MICROBIT_SRAM_END 
+#ifndef CORTEX_M0_STACK_BASE
+#define CORTEX_M0_STACK_BASE    MICROBIT_SRAM_END
 #endif
 
 // Amount of memory reserved for the stack at the end of memory (bytes).
-#ifndef MICROBIT_STACK_SIZE		
+#ifndef MICROBIT_STACK_SIZE
 #define MICROBIT_STACK_SIZE		2048
 #endif
 
@@ -44,7 +44,7 @@
 
 // if defined, reuse the 8K of SRAM reserved for SoftDevice (Nordic's memory resident BLE stack) as heap memory.
 // The amount of memory reused depends upon whether or not BLE is enabled using MICROBIT_BLE_ENABLED.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_HEAP_REUSE_SD
 #define MICROBIT_HEAP_REUSE_SD          1
 #endif
@@ -62,7 +62,7 @@
 #define MICROBIT_HEAP_BASE_BLE_ENABLED          0x20001C00
 #endif
 
-// The highest address of memory normally reserved for Soft Device that is safe to use as heap storage 
+// The highest address of memory normally reserved for Soft Device that is safe to use as heap storage
 #ifndef MICROBIT_HEAP_SD_LIMIT
 #define MICROBIT_HEAP_SD_LIMIT                  0x20002000
 #endif
@@ -80,7 +80,7 @@
 //
 // Message Bus:
 // Default behaviour for event handlers, if not specified in the listen() call
-// 
+//
 // Permissable values are:
 //   MESSAGE_BUS_LISTENER_REENTRANT
 //   MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY
@@ -94,7 +94,7 @@
 //
 // Maximum event queue depth. If a queue exceeds this depth, further events will be dropped.
 // Used to prevent message queues growing uncontrollably due to badly behaved user code and causing panic conditions.
-// 
+//
 #ifndef MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH
 #define MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH        10
 #endif
@@ -110,7 +110,7 @@
 #endif
 
 // To reduce memory cost and complexity, the micro:bit allows components to register for
-// periodic callback events when the processor is idle. 
+// periodic callback events when the processor is idle.
 // This defines the maximum size of the idle callback list.
 #ifndef MICROBIT_IDLE_COMPONENTS
 #define MICROBIT_IDLE_COMPONENTS        6
@@ -119,27 +119,27 @@
 //
 // BLE options
 //
-// The BLE stack is very memory hungry. Each service can therefore be compiled in or out 
-// by enabling/disabling the options below. 
+// The BLE stack is very memory hungry. Each service can therefore be compiled in or out
+// by enabling/disabling the options below.
 //
 // n.b. The minimum set of services to enable over the air programming of the device will
 // still be brought up in pairing mode regardless of the settings below.
 //
 
 // Enable/Disable BLE during normal operation.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_ENABLED
 #define MICROBIT_BLE_ENABLED                1
 #endif
 
 // Enable/Disable BLE pairing mode mode at power up.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_PAIRING_MODE
 #define MICROBIT_BLE_PAIRING_MODE	        1
 #endif
 
 // Enable/Disable the use of private resolvable addresses.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_PRIVATE_ADDRESSES
 #define MICROBIT_BLE_PRIVATE_ADDRESSES		0
 #endif
@@ -160,28 +160,28 @@
 // Defines default power level of the BLE radio transmitter.
 // Valid values are in the range 0..7 inclusive, with 0 being the lowest power and 7 the highest power.
 // Based on trials undertaken by the BBC, the radio is normally set to its lowest power level
-// to best protect children's privacy. 
+// to best protect children's privacy.
 #ifndef MICROBIT_BLE_DEFAULT_TX_POWER
 #define MICROBIT_BLE_DEFAULT_TX_POWER       0
 #endif
 
 // Enable/Disable BLE Service: MicroBitDFU
 // This allows over the air programming during normal operation.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_DFU_SERVICE
 #define MICROBIT_BLE_DFU_SERVICE            1
 #endif
 
 // Enable/Disable BLE Service: MicroBitEventService
 // This allows routing of events from the micro:bit message bus over BLE.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_EVENT_SERVICE
 #define MICROBIT_BLE_EVENT_SERVICE  1
 #endif
 
 // Enable/Disable BLE Service: MicroBitDeviceInformationService
 // This enables the standard BLE device information service.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_DEVICE_INFORMATION_SERVICE
 #define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE     1
 #endif
@@ -189,40 +189,40 @@
 
 // Enable/Disable BLE Service: MicroBitLEDService
 // This enables the control and the LED matrix display via BLE.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_LED_SERVICE
 #define MICROBIT_BLE_LED_SERVICE                0
 #endif
 
 // Enable/Disable BLE Service: MicroBitAccelerometerService
 // This enables live access to the on board 3 axis accelerometer.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_ACCELEROMETER_SERVICE
 #define MICROBIT_BLE_ACCELEROMETER_SERVICE     0
 #endif
 
 // Enable/Disable BLE Service: MicroBitMagnetometerService
 // This enables live access to the on board 3 axis magnetometer.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_MAGNETOMETER_SERVICE
 #define MICROBIT_BLE_MAGNETOMETER_SERVICE       0
 #endif
 
 // Enable/Disable BLE Service: MicroBitButtonService
 // This enables live access to the two micro:bit buttons.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_BUTTON_SERVICE
 #define MICROBIT_BLE_BUTTON_SERVICE             0
 #endif
 
 // This enables live access to the two micro:bit buttons.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_IO_PIN_SERVICE
 #define MICROBIT_BLE_IO_PIN_SERVICE             0
 #endif
 
 // This enables live access to the die temperature sensors on the micro:bit.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_BLE_TEMPERATURE_SERVICE
 #define MICROBIT_BLE_TEMPERATURE_SERVICE        0
 #endif
@@ -238,7 +238,7 @@
 
 // Enable this to read 10 bits of data from the acclerometer.
 // Otherwise, 8 bits are used.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef USE_ACCEL_LSB
 #define USE_ACCEL_LSB               0
 #endif
@@ -261,36 +261,36 @@
 
 // Selects the minimum permissable brightness level for the device
 // in the region of 0 (off) to 255 (full brightness)
-#ifndef MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS 
 #define MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS     2     
+#ifndef MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS
 #endif
 
 // Selects the maximum permissable brightness level for the device
 // in the region of 0 (off) to 255 (full brightness)
-#ifndef MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS 
+#ifndef MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS
 #define MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS     255
 #endif
 
 // Selects the default brightness for the display
 // in the region of zero (off) to 255 (full brightness)
-#ifndef MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS 
+#ifndef MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS
 #define MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS     MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS
 #endif
 
 // Selects the default scroll speed for the display.
 // The time taken to move a single pixel (ms).
-#ifndef MICROBIT_DEFAULT_SCROLL_SPEED 
+#ifndef MICROBIT_DEFAULT_SCROLL_SPEED
 #define MICROBIT_DEFAULT_SCROLL_SPEED       120
 #endif
 
 // Selects the number of pixels a scroll will move in each quantum.
-#ifndef MICROBIT_DEFAULT_SCROLL_STRIDE 
-#define MICROBIT_DEFAULT_SCROLL_STRIDE      -1 
+#ifndef MICROBIT_DEFAULT_SCROLL_STRIDE
+#define MICROBIT_DEFAULT_SCROLL_STRIDE      -1
 #endif
 
 // Selects the time each character will be shown on the display during print operations.
 // The time each character is shown on the screen  (ms).
-#ifndef MICROBIT_DEFAULT_PRINT_SPEED 
+#ifndef MICROBIT_DEFAULT_PRINT_SPEED
 #define MICROBIT_DEFAULT_PRINT_SPEED        400
 #endif
 
@@ -300,7 +300,7 @@
 //
 
 // Enable this to invoke a panic on out of memory conditions.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_PANIC_HEAP_FULL
 #define MICROBIT_PANIC_HEAP_FULL    1
 #endif
@@ -311,14 +311,14 @@
 
 // Enable this to route debug messages through the USB serial interface.
 // n.b. This also disables the user serial port 'uBit.serial'.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_DBG
 #define MICROBIT_DBG            0
 #endif
 
 // Enable this to receive diagnostic messages from the heap allocator via the USB serial interface.
 // n.b. This requires MICROBIT_DBG to be defined.
-// Set '1' to enable. 
+// Set '1' to enable.
 #ifndef MICROBIT_HEAP_DBG
 #define MICROBIT_HEAP_DBG       0
 #endif
@@ -329,7 +329,7 @@
 // if this isn't available, it can be defined manually as a configuration option.
 //
 #ifndef MICROBIT_DAL_VERSION
-#define MICROBIT_DAL_VERSION   "unknown" 
+#define MICROBIT_DAL_VERSION   "unknown"
 #endif
 
 
