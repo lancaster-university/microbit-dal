@@ -36,6 +36,19 @@ int main()
     // Provide time for all threaded initialisers to complete.
     uBit.sleep(100);
 
+    //check our persistent storage for compassCalibrationData
+    MicroBitStorage s = MicroBitStorage();
+    MicroBitConfigurationBlock *b = s.getConfigurationBlock();
+
+    //if we have some calibrated data, calibrate the compass!
+    if(b->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+    {
+        if(b->compassCalibrationData != CompassSample(0,0,0))
+            uBit.compass.setCalibration(b->compassCalibrationData);
+    }
+
+    delete b;
+
 #if CONFIG_ENABLED(MICROBIT_BLE_PAIRING_MODE)
     // Test if we need to enter BLE pairing mode...
     int i=0;
