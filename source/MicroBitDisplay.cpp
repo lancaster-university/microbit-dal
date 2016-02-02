@@ -8,7 +8,7 @@
 #include "MicroBitMatrixMaps.h"
 #include "nrf_gpio.h"
 
-const float timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {0.000010, 0.000047, 0.000094, 0.000187, 0.000375, 0.000750, 0.001500, 0.003000};
+const int timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {10, 47, 94, 187, 375, 750, 1500, 3000};
 
 /**
   * Constructor.
@@ -222,7 +222,7 @@ void MicroBitDisplay::renderGreyscale()
 
     greyscaleBitMsk <<= 1;
 
-    renderTimer.attach(this,&MicroBitDisplay::renderGreyscale, timings[timingCount++]);
+    renderTimer.attach_us(this,&MicroBitDisplay::renderGreyscale, timings[timingCount++]);
 }
 
 /**
