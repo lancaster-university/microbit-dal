@@ -32,10 +32,8 @@
 
 
 #define MES_ALERTS_ID                       1004
-// TODO Multiple DISPLAY_TOAST event values
 #define MES_ALERT_EVT_DISPLAY_TOAST         1
 #define MES_ALERT_EVT_VIBRATE               2
-// TODO PLAY_SOUND and ALARMN to be combined
 #define MES_ALERT_EVT_PLAY_SOUND            3
 #define MES_ALERT_EVT_PLAY_RINGTONE         4
 #define MES_ALERT_EVT_FIND_MY_PHONE         5
