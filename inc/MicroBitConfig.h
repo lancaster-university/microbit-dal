@@ -262,7 +262,7 @@
 // Selects the minimum permissable brightness level for the device
 // in the region of 0 (off) to 255 (full brightness)
 #ifndef MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS
-#define MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS     4
+#define MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS     1
 #endif
 
 // Selects the maximum permissable brightness level for the device
