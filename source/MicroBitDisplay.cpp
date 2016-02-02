@@ -8,7 +8,7 @@
 #include "MicroBitMatrixMaps.h"
 #include "nrf_gpio.h"
 
-const float timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {0.000010, 0.000047, 0.000094, 0.000187, 0.000375, 0.000750, 0.001500, 0.003000};
+const int timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
 
 /**
   * Constructor.
@@ -147,7 +147,7 @@ void MicroBitDisplay::render()
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
     if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
-        renderTimer.attach_us(this, &MicroBitDisplay::renderFinish, (((brightness * 1000) / (MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * uBit.getTickPeriod()));
+        renderTimer.attach_us(this, &MicroBitDisplay::renderFinish, (((brightness * 950) / (MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * uBit.getTickPeriod()));
 
     //this will take around 23us to execute
     if(brightness <= MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
@@ -222,7 +222,13 @@ void MicroBitDisplay::renderGreyscale()
 
     greyscaleBitMsk <<= 1;
 
-    renderTimer.attach(this,&MicroBitDisplay::renderGreyscale, timings[timingCount++]);
+    if(timingCount < 3)
+    {
+        wait_us(timings[timingCount++]);
+        renderGreyscale();
+        return;
+    }
+    renderTimer.attach_us(this,&MicroBitDisplay::renderGreyscale, timings[timingCount++]);
 }
 
 /**
