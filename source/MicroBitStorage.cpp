@@ -70,6 +70,35 @@ MicroBitConfigurationBlock *MicroBitStorage::getConfigurationBlock()
     if (block->magic != MICROBIT_STORAGE_CONFIG_MAGIC) 
         memclr(block, sizeof(MicroBitConfigurationBlock));
 
+#if CONFIG_ENABLED(MICROBIT_DBG)
+
+    uBit.serial.printf("RETREIVE:\r\n");
+
+    if(block->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+    {
+        uBit.serial.printf("magic: %.2x\r\n", block->magic);
+
+        for(int attrIterator = 0; attrIterator < MICROBIT_BLE_MAXIMUM_BONDS; attrIterator++)
+        {
+            if(block->sysAttrs[attrIterator].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+            {
+                uBit.serial.printf("systemAttrs[%d]: ", attrIterator);
+
+                for(int i = 0; i < 8; i++)
+                {
+                    uBit.serial.printf("%.2x\r\n", block->sysAttrs[attrIterator].sys_attr[i]);
+                }
+
+                uBit.serial.printf("\r\n");
+            }
+        }
+
+        uBit.serial.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
+
+        uBit.serial.printf("temperature: %d\r\n", block->thermometerCalibration);
+    }
+#endif
+
     return block;
 }
 
@@ -103,6 +132,37 @@ void MicroBitStorage::flashWordWrite(uint32_t * address, uint32_t value)
  */  
 int MicroBitStorage::setConfigurationBlock(MicroBitConfigurationBlock *block)
 {
+
+    #if CONFIG_ENABLED(MICROBIT_DBG)
+
+        uBit.serial.printf("STORE:\r\n");
+
+        if(block->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+        {
+            uBit.serial.printf("magic: %.2x\r\n", block->magic);
+
+            for(int attrIterator = 0; attrIterator < MICROBIT_BLE_MAXIMUM_BONDS; attrIterator++)
+            {
+                if(block->sysAttrs[attrIterator].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+                {
+                    uBit.serial.printf("systemAttrs[%d]: ", attrIterator);
+
+                    for(int i = 0; i < 8; i++)
+                    {
+                        uBit.serial.printf("%.2x\r\n", block->sysAttrs[attrIterator].sys_attr[i]);
+                    }
+
+                    uBit.serial.printf("\r\n");
+                }
+            }
+
+            uBit.serial.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
+
+            uBit.serial.printf("temperature: %d\r\n", block->thermometerCalibration);
+        }
+    #endif
+
+
     uint32_t * addr;
     uint32_t   pg_size;
     uint32_t   pg_num;
