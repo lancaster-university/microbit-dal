@@ -13,6 +13,10 @@
 #endif
 
 #include "ble.h"
+extern "C"
+{
+#include "device_manager.h"
+}
 
 /*
  * Return to our predefined compiler settings.
@@ -36,6 +40,7 @@ const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
  * whilst keeping the code modular.
  */
 static MicroBitBLEManager *manager = NULL;
+static uint8_t deviceID = 255;
 
 /**
   * Callback when a BLE GATT disconnect occurs.
@@ -44,12 +49,26 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 {
     (void) reason; /* -Wunused-param */
 
-    // configure the stack to release CPU during critical timing events.
-    // mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures
-    // on secure BLE channels.
-    ble_common_opt_radio_cpu_mutex_t opt;
-    opt.enable = 0;
-    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
+    BLESysAttribute attrib;
+    uint16_t len = sizeof(BLESysAttribute);
+
+    sd_ble_gatts_sys_attr_get(reason->handle, attrib.sys_attr, &len, BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
+
+    if (deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    {
+        MicroBitStorage s = MicroBitStorage();
+        MicroBitConfigurationBlock *b = s.getConfigurationBlock();
+
+        if(b->sysAttrs[deviceID].magic != MICROBIT_STORAGE_CONFIG_MAGIC || memcmp(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(BLESysAttribute)) != 0)
+        {
+            b->magic = MICROBIT_STORAGE_CONFIG_MAGIC;
+            b->sysAttrs[deviceID].magic = MICROBIT_STORAGE_CONFIG_MAGIC;
+            memcpy(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(BLESysAttribute));
+            s.setConfigurationBlock(b);
+        }
+
+        delete b;
+    }
 
     if (manager)
 	    manager->advertise();
@@ -60,23 +79,29 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
   */
 static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
 {
-    // configure the stack to hold on to CPU during critical timing events.
-    // mbed-classic performs __disabe_irq calls in its timers, which can cause MIC failures
-    // on secure BLE channels.
-    ble_common_opt_radio_cpu_mutex_t opt;
-    opt.enable = 1;
-    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
+    deviceID = 255;
 
-    // Ensure that there's no stale, cached information in the client... invalidate all characteristics.
-    uint16_t len = 8;
+    dm_handle_t dm_handle = {0,0,0,0};
 
-    // Configure the ServiceChanged characteristic to receive service changed indications
-    // TODO: This is really a workaround as we can't maintain persistent state on the micro:bit across USB
-    // reprogramming flashes.... yet.
-    uint8_t data[] = {0x0B,0x00,0x02,0x00,0x02,0x00,0xB8,0x46};
+    int ret = dm_handle_get(reason->handle, &dm_handle);
 
-    sd_ble_gatts_sys_attr_set(reason->handle, data, len, BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS); 
-    sd_ble_gatts_service_changed(reason->handle, 0x000c, 0xffff); 
+    if (ret == 0)
+        deviceID = dm_handle.device_id;
+
+    if (deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    {
+        // Ensure that there's no stale, cached information in the client... invalidate all characteristics.
+        MicroBitStorage s = MicroBitStorage();
+        MicroBitConfigurationBlock *b = s.getConfigurationBlock();
+
+        if(b->sysAttrs[deviceID].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+        {
+            sd_ble_gatts_sys_attr_set(reason->handle, b->sysAttrs[deviceID].sys_attr, sizeof(BLESysAttribute), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
+            sd_ble_gatts_service_changed(reason->handle, 0x000c, 0xffff);
+        }
+
+        delete b;
+    }
 }
 
 static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::Passkey_t passkey)
@@ -92,6 +117,12 @@ static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::
 static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager::SecurityCompletionStatus_t status)
 {
     (void) handle; /* -Wunused-param */
+
+    dm_handle_t dm_handle = {0,0,0,0};
+    int ret = dm_handle_get(handle, &dm_handle);
+
+    if (ret == 0)
+        deviceID = dm_handle.device_id;
 
     if (manager)
 	    manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
@@ -144,11 +175,16 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble = new BLEDevice();
     ble->init();
 
-
     // automatically restart advertising after a device disconnects.
     ble->onDisconnection(bleDisconnectionCallback);
     ble->onConnection(bleConnectionCallback);
 
+    // Configure the stack to hold onto the CPU during critical timing events.
+    // mbed-classic performs __disable_irq() calls in its timers that can cause
+    // MIC failures on secure BLE channels...
+    ble_common_opt_radio_cpu_mutex_t opt;
+    opt.enable = 1;
+    sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
 
 #if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
 	// Configure for private addresses, so kids' behaviour can't be easily tracked.
@@ -160,12 +196,13 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
     ble->securityManager().init(enableBonding, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
-    // If we're in pairing mode, review the size of the bond table.
     if (enableBonding)
     {
+        // If we're in pairing mode, review the size of the bond table.
+        int bonds = getBondCount();
+
         // TODO: It would be much better to implement some sort of LRU/NFU policy here,
         // but this isn't currently supported in mbed, so we'd need to layer break...
-        int bonds = getBondCount();
 
         // If we're full, empty the bond table.
         if (bonds >= MICROBIT_BLE_MAXIMUM_BONDS)
@@ -173,7 +210,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     }
 
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
-    // Configure a whitelist to filter all connection requetss from unbonded devices. 
+    // Configure a whitelist to filter all connection requetss from unbonded devices.
     // Most BLE stacks only permit one connection at a time, so this prevents denial of service attacks.
     BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
     Gap::Whitelist_t whitelist;
@@ -182,13 +219,12 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     ble->securityManager().getAddressesFromBondTable(whitelist);
     ble->gap().setWhitelist(whitelist);
-
     ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
     ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
-#endif    
+#endif
 
     // Configure the radio at our default power level
-    setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER); 
+    setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER);
 
     // Bring up any configured auxiliary services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
@@ -255,14 +291,14 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // If whiltelisting is disabled, then we always advertise.
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     if (whitelist.size > 0)
-#endif        
+#endif
         ble->startAdvertising();
 }
 
 /**
  * Change the output power level of the transmitter to the given value.
  *
- * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest. 
+ * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest.
  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
  *
  */
@@ -299,7 +335,7 @@ int MicroBitBLEManager::getBondCount()
  */
 void MicroBitBLEManager::pairingRequested(ManagedString passKey)
 {
-    // Update our mode to display the passkey. 
+    // Update our mode to display the passkey.
 	this->passKey = passKey;
 	this->pairingStatus = MICROBIT_BLE_PAIR_REQUEST;
 }
@@ -416,7 +452,8 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display)
 			{
 				MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
 				display.print(tick,0,0,0);
-                uBit.sleep(5000);
+                uBit.sleep(15000);
+		        timeInPairingMode = MICROBIT_BLE_PAIRING_TIMEOUT * 30;
 
                 /*
                  * Disabled, as the API to return the number of active bonds is not reliable at present...

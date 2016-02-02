@@ -50,7 +50,7 @@ extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
   *
   */
 class MicroBitBLEManager
-{                                  
+{
     public:
 
 	// The mbed abstraction of the BlueTooth Low Energy (BLE) hardware

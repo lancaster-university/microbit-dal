@@ -488,6 +488,24 @@ void MicroBitCompass::calibrateEnd()
   */
 void MicroBitCompass::setCalibration(CompassSample calibration)
 {
+
+    MicroBitStorage s = MicroBitStorage();
+    MicroBitConfigurationBlock *b = s.getConfigurationBlock();
+
+    //check we are not storing our restored calibration data.
+    if(b->compassCalibrationData != calibration)
+    {
+        b->magic = MICROBIT_STORAGE_CONFIG_MAGIC;
+
+        b->compassCalibrationData.x = calibration.x;
+        b->compassCalibrationData.y = calibration.y;
+        b->compassCalibrationData.z = calibration.z;
+
+        s.setConfigurationBlock(b);
+    }
+
+    delete b;
+
     average = calibration;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;
 }

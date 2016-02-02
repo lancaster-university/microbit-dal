@@ -97,6 +97,16 @@ struct CompassSample
         this->y = y;
         this->z = z;
     }
+
+    bool operator==(const CompassSample& other) const
+    {
+        return x == other.x && y == other.y && z == other.z;
+    }
+
+    bool operator!=(const CompassSample& other) const
+    {
+        return !(x == other.x && y == other.y && z == other.z);
+    }
 };
 
 /**
