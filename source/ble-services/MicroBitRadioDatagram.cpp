@@ -60,7 +60,7 @@ ManagedString MicroBitRadioDatagram::recv()
     PacketBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    ManagedString s((const char *)p->payload, p->length - MICROBIT_RADIO_HEADER_SIZE - 1);
+    ManagedString s((const char *)p->payload, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1));
 
     delete p;
     return s;
