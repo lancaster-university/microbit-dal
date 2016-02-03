@@ -39,7 +39,7 @@ int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
     PacketBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    int l = min(len, p->length - MICROBIT_RADIO_HEADER_SIZE - 1);
+    int l = min(len, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1));
 
     // Fill in the buffer provided, if possible.
     memcpy(buf, p->payload, l);
