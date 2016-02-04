@@ -116,7 +116,19 @@ class MicroBitRadio : MicroBitComponent
     int queueRxBuf();
 
     /**
-     * Initialises the radio for use as a multipoint sender/receiver 
+     * Sets the RSSI for the most recent packet.
+     *
+     * @param rssi the new rssi value
+     */
+    int setRSSI(uint8_t rssi);
+
+    /**
+     * Retrieves the current RSSI for the most recent packet.
+     */
+    int getRSSI();
+
+    /**
+     * Initialises the radio for use as a multipoint sender/receiver
      * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if SoftDevice is enabled.
      */
     int enable();

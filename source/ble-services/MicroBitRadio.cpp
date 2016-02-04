@@ -31,9 +31,28 @@ extern "C" void RADIO_IRQHandler(void)
     MicroBitRadio::instance->queueRxBuf();
     NRF_RADIO->PACKETPTR = (uint32_t) MicroBitRadio::instance->getRxBuf();
 
-    // Start listening for the next packet.
-    NRF_RADIO->EVENTS_END = 0;
-    NRF_RADIO->TASKS_START = 1;
+    if(NRF_RADIO->EVENTS_READY)
+    {
+        NRF_RADIO->EVENTS_READY = 0;
+
+        // Start listening and wait for the END event
+        NRF_RADIO->TASKS_START = 1;
+    }
+
+    if(NRF_RADIO->EVENTS_END)
+    {
+        NRF_RADIO->EVENTS_END = 0;
+
+        if(NRF_RADIO->CRCSTATUS == 1)
+        {
+            uint8_t sample = NRF_RADIO->RSSISAMPLE;
+
+            uBit.radio.setRSSI(sample);
+        }
+
+        // Start listening and wait for the END event
+        NRF_RADIO->TASKS_START = 1;
+    }
 }
 
 /**
@@ -48,6 +67,7 @@ MicroBitRadio::MicroBitRadio(uint16_t id) : datagram()
     this->status = 0;
 	this->group = 0;
 	this->queueDepth = 0;
+    this->rssi = 0;
     this->rxQueue = NULL;
     this->rxBuf = NULL;
 
@@ -146,6 +166,34 @@ int MicroBitRadio::queueRxBuf()
     rxBuf = newRxBuf;
 
     return MICROBIT_OK;
+}
+
+/**
+ * Sets the RSSI for the most recent packet.
+ *
+ * @param rssi the new rssi value
+ *
+ * @note should only be called from RADIO_IRQHandler...
+ */
+int MicroBitRadio::setRSSI(uint8_t rssi)
+{
+    if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
+        return MICROBIT_NOT_SUPPORTED;
+
+    this->rssi = rssi;
+
+    return MICROBIT_OK;
+}
+
+/**
+ * Retrieves the current RSSI for the most recent packet.
+ */
+int MicroBitRadio::getRSSI()
+{
+    if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
+        return MICROBIT_NOT_SUPPORTED;
+
+    return this->rssi;
 }
 
 /**
