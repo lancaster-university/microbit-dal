@@ -20,81 +20,41 @@
 #define EDDYSTONE_FRAME_TYPE_TLM        0x20
 
 #define EDDYSTONE_FRAME_SIZE_UID        20
-#define EDDYSTONE_FRAME_SIZE_TLM        14
 #define EDDYSTONE_FRAME_SIZE_URL        2
+#define EDDYSTONE_FRAME_SIZE_TLM        14
 
 #define EDDYSTONE_HEADER_SIZE           2
 #define EDDYSTONE_UID_RESERVED_SIZE     2
 #define EDDYSTONE_NAMESPACE_SIZE        10
 #define EDDYSTONE_INSTANCE_SIZE         6
 
+#define EDDYSTONE_FRAME_UID             0
+#define EDDYSTONE_FRAME_URL             1
+#define EDDYSTONE_FRAME_TLM             2
+
+
+const uint8_t EDDYSTONE_UUID[] = {0xAA, 0xFE};
 
 struct UIDFrame
 {
 
     private:
-    uint16_t uid;
     ManagedString namespaceID;
     ManagedString instanceID;
-
-    uint16_t encodeName(ManagedString name)
-    {
-        const uint8_t littleEndianLookup[MICROBIT_NAME_LENGTH] =
-        {
-            0x00,
-            0x04,
-            0x02,
-            0x06,
-            0x01
-        };
-
-        const uint8_t codebook[MICROBIT_NAME_LENGTH][MICROBIT_NAME_CODE_LETTERS] =
-        {
-            {'z', 'v', 'g', 'p', 't'},
-            {'u', 'o', 'i', 'e', 'a'},
-            {'z', 'v', 'g', 'p', 't'},
-            {'u', 'o', 'i', 'e', 'a'},
-            {'z', 'v', 'g', 'p', 't'}
-        };
-
-        uint16_t encodedUID = 0;
-
-        int bitPos = 12;
-
-        for(int outer = 0; outer < MICROBIT_NAME_LENGTH; outer++)
-        {
-            for(int inner = 0; inner < MICROBIT_NAME_CODE_LETTERS; inner++)
-            {
-                if(name.charAt(outer) == codebook[outer][inner])
-                    encodedUID |= ((littleEndianLookup[inner] & 0x07) << bitPos);
-            }
-
-            bitPos -= 3;
-        }
-
-        return encodedUID;
-    }
 
     public:
     UIDFrame(ManagedString namespaceID, ManagedString instanceID)
     {
-        this->uid = encodeName(uBit.getName());
         this->namespaceID = namespaceID;
         this->instanceID = instanceID;
-    }
-
-
-    uint16_t getEncodedUID()
-    {
-        return uid;
     }
 
     void getFrame(uint8_t * frameBuf)
     {
         int index = 0;
 
-        frameBuf[index++] = this->uid & 0x0F;
-        frameBuf[index++] = this->uid >> 8;
+        frameBuf[index++] = EDDYSTONE_UUID[0];
+        frameBuf[index++] = EDDYSTONE_UUID[1];
 
 
         frameBuf[index++] = EDDYSTONE_FRAME_TYPE_UID;
@@ -155,12 +115,9 @@ struct UIDFrame
 
 struct TLMFrame
 {
-    uint16_t uid;
-
     public:
-    TLMFrame(uint16_t uid)
+    TLMFrame()
     {
-        this->uid = uid;
     }
 
     void getFrame(uint8_t * frameBuf)
@@ -169,8 +126,8 @@ struct TLMFrame
         uint32_t tempTicks = ticks;
         uint16_t temperature = uBit.thermometer.getTemperature();
 
-        frameBuf[index++] = this->uid & 0x0F;
-        frameBuf[index++] = this->uid >> 8;
+        frameBuf[index++] = EDDYSTONE_UUID[0];
+        frameBuf[index++] = EDDYSTONE_UUID[1];
 
         frameBuf[index++] = EDDYSTONE_FRAME_TYPE_TLM;           // Eddystone frameBuf type = Telemetry
         frameBuf[index++] = 0;                             // TLM Version Number
@@ -209,8 +166,6 @@ struct TLMFrame
 struct URLFrame
 {
     ManagedString encodedURL;
-
-    uint16_t uid;
 
     ManagedString encodeURL(ManagedString url)
     {
@@ -292,18 +247,17 @@ struct URLFrame
     };
 
 public:
-    URLFrame(ManagedString url, uint16_t uid)
+    URLFrame(ManagedString url)
     {
         this->encodedURL = encodeURL(url);
-        this->uid = uid;
     }
 
     void getFrame(uint8_t * frameBuf)
     {
         int index = 0;
 
-        frameBuf[index++] = this->uid & 0x0F;
-        frameBuf[index++] = this->uid >> 8;
+        frameBuf[index++] = EDDYSTONE_UUID[0];
+        frameBuf[index++] = EDDYSTONE_UUID[1];
 
         frameBuf[index++] = EDDYSTONE_FRAME_TYPE_URL;
         frameBuf[index++] = 0;
@@ -322,6 +276,11 @@ public:
 
         uBit.serial.printf("\r\n");
 #endif
+    }
+
+    void setURL(ManagedString url)
+    {
+        this->encodedURL = encodeURL(url);
     }
 
     int length()
@@ -349,8 +308,6 @@ class MicroBitEddyStoneService
 
     uint8_t currentFrame;
 
-
-
     public:
 
     /**
@@ -367,6 +324,8 @@ class MicroBitEddyStoneService
       * Callback. Invoked when any of our attributes are written via BLE.
       */
     void onDataWritten(const GattWriteCallbackParams *params);
+
+    void radioNotificationCallback(bool radioActive);
 
     void updateAdvertisementPacket();
 };

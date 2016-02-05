@@ -148,7 +148,7 @@
 // If enabled, the micro:bit will only respond to conneciton requests from
 // known, bonded devices.
 #ifndef MICROBIT_BLE_WHITELIST
-#define MICROBIT_BLE_WHITELIST              1
+#define MICROBIT_BLE_WHITELIST              0
 #endif
 
 // Define the period of time for which the BLE stack will advertise (seconds)
@@ -162,28 +162,28 @@
 // Based on trials undertaken by the BBC, the radio is normally set to its lowest power level
 // to best protect children's privacy.
 #ifndef MICROBIT_BLE_DEFAULT_TX_POWER
-#define MICROBIT_BLE_DEFAULT_TX_POWER       0
+#define MICROBIT_BLE_DEFAULT_TX_POWER       6
 #endif
 
 // Enable/Disable BLE Service: MicroBitDFU
 // This allows over the air programming during normal operation.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_DFU_SERVICE
-#define MICROBIT_BLE_DFU_SERVICE            1
+#define MICROBIT_BLE_DFU_SERVICE            0
 #endif
 
 // Enable/Disable BLE Service: MicroBitEventService
 // This allows routing of events from the micro:bit message bus over BLE.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_EVENT_SERVICE
-#define MICROBIT_BLE_EVENT_SERVICE  1
+#define MICROBIT_BLE_EVENT_SERVICE  0
 #endif
 
 // Enable/Disable BLE Service: MicroBitDeviceInformationService
 // This enables the standard BLE device information service.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_DEVICE_INFORMATION_SERVICE
-#define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE     1
+#define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE     0
 #endif
 
 

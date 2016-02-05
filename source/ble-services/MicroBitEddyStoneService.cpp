@@ -16,8 +16,8 @@
 MicroBitEddyStoneService::MicroBitEddyStoneService(BLEDevice &_ble, ManagedString url, ManagedString namespaceID, ManagedString instanceID) :
         ble(_ble),
         uidFrame(namespaceID, instanceID),
-        urlFrame(url, uidFrame.getEncodedUID()),
-        tlmFrame(uidFrame.getEncodedUID())
+        urlFrame(url),
+        tlmFrame()
 {
     uBit.serial.printf("%s %s %s\r\n",url.toCharArray(),namespaceID.toCharArray(), instanceID.toCharArray());
 
@@ -30,46 +30,35 @@ MicroBitEddyStoneService::MicroBitEddyStoneService(BLEDevice &_ble, ManagedStrin
 
     updateAdvertisementPacket();
 
-
     /* Start advertising */
     ble.gap().startAdvertising();
 }
 
 void MicroBitEddyStoneService::updateAdvertisementPacket()
 {
-    currentFrame = (currentFrame + 1) % EDDYSTONE_NUM_EDDYSTONE_FRAMES;
-
-    uint8_t* data;
-    int len;
+    uint8_t* data = NULL;
+    int len = 0;
 
     switch(currentFrame)
     {
-        case 0:
+        case EDDYSTONE_FRAME_UID:
             len = uidFrame.length();
             data = (uint8_t*) malloc(len);
             uidFrame.getFrame(data);
             break;
 
-        case 1:
+        case EDDYSTONE_FRAME_URL:
             len = urlFrame.length();
             data = (uint8_t*) malloc(len);
             urlFrame.getFrame(data);
             break;
 
-        case 2:
+        case EDDYSTONE_FRAME_TLM:
             len = tlmFrame.length();
             data = (uint8_t*) malloc(len);
             tlmFrame.getFrame(data);
             break;
     }
-
-    uint16_t encodedUID = uidFrame.getEncodedUID();
-
-    uint8_t uid[2] =
-    {
-        (uint8_t)(encodedUID & 0x0F),
-        (uint8_t)(encodedUID >> 8)
-    };
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
 
@@ -92,8 +81,20 @@ void MicroBitEddyStoneService::updateAdvertisementPacket()
 
     ble.gap().clearAdvertisingPayload();
     ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, uid, sizeof(uid));
+    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
     ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, data, len);
 
     free(data);
+
+    currentFrame = (currentFrame + 1) % EDDYSTONE_NUM_EDDYSTONE_FRAMES;
+}
+
+void MicroBitEddyStoneService::radioNotificationCallback(bool radioActive)
+{
+    if (radioActive) {
+        return;
+    }
+    currentFrame = (currentFrame + 1) % EDDYSTONE_NUM_EDDYSTONE_FRAMES;
+
+    updateAdvertisementPacket();
 }
