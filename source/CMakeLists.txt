@@ -45,6 +45,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "ble-services/MicroBitRadio.cpp"
     "ble-services/MicroBitRadioDatagram.cpp"
     "ble-services/MicroBitRadioEvent.cpp"
+    "ble-services/MicroBitEddyStoneService.cpp"
 )
 
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)
