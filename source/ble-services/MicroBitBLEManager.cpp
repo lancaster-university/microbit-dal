@@ -168,8 +168,13 @@ void MicroBitBLEManager::advertise()
 void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, bool enableBonding)
 {
 	ManagedString BLEName("BBC micro:bit");
-
 	this->deviceName = deviceName;
+
+#if !(CONFIG_ENABLED(MICROBIT_BLE_WHITELIST))
+	ManagedString namePrefix(" [");
+	ManagedString namePostfix("]");
+	BLEName = BLEName + namePrefix + deviceName + namePostfix;
+#endif
 
     // Start the BLE stack.
     ble = new BLEDevice();
@@ -194,7 +199,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
-    ble->securityManager().init(enableBonding, MICROBIT_BLE_REQUIRE_MITM, SecurityManager::IO_CAPS_DISPLAY_ONLY);
+    ble->securityManager().init(enableBonding, (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM), SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
     if (enableBonding)
     {

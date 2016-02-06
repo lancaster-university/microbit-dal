@@ -28,8 +28,8 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble) :
     temperaturePeriodCharacteristicBuffer = uBit.thermometer.getPeriod();
 
     // Set default security requirements
-    temperatureDataCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
-    temperaturePeriodCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    temperatureDataCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
+    temperaturePeriodCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
 
     GattCharacteristic *characteristics[] = {&temperatureDataCharacteristic, &temperaturePeriodCharacteristic};
     GattService         service(MicroBitTemperatureServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));

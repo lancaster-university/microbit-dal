@@ -140,8 +140,34 @@
 
 // Enable/Disable the use of private resolvable addresses.
 // Set '1' to enable.
+// n.b. This is known to be a feature that suffers compatibility issues with many BLE central devices.
 #ifndef MICROBIT_BLE_PRIVATE_ADDRESSES
 #define MICROBIT_BLE_PRIVATE_ADDRESSES		0
+#endif
+
+// Convenience option to enable / disable BLE security entirely
+// Open BLE links are not secure, but commonly used during the development of BLE services
+// Set '1' to disable all secuity
+#ifndef MICROBIT_BLE_OPEN
+#define MICROBIT_BLE_OPEN                   0
+#endif
+
+// Configure for open BLE operation if so configured
+#if (MICROBIT_BLE_OPEN == 1)
+#define MICROBIT_BLE_SECURITY_LEVEL         SECURITY_MODE_ENCRYPTION_OPEN_LINK
+#define MICROBIT_BLE_WHITELIST              0
+#define MICROBIT_BLE_ADVERTISING_TIMEOUT    0
+#endif
+
+
+// Define the default, global BLE security requirements for MicroBit BLE services
+// May be one of the following options (see mbed's SecurityManager class implementaiton detail)
+// SECURITY_MODE_ENCRYPTION_OPEN_LINK:      No bonding, encryption, or whitelisting required.
+// SECURITY_MODE_ENCRYPTION_NO_MITM:        Bonding, encyption and whitelisting but no passkey.
+// SECURITY_MODE_ENCRYPTION_WITH_MITM:      Bonding, encrytion and whitelisting with passkey authentication.
+//
+#ifndef MICROBIT_BLE_SECURITY_LEVEL
+#define MICROBIT_BLE_SECURITY_LEVEL         SECURITY_MODE_ENCRYPTION_WITH_MITM
 #endif
 
 // Enable/Disbale the use of BLE whitelisting.

@@ -50,7 +50,7 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     controlByte = 0x00;
 
     // Set default security requirements
-    microBitDFUServiceControlCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    microBitDFUServiceControlCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
 
     GattCharacteristic *characteristics[] = {&microBitDFUServiceControlCharacteristic};
     GattService         service(MicroBitDFUServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));

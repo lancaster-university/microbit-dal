@@ -35,10 +35,10 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble) :
     messageBusListenerOffset = 0;
     
     // Set default security requirements
-    microBitEventCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
-    clientEventCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
-    clientRequirementsCharacteristic.requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
-    microBitRequirementsCharacteristic->requireSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM);
+    microBitEventCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
+    clientEventCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
+    clientRequirementsCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
+    microBitRequirementsCharacteristic->requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
 
     GattCharacteristic *characteristics[] = {&microBitEventCharacteristic, &clientEventCharacteristic, &clientRequirementsCharacteristic, microBitRequirementsCharacteristic};
     GattService         service(MicroBitEventServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
