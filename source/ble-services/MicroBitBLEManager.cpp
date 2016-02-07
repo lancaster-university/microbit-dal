@@ -330,7 +330,7 @@ int MicroBitBLEManager::getBondCount()
     whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
     ble->securityManager().getAddressesFromBondTable(whitelist);
 
-    return whitelist.size;
+    return whitelist.bonds;
 }
 
 /**
