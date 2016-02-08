@@ -9,6 +9,7 @@
 #define MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_2      0x08
 #define MICROBIT_MULTI_BUTTON_SUPRESSED_1           0X10 
 #define MICROBIT_MULTI_BUTTON_SUPRESSED_2           0x20
+#define MICROBIT_MULTI_BUTTON_ATTACHED              0x40
 
 /**
   * Class definition for MicroBitMultiButton.
@@ -25,9 +26,11 @@ class MicroBitMultiButton : public MicroBitComponent
     int         isSubButtonPressed(uint16_t button);
     int         isSubButtonHeld(uint16_t button);
     int         isSubButtonSupressed(uint16_t button);
+    int         isListenerAttached();
     void        setButtonState(uint16_t button, int value);
     void        setHoldState(uint16_t button, int value);
     void        setSupressedState(uint16_t button, int value);
+    void        setListenerAttached(int value);
 
     public:
 
@@ -68,8 +71,10 @@ class MicroBitMultiButton : public MicroBitComponent
       * @endcode
       */
     int isPressed();
-    
-    void onEvent(MicroBitEvent evt);
+
+    private:    
+    void onButtonEvent(MicroBitEvent evt);
+    void onListenerRegisteredEvent(MicroBitEvent evt);
 };
 
 #endif

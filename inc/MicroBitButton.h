@@ -100,6 +100,10 @@ class MicroBitButton : public MicroBitComponent
       * Destructor for MicroBitButton, so that we deregister ourselves as a systemComponent
       */
     ~MicroBitButton();
+
+    private:
+    void onMultiButtonAttachEvent(MicroBitEvent evt);
+
 };
 
 #endif

@@ -1,11 +1,5 @@
 #include "MicroBit.h"
 
-void
-onMultiButtonEvent(MicroBitEvent evt)
-{   
-    uBit.buttonAB.onEvent(evt);
-}
-
 /**
   * Constructor. 
   * Create a representation of a virtual button, that generates events based upon the combination
@@ -35,8 +29,9 @@ MicroBitMultiButton::MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t
     this->button1 = button1;
     this->button2 = button2;
     
-    uBit.MessageBus.listen(button1, MICROBIT_EVT_ANY, onMultiButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
-    uBit.MessageBus.listen(button2, MICROBIT_EVT_ANY, onMultiButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    uBit.MessageBus.listen(button1, MICROBIT_EVT_ANY, this, &MicroBitMultiButton::onButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    uBit.MessageBus.listen(button2, MICROBIT_EVT_ANY, this, &MicroBitMultiButton::onButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    uBit.MessageBus.listen(MICROBIT_ID_MESSAGE_BUS_LISTENER, id, this, &MicroBitMultiButton::onListenerRegisteredEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 uint16_t MicroBitMultiButton::otherSubButton(uint16_t b)
@@ -76,6 +71,20 @@ int MicroBitMultiButton::isSubButtonSupressed(uint16_t button)
         
     return 0;
 }
+
+int MicroBitMultiButton::isListenerAttached()
+{
+   return status & MICROBIT_MULTI_BUTTON_ATTACHED;
+}
+
+void MicroBitMultiButton::setListenerAttached(int value)
+{
+    if (value)
+        status |= MICROBIT_MULTI_BUTTON_ATTACHED;
+    else
+        status &= ~MICROBIT_MULTI_BUTTON_ATTACHED;
+}
+
 
 void MicroBitMultiButton::setButtonState(uint16_t button, int value)
 {
@@ -134,8 +143,18 @@ void MicroBitMultiButton::setSupressedState(uint16_t button, int value)
     }
 }
 
+void MicroBitMultiButton::onListenerRegisteredEvent(MicroBitEvent evt)
+{
+    (void) evt;     // Unused parameter
 
-void MicroBitMultiButton::onEvent(MicroBitEvent evt)
+    // Simply indicate to the buttons we are tracking that they are now part of a button group.
+    // As a result, they will suppress some individual events from being generated.
+    MicroBitEvent(MICROBIT_ID_MULTIBUTTON_ATTACH, button1);
+    MicroBitEvent(MICROBIT_ID_MULTIBUTTON_ATTACH, button2);
+    setListenerAttached(1);
+}
+
+void MicroBitMultiButton::onButtonEvent(MicroBitEvent evt)
 {
     int button = evt.source;
     int otherButton = otherSubButton(button);
@@ -168,7 +187,7 @@ void MicroBitMultiButton::onEvent(MicroBitEvent evt)
 
                 setSupressedState(otherButton, 1);
             }
-            else if (!isSubButtonSupressed(button))
+            else if (!isSubButtonSupressed(button) && isListenerAttached())
             {
                 if (isSubButtonHeld(button))
                     MicroBitEvent e(button, MICROBIT_BUTTON_EVT_LONG_CLICK);

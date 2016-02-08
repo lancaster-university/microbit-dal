@@ -29,6 +29,16 @@ MicroBitButton::MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventCon
     this->downStartTime = 0;
     this->sigma = 0;
     uBit.addSystemComponent(this);
+
+    uBit.MessageBus.listen(MICROBIT_ID_MULTIBUTTON_ATTACH, id, this, &MicroBitButton::onMultiButtonAttachEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+}
+
+void MicroBitButton::onMultiButtonAttachEvent(MicroBitEvent evt)
+{
+    (void) evt;     // Unused parameter
+
+    // This button is now part of a button group. Suppress individual events (such as click) from being generated.
+    this->eventConfiguration = MICROBIT_BUTTON_SIMPLE_EVENTS;
 }
 
 /**
