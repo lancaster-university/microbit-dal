@@ -125,6 +125,9 @@ void microbit_initialise_heap(HeapDefinition &heap)
 int
 microbit_create_sd_heap(HeapDefinition &heap)
 {
+    heap.heap_start = 0;
+    heap.heap_end = 0;
+
 #if CONFIG_ENABLED(MICROBIT_HEAP_REUSE_SD)
 
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
@@ -137,10 +140,8 @@ microbit_create_sd_heap(HeapDefinition &heap)
     heap.heap_end = (uint32_t *)MICROBIT_HEAP_SD_LIMIT;
 #endif
 
-    microbit_initialise_heap(heap);
-#else
-    heap.heap_start = 0;
-    heap.heap_end = 0;
+    if (heap.heap_end > heap.heap_start)
+        microbit_initialise_heap(heap);
 #endif
 
     return MICROBIT_OK;

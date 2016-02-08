@@ -49,6 +49,25 @@
 #define MICROBIT_HEAP_REUSE_SD          1
 #endif
 
+// The lowest address of memory normally reserved for Soft Device that is safe to use as heap storage
+#ifndef MICROBIT_SD_GATT_TABLE_SIZE
+#define MICROBIT_SD_GATT_TABLE_SIZE             0x700
+#endif
+
+// The highest address of memory normally reserved for Soft Device that is safe to use as heap storage
+#ifndef MICROBIT_HEAP_SD_LIMIT
+#define MICROBIT_HEAP_SD_LIMIT                  0x20002000
+#endif
+
+#ifndef MICROBIT_HEAP_SD_SIZE
+#define MICROBIT_HEAP_SD_SIZE                   0x400
+#endif
+
+#ifndef MICROBIT_HEAP_BASE_BLE_ENABLED
+#define MICROBIT_HEAP_BASE_BLE_ENABLED          (MICROBIT_HEAP_SD_LIMIT - MICROBIT_HEAP_SD_SIZE)
+#endif
+
+
 // The lowest address of memory that is safe to use as heap storage when BLE is DISABLED
 // Used to define the base of the heap when MICROBIT_HEAP_REUSE_SD is defined.
 #ifndef MICROBIT_HEAP_BASE_BLE_DISABLED
@@ -62,10 +81,6 @@
 #define MICROBIT_HEAP_BASE_BLE_ENABLED          0x20001C00
 #endif
 
-// The highest address of memory normally reserved for Soft Device that is safe to use as heap storage
-#ifndef MICROBIT_HEAP_SD_LIMIT
-#define MICROBIT_HEAP_SD_LIMIT                  0x20002000
-#endif
 
 //
 // Fiber scheduler configuration
