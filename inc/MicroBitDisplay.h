@@ -103,6 +103,7 @@ class MicroBitDisplay : public MicroBitComponent
     uint8_t mode;
     uint8_t greyscaleBitMsk;
     uint8_t timingCount;
+    uint8_t errorTimeout;
     Timeout renderTimer;
 
     MicroBitFont font;
@@ -560,6 +561,17 @@ public:
      * @endcode
      */
     void error(int statusCode);
+
+    /**
+     * Defines the length of time that the device will remain in a error state before resetting.
+     * @param iteration The number of times the error code will be displayed before resetting. Set to zero to remain in error state forever.
+     *
+     * Example:
+     * @code
+     * uBit.display.setErrorTimeout(4);
+     * @endcode
+     */
+    void setErrorTimeout(int iterations);
 
     /**
       * Updates the font property of this object with the new font.
