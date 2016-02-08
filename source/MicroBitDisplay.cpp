@@ -38,6 +38,7 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
     this->rotation = MICROBIT_DISPLAY_ROTATION_0;
     this->greyscaleBitMsk = 0x01;
     this->timingCount = 0;
+    this->errorTimeout = 0;
 
     this->setBrightness(MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS);
 
@@ -1038,6 +1039,20 @@ void MicroBitDisplay::clear()
 }
 
 /**
+ * Defines the length of time that the device will remain in a error state before resetting.
+ * @param iteration The number of times the error code will be displayed before resetting. Set to zero to remain in error state forever.
+ *
+ * Example:
+ * @code
+ * uBit.display.setErrorTimeout(4);
+ * @endcode
+ */
+void MicroBitDisplay::setErrorTimeout(int iterations)
+{
+    this->errorTimeout = iterations;
+}
+
+/**
   * Displays "=(" and an accompanying status code infinitely.
   * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
   *
@@ -1059,6 +1074,7 @@ void MicroBitDisplay::error(int statusCode)
 
     uint8_t strobeRow = 0;
     uint8_t strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
+    uint8_t count = errorTimeout ? errorTimeout : 1;
 
     //point to the font stored in Flash
     const unsigned char * fontLocation = MicroBitFont::defaultFont;
@@ -1067,7 +1083,7 @@ void MicroBitDisplay::error(int statusCode)
     const uint8_t* chars[MICROBIT_DISPLAY_ERROR_CHARS] = { panicFace, fontLocation+((((statusCode/100 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode/10 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode % 10)+48)-MICROBIT_FONT_ASCII_START) * 5)};
 
     //enter infinite loop.
-    while(1)
+    while(count)
     {
         //iterate through our chars :)
         for(int characterCount = 0; characterCount < MICROBIT_DISPLAY_ERROR_CHARS; characterCount++)
@@ -1125,7 +1141,12 @@ void MicroBitDisplay::error(int statusCode)
                 outerCount++;
             }
         }
+
+        if (errorTimeout)
+            count--;
     }
+
+    microbit_reset(); 
 }
 
 /**
