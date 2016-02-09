@@ -18,7 +18,7 @@
 
 class MicroBitRadioDatagram 
 {
-    PacketBuffer    *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
+    FrameBuffer    *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
 
     public:
 
@@ -46,7 +46,7 @@ class MicroBitRadioDatagram
      *
      * @return the data received, or the EmptyString if no data is available.
      */
-    ManagedString recv();
+    PacketBuffer recv();
 
     /**
      * Transmits the given buffer onto the broadcast radio.
@@ -65,7 +65,7 @@ class MicroBitRadioDatagram
      * @param data The packet contents to transmit.
      * @return MICROBIT_OK on success.
      */
-    int send(ManagedString data);
+    int send(PacketBuffer data);
 
     /**
      * Protocol handler callback. This is called when the radio receives a packet marked as a datagram.
