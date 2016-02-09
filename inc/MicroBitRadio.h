@@ -2,6 +2,7 @@
 #define MICROBIT_RADIO_H
 
 #include "mbed.h"
+#include "PacketBuffer.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -45,7 +46,7 @@
 // Events
 #define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received.
 
-struct PacketBuffer
+struct FrameBuffer
 {
     uint8_t         length;                             // The length of the remaining bytes in the packet. includes protocol/version/group fields, excluding the length field itself.
     uint8_t         version;                            // Protocol version code.
@@ -53,7 +54,8 @@ struct PacketBuffer
     uint8_t         protocol;                           // Inner protocol number c.f. those issued by IANA for IP protocols
 
     uint8_t         payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
-    PacketBuffer    *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
+    FrameBuffer     *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
+    uint8_t         rssi;                               // Received signal strength of this frame.
 };
 
 #include "MicroBitRadioDatagram.h"
@@ -64,8 +66,8 @@ class MicroBitRadio : MicroBitComponent
     uint8_t                 group;      // The radio group to which this micro:bit belongs.
     uint8_t                 queueDepth; // The number of packets in the receiver queue.
     uint8_t                 rssi;
-    PacketBuffer            *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
-    PacketBuffer            *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
+    FrameBuffer             *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
+    FrameBuffer             *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
 
     public:
     MicroBitRadioDatagram   datagram;   // A simple datagram service.
@@ -105,7 +107,7 @@ class MicroBitRadio : MicroBitComponent
      *
      * @return a pointer to the current receive buffer
      */
-    PacketBuffer* getRxBuf();
+    FrameBuffer * getRxBuf();
 
     /**
      * Attempt to queue a buffer received by the radio hardware, if sufficient space is available.
@@ -172,7 +174,7 @@ class MicroBitRadio : MicroBitComponent
      *
      * @return The buffer containing the the packet. If no data is available, NULL is returned.
      */
-    PacketBuffer* recv();
+    FrameBuffer* recv();
 
     /**
      * Transmits the given buffer onto the broadcast radio.
@@ -181,7 +183,7 @@ class MicroBitRadio : MicroBitComponent
      * @param data The packet contents to transmit.
      * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
      */
-    int send(PacketBuffer *buffer);
+    int send(FrameBuffer *buffer);
 };
 
 #endif

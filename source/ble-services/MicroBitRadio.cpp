@@ -118,7 +118,7 @@ int MicroBitRadio::setFrequencyBand(int band)
  *
  * @return a pointer to the current receive buffer
  */
-PacketBuffer* MicroBitRadio::getRxBuf()
+FrameBuffer* MicroBitRadio::getRxBuf()
 {
     return rxBuf;
 }
@@ -137,8 +137,11 @@ int MicroBitRadio::queueRxBuf()
     if (queueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
         return MICROBIT_NO_RESOURCES;
 
+    // Store the received RSSI value in the frame
+    rxBuf->rssi = getRSSI();
+
     // Ensure that a replacement buffer is available before queuing.
-    PacketBuffer *newRxBuf = new PacketBuffer();
+    FrameBuffer *newRxBuf = new FrameBuffer();
 
     if (newRxBuf == NULL)
         return MICROBIT_NO_RESOURCES;
@@ -152,7 +155,7 @@ int MicroBitRadio::queueRxBuf()
     }
     else
     {
-        PacketBuffer *p = rxQueue;
+        FrameBuffer *p = rxQueue;
         while (p->next != NULL)
             p = p->next;
 
@@ -214,7 +217,7 @@ int MicroBitRadio::enable()
 
     // If this is the first time we've been enable, allocate out receive buffers.
     if (rxBuf == NULL)
-        rxBuf = new PacketBuffer();
+        rxBuf = new FrameBuffer();
 
     if (rxBuf == NULL)
         return MICROBIT_NO_RESOURCES;
@@ -352,7 +355,7 @@ void MicroBitRadio::idleTick()
     // Walk the list of packets and process each one.
     while(rxQueue)
     {
-        PacketBuffer *p = rxQueue;
+        FrameBuffer *p = rxQueue;
 
         switch (p->protocol)
         {
@@ -397,9 +400,9 @@ int MicroBitRadio::dataReady()
  *
  * @return The buffer containing the the packet. If no data is available, NULL is returned.
  */
-PacketBuffer* MicroBitRadio::recv()
+FrameBuffer* MicroBitRadio::recv()
 {
-    PacketBuffer *p = rxQueue;
+    FrameBuffer *p = rxQueue;
 
     if (p)
     {
@@ -417,7 +420,7 @@ PacketBuffer* MicroBitRadio::recv()
  * @param data The packet contents to transmit.
  * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
  */
-int MicroBitRadio::send(PacketBuffer *buffer)
+int MicroBitRadio::send(FrameBuffer *buffer)
 {
     if (uBit.ble)
         return MICROBIT_NOT_SUPPORTED;

@@ -33,6 +33,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "RefCounted.cpp"
     "MemberFunctionCallback.cpp"
     "MicroBitStorage.cpp"
+    "PacketBuffer.cpp"
     "ble-services/MicroBitBLEManager.cpp"
     "ble-services/MicroBitDFUService.cpp"
     "ble-services/MicroBitEventService.cpp"

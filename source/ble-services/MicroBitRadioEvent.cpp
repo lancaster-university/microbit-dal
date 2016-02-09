@@ -55,7 +55,7 @@ int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value)
  */
 void MicroBitRadioEvent::packetReceived()
 {
-    PacketBuffer *p = uBit.radio.recv();
+    FrameBuffer *p = uBit.radio.recv();
     MicroBitEvent *e = (MicroBitEvent *) p->payload;
 
     suppressForwarding = true;
@@ -75,7 +75,7 @@ void MicroBitRadioEvent::eventReceived(MicroBitEvent e)
     if(suppressForwarding)
         return;
 
-    PacketBuffer buf;
+    FrameBuffer buf;
 
     buf.length = sizeof(MicroBitEvent) + MICROBIT_RADIO_HEADER_SIZE - 1;
     buf.version = 1;

@@ -36,7 +36,7 @@ int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
         return MICROBIT_INVALID_PARAMETER;
 
     // Take the first buffer from the queue.
-    PacketBuffer *p = rxQueue;
+    FrameBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
     int l = min(len, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1));
@@ -55,15 +55,15 @@ int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
  *
  * @return the data received, or the EmptyString if no data is available.
  */
-ManagedString MicroBitRadioDatagram::recv()
+PacketBuffer MicroBitRadioDatagram::recv()
 {
-    PacketBuffer *p = rxQueue;
+    FrameBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    ManagedString s((const char *)p->payload, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1));
+    PacketBuffer packet(p->payload, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1), p->rssi);
 
     delete p;
-    return s;
+    return packet;
 }
 
 /**
@@ -79,7 +79,7 @@ int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
     if (buffer == NULL || len < 0 || len > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
  
-    PacketBuffer buf;
+    FrameBuffer buf;
 
     buf.length = len + MICROBIT_RADIO_HEADER_SIZE - 1;
     buf.version = 1;
@@ -97,9 +97,9 @@ int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
  * @param data The packet contents to transmit.
  * @return MICROBIT_OK on success.
  */
-int MicroBitRadioDatagram::send(ManagedString data)
+int MicroBitRadioDatagram::send(PacketBuffer data)
 {
-    return send((uint8_t *)data.toCharArray(), data.length());
+    return send((uint8_t *)data.getBytes(), data.length());
 }
 
 /**
@@ -108,7 +108,7 @@ int MicroBitRadioDatagram::send(ManagedString data)
  */
 void MicroBitRadioDatagram::packetReceived()
 {
-    PacketBuffer *packet = uBit.radio.recv();
+    FrameBuffer *packet = uBit.radio.recv();
     int queueDepth = 0;
 
     // We add to the tail of the queue to preserve causal ordering.
@@ -120,7 +120,7 @@ void MicroBitRadioDatagram::packetReceived()
     }
     else
     {
-        PacketBuffer *p = rxQueue;
+        FrameBuffer *p = rxQueue;
         while (p->next != NULL)
         {
             p = p->next;
