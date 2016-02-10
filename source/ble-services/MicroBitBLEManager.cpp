@@ -44,33 +44,43 @@ const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 static MicroBitBLEManager *manager = NULL;
 static uint8_t deviceID = 255;
 
-/**
-  * Callback when a BLE GATT disconnect occurs.
-  */
-static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
+static void storeSystemAttributes(Gap::Handle_t handle)
 {
-    (void) reason; /* -Wunused-param */
-
     BLESysAttribute attrib;
-    uint16_t len = sizeof(BLESysAttribute);
+    uint16_t len = sizeof(attrib.sys_attr);
 
-    sd_ble_gatts_sys_attr_get(reason->handle, attrib.sys_attr, &len, BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
+    sd_ble_gatts_sys_attr_get(handle, attrib.sys_attr, &len, BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
 
     if (deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
         MicroBitStorage s = MicroBitStorage();
         MicroBitConfigurationBlock *b = s.getConfigurationBlock();
 
-        if(b->sysAttrs[deviceID].magic != MICROBIT_STORAGE_CONFIG_MAGIC || memcmp(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(BLESysAttribute)) != 0)
+        if(b->sysAttrs[deviceID].magic != MICROBIT_STORAGE_CONFIG_MAGIC || memcmp(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(attrib.sys_attr)) != 0)
         {
+            uBit.serial.printf("CCCD: Storing... ");
+            for (int i=0; i<len; i++)
+                uBit.serial.printf("%.2X ", attrib.sys_attr[i]);
+            uBit.serial.printf("\n");
+
             b->magic = MICROBIT_STORAGE_CONFIG_MAGIC;
             b->sysAttrs[deviceID].magic = MICROBIT_STORAGE_CONFIG_MAGIC;
-            memcpy(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(BLESysAttribute));
+            memcpy(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(attrib.sys_attr));
             s.setConfigurationBlock(b);
         }
 
         delete b;
     }
+}
+
+/**
+  * Callback when a BLE GATT disconnect occurs.
+  */
+static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
+{
+    uBit.serial.printf("CCCD: DISCONNECT: deviceID = %d\n", deviceID);
+
+    storeSystemAttributes(reason->handle);
 
     if (manager)
 	    manager->advertise();
@@ -88,7 +98,14 @@ static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
     int ret = dm_handle_get(reason->handle, &dm_handle);
 
     if (ret == 0)
+    {
         deviceID = dm_handle.device_id;
+        uBit.serial.printf("CCCD: CONNECT: deviceID = %d\n", deviceID);
+    }
+    else
+    {
+        uBit.serial.printf("CCCD: CONNECT: deviceID = <unavailable>\n");
+    }
 
     if (deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
@@ -98,8 +115,15 @@ static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
 
         if(b->sysAttrs[deviceID].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
         {
-            sd_ble_gatts_sys_attr_set(reason->handle, b->sysAttrs[deviceID].sys_attr, sizeof(BLESysAttribute), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
-            sd_ble_gatts_service_changed(reason->handle, 0x000c, 0xffff);
+            uBit.serial.printf("CCCD: Retrieving... n");
+            for (int i=0; i<(int)sizeof(b->sysAttrs[deviceID].sys_attr); i++)
+                uBit.serial.printf("%.2X ", b->sysAttrs[deviceID].sys_attr[i]);
+            uBit.serial.printf("\n");
+
+            ret = sd_ble_gatts_sys_attr_set(reason->handle, b->sysAttrs[deviceID].sys_attr, sizeof(b->sysAttrs[deviceID].sys_attr), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
+            uBit.serial.printf("CCCD: attr_set returned: %d\n", ret);
+
+            ret = sd_ble_gatts_service_changed(reason->handle, 0x000c, 0xffff);
         }
 
         delete b;
@@ -126,8 +150,15 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
     if (ret == 0)
         deviceID = dm_handle.device_id;
 
+    uBit.serial.printf("CCCD: PAIR_COMPLETE: deviceID = %d\n", deviceID);
+
     if (manager)
+    {
 	    manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
+        manager->ble->disconnect(handle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+        //storeSystemAttributes(handle);
+        uBit.serial.printf("CCCD: DISCONNECT ISSUED\n");
+    }
 }
 
 /**
