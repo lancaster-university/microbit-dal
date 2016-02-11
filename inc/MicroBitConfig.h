@@ -39,7 +39,7 @@
 
 // The proportion of SRAM available on the mbed heap to reserve for the micro:bit heap.
 #ifndef MICROBIT_HEAP_SIZE
-#define MICROBIT_HEAP_SIZE				0.9
+#define MICROBIT_HEAP_SIZE				0.75
 #endif
 
 // if defined, reuse the 8K of SRAM reserved for SoftDevice (Nordic's memory resident BLE stack) as heap memory.
@@ -204,7 +204,7 @@
 // Based on trials undertaken by the BBC, the radio is normally set to its lowest power level
 // to best protect children's privacy.
 #ifndef MICROBIT_BLE_DEFAULT_TX_POWER
-#define MICROBIT_BLE_DEFAULT_TX_POWER       0
+#define MICROBIT_BLE_DEFAULT_TX_POWER       6
 #endif
 
 // Enable/Disable BLE Service: MicroBitDFU

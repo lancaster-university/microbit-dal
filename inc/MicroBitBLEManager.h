@@ -48,7 +48,7 @@ extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
   * Class definition for the MicroBitBLEManager.
   *
   */
-class MicroBitBLEManager
+class MicroBitBLEManager : MicroBitComponent
 {
     public:
 
@@ -119,6 +119,12 @@ class MicroBitBLEManager
 	 * If we're in pairing mode, display feedback to the user.
 	 */
 	void pairingComplete(bool success);
+
+	/**
+     * Periodic callback in thread context.
+     * We use this here purely to safely issue a disconnect operation after a pairing operation is complete.
+	 */
+	void idleTick();
 
     private:
 

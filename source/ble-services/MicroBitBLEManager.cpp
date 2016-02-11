@@ -41,8 +41,9 @@ const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
  * So, we maintain a pointer to the MicroBitBLEManager that's in use. Ths way, we can still access resources on the micro:bit
  * whilst keeping the code modular.
  */
-static MicroBitBLEManager *manager = NULL;
-static uint8_t deviceID = 255;
+static MicroBitBLEManager *manager = NULL;                      // Singleton reference to the BLE manager. many mbed BLE API callbacks still do not support member funcions yet. :-(
+static uint8_t deviceID = 255;                                  // Unique ID for the peer that has connected to us.
+static Gap::Handle_t pairingHandle = 0;                         // The connection handle used during a pairing process. Used to ensure that connections are dropped elegantly.
 
 static void storeSystemAttributes(Gap::Handle_t handle)
 {
@@ -87,24 +88,25 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 }
 
 /**
-  * Callback when a BLE GATT connect occurs.
+  * Callback when a BLE SYS_ATTR_MISSING.
   */
-static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
+static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *params)
 {
+    int complete = 0;
     deviceID = 255;
 
     dm_handle_t dm_handle = {0,0,0,0};
 
-    int ret = dm_handle_get(reason->handle, &dm_handle);
+    int ret = dm_handle_get(params->connHandle, &dm_handle);
 
     if (ret == 0)
     {
         deviceID = dm_handle.device_id;
-        uBit.serial.printf("CCCD: CONNECT: deviceID = %d\n", deviceID);
+        uBit.serial.printf("CCCD: SYS_ATTR_MISSING: deviceID = %d\n", deviceID);
     }
     else
     {
-        uBit.serial.printf("CCCD: CONNECT: deviceID = <unavailable>\n");
+        uBit.serial.printf("CCCD: SYS_ATTR_MISSING: deviceID = <unavailable>\n");
     }
 
     if (deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
@@ -113,6 +115,7 @@ static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
         MicroBitStorage s = MicroBitStorage();
         MicroBitConfigurationBlock *b = s.getConfigurationBlock();
 
+        uBit.serial.printf("CCCD: Attempring Retrieval... \n");
         if(b->sysAttrs[deviceID].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
         {
             uBit.serial.printf("CCCD: Retrieving... n");
@@ -120,14 +123,23 @@ static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *reason)
                 uBit.serial.printf("%.2X ", b->sysAttrs[deviceID].sys_attr[i]);
             uBit.serial.printf("\n");
 
-            ret = sd_ble_gatts_sys_attr_set(reason->handle, b->sysAttrs[deviceID].sys_attr, sizeof(b->sysAttrs[deviceID].sys_attr), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
+            ret = sd_ble_gatts_sys_attr_set(params->connHandle, b->sysAttrs[deviceID].sys_attr, sizeof(b->sysAttrs[deviceID].sys_attr), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
             uBit.serial.printf("CCCD: attr_set returned: %d\n", ret);
-
-            ret = sd_ble_gatts_service_changed(reason->handle, 0x000c, 0xffff);
+            if(ret == 0)
+            {
+                ret = sd_ble_gatts_service_changed(params->connHandle, 0x000c, 0xffff);
+                uBit.serial.printf("CCCD: service_changed returned: %d\n", ret);
+                if (ret == 0)
+                    complete = 1;
+            }
         }
 
         delete b;
     }
+
+    if (!complete)
+        sd_ble_gatts_sys_attr_set(params->connHandle, NULL, 0, 0);
+
 }
 
 static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::Passkey_t passkey)
@@ -154,10 +166,10 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
 
     if (manager)
     {
+        pairingHandle = handle;
 	    manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
-        manager->ble->disconnect(handle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
-        //storeSystemAttributes(handle);
-        uBit.serial.printf("CCCD: DISCONNECT ISSUED\n");
+
+        uBit.serial.printf("CCCD: DISCONNECT SCHEDULED\n");
     }
 }
 
@@ -218,8 +230,8 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->init();
 
     // automatically restart advertising after a device disconnects.
-    ble->onDisconnection(bleDisconnectionCallback);
-    ble->onConnection(bleConnectionCallback);
+    ble->gap().onDisconnection(bleDisconnectionCallback);
+    ble->gattServer().onSysAttrMissing(bleSysAttrMissingCallback);
 
     // Configure the stack to hold onto the CPU during critical timing events.
     // mbed-classic performs __disable_irq() calls in its timers that can cause
@@ -391,7 +403,25 @@ void MicroBitBLEManager::pairingComplete(bool success)
 	this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
 	if(success)
+    {
 		this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
+        uBit.addIdleComponent(this);
+    }
+}
+
+/**
+ * Periodic callback in thread context.
+ * We use this here purely to safely issue a disconnect operation after a pairing operation is complete.
+ */
+void MicroBitBLEManager::idleTick()
+{
+    if (ble)
+    {
+        ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+        uBit.serial.printf("CCCD: DISCONNECT ISSUED\n");
+    }
+
+    uBit.removeIdleComponent(this);
 }
 
 /**
