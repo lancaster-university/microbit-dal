@@ -267,11 +267,21 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Configure a whitelist to filter all connection requetss from unbonded devices.
     // Most BLE stacks only permit one connection at a time, so this prevents denial of service attacks.
     BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
+    BLEProtocol::Address_t reversedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
     Gap::Whitelist_t whitelist;
     whitelist.addresses = bondedAddresses;
     whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
 
     ble->securityManager().getAddressesFromBondTable(whitelist);
+
+    // Generate a reversed list of addresses. We do this such that the most recently used
+    // bonds are added first - thus making the most recent (not oldest) bond the one
+    // added to the whitelist for any given peer.
+    for (int i=0; i<whitelist.size; i++)
+        reversedAddresses[whitelist.size-i-1] = bondedAddresses[i];
+
+    whitelist.addresses = reversedAddresses;
+
     ble->gap().setWhitelist(whitelist);
     ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
     ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
