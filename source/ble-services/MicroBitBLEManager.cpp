@@ -105,13 +105,10 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
         {
             ret = sd_ble_gatts_sys_attr_set(params->connHandle, b->sysAttrs[deviceID].sys_attr, sizeof(b->sysAttrs[deviceID].sys_attr), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
 
-            if(ret == 0)
-            {
-                ret = sd_ble_gatts_service_changed(params->connHandle, 0x000c, 0xffff);
+            complete = 1;
 
-                if (ret == 0)
-                    complete = 1;
-            }
+            if(ret == 0)
+                ret = sd_ble_gatts_service_changed(params->connHandle, 0x000c, 0xffff);
         }
 
         delete b;
