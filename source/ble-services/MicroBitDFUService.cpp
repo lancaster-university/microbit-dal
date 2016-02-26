@@ -17,7 +17,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-/* 
+/*
  * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
@@ -27,7 +27,7 @@ extern "C" {
 #include "dfu_app_handler.h"
 }
 
-/* 
+/*
  * Return to our predefined compiler settings.
  */
 #if !defined(__arm)
@@ -36,15 +36,15 @@ extern "C" {
 
 
 /**
- * Constructor. 
+ * Constructor.
  * Create a representation of a MicroBit device.
  * @param messageBus callback function to receive MicroBitMessageBus events.
  */
-MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) : 
-    ble(_ble) 
+MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
+    ble(_ble)
 {
     // Opcodes can be issued here to control the MicroBitDFU Service, as defined above.
-    GattCharacteristic  microBitDFUServiceControlCharacteristic(MicroBitDFUServiceControlCharacteristicUUID, &controlByte, 0, sizeof(uint8_t), 
+    GattCharacteristic  microBitDFUServiceControlCharacteristic(MicroBitDFUServiceControlCharacteristicUUID, &controlByte, 0, sizeof(uint8_t),
             GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     controlByte = 0x00;
@@ -80,7 +80,9 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
 #endif
 
             // Perform an explicit disconnection to assist our peer to reconnect to the DFU service
-            ble.disconnect(Gap::LOCAL_HOST_TERMINATED_CONNECTION);
+            ble.disconnect(Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+
+            wait_ms(1000);
 
             // Call bootloader_start implicitly trough a event handler call
             // it is a work around for bootloader_start not being public in sdk 8.1
@@ -107,4 +109,3 @@ const uint8_t              MicroBitDFUServiceUUID[] = {
 const uint8_t              MicroBitDFUServiceControlCharacteristicUUID[] = {
     0xe9,0x5d,0x93,0xb1,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
-
