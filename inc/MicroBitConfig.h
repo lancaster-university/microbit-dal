@@ -204,7 +204,7 @@
 // Based on trials undertaken by the BBC, the radio is normally set to its lowest power level
 // to best protect children's privacy.
 #ifndef MICROBIT_BLE_DEFAULT_TX_POWER
-#define MICROBIT_BLE_DEFAULT_TX_POWER       6
+#define MICROBIT_BLE_DEFAULT_TX_POWER       0
 #endif
 
 // Enable/Disable BLE Service: MicroBitDFU
