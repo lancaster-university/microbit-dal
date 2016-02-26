@@ -1,5 +1,8 @@
 #include "MicroBit.h"
 
+// Create the EmptyPacket reference.
+PacketBuffer PacketBuffer::EmptyPacket = PacketBuffer(1);
+
 /**
  * Default Constructor. 
  * Creates an empty Packet Buffer. 

@@ -57,6 +57,9 @@ int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
  */
 PacketBuffer MicroBitRadioDatagram::recv()
 {
+    if (rxQueue == NULL)
+        return PacketBuffer::EmptyPacket;
+
     FrameBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
