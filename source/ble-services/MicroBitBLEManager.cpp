@@ -59,11 +59,6 @@ static void storeSystemAttributes(Gap::Handle_t handle)
 
         if(b->sysAttrs[deviceID].magic != MICROBIT_STORAGE_CONFIG_MAGIC || memcmp(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(attrib.sys_attr)) != 0)
         {
-            uBit.serial.printf("CCCD: Storing... ");
-            for (int i=0; i<len; i++)
-                uBit.serial.printf("%.2X ", attrib.sys_attr[i]);
-            uBit.serial.printf("\n");
-
             b->magic = MICROBIT_STORAGE_CONFIG_MAGIC;
             b->sysAttrs[deviceID].magic = MICROBIT_STORAGE_CONFIG_MAGIC;
             memcpy(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(attrib.sys_attr));
@@ -79,8 +74,6 @@ static void storeSystemAttributes(Gap::Handle_t handle)
   */
 static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
-    uBit.serial.printf("CCCD: DISCONNECT: deviceID = %d\n", deviceID);
-
     storeSystemAttributes(reason->handle);
 
     if (manager)
@@ -100,14 +93,7 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
     int ret = dm_handle_get(params->connHandle, &dm_handle);
 
     if (ret == 0)
-    {
         deviceID = dm_handle.device_id;
-        uBit.serial.printf("CCCD: SYS_ATTR_MISSING: deviceID = %d\n", deviceID);
-    }
-    else
-    {
-        uBit.serial.printf("CCCD: SYS_ATTR_MISSING: deviceID = <unavailable>\n");
-    }
 
     if (deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
@@ -115,20 +101,14 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
         MicroBitStorage s = MicroBitStorage();
         MicroBitConfigurationBlock *b = s.getConfigurationBlock();
 
-        uBit.serial.printf("CCCD: Attempring Retrieval... \n");
         if(b->sysAttrs[deviceID].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
         {
-            uBit.serial.printf("CCCD: Retrieving... n");
-            for (int i=0; i<(int)sizeof(b->sysAttrs[deviceID].sys_attr); i++)
-                uBit.serial.printf("%.2X ", b->sysAttrs[deviceID].sys_attr[i]);
-            uBit.serial.printf("\n");
-
             ret = sd_ble_gatts_sys_attr_set(params->connHandle, b->sysAttrs[deviceID].sys_attr, sizeof(b->sysAttrs[deviceID].sys_attr), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
-            uBit.serial.printf("CCCD: attr_set returned: %d\n", ret);
+
             if(ret == 0)
             {
                 ret = sd_ble_gatts_service_changed(params->connHandle, 0x000c, 0xffff);
-                uBit.serial.printf("CCCD: service_changed returned: %d\n", ret);
+
                 if (ret == 0)
                     complete = 1;
             }
@@ -162,14 +142,10 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
     if (ret == 0)
         deviceID = dm_handle.device_id;
 
-    uBit.serial.printf("CCCD: PAIR_COMPLETE: deviceID = %d\n", deviceID);
-
     if (manager)
     {
         pairingHandle = handle;
 	    manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
-
-        uBit.serial.printf("CCCD: DISCONNECT SCHEDULED\n");
     }
 }
 
@@ -267,20 +243,11 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Configure a whitelist to filter all connection requetss from unbonded devices.
     // Most BLE stacks only permit one connection at a time, so this prevents denial of service attacks.
     BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
-    BLEProtocol::Address_t reversedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
     Gap::Whitelist_t whitelist;
     whitelist.addresses = bondedAddresses;
     whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
 
     ble->securityManager().getAddressesFromBondTable(whitelist);
-
-    // Generate a reversed list of addresses. We do this such that the most recently used
-    // bonds are added first - thus making the most recent (not oldest) bond the one
-    // added to the whitelist for any given peer.
-    for (int i=0; i<whitelist.size; i++)
-        reversedAddresses[whitelist.size-i-1] = bondedAddresses[i];
-
-    whitelist.addresses = reversedAddresses;
 
     ble->gap().setWhitelist(whitelist);
     ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
@@ -426,10 +393,7 @@ void MicroBitBLEManager::pairingComplete(bool success)
 void MicroBitBLEManager::idleTick()
 {
     if (ble)
-    {
         ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
-        uBit.serial.printf("CCCD: DISCONNECT ISSUED\n");
-    }
 
     uBit.removeIdleComponent(this);
 }
