@@ -233,6 +233,8 @@ class PacketBuffer
      * @endcode
      */
     void setRSSI(uint8_t rssi);
+
+    static PacketBuffer EmptyPacket;
 };
 
 #endif
