@@ -132,14 +132,14 @@ class MicroBitPin : public MicroBitComponent
 
     /**
      * Configures this IO pin as an analog/pwm output if it isn't already, configures the period to be 20ms,
-     * and sets the duty cycle between 0.05 and 0.1 (i.e. 5% or 10%) based on the value given to this method.
+     * and sets the duty cycle between 500 us and 2500 us.
      *
-     * A value of 180 sets the duty cycle to be 10%, and a value of 0 sets the duty cycle to be 5% by default.
+     * A value of 180 sets the duty cycle to be 2500us, and a value of 0 sets the duty cycle to be 500us by default.
      *
      * This range can be modified to fine tune, and also tolerate different servos.
      *
      * @param value the level to set on the output pin, in the range 0 - 180
-     * @param range which gives the span of possible values the i.e. lower and upper bounds center ± range/2 (Defaults to: MICROBIT_PIN_DEFAULT_SERVO_RANGE)
+     * @param range which gives the span of possible values the i.e. lower and upper bounds center +/- range/2 (Defaults to: MICROBIT_PIN_DEFAULT_SERVO_RANGE)
      * @param center the center point from which to calculate the lower and upper bounds  (Defaults to: MICROBIT_PIN_DEFAULT_SERVO_CENTER)
      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
      * if the given pin does not have analog capability.
