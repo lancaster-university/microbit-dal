@@ -98,12 +98,12 @@ void MicroBitThermometer::idleTick()
 }
 
 /**
- * Determines if we're due to take another temeoratur reading
+ * Determines if we're due to take another temperature reading
  * @return 1 if we're due to take a temperature reading, 0 otherwise.
  */
 int MicroBitThermometer::isSampleNeeded()
 { 
-    return  ticks >= sampleTime;
+    return  system_timer_current_time() >= sampleTime;
 }
 
 /**
@@ -167,7 +167,7 @@ void MicroBitThermometer::updateTemperature()
     temperature = processorTemperature / 4;
 
     // Schedule our next sample.
-    sampleTime = ticks + samplePeriod;
+    sampleTime = system_timer_current_time() + samplePeriod;
     
     // Send an event to indicate that we'e updated our temperature.
     MicroBitEvent e(id, MICROBIT_THERMOMETER_EVT_UPDATE);

@@ -79,21 +79,6 @@ extern Fiber *currentFiber;
   */
 void scheduler_init(MicroBitMessageBus *_messageBus);
 
-/*
- * Reconfigures the system wide timer to the given period in milliseconds.
- *
- * @param speedMs the new period of the timer in milliseconds
- * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if speedMs < 1
- *
- * @note this will also modify the value that is added to ticks in MiroBitFiber:scheduler_tick()
- */
-int scheduler_set_tick_period(int speedMs);
-
-/*
- * Returns the currently used tick speed in milliseconds
- */
-int scheduler_get_tick_period();
-
 /**
   * Determines if the fiber scheduler is operational.
   * @return 1 if the fber scheduler is running, 0 otherwise.
@@ -163,7 +148,7 @@ void schedule();
 void fiber_sleep(unsigned long t);
 
 /**
-  * Timer callback. Called from interrupt context, once every FIBER_TICK_PERIOD_MS milliseconds.
+  * Timer callback. Called from interrupt context, once every SYSTEM_TICK_PERIOD_MS milliseconds by default.
   * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up 
   * and made runnable.
   */
@@ -266,21 +251,6 @@ void idle();
 void idle_task();
 
 /**
- * add a component to the array of system components which invocate the systemTick member function during a systemTick 
- *
- * @param component The component to add.
- * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
- */
-int fiber_add_system_component(MicroBitComponent *component);
-
-/**
- * remove a component from the array of system components
- * @param component The component to remove.
- * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
- */
-int fiber_remove_system_component(MicroBitComponent *component);
-
-/**
  * add a component to the array of of idle thread components.
  * isIdleCallbackNeeded is polled during a systemTick to determine if the idle thread should jump to the front of the queue
  * @param component The component to add.
@@ -312,11 +282,5 @@ extern "C" void swap_context(Cortex_M0_TCB *from, Cortex_M0_TCB *to, uint32_t fr
 extern "C" void save_context(Cortex_M0_TCB *tcb, uint32_t stack);
 extern "C" void save_register_context(Cortex_M0_TCB *tcb);
 extern "C" void restore_register_context(Cortex_M0_TCB *tcb);
-
-/**
-  * Time since power on. Measured in milliseconds.
-  * When stored as an unsigned long, this gives us approx 50 days between rollover, which is ample. :-)
-  */
-extern unsigned long ticks;
 
 #endif

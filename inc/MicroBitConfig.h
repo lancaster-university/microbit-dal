@@ -88,8 +88,8 @@
 
 // Scheduling quantum (milliseconds)
 // Also used to drive the micro:bit runtime system ticker.
-#ifndef FIBER_TICK_PERIOD_MS
-#define FIBER_TICK_PERIOD_MS            6
+#ifndef SYSTEM_TICK_PERIOD_MS
+#define SYSTEM_TICK_PERIOD_MS            6
 #endif
 
 //

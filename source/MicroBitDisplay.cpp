@@ -50,7 +50,7 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
     if (!this->defaultDisplay)
         this->defaultDisplay = this;
 
-	fiber_add_system_component(this);
+	system_timer_add_component(this);
 
     status |= MICROBIT_COMPONENT_RUNNING;
 }
@@ -153,7 +153,7 @@ void MicroBitDisplay::render()
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
     if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
-        renderTimer.attach_us(this, &MicroBitDisplay::renderFinish, (((brightness * 950) / (MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * scheduler_get_tick_period()));
+        renderTimer.attach_us(this, &MicroBitDisplay::renderFinish, (((brightness * 950) / (MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS)) * system_timer_get_period()));
 
     //this will take around 23us to execute
     if(brightness <= MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
@@ -247,7 +247,7 @@ MicroBitDisplay::animationUpdate()
     if (animationMode == ANIMATION_MODE_NONE)
         return;
 
-    animationTick += FIBER_TICK_PERIOD_MS;
+    animationTick += system_timer_get_period();
 
     if(animationTick >= animationDelay)
     {
@@ -939,17 +939,12 @@ void MicroBitDisplay::setDisplayMode(DisplayMode mode)
     if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
     {
         //to reduce the artifacts on the display - increase the tick
-        if(scheduler_get_tick_period() != MICROBIT_LIGHT_SENSOR_TICK_PERIOD)
-            scheduler_set_tick_period(MICROBIT_LIGHT_SENSOR_TICK_PERIOD);
+        if(system_timer_get_period() != MICROBIT_LIGHT_SENSOR_TICK_PERIOD)
+            system_timer_set_period(MICROBIT_LIGHT_SENSOR_TICK_PERIOD);
     }
 
     if(this->mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE && mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
     {
-
-        //if we previously were in light sense mode - return to our default.
-        if(scheduler_get_tick_period() != FIBER_TICK_PERIOD_MS)
-            scheduler_set_tick_period(FIBER_TICK_PERIOD_MS);
-
         delete this->lightSensor;
 
         this->lightSensor = NULL;
@@ -1216,5 +1211,5 @@ int MicroBitDisplay::readLightLevel()
   */
 MicroBitDisplay::~MicroBitDisplay()
 {
-    fiber_remove_system_component(this);
+    system_timer_remove_component(this);
 }
