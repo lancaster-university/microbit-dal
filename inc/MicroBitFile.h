@@ -1,6 +1,6 @@
 #ifndef MICROBIT_FILE_H_
 #define MICROBIT_FILE_H_
-#include "tinyfs_config.h"
+#include "MicroBitFile_config.h"
 #include "MicroBitFlash.h"
 #include "MicroBit.h"
 

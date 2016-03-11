@@ -1,6 +1,6 @@
 #include "MicroBit.h"
 #include "MicroBitFlash.h"
-#include "tinyfs_config.h"
+#include "MicroBitFile_config.h"
 
 #define WORD_ADDR(x) (((uint32_t)x) & 0xFFFFFFFC)
 #define MIN(a,b) (a<b?a:b)
