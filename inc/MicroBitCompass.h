@@ -316,8 +316,17 @@ class MicroBitCompass : public MicroBitComponent
     CompassSample getCalibration();
 
     /**
+      * Updates the local sample, only if the compass indicates that
+      * data is stale.
+      *
+      * @note Required if the device is running without a scheduler. Also called
+      * by all get[X,Y,Z]() member functions.
+      */
+    int updateSample();
+
+    /**
       * Periodic callback from MicroBit idle thread.
-      * Check if any data is ready for reading by checking the interrupt.
+      * Check if any data is ready for reading by checking the interrupt, wraps updateSample().
       */
     virtual void idleTick();
 

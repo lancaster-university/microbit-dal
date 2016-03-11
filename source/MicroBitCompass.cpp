@@ -176,12 +176,15 @@ int MicroBitCompass::heading()
 }
 
 /**
-  * Periodic callback from MicroBit clock.
-  * Check if any data is ready for reading by checking the interrupt.
+  * Updates the local sample, only if the compass indicates that
+  * data is stale.
+  *
+  * @note Required if the device is running without a scheduler. Also called
+  * by all get[X,Y,Z]() member functions.
   */
-void MicroBitCompass::idleTick()
+int MicroBitCompass::updateSample()
 {
-    // Poll interrupt line from accelerometer (Active HI).
+    // Poll interrupt line from compass (Active HI).
     // Interrupt is cleared on data read of MAG_OUT_X_MSB.
     if(int1)
     {
@@ -192,6 +195,17 @@ void MicroBitCompass::idleTick()
         // Indicate that a new sample is available
         MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
     }
+
+    return MICROBIT_OK;
+}
+
+/**
+  * Periodic callback from MicroBit idle thread.
+  * Check if any data is ready for reading by checking the interrupt, wraps updateSample().
+  */
+void MicroBitCompass::idleTick()
+{
+    updateSample();
 }
 
 /**
@@ -205,6 +219,8 @@ void MicroBitCompass::idleTick()
   */
 int MicroBitCompass::getX(MicroBitCoordinateSystem system)
 {
+    updateSample();
+
     switch (system)
     {
         case SIMPLE_CARTESIAN:
@@ -230,6 +246,8 @@ int MicroBitCompass::getX(MicroBitCoordinateSystem system)
   */
 int MicroBitCompass::getY(MicroBitCoordinateSystem system)
 {
+    updateSample();
+
     switch (system)
     {
         case SIMPLE_CARTESIAN:
@@ -255,6 +273,8 @@ int MicroBitCompass::getY(MicroBitCoordinateSystem system)
   */
 int MicroBitCompass::getZ(MicroBitCoordinateSystem system)
 {
+    updateSample();
+
     switch (system)
     {
         case SIMPLE_CARTESIAN:
