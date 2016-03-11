@@ -67,6 +67,7 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
  */
 #define MICROBIT_COMPASS_STATUS_CALIBRATED      1
 #define MICROBIT_COMPASS_STATUS_CALIBRATING     2
+#define MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE   4
 
 /*
  * Term to convert sample data into SI units

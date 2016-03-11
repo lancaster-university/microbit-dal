@@ -33,8 +33,6 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2
     // Assume that we have no calibraiton information.
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 
-	fiber_add_idle_component(this);
-
     // Indicate that we're up and running.
     status |= MICROBIT_COMPONENT_RUNNING;
 }
@@ -184,6 +182,16 @@ int MicroBitCompass::heading()
   */
 int MicroBitCompass::updateSample()
 {
+    /**
+      * Adds the compass to idle, if it hasn't been added already.
+      * This is an optimisation so that the compass is only added on first 'use'.
+      */
+    if(!(status & MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE))
+    {
+        fiber_add_idle_component(this);
+        status |= MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE;
+    }
+
     // Poll interrupt line from compass (Active HI).
     // Interrupt is cleared on data read of MAG_OUT_X_MSB.
     if(int1)
@@ -441,6 +449,16 @@ int MicroBitCompass::readTemperature()
   */
 int MicroBitCompass::calibrate()
 {
+    /**
+      * Adds the compass to idle, if it hasn't been added already.
+      * This is an optimisation so that the compass is only added on first 'use'.
+      */
+    if(!(status & MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE))
+    {
+        fiber_add_idle_component(this);
+        status |= MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE;
+    }
+
     // Only perform one calibration process at a time.
     if(isCalibrating())
         return MICROBIT_CALIBRATION_IN_PROGRESS;
