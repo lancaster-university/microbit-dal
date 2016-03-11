@@ -131,7 +131,7 @@ class MicroBitCompass : public MicroBitComponent
     CompassSample           sample;                   // The latest sample data recorded.
     DigitalIn               int1;                     // Data ready interrupt.
     MicroBitI2C&		    i2c;                      // The I2C interface the sensor is connected to.
-    MicroBitAccelerometer&  accelerometer;            // The accelerometer to use for tilt compensation.
+    MicroBitAccelerometer* accelerometer;            // The accelerometer to use for tilt compensation.
 
     public:
 
@@ -140,6 +140,8 @@ class MicroBitCompass : public MicroBitComponent
       * Create a compass representation with the given ID.
       * @param id the event ID of the compass object.
       * @param address the default address for the compass register
+      * @param _i2c an instance of i2c, which the compass is accessible from.
+      * @param _accelerometer an instance of the accelerometer, used for tilt compensation.
       *
       * Example:
       * @code
@@ -154,6 +156,30 @@ class MicroBitCompass : public MicroBitComponent
       * @endcode
       */
     MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer &_accelerometer);
+
+
+    /**
+      * Constructor.
+      * Create a compass representation with the given ID.
+      * @param id the event ID of the compass object.
+      * @param address the default address for the compass register
+      * @param _i2c an instance of i2c, which the compass is accessible from.
+      *
+      * @note This creates a non-tilt compensated compass.
+      *
+      * Example:
+      * @code
+      * compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR);
+      * @endcode
+      *
+      * Possible Events for the compass are as follows:
+      * @code
+      * MICROBIT_COMPASS_EVT_CAL_REQUIRED   // triggered when no magnetometer data is available in persistent storage
+      * MICROBIT_COMPASS_EVT_CAL_START      // triggered when calibration has begun
+      * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
+      * @endcode
+      */
+    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c);
 
     /**
      * Configures the compass for the sample rate defined
@@ -397,6 +423,21 @@ class MicroBitCompass : public MicroBitComponent
       * @return The register value, interpreted as a 8 bit unsigned value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
       */
     int read8(uint8_t reg);
+
+    /**
+      * Calculates a tilt compensated bearing of the device, using the accelerometer.
+      */
+    int tiltCompensatedBearing();
+
+    /**
+      * Calculates a non-tilt compensated bearing of the device.
+      */
+    int basicBearing();
+
+    /**
+      * An initialisation member function used by the constructors of MicroBitCompass.
+      */
+    void init(uint16_t id, uint16_t address);
 };
 
 #endif

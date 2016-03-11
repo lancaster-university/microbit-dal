@@ -1,24 +1,9 @@
 #include "MicroBit.h"
 
 /**
-  * Constructor.
-  * Create a compass representation with the given ID.
-  * @param id the event ID of the compass object.
-  * @param address the default address for the compass register
-  *
-  * Example:
-  * @code
-  * compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR);
-  * @endcode
-  *
-  * Possible Events for the compass are as follows:
-  * @code
-  * MICROBIT_COMPASS_EVT_CAL_REQUIRED   // triggered when no magnetometer data is available in persistent storage
-  * MICROBIT_COMPASS_EVT_CAL_START      // triggered when calibration has begun
-  * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
-  * @endcode
+  * An initialisation member function used by the constructors of MicroBitCompass.
   */
-MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer) : average(), sample(), int1(MICROBIT_PIN_COMPASS_DATA_READY), i2c(_i2c), accelerometer(_accelerometer)
+void MicroBitCompass::init(uint16_t id, uint16_t address)
 {
     this->id = id;
     this->address = address;
@@ -35,6 +20,57 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2
 
     // Indicate that we're up and running.
     status |= MICROBIT_COMPONENT_RUNNING;
+}
+
+/**
+  * Constructor.
+  * Create a compass representation with the given ID.
+  * @param id the event ID of the compass object.
+  * @param address the default address for the compass register
+  * @param _i2c an instance of i2c, which the compass is accessible from.
+  * @param _accelerometer an instance of the accelerometer, used for tilt compensation.
+  *
+  * Example:
+  * @code
+  * compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR);
+  * @endcode
+  *
+  * Possible Events for the compass are as follows:
+  * @code
+  * MICROBIT_COMPASS_EVT_CAL_REQUIRED   // triggered when no magnetometer data is available in persistent storage
+  * MICROBIT_COMPASS_EVT_CAL_START      // triggered when calibration has begun
+  * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
+  * @endcode
+  */
+MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer) : average(), sample(), int1(MICROBIT_PIN_COMPASS_DATA_READY), i2c(_i2c), accelerometer(&_accelerometer)
+{
+    init(id, address);
+}
+
+/**
+  * Constructor.
+  * Create a compass representation with the given ID.
+  * @param id the event ID of the compass object.
+  * @param address the default address for the compass register
+  * @param _i2c an instance of i2c, which the compass is accessible from.
+  *
+  * @note This creates a non-tilt compensated compass.
+  *
+  * Example:
+  * @code
+  * compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR);
+  * @endcode
+  *
+  * Possible Events for the compass are as follows:
+  * @code
+  * MICROBIT_COMPASS_EVT_CAL_REQUIRED   // triggered when no magnetometer data is available in persistent storage
+  * MICROBIT_COMPASS_EVT_CAL_START      // triggered when calibration has begun
+  * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
+  * @endcode
+  */
+MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c) : average(), sample(), int1(MICROBIT_PIN_COMPASS_DATA_READY), i2c(_i2c), accelerometer(NULL)
+{
+    init(id, address);
 }
 
 /**
@@ -129,32 +165,14 @@ int MicroBitCompass::read8(uint8_t reg)
 }
 
 /**
- * Gets the current heading of the device, relative to magnetic north.
- * If the compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
- * Users wishing to implement their own calibration algorithms should listen for this event,
- * using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensures that calibration is complete before
- * the user program continues.
- *
- * @return the current heading, in degrees. Or MICROBIT_CALIBRATION_IN_PROGRESS if the compass is calibrating.
- *
- * Example:
- * @code
- * uBit.compass.heading();
- * @endcode
- */
-int MicroBitCompass::heading()
+  * Calculates a tilt compensated bearing of the device, using the accelerometer.
+  */
+int MicroBitCompass::tiltCompensatedBearing()
 {
-    float bearing;
-
-    if(status & MICROBIT_COMPASS_STATUS_CALIBRATING)
-        return MICROBIT_CALIBRATION_IN_PROGRESS;
-
-    if(!(status & MICROBIT_COMPASS_STATUS_CALIBRATED))
-        calibrate();
-
     // Precompute the tilt compensation parameters to improve readability.
-    float phi = accelerometer.getRollRadians();
-    float theta = accelerometer.getPitchRadians();
+    float phi = accelerometer->getRollRadians();
+    float theta = accelerometer->getPitchRadians();
+
     float x = (float) getX(NORTH_EAST_DOWN);
     float y = (float) getY(NORTH_EAST_DOWN);
     float z = (float) getZ(NORTH_EAST_DOWN);
@@ -165,12 +183,58 @@ int MicroBitCompass::heading()
     float sinTheta = sin(theta);
     float cosTheta = cos(theta);
 
-    bearing = (360*atan2(z*sinPhi - y*cosPhi, x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi)) / (2*PI);
+    float bearing = (360*atan2(z*sinPhi - y*cosPhi, x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi)) / (2*PI);
 
     if (bearing < 0)
         bearing += 360.0;
 
     return (int) bearing;
+}
+
+/**
+  * Calculates a non-tilt compensated bearing of the device.
+  */
+int MicroBitCompass::basicBearing()
+{
+    updateSample();
+
+    float bearing = (atan2((double)(sample.y - average.y),(double)(sample.x - average.x)))*180/PI;
+
+    if (bearing < 0)
+        bearing += 360.0;
+
+    return (int)(360.0 - bearing);
+}
+
+/**
+ * Gets the current heading of the device, relative to magnetic north.
+ * If the compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
+ * Users wishing to implement their own calibration algorithms should listen for this event,
+ * using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensures that calibration is complete before
+ * the user program continues.
+ *
+ * @return the current heading, in degrees. Or MICROBIT_CALIBRATION_IN_PROGRESS if the compass is calibrating.
+ *
+ * @note if this instance of the compass was constructed without an accelerometer, the tilt compensation will not
+ * be available, and a less accurate algorithm will be used.
+ *
+ * Example:
+ * @code
+ * uBit.compass.heading();
+ * @endcode
+ */
+int MicroBitCompass::heading()
+{
+    if(status & MICROBIT_COMPASS_STATUS_CALIBRATING)
+        return MICROBIT_CALIBRATION_IN_PROGRESS;
+
+    if(!(status & MICROBIT_COMPASS_STATUS_CALIBRATED))
+        calibrate();
+
+    if(accelerometer != NULL)
+        return tiltCompensatedBearing();
+
+    return basicBearing();
 }
 
 /**
@@ -449,19 +513,11 @@ int MicroBitCompass::readTemperature()
   */
 int MicroBitCompass::calibrate()
 {
-    /**
-      * Adds the compass to idle, if it hasn't been added already.
-      * This is an optimisation so that the compass is only added on first 'use'.
-      */
-    if(!(status & MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE))
-    {
-        fiber_add_idle_component(this);
-        status |= MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE;
-    }
-
     // Only perform one calibration process at a time.
     if(isCalibrating())
         return MICROBIT_CALIBRATION_IN_PROGRESS;
+
+    updateSample();
 
     // Delete old calibration data
     clearCalibration();
