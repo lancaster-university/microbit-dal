@@ -13,8 +13,8 @@
 /**
   * Status flags
   */
-#define MICROBIT_ACCEL_PITCH_ROLL_VALID           0x01
-#define MICROBIT_ACCEL_ADDED_TO_IDLE              0x02
+#define MICROBIT_ACCEL_PITCH_ROLL_VALID           0x02
+#define MICROBIT_ACCEL_ADDED_TO_IDLE              0x04
 
 /*
  * I2C constants
