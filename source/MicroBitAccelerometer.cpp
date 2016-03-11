@@ -157,10 +157,7 @@ MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address, Micr
 
     // Configure and enable the accelerometer.
     if (this->configure() == MICROBIT_OK)
-	{
-		fiber_add_idle_component(this);
         status |= MICROBIT_COMPONENT_RUNNING;
-	}
 }
 
 /**
@@ -186,49 +183,60 @@ int MicroBitAccelerometer::whoAmI()
 
 /**
  * Reads the acceleration data from the accelerometer, and stores it in our buffer.
- * This is called by the tick() member function, if the interrupt is set!
+ * This is called by the idle thread, when the accelerometer indicates it needs updating.
  *
- * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the read request fails.
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the read request fails.
  */
-int MicroBitAccelerometer::update()
+int MicroBitAccelerometer::updateSample()
 {
-    int8_t data[6];
-    int result;
+    if(!(status & MICROBIT_ACCEL_ADDED_TO_IDLE))
+    {
+        fiber_add_idle_component(this);
+        status |= MICROBIT_ACCEL_ADDED_TO_IDLE;
+    }
 
-    result = readCommand(MMA8653_OUT_X_MSB, (uint8_t *)data, 6);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
+    // Poll interrupt line from accelerometer.
+    // n.b. Default is Active LO. Interrupt is cleared in data read.
+    if(!int1)
+    {
+        int8_t data[6];
+        int result;
 
-    // read MSB values...
-    sample.x = data[0];
-    sample.y = data[2];
-    sample.z = data[4];
+        result = readCommand(MMA8653_OUT_X_MSB, (uint8_t *)data, 6);
+        if (result !=0)
+            return MICROBIT_I2C_ERROR;
 
-    // Normalize the data in the 0..1024 range.
-    sample.x *= 8;
-    sample.y *= 8;
-    sample.z *= 8;
+        // read MSB values...
+        sample.x = data[0];
+        sample.y = data[2];
+        sample.z = data[4];
+
+        // Normalize the data in the 0..1024 range.
+        sample.x *= 8;
+        sample.y *= 8;
+        sample.z *= 8;
 
 #if CONFIG_ENABLED(USE_ACCEL_LSB)
-    // Add in LSB values.
-    sample.x += (data[1] / 64);
-    sample.y += (data[3] / 64);
-    sample.z += (data[5] / 64);
+        // Add in LSB values.
+        sample.x += (data[1] / 64);
+        sample.y += (data[3] / 64);
+        sample.z += (data[5] / 64);
 #endif
 
-    // Scale into millig (approx!)
-    sample.x *= this->sampleRange;
-    sample.y *= this->sampleRange;
-    sample.z *= this->sampleRange;
+        // Scale into millig (approx!)
+        sample.x *= this->sampleRange;
+        sample.y *= this->sampleRange;
+        sample.z *= this->sampleRange;
 
-    // Indicate that pitch and roll data is now stale, and needs to be recalculated if needed.
-    status &= ~MICROBIT_ACCEL_PITCH_ROLL_VALID;
+        // Indicate that pitch and roll data is now stale, and needs to be recalculated if needed.
+        status &= ~MICROBIT_ACCEL_PITCH_ROLL_VALID;
 
-    // Update gesture tracking
-    updateGesture();
+        // Update gesture tracking
+        updateGesture();
 
-    // Indicate that a new sample is available
-    MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
+        // Indicate that a new sample is available
+        MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
+    }
 
     return MICROBIT_OK;
 };
@@ -242,6 +250,8 @@ int MicroBitAccelerometer::update()
  */
 int MicroBitAccelerometer::instantaneousAccelerationSquared()
 {
+    updateSample();
+
     // Use pythagoras theorem to determine the combined force acting on the device.
     return (int)sample.x*(int)sample.x + (int)sample.y*(int)sample.y + (int)sample.z*(int)sample.z;
 }
@@ -413,6 +423,8 @@ int MicroBitAccelerometer::getRange()
   */
 int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
 {
+    updateSample();
+
     switch (system)
     {
         case SIMPLE_CARTESIAN:
@@ -440,6 +452,8 @@ int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
   */
 int MicroBitAccelerometer::getY(MicroBitCoordinateSystem system)
 {
+    updateSample();
+
     switch (system)
     {
         case SIMPLE_CARTESIAN:
@@ -467,6 +481,8 @@ int MicroBitAccelerometer::getY(MicroBitCoordinateSystem system)
   */
 int MicroBitAccelerometer::getZ(MicroBitCoordinateSystem system)
 {
+    updateSample();
+
     switch (system)
     {
         case NORTH_EAST_DOWN:
@@ -559,11 +575,7 @@ BasicGesture MicroBitAccelerometer::getGesture()
  */
 void MicroBitAccelerometer::idleTick()
 {
-    // Poll interrupt line from accelerometer.
-    // n.b. Default is Active LO. Interrupt is cleared in data read.
-    //
-    if(!int1)
-        update();
+    updateSample();
 }
 
 /**

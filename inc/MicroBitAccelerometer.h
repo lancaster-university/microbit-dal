@@ -14,6 +14,7 @@
   * Status flags
   */
 #define MICROBIT_ACCEL_PITCH_ROLL_VALID           0x01
+#define MICROBIT_ACCEL_ADDED_TO_IDLE              0x02
 
 /*
  * I2C constants
@@ -184,11 +185,11 @@ class MicroBitAccelerometer : public MicroBitComponent
 
     /**
      * Reads the acceleration data from the accelerometer, and stores it in our buffer.
-     * This is called by the tick() member function, if the interrupt is set.
+     * This is called by the idle thread, when the accelerometer indicates it needs updating.
      *
-     * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the read request fails.
+     * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the read request fails.
      */
-    int update();
+    int updateSample();
 
     /**
      * Attempts to set the sample rate of the accelerometer to the specified value (in ms).
