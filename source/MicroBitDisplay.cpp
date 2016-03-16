@@ -8,7 +8,7 @@
 #include "MicroBitMatrixMaps.h"
 #include "nrf_gpio.h"
 
-const int timings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
+const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
 MicroBitDisplay *MicroBitDisplay::defaultDisplay = NULL;
 
 /**
@@ -24,7 +24,7 @@ MicroBitDisplay *MicroBitDisplay::defaultDisplay = NULL;
   * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
   * @endcode
   */
-MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y) :
+MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y, MatrixMap &map) :
     image(x*2,y)
 {
     //set pins as output
@@ -230,11 +230,11 @@ void MicroBitDisplay::renderGreyscale()
 
     if(timingCount < 3)
     {
-        wait_us(timings[timingCount++]);
+        wait_us(greyScaleTimings[timingCount++]);
         renderGreyscale();
         return;
     }
-    renderTimer.attach_us(this,&MicroBitDisplay::renderGreyscale, timings[timingCount++]);
+    renderTimer.attach_us(this,&MicroBitDisplay::renderGreyscale, greyScaleTimings[timingCount++]);
 }
 
 /**

@@ -82,11 +82,6 @@ enum DisplayRotation {
     MICROBIT_DISPLAY_ROTATION_270
 };
 
-struct MatrixPoint {
-    uint8_t x;
-    uint8_t y;
-};
-
 /**
   * Class definition for a MicroBitDisplay.
   *

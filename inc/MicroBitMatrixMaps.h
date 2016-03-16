@@ -9,13 +9,45 @@
 #define MICROBIT_MATRIX_MAPS_H
 
 #include "mbed.h"
-#include "MicroBitDisplay.h"
+
+#define NO_CONN 0
+
 /**
   * Provides the mapping from Matrix ROW/COL to a linear X/Y buffer. 
   * It's arranged such that matrixMap[col, row] provides the [x,y] screen co-ord.     
   */
 
-#define NO_CONN 0
+struct MatrixPoint 
+{
+    uint8_t x;
+    uint8_t y;
+};
+
+struct MatrixMap
+{
+    int         rows;
+    int         columns;
+
+    PinName     rowStart;
+    PinName     columnStart;
+
+    MatrixPoint  *map;
+};
+
+const MatrixMap microbitMatrixMap = 
+{
+    3, 9, P0_4, P0_13,
+    {0,0},{4,2},{2,4},
+    {2,0},{0,2},{4,4},
+    {4,0},{2,2},{0,4},
+    {4,3},{1,0},{0,1},
+    {3,3},{3,0},{1,1},
+    {2,3},{3,4},{2,1},
+    {1,3},{1,4},{3,1},
+    {0,3},{NO_CONN,NO_CONN},{4,1},
+    {1,2},{NO_CONN,NO_CONN},{3,2}
+};
+    
 
 #if MICROBIT_DISPLAY_TYPE == MICROBUG_REFERENCE_DEVICE
     const MatrixPoint MicroBitDisplay::matrixMap[MICROBIT_DISPLAY_COLUMN_COUNT][MICROBIT_DISPLAY_ROW_COUNT] = 
@@ -69,6 +101,8 @@
 
 const PinName rowPins[MICROBIT_DISPLAY_ROW_COUNT] = {MICROBIT_DISPLAY_ROW_PINS};
 const uint8_t panicFace[MICROBIT_DISPLAY_COLUMN_COUNT] = {0x1B, 0x1B,0x0,0x0E,0x11};
+
+
 
 #endif  
 
