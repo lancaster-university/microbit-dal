@@ -46,13 +46,13 @@ struct MicroBitListener
 	  * @param value The event ID you would like to listen to from that component
 	  * @param handler A function pointer to call when the event is detected.
 	  */
-	MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent), uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
+	MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent), uint16_t flags = EVENT_LISTENER_DEFAULT_FLAGS);
 	
 	/**
 	  * Alternative constructor where we register a value to be passed to the
 	  * callback. 
 	  */
-    MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent, void *), void* arg, uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
+    MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent, void *), void* arg, uint16_t flags = EVENT_LISTENER_DEFAULT_FLAGS);
 
     /**
      * Constructor. 
@@ -63,7 +63,7 @@ struct MicroBitListener
      * @param object The method within the C++ object to call.
      */
     template <typename T> 
-    MicroBitListener(uint16_t id, uint16_t value, T* object, void (T::*method)(MicroBitEvent), uint16_t flags = MESSAGE_BUS_LISTENER_DEFAULT_FLAGS);
+    MicroBitListener(uint16_t id, uint16_t value, T* object, void (T::*method)(MicroBitEvent), uint16_t flags = EVENT_LISTENER_DEFAULT_FLAGS);
 
     /**
       * Destructor. Ensures all resources used by this listener are freed.

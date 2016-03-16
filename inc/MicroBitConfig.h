@@ -88,8 +88,8 @@
 
 // Scheduling quantum (milliseconds)
 // Also used to drive the micro:bit runtime system ticker.
-#ifndef FIBER_TICK_PERIOD_MS
-#define FIBER_TICK_PERIOD_MS            6
+#ifndef SYSTEM_TICK_PERIOD_MS
+#define SYSTEM_TICK_PERIOD_MS            6
 #endif
 
 //
@@ -102,8 +102,8 @@
 //   MESSAGE_BUS_LISTENER_DROP_IF_BUSY
 //   MESSAGE_BUS_LISTENER_NONBLOCKING
 
-#ifndef MESSAGE_BUS_LISTENER_DEFAULT_FLAGS
-#define MESSAGE_BUS_LISTENER_DEFAULT_FLAGS          MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY
+#ifndef EVENT_LISTENER_DEFAULT_FLAGS
+#define EVENT_LISTENER_DEFAULT_FLAGS                MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY
 #endif
 
 //

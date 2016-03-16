@@ -5,8 +5,7 @@
   */
 
 #include "MicroBit.h"
-
-MicroBitMessageBus* MicroBitMessageBus::defaultMessageBus = NULL;
+#include "EventModel.h"
 
 /**
   * Constructor.
@@ -21,8 +20,8 @@ MicroBitMessageBus::MicroBitMessageBus()
 
 	fiber_add_idle_component(this);
 
-	if(MicroBitMessageBus::defaultMessageBus == NULL)
-		MicroBitMessageBus::defaultMessageBus = this;
+	if(EventModel::defaultEventBus == NULL)
+		EventModel::defaultEventBus = this;
 }
 
 /**
@@ -260,24 +259,26 @@ int MicroBitMessageBus::isIdleCallbackNeeded()
   * Queues the given event to be sent to all registered recipients.
   *
   * @param The event to send.
+  * @return MICROBIT_OK on success.
   *
   * n.b. THIS IS NOW WRAPPED BY THE MicroBitEvent CLASS FOR CONVENIENCE...
   *
   * Example:
   * @code
-  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,ticks,CREATE_ONLY);
+  * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN,CREATE_ONLY);
   * evt.fire();
   *
   * //OR YOU CAN DO THIS...
   * MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN);
   * @endcode
   */
-void MicroBitMessageBus::send(MicroBitEvent evt)
+int MicroBitMessageBus::send(MicroBitEvent evt)
 {
     // We simply queue processing of the event until we're scheduled in normal thread context.
     // We do this to avoid the possibility of executing event handler code in IRQ context, which may bring
     // hidden race conditions to kids code. Queuing all events ensures causal ordering (total ordering in fact).
     this->queueEvent(evt);
+    return MICROBIT_OK;
 }
 
 /*
@@ -327,122 +328,6 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
 
     return complete;
 }
-
-/**
-  * Register a listener function.
-  *
-  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered.
-  * Use MICROBIT_ID_ANY to receive events from all components.
-  *
-  * @param value The value of messages to listen for. Events with any other values will be filtered.
-  * Use MICROBIT_VALUE_ANY to receive events of any value.
-  *
-  * @param handler The function to call when an event is received.
-  *
-  * @return MICROBIT_OK on success MICROBIT_INVALID_PARAMETER
-  *
-  * Example:
-  * @code
-  * void onButtonBClick(MicroBitEvent evt)
-  * {
-  * 	//do something
-  * }
-  * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); // call function when ever a click event is detected.
-  * @endcode
-  */
-
-int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags)
-{
-	if (handler == NULL)
-		return MICROBIT_INVALID_PARAMETER;
-
-	MicroBitListener *newListener = new MicroBitListener(id, value, handler, flags);
-
-    if(add(newListener) == MICROBIT_OK)
-        return MICROBIT_OK;
-
-    delete newListener;
-
-    return MICROBIT_NO_RESOURCES;
-
-}
-
-int MicroBitMessageBus::listen(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg, uint16_t flags)
-{
-	if (handler == NULL)
-		return MICROBIT_INVALID_PARAMETER;
-
-	MicroBitListener *newListener = new MicroBitListener(id, value, handler, arg, flags);
-
-    if(add(newListener) == MICROBIT_OK)
-        return MICROBIT_OK;
-
-    delete newListener;
-
-    return MICROBIT_NO_RESOURCES;
-}
-
-/**
- * Unregister a listener function.
- * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
- *
- * @param id The Event ID used to register the listener.
- * @param value The Event VALUE used to register the listener.
- * @param handler The function used to register the listener.
- *
- *
- * Example:
- * @code
- * void onButtonBClick()
- * {
- * 	//do something
- * }
- *
- * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
- * @endcode
- */
-int MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent))
-{
-	if (handler == NULL)
-		return MICROBIT_INVALID_PARAMETER;
-
-	MicroBitListener listener(id, value, handler);
-    remove(&listener);
-
-    return MICROBIT_OK;
-}
-
-/**
- * Unregister a listener function.
- * Listners are identified by the Event ID, Event VALUE and handler registered using listen().
- *
- * @param id The Event ID used to register the listener.
- * @param value The Event VALUE used to register the listener.
- * @param handler The function used to register the listener.
- *
- *
- * Example:
- * @code
- * void onButtonBClick(void *arg)
- * {
- * 	//do something
- * }
- *
- * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
- * @endcode
- */
-int MicroBitMessageBus::ignore(int id, int value, void (*handler)(MicroBitEvent, void*))
-{
-	if (handler == NULL)
-		return MICROBIT_INVALID_PARAMETER;
-
-    // The remove function is not comparing the [arg] anyhow.
-	MicroBitListener listener(id, value, handler, NULL);
-    remove(&listener);
-
-    return MICROBIT_OK;
-}
-
 
 /**
   * Add the given MicroBitListener to the list of event handlers, unconditionally.

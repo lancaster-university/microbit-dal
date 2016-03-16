@@ -112,8 +112,12 @@ void MicroBit::init()
     // Bring up the heap allocator, and reclaim as much memory from SoftDevice as possible.
     microbit_heap_init();
 
-    // Bring up fiber scheduler. Wait a little while for state to stabilise.
+    // Bring up the system timer.
+    system_timer_init(SYSTEM_TICK_PERIOD_MS); 
+
+    // Bring up fiber scheduler. 
     scheduler_init(&messageBus);
+
     // Load any stored calibration data from persistent storage.
     MicroBitStorage s = MicroBitStorage();
     MicroBitConfigurationBlock *b = s.getConfigurationBlock();
@@ -536,7 +540,7 @@ void MicroBit::seedRandom(uint32_t seed)
   */
 int MicroBit::addSystemComponent(MicroBitComponent *component)
 {
-	return fiber_add_system_component(component);
+	return system_timer_add_component(component);
 }
 
 /**
@@ -547,7 +551,7 @@ int MicroBit::addSystemComponent(MicroBitComponent *component)
   */
 int MicroBit::removeSystemComponent(MicroBitComponent *component)
 {
-	return fiber_remove_system_component(component);
+	return system_timer_remove_component(component);
 }
 
 /**
@@ -581,7 +585,7 @@ int MicroBit::removeIdleComponent(MicroBitComponent *component)
   */
 unsigned long MicroBit::systemTime()
 {
-    return ticks;
+    return system_timer_current_time();
 }
 
 

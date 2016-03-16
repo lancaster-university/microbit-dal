@@ -6,11 +6,10 @@
 enum MicroBitEventLaunchMode
 {
     CREATE_ONLY,                        
-    CREATE_AND_QUEUE,
     CREATE_AND_FIRE
 };
 
-#define MICROBIT_EVENT_DEFAULT_LAUNCH_MODE     CREATE_AND_QUEUE
+#define MICROBIT_EVENT_DEFAULT_LAUNCH_MODE     CREATE_AND_FIRE
 
 /**
   * Class definition for a MicrobitEvent
@@ -59,12 +58,6 @@ class MicroBitEvent
       * Fires the represented event onto the message bus using the default configuration.
       */
     void fire();
-
-    /**
-      * Fires the represented event onto the message bus.
-      * @param mode Configuration of how the event is processed.
-      */
-    void fire(MicroBitEventLaunchMode mode);
 };
 
 /**

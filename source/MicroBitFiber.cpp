@@ -26,13 +26,6 @@ static Fiber *waitQueue = NULL;                    // The list of blocked fibers
 static Fiber *fiberPool = NULL;                    // Pool of unused fibers, just waiting for a job to do.
 
 /*
- * Time since power on. Measured in milliseconds.
- * When stored as an unsigned long, this gives us approx 50 days between rollover, which is ample. :-)
- */
-unsigned long ticks = 0;
-static unsigned int tickPeriod = FIBER_TICK_PERIOD_MS;
-
-/*
  * Scheduler wide flags
  */
 static uint8_t fiber_flags = 0;
@@ -43,14 +36,8 @@ static uint8_t fiber_flags = 0;
  */
 static MicroBitMessageBus *messageBus = NULL;
 
-// Array of components which are iterated during a system tick
-static MicroBitComponent* systemTickComponents[MICROBIT_SYSTEM_COMPONENTS];
-
 // Array of components which are iterated during idle thread execution, isIdleCallbackNeeded is polled during a systemTick.
 static MicroBitComponent* idleThreadComponents[MICROBIT_IDLE_COMPONENTS];
-
-// Periodic callback interrupt
-static Ticker fiberSchedulerTicker;
 
 /**
   * Utility function to add the currenty running fiber to the given queue.
@@ -190,37 +177,9 @@ void scheduler_init(MicroBitMessageBus *_messageBus)
 	}
 
 	// register a period callback to drive the scheduler and any other registered components.
-    fiberSchedulerTicker.attach_us(scheduler_tick, tickPeriod * 1000);     
+    new MicroBitSystemTimerCallback(scheduler_tick);
 
 	fiber_flags |= MICROBIT_SCHEDULER_RUNNING;
-}
-
-/*
- * Reconfigures the system wide timer to the given period in milliseconds.
- *
- * @param speedMs the new period of the timer in milliseconds
- * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if speedMs < 1
- *
- * @note this will also modify the value that is added to ticks in MiroBitFiber:scheduler_tick()
- */
-int scheduler_set_tick_period(int speedMs)
-{
-    if(speedMs < 1)
-        return MICROBIT_INVALID_PARAMETER;
-
-    tickPeriod = speedMs;
-    fiberSchedulerTicker.detach();
-    fiberSchedulerTicker.attach_us(scheduler_tick, tickPeriod * 1000);     
-
-    return MICROBIT_OK;
-}
-
-/*
- * Returns the currently used tick speed in milliseconds
- */
-int scheduler_get_tick_period()
-{
-    return tickPeriod;
 }
 
 /**
@@ -236,7 +195,7 @@ int fiber_scheduler_running()
 }
 
 /**
-  * Timer callback. Called from interrupt context, once every FIBER_TICK_PERIOD_MS milliseconds, by default.
+  * Timer callback. Called from interrupt context, once every SYSTEM_TICK_PERIOD_MS milliseconds, by default.
   * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up
   * and made runnable.
   */
@@ -245,15 +204,12 @@ void scheduler_tick()
     Fiber *f = sleepQueue;
     Fiber *t;
 
-    // increment our real-time counter.
-    ticks += scheduler_get_tick_period();
-
     // Check the sleep queue, and wake up any fibers as necessary.
     while (f != NULL)
     {
         t = f->next;
 
-        if (ticks >= f->context)
+        if (system_timer_current_time() >= f->context)
         {
             // Wakey wakey!
             dequeue_fiber(f);
@@ -262,11 +218,6 @@ void scheduler_tick()
 
         f = t;
     }
-
-    // Update any components registered for a callback
-    for(int i = 0; i < MICROBIT_SYSTEM_COMPONENTS; i++)
-        if(systemTickComponents[i] != NULL)
-            systemTickComponents[i]->systemTick();
 }
 
 /**
@@ -355,7 +306,7 @@ void fiber_sleep(unsigned long t)
     }
 
     // Calculate and store the time we want to wake up.
-    f->context = ticks + t;
+    f->context = system_timer_current_time() + t;
 
     // Remove fiber from the run queue
     dequeue_fiber(f);
@@ -783,50 +734,6 @@ void schedule()
             swap_context(&oldFiber->tcb, &currentFiber->tcb, oldFiber->stack_top, currentFiber->stack_top);
         }
     }
-}
-
-
-/**
-  * Add a component to to the collection of those invoked when the scheduler's periodic timer is triggered.
-  * The given component is called on each interrupt, within interrupt context.
-  *
-  * @param component The component to add.
-  * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
-  * @note this will be converted into a dynamic list of components
-  */
-int fiber_add_system_component(MicroBitComponent *component)
-{
-    int i = 0;
-    
-    while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)  
-        i++;
-    
-    if(i == MICROBIT_SYSTEM_COMPONENTS)
-        return MICROBIT_NO_RESOURCES;
-        
-    systemTickComponents[i] = component;    
-    return MICROBIT_OK;
-}
-
-/**
-  * remove a component from the array of components
-  * @param component The component to remove.
-  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMTER is returned if the given component has not been previous added.
-  * @note this will be converted into a dynamic list of components
-  */
-int fiber_remove_system_component(MicroBitComponent *component)
-{
-    int i = 0;
-    
-    while(systemTickComponents[i] != component  && i < MICROBIT_SYSTEM_COMPONENTS)  
-        i++;
-    
-    if(i == MICROBIT_SYSTEM_COMPONENTS)
-        return MICROBIT_INVALID_PARAMETER;
-
-    systemTickComponents[i] = NULL;
-
-    return MICROBIT_OK;
 }
 
 /**

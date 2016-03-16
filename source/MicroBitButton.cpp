@@ -28,7 +28,7 @@ MicroBitButton::MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventCon
     this->eventConfiguration = eventConfiguration;
     this->downStartTime = 0;
     this->sigma = 0;
-    fiber_add_system_component(this);
+    system_timer_add_component(this);
 }
 
 /**
@@ -84,7 +84,7 @@ void MicroBitButton::systemTick()
         MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN);
 
         //Record the time the button was pressed.
-        downStartTime=ticks;
+        downStartTime = system_timer_current_time();
     }
 
     // Check to see if we have on->off state change.
@@ -96,7 +96,7 @@ void MicroBitButton::systemTick()
        if (eventConfiguration == MICROBIT_BUTTON_ALL_EVENTS)
        {
            //determine if this is a long click or a normal click and send event
-           if((ticks - downStartTime) >= MICROBIT_BUTTON_LONG_CLICK_TIME)
+           if((system_timer_current_time() - downStartTime) >= MICROBIT_BUTTON_LONG_CLICK_TIME)
                MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_LONG_CLICK);
            else
                MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK);
@@ -104,7 +104,7 @@ void MicroBitButton::systemTick()
     }
 
     //if button is pressed and the hold triggered event state is not triggered AND we are greater than the button debounce value
-    if((status & MICROBIT_BUTTON_STATE) && !(status & MICROBIT_BUTTON_STATE_HOLD_TRIGGERED) && (ticks - downStartTime) >= MICROBIT_BUTTON_HOLD_TIME)
+    if((status & MICROBIT_BUTTON_STATE) && !(status & MICROBIT_BUTTON_STATE_HOLD_TRIGGERED) && (system_timer_current_time() - downStartTime) >= MICROBIT_BUTTON_HOLD_TIME)
     {
         //set the hold triggered event flag
         status |= MICROBIT_BUTTON_STATE_HOLD_TRIGGERED;
@@ -128,5 +128,5 @@ int MicroBitButton::isPressed()
   */
 MicroBitButton::~MicroBitButton()
 {
-    fiber_remove_system_component(this);
+    system_timer_remove_component(this);
 }

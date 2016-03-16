@@ -6,6 +6,8 @@
 
 #include "MicroBit.h"
 
+EventModel* EventModel::defaultEventBus = NULL;
+
 /**
   * Constructor. 
   * @param src ID of the MicroBit Component that generated the event e.g. MICROBIT_ID_BUTTON_A.
@@ -21,10 +23,10 @@ MicroBitEvent::MicroBitEvent(uint16_t source, uint16_t value, MicroBitEventLaunc
 {
     this->source = source;
     this->value = value;
-    this->timestamp = ticks;
+    this->timestamp = system_timer_current_time();
     
     if(mode != CREATE_ONLY)
-        this->fire(mode);
+        this->fire();
 }    
 
 /**
@@ -34,21 +36,7 @@ MicroBitEvent::MicroBitEvent()
 {
     this->source = 0;
     this->value = 0;
-    this->timestamp = ticks;
-}
-
-/**
-  * Fires the represented event onto the default message bus.
-  */
-void MicroBitEvent::fire(MicroBitEventLaunchMode mode)
-{
-	if(MicroBitMessageBus::defaultMessageBus)
-	{
-		if (mode == CREATE_AND_QUEUE)
-			MicroBitMessageBus::defaultMessageBus->send(*this);
-		else if (mode == CREATE_AND_FIRE)
-			MicroBitMessageBus::defaultMessageBus->process(*this);
-	}
+    this->timestamp = system_timer_current_time();
 }
 
 /**
@@ -56,7 +44,8 @@ void MicroBitEvent::fire(MicroBitEventLaunchMode mode)
   */
 void MicroBitEvent::fire()
 {
-    fire(MICROBIT_EVENT_DEFAULT_LAUNCH_MODE);
+	if(EventModel::defaultEventBus)
+		EventModel::defaultEventBus->send(*this);
 }
 
 

@@ -16,6 +16,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitCompass.cpp"
     "MicroBitEvent.cpp"
     "MicroBitFiber.cpp"
+    "MicroBitSystemTimer.cpp"
     "ManagedString.cpp"
     "Matrix4.cpp"
     "MicroBitAccelerometer.cpp"
