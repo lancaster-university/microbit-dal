@@ -23,9 +23,9 @@ MicroBitRadioEvent::MicroBitRadioEvent(MicroBitRadio &r) : radio(r)
 }
 
 /**
- * Associates the given MessageBus events with the radio channel.
+ * Associates the given MicroBitEvent with the radio channel.
  * Once registered, all events matching the given registration sent to this micro:bit's 
- * default MessageBus will be automaticlaly retrasmitted on the radio.
+ * default EventBus will be automatically retrasmitted on the radio.
  *
  * @param id The ID of the events to register.
  * @param value the VALUE of the event to register. use MICROBIT_EVT_ANY for all event values matching the given id.
@@ -34,14 +34,14 @@ MicroBitRadioEvent::MicroBitRadioEvent(MicroBitRadio &r) : radio(r)
  */
 int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
 {
-    if (MicroBitMessageBus::defaultMessageBus)
-        return listen(id, value, *MicroBitMessageBus::defaultMessageBus);
+    if (EventModel::defaultEventBus)
+        return listen(id, value, *EventModel::defaultEventBus);
 
     return MICROBIT_NO_RESOURCES;
 }
 
 /**
- * Associates the given MessageBus events with the radio channel.
+ * Associates the given MicroBitEvent events with the radio channel.
  * Once registered, all events matching the given registration sent to the given 
  * MessageBus will be automaticlaly retrasmitted on the radio.
  *
@@ -50,9 +50,9 @@ int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
  *
  * @return MICROBIT_OK on success.
  */
-int MicroBitRadioEvent::listen(uint16_t id, uint16_t value, MicroBitMessageBus &messageBus)
+int MicroBitRadioEvent::listen(uint16_t id, uint16_t value, EventModel &eventBus)
 {
-    return messageBus.listen(id, value, this, &MicroBitRadioEvent::eventReceived, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    return eventBus.listen(id, value, this, &MicroBitRadioEvent::eventReceived, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 /**
@@ -65,8 +65,8 @@ int MicroBitRadioEvent::listen(uint16_t id, uint16_t value, MicroBitMessageBus &
  */
 int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value)
 {
-    if (MicroBitMessageBus::defaultMessageBus)
-        return ignore(id, value, *MicroBitMessageBus::defaultMessageBus);
+    if (EventModel::defaultEventBus)
+        return ignore(id, value, *EventModel::defaultEventBus);
 
     return MICROBIT_INVALID_PARAMETER;
 }
@@ -80,9 +80,9 @@ int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value)
  *
  * @return MICROBIT_OK on success.
  */
-int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value, MicroBitMessageBus &messageBus)
+int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value, EventModel &eventBus)
 {
-    return messageBus.ignore(id, value, this, &MicroBitRadioEvent::eventReceived);
+    return eventBus.ignore(id, value, this, &MicroBitRadioEvent::eventReceived);
 }
 
 

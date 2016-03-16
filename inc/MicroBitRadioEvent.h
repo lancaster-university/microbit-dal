@@ -52,7 +52,7 @@ class MicroBitRadioEvent
      *
      * @return MICROBIT_OK on success.
      */
-    int listen(uint16_t id, uint16_t value, MicroBitMessageBus &messageBus);
+    int listen(uint16_t id, uint16_t value, EventModel &eventBus);
 
     /**
      * Disassociates the given MessageBus events with the radio channel.
@@ -73,7 +73,7 @@ class MicroBitRadioEvent
      *
      * @return MICROBIT_OK on success.
      */
-    int ignore(uint16_t id, uint16_t value, MicroBitMessageBus &messageBus);
+    int ignore(uint16_t id, uint16_t value, EventModel &eventBus);
 
     /**
      * Protocol handler callback. This is called when the radio receives a packet marked as using the event protocol.
