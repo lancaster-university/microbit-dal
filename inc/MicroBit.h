@@ -67,7 +67,7 @@ class MicroBit
     private:
 
     void                    compassCalibrator(MicroBitEvent e);
-    void                    onABListenerRegisteredEvent(MicroBitEvent evt);
+    void                    onListenerRegisteredEvent(MicroBitEvent evt);
     uint32_t                randomValue;
 
     public:
@@ -82,7 +82,7 @@ class MicroBit
     MicroBitSerial          serial;
 
     // Device level Message Bus abstraction
-    MicroBitMessageBus      messageBus;     
+    MicroBitMessageBus      messageBus;
 
     // Member variables to represent each of the core components on the device.
     MicroBitDisplay         display;
@@ -231,16 +231,16 @@ class MicroBit
 
     /**
       * Triggers a microbit panic where an infinite loop will occur swapping between the panicFace and statusCode if provided.
-      * 
+      *
       * @param statusCode the status code of the associated error. Status codes must be in the range 0-255.
       */
     void panic(int statusCode = 0);
 
 	/**
-	 * add a component to the array of components which invocate the systemTick member function during a systemTick 
+	 * add a component to the array of components which invocate the systemTick member function during a systemTick
 	 * @param component The component to add.
 	 * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
-	 * @note This interface is now deprecated. See fiber_add_system_component(). 
+	 * @note This interface is now deprecated. See fiber_add_system_component().
 	 */
 	int addSystemComponent(MicroBitComponent *component);
 
@@ -248,15 +248,15 @@ class MicroBit
 	 * remove a component from the array of components
 	 * @param component The component to remove.
 	 * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMTER is returned if the given component has not been previous added.
-	 * @note This interface is now deprecated. See fiber_remove_system_component(). 
+	 * @note This interface is now deprecated. See fiber_remove_system_component().
 	 */
 	int removeSystemComponent(MicroBitComponent *component);
 
 	/**
-	 * add a component to the array of components which invocate the systemTick member function during a systemTick 
+	 * add a component to the array of components which invocate the systemTick member function during a systemTick
 	 * @param component The component to add.
 	 * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
-	 * @note This interface is now deprecated. See fiber_add_idle_component(). 
+	 * @note This interface is now deprecated. See fiber_add_idle_component().
 	 */
 	int addIdleComponent(MicroBitComponent *component);
 
@@ -264,7 +264,7 @@ class MicroBit
 	 * remove a component from the array of components
 	 * @param component The component to remove.
 	 * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMTER is returned if the given component has not been previous added.
-	 * @note This interface is now deprecated. See fiber_remove_idle_component(). 
+	 * @note This interface is now deprecated. See fiber_remove_idle_component().
 	 */
 	int removeIdleComponent(MicroBitComponent *component);
 };
@@ -275,4 +275,3 @@ extern "C" void app_main();
 
 
 #endif
-
