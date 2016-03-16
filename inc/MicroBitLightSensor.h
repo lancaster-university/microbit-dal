@@ -4,6 +4,7 @@
 #include "mbed.h"
 #include "MicroBitComponent.h"
 #include "MicroBitMessageBus.h"
+#include "MicroBitMatrixMaps.h"
 
 #define MICROBIT_LIGHT_SENSOR_CHAN_NUM      3
 #define MICROBIT_LIGHT_SENSOR_AN_SET_TIME   4000
@@ -31,6 +32,8 @@ class MicroBitLightSensor
 
     //a pointer the currently sensed pin, represented as an AnalogIn
     AnalogIn* sensePin;
+
+    const MatrixMap &matrixMap;
 
     /**
       * After the startSensing method has been called, this method will be called
@@ -66,7 +69,7 @@ class MicroBitLightSensor
       * Constructor.
       * Create a representation of the light sensor
       */
-    MicroBitLightSensor();
+    MicroBitLightSensor(const MatrixMap &map);
 
     /**
       * This method returns a summed average of the three sections of the display.

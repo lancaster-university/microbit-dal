@@ -8,38 +8,7 @@
 #define MICROBIT_DISPLAY_EVT_FREE                       2
 #define MICROBIT_DISPLAY_EVT_LIGHT_SENSE                4
 
-/**
-  * I/O configurations for common devices.
-  */
-#if MICROBIT_DISPLAY_TYPE == MICROBUG_REFERENCE_DEVICE
-#define MICROBIT_DISPLAY_ROW_COUNT          5
-#define MICROBIT_DISPLAY_ROW_PINS           P0_0, P0_1, P0_2, P0_3, P0_4
-#define MICROBIT_DISPLAY_COLUMN_COUNT       5
-#define MICROBIT_DISPLAY_COLUMN_PINS        P0_24, P0_25, P0_28, P0_29, P0_30
-#endif
-
-#if MICROBIT_DISPLAY_TYPE == MICROBIT_3X9
-#define MICROBIT_DISPLAY_ROW_COUNT          3
-#define MICROBIT_DISPLAY_ROW_PINS           P0_12, P0_13, P0_14
-#define MICROBIT_DISPLAY_COLUMN_COUNT       9
-#define MICROBIT_DISPLAY_COLUMN_PINS        P0_15, P0_16, P0_17, P0_18, P0_19, P0_24, P0_25, P0_28, P0_29
-#endif
-
-#if MICROBIT_DISPLAY_TYPE == MICROBIT_SB1
-#define MICROBIT_DISPLAY_ROW_COUNT          9
-#define MICROBIT_DISPLAY_ROW_PINS           P0_15, P0_16, P0_17, P0_18, P0_19, P0_24, P0_25, P0_28, P0_29
-#define MICROBIT_DISPLAY_COLUMN_COUNT       3
-#define MICROBIT_DISPLAY_COLUMN_PINS        P0_12, P0_13, P0_14
-#endif
-
-#if MICROBIT_DISPLAY_TYPE == MICROBIT_SB2
-#define MICROBIT_DISPLAY_ROW_COUNT          3
-#define MICROBIT_DISPLAY_ROW_PINS           P0_13, P0_14, P0_15
-#define MICROBIT_DISPLAY_COLUMN_COUNT       9
-#define MICROBIT_DISPLAY_COLUMN_PINS        P0_4, P0_5, P0_6, P0_7, P0_8, P0_9, P0_10, P0_11, P0_12
-#define MICROBIT_DISPLAY_COLUMN_START       P0_4
-#define MICROBIT_DISPLAY_ROW_START          P0_13
-#endif
+const uint8_t panicFace[5] = {0x1B, 0x1B,0x0,0x0E,0x11};
 
 //
 // Internal constants
@@ -58,6 +27,7 @@
 #include "MicroBitComponent.h"
 #include "MicroBitImage.h"
 #include "MicroBitFont.h"
+#include "MicroBitMatrixMaps.h"
 
 enum AnimationMode {
     ANIMATION_MODE_NONE,
@@ -164,7 +134,7 @@ class MicroBitDisplay : public MicroBitComponent
     // Flag to indicate if image has been rendered to screen yet (or not)
     bool scrollingImageRendered;
 
-    static const MatrixPoint matrixMap[MICROBIT_DISPLAY_COLUMN_COUNT][MICROBIT_DISPLAY_ROW_COUNT];
+    const MatrixMap &matrixMap;
 
     // Internal methods to handle animation.
 
@@ -233,6 +203,12 @@ class MicroBitDisplay : public MicroBitComponent
       */
     void waitForFreeDisplay();
 
+    /**
+      * Blocks the current fiber until the current animation has finished.
+      * If the scheduler is not running, this call will essentially perform a spinning wait.
+      */
+    void fiberWait();
+
 public:
     // The mutable bitmap buffer being rendered to the LED matrix.
     MicroBitImage image;
@@ -250,7 +226,7 @@ public:
       * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
       * @endcode
       */
-    MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y);
+    MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y, const MatrixMap &map);
 
     /**
       * Stops any currently running animation, and any that are waiting to be displayed.
@@ -553,7 +529,7 @@ public:
      * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
      *
      * Example:
-     * @code 
+     * @code
      * uBit.display.error(20);
      * @endcode
      */
@@ -583,7 +559,7 @@ public:
 
     /**
       * Updates the font that will be used for display operations.
-	  * DEPRECATED: Please use MicroBitFont::setSystemFont() instead. 
+	  * DEPRECATED: Please use MicroBitFont::setSystemFont() instead.
 	  *
       * @param font the new font that will be used to render characters.
       */
@@ -591,7 +567,7 @@ public:
 
     /**
       * Retreives the font object used for rendering characters on the display.
-	  * DEPRECATED: Please use MicroBitFont::getSystemFont() instead. 
+	  * DEPRECATED: Please use MicroBitFont::getSystemFont() instead.
       */
     MicroBitFont getFont();
 

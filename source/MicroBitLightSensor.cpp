@@ -19,7 +19,7 @@ void MicroBitLightSensor::analogReady()
 
     analogDisable();
 
-    DigitalOut((PinName)(MICROBIT_DISPLAY_COLUMN_START + chan)).write(1);
+    DigitalOut((PinName)(matrixMap.columnStart + chan)).write(1);
 
     chan++;
 
@@ -57,10 +57,10 @@ void MicroBitLightSensor::analogDisable()
   */
 void MicroBitLightSensor::startSensing(MicroBitEvent)
 {
-    for(int rowCount = 0; rowCount < MICROBIT_DISPLAY_ROW_COUNT; rowCount++)
-        DigitalOut((PinName)(MICROBIT_DISPLAY_ROW_START + rowCount)).write(0);
+    for(int rowCount = 0; rowCount < matrixMap.rows; rowCount++)
+        DigitalOut((PinName)(matrixMap.rowStart + rowCount)).write(0);
 
-    PinName currentPin = (PinName)(MICROBIT_DISPLAY_COLUMN_START + chan);
+    PinName currentPin = (PinName)(matrixMap.columnStart + chan);
 
     DigitalOut(currentPin).write(1);
 
@@ -78,7 +78,9 @@ void MicroBitLightSensor::startSensing(MicroBitEvent)
   * Constructor.
   * Create a representation of the light sensor
   */
-MicroBitLightSensor::MicroBitLightSensor() : analogTrigger()
+MicroBitLightSensor::MicroBitLightSensor(const MatrixMap &map) :
+    analogTrigger(),
+    matrixMap(map)
 {
     this->chan = 0;
 

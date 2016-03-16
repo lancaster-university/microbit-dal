@@ -233,12 +233,12 @@ void scheduler_event(MicroBitEvent evt)
     Fiber *t;
     int notifyOneComplete = 0;
 
-	// This should never happen. 
+	// This should never happen.
 	// It is however, safe to simply ignore any events provided, ans if no messageBus if recorded,
 	// no fibers are permitted to block on events.
 	if (messageBus == NULL)
 		return;
-    
+
     // Check the wait queue, and wake up any fibers as necessary.
     while (f != NULL)
     {
@@ -320,7 +320,7 @@ void fiber_sleep(unsigned long t)
 
 /**
   * Blocks the calling thread until the specified event is raised.
-  * The calling thread will be immediately descheduled, and placed onto a 
+  * The calling thread will be immediately descheduled, and placed onto a
   * wait queue until the requested event is received.
   *
   * n.b. the fiber will not be be made runnable until after the event is raised, but there
@@ -334,7 +334,7 @@ int fiber_wait_for_event(uint16_t id, uint16_t value)
 {
     Fiber *f = currentFiber;
 
-	if (messageBus == NULL)
+	if (messageBus == NULL || !fiber_scheduler_running())
 		return MICROBIT_NOT_SUPPORTED;
 
     // Sleep is a blocking call, so if we'r ein a fork on block context,
@@ -737,7 +737,7 @@ void schedule()
 }
 
 /**
-  * add a component to the array of components which invocate the systemTick member function during a systemTick 
+  * add a component to the array of components which invocate the systemTick member function during a systemTick
   * @param component The component to add.
   * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
   * @note this will be converted into a dynamic list of components
@@ -745,14 +745,14 @@ void schedule()
 int fiber_add_idle_component(MicroBitComponent *component)
 {
     int i = 0;
-    
-    while(idleThreadComponents[i] != NULL && i < MICROBIT_IDLE_COMPONENTS)  
+
+    while(idleThreadComponents[i] != NULL && i < MICROBIT_IDLE_COMPONENTS)
         i++;
-    
+
     if(i == MICROBIT_IDLE_COMPONENTS)
         return MICROBIT_NO_RESOURCES;
-        
-    idleThreadComponents[i] = component;    
+
+    idleThreadComponents[i] = component;
 
     return MICROBIT_OK;
 }
@@ -766,10 +766,10 @@ int fiber_add_idle_component(MicroBitComponent *component)
 int fiber_remove_idle_component(MicroBitComponent *component)
 {
     int i = 0;
-    
-    while(idleThreadComponents[i] != component && i < MICROBIT_IDLE_COMPONENTS)  
+
+    while(idleThreadComponents[i] != component && i < MICROBIT_IDLE_COMPONENTS)
         i++;
-    
+
     if(i == MICROBIT_IDLE_COMPONENTS)
         return MICROBIT_INVALID_PARAMETER;
 
@@ -788,7 +788,7 @@ void idle()
     for(int i = 0; i < MICROBIT_IDLE_COMPONENTS; i++)
         if(idleThreadComponents[i] != NULL)
             idleThreadComponents[i]->idleTick();
-    
+
     // If the above did create any useful work, enter power efficient sleep.
     if(scheduler_runqueue_empty())
     	__WFE();

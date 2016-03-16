@@ -5,7 +5,6 @@
   */
 #include "mbed.h"
 #include "MicroBit.h"
-#include "MicroBitMatrixMaps.h"
 #include "nrf_gpio.h"
 
 const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
@@ -24,11 +23,12 @@ MicroBitDisplay *MicroBitDisplay::defaultDisplay = NULL;
   * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
   * @endcode
   */
-MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y, MatrixMap &map) :
+MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y, const MatrixMap &map) :
+    matrixMap(map),
     image(x*2,y)
 {
     //set pins as output
-    nrf_gpio_range_cfg_output(MICROBIT_DISPLAY_COLUMN_START,MICROBIT_DISPLAY_COLUMN_START + MICROBIT_DISPLAY_COLUMN_COUNT + MICROBIT_DISPLAY_ROW_COUNT);
+    nrf_gpio_range_cfg_output(matrixMap.columnStart, matrixMap.columnStart + matrixMap.columns + matrixMap.rows);
 
     this->id = id;
     this->width = x;
@@ -77,7 +77,7 @@ void MicroBitDisplay::systemTick()
     strobeRow++;
 
     //reset the row counts and bit mask when we have hit the max.
-    if(strobeRow == MICROBIT_DISPLAY_ROW_COUNT){
+    if(strobeRow == matrixMap.rows){
         strobeRow = 0;
         strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     }
@@ -116,10 +116,12 @@ void MicroBitDisplay::render()
     int coldata = 0;
 
     // Calculate the bitpattern to write.
-    for (int i = 0; i<MICROBIT_DISPLAY_COLUMN_COUNT; i++)
+    for (int i = 0; i < matrixMap.columns; i++)
     {
-        int x = matrixMap[i][strobeRow].x;
-        int y = matrixMap[i][strobeRow].y;
+        int index = (i * matrixMap.rows) + strobeRow;
+
+        int x = matrixMap.map[index].x;
+        int y = matrixMap.map[index].y;
         int t = x;
 
         if(rotation == MICROBIT_DISPLAY_ROTATION_90)
@@ -163,7 +165,7 @@ void MicroBitDisplay::render()
 void MicroBitDisplay::renderWithLightSense()
 {
     //reset the row counts and bit mask when we have hit the max.
-    if(strobeRow == MICROBIT_DISPLAY_ROW_COUNT + 1)
+    if(strobeRow == matrixMap.rows + 1)
     {
 
         MicroBitEvent(id, MICROBIT_DISPLAY_EVT_LIGHT_SENSE);
@@ -189,10 +191,12 @@ void MicroBitDisplay::renderGreyscale()
     int coldata = 0;
 
     // Calculate the bitpattern to write.
-    for (int i = 0; i<MICROBIT_DISPLAY_COLUMN_COUNT; i++)
+    for (int i = 0; i < matrixMap.columns; i++)
     {
-        int x = matrixMap[i][strobeRow].x;
-        int y = matrixMap[i][strobeRow].y;
+        int index = (i * matrixMap.rows) + strobeRow;
+
+        int x = matrixMap.map[index].x;
+        int y = matrixMap.map[index].y;
         int t = x;
 
         if(rotation == MICROBIT_DISPLAY_ROTATION_90)
@@ -414,6 +418,16 @@ void MicroBitDisplay::waitForFreeDisplay()
         fiber_wait_for_event(MICROBIT_ID_NOTIFY, MICROBIT_DISPLAY_EVT_FREE);
 }
 
+/**
+  * Blocks the current fiber until the current animation has finished.
+  * If the scheduler is not running, this call will essentially perform a spinning wait.
+  */
+void MicroBitDisplay::fiberWait()
+{
+    if (fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE) == MICROBIT_NOT_SUPPORTED)
+        while(animationMode != ANIMATION_MODE_NONE)
+            __WFE();
+}
 
 /**
   * Prints the given character to the display, if it is not in use.
@@ -536,7 +550,7 @@ int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int de
   *
   * @param c The character to display.
   * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_CANCELLED, MICROBIT_INVALID_PARAMETER or MICROBIT_NOT_SUPPORTED if the scheduler is not running
   *
   * Example:
   * @code
@@ -557,8 +571,9 @@ int MicroBitDisplay::print(char c, int delay)
     if (animationMode == ANIMATION_MODE_NONE)
     {
         this->printAsync(c, delay);
+
         if (delay > 0)
-            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+            fiberWait();
     }
     else
     {
@@ -596,7 +611,7 @@ int MicroBitDisplay::print(ManagedString s, int delay)
     if (animationMode == ANIMATION_MODE_NONE)
     {
         this->printAsync(s, delay);
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        fiberWait();
     }
     else
     {
@@ -633,8 +648,9 @@ int MicroBitDisplay::print(MicroBitImage i, int x, int y, int alpha, int delay)
     if (animationMode == ANIMATION_MODE_NONE)
     {
         this->printAsync(i, x, y, alpha, delay);
+
         if (delay > 0)
-            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+            fiberWait();
     }
     else
     {
@@ -731,7 +747,7 @@ int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
   *
   * @param s The string to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_CANCELLED, MICROBIT_INVALID_PARAMETER or MICROBIT_NOT_SUPPORTED if the scheduler is not running.
   *
   * Example:
   * @code
@@ -755,7 +771,7 @@ int MicroBitDisplay::scroll(ManagedString s, int delay)
         this->scrollAsync(s, delay);
 
         // Wait for completion.
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        fiberWait();
     }
     else
     {
@@ -772,7 +788,7 @@ int MicroBitDisplay::scroll(ManagedString s, int delay)
   * @param image The image to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
   * @param stride The number of pixels to move in each update. Default value is the screen width.
-  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER
   *
   * Example:
   * @code
@@ -797,7 +813,7 @@ int MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
         this->scrollAsync(image, delay, stride);
 
         // Wait for completion.
-        fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+        fiberWait();
     }
     else
     {
@@ -863,7 +879,8 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
   * @param image The image to display.
   * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
   * @param stride The number of pixels to move in each update. Default value is the screen width.
-  * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, or MICROBIT_INVALID_PARAMETER.
+  * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, MICROBIT_INVALID_PARAMETER or
+  * MICROBIT_NOT_SUPPORTED if the scheduler is not running
   *
   * Example:
   * @code
@@ -894,12 +911,13 @@ int MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int sta
         // Wait for completion.
         //TODO: Put this in when we merge tight-validation
         //if (delay > 0)
-            fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
+            fiberWait();
     }
     else
     {
         return MICROBIT_CANCELLED;
     }
+
     return MICROBIT_OK;
 }
 
@@ -1055,7 +1073,7 @@ void MicroBitDisplay::setErrorTimeout(int iterations)
   * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
   *
   * Example:
-  * @code 
+  * @code
   * uBit.display.error(20);
   * @endcode
   */
@@ -1117,11 +1135,13 @@ void MicroBitDisplay::error(int statusCode)
                 }
 
                 // Calculate the bitpattern to write.
-                for (i = 0; i<MICROBIT_DISPLAY_COLUMN_COUNT; i++)
+                for (i = 0; i < matrixMap.columns; i++)
                 {
 
-                    int bitMsk = 0x10 >> matrixMap[i][strobeRow].x; //chars are right aligned but read left to right
-                    int y = matrixMap[i][strobeRow].y;
+                    int index = (i * matrixMap.rows) + strobeRow;
+
+                    int bitMsk = 0x10 >> matrixMap.map[index].x; //chars are right aligned but read left to right
+                    int y = matrixMap.map[index].y;
 
                     if(chars[characterCount][y] & bitMsk)
                         coldata |= (1 << i);
@@ -1156,7 +1176,7 @@ void MicroBitDisplay::error(int statusCode)
             count--;
     }
 
-    microbit_reset(); 
+    microbit_reset();
 }
 
 /**
@@ -1200,7 +1220,7 @@ int MicroBitDisplay::readLightLevel()
     if(mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
     {
         setDisplayMode(DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE);
-        this->lightSensor = new MicroBitLightSensor();
+        this->lightSensor = new MicroBitLightSensor(matrixMap);
     }
 
     return this->lightSensor->read();

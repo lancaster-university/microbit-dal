@@ -30,6 +30,7 @@
 
 #include "MicroBitSerial.h"
 #include "MicroBitIO.h"
+#include "MicroBitMatrixMaps.h"
 #include "MicroBitDisplay.h"
 
 #include "MicroBitFiber.h"
