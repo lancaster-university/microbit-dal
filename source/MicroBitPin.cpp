@@ -1,5 +1,7 @@
-#include "MicroBit.h"
 #include "MicroBitPin.h"
+#include "MicroBitButton.h"
+#include "DynamicPwm.h"
+#include "ErrorNo.h"
 
 /**
   * Constructor.

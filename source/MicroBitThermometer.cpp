@@ -1,4 +1,6 @@
-#include "MicroBit.h"
+#include "MicroBitThermometer.h"
+#include "MicroBitSystemTimer.h"
+#include "MicroBitFiber.h"
 
 /**
   * Turn off warnings under gcc -Wall. We turn off unused-function for the

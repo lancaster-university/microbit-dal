@@ -1,6 +1,7 @@
+#ifdef UBIT_SUPERMAIN
+
 #include "MicroBit.h"
 
-#ifdef UBIT_SUPERMAIN
 MicroBit        uBit;
 
 int main()

@@ -1,6 +1,8 @@
 #ifndef MICROBIT_PANIC_H
 #define MICROBIT_PANIC_H
 
+#include "MicroBitDisplay.h"
+
 /**
   * Displays "=(" and an accompanying status code.
   * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.

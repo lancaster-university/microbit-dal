@@ -1,4 +1,6 @@
-#include "MicroBit.h"
+#include "DynamicPwm.h"
+#include "MicroBitPin.h"
+#include "ErrorNo.h"
 
 DynamicPwm* DynamicPwm::pwms[NO_PWMS] = { NULL };
 

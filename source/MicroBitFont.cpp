@@ -3,7 +3,7 @@
   * It represents a font that can be used by the display to render text.
   */
 
-#include "MicroBit.h"
+#include "MicroBitFont.h"
 
 /**
   * The original MicroBit font.

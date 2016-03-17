@@ -1,4 +1,5 @@
-#include "MicroBit.h"
+#include "PacketBuffer.h"
+#include "ErrorNo.h"
 
 // Create the EmptyPacket reference.
 PacketBuffer PacketBuffer::EmptyPacket = PacketBuffer(1);

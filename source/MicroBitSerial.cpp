@@ -1,5 +1,5 @@
 #include "mbed.h"
-#include "MicroBit.h"
+#include "MicroBitSerial.h"
 
 /**
   * Constructor.

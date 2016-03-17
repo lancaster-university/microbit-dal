@@ -1,7 +1,9 @@
 #include <string.h>
 #include <stdlib.h>
+
 #include "mbed.h"
-#include "MicroBit.h"
+#include "ManagedString.h"
+#include "MicroBitCompat.h"
 
 static const char empty[] __attribute__ ((aligned (4))) = "\xff\xff\0\0\0";
 

@@ -1,4 +1,7 @@
-#include "MicroBit.h"
+#include "MicroBitConfig.h"
+#include "MicroBitHeapAllocator.h"
+#include "MicroBitPanic.h"
+#include "ErrorNo.h"
 
 /**
   * A simple 32 bit block based memory allocator. This allows one or more memory segments to

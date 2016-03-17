@@ -1,4 +1,5 @@
-#include "MicroBit.h"
+#include "MicroBitButton.h"
+#include "MicroBitSystemTimer.h"
 
 /**
   * Constructor.

@@ -1,4 +1,7 @@
-#include "MicroBit.h"
+#include "MicroBitCompass.h"
+#include "MicroBitStorage.h"
+#include "MicroBitFiber.h"
+#include "ErrorNo.h"
 
 /**
   * An initialisation member function used by the constructors of MicroBitCompass.
@@ -408,7 +411,7 @@ int MicroBitCompass::configure()
             break;
 
         // Perform a power efficient sleep...
-		MicroBit::sleep(100);
+		fiber_sleep(100);
     }
 
     // Find the nearest sample rate to that specified.

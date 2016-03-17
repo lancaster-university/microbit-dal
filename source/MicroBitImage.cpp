@@ -5,7 +5,11 @@
   * n.b. This is a mutable, managed type.
   */
 
-#include "MicroBit.h"
+#include "MicroBitImage.h"
+#include "MicroBitFont.h"
+#include "MicroBitCompat.h"
+#include "ManagedString.h"
+#include "ErrorNo.h"
 
 
 /*

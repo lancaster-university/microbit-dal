@@ -4,8 +4,9 @@
   * The MicroBitMessageBus handles all messages passed between components.
   */
 
-#include "MicroBit.h"
-#include "EventModel.h"
+#include "MicroBitMessageBus.h"
+#include "MicroBitFiber.h"
+#include "ErrorNo.h"
 
 /**
   * Constructor.

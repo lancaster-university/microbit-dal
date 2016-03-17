@@ -9,7 +9,7 @@
   * events to C++ methods.
   */
 
-#include "MicroBit.h"
+#include "MemberFunctionCallback.h"
 
 /**
   * Calls the method reference held by this MemberFunctionCallback.

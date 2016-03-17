@@ -1,5 +1,6 @@
 #include "mbed.h"
-#include "MicroBit.h"
+#include "RefCounted.h"
+#include "MicroBitDisplay.h"
 
 void RefCounted::init()
 {
