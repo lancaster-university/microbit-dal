@@ -109,7 +109,7 @@ class MicroBit
       *
       * Exposed objects:
       * @code
-      * uBit.MessageBus; //The message bus where events are fired.
+      * uBit.messageBus; //The message bus where events are fired.
       * uBit.display; //The display object for the LED matrix.
       * uBit.buttonA; //The buttonA object for button a.
       * uBit.buttonB; //The buttonB object for button b.

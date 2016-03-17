@@ -124,7 +124,7 @@ class EventModel
       * {
       * 	//do something
       * }
-      * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); // call function when ever a click event is detected.
+      * uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick); // call function when ever a click event is detected.
       * @endcode
 	  */
 	int listen(int id, int value, void (*handler)(MicroBitEvent), uint16_t flags = EVENT_LISTENER_DEFAULT_FLAGS)
@@ -178,7 +178,7 @@ class EventModel
       * }
       *
       * SomeClass s = new SomeClass();
-      * uBit.MessageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick);
+      * uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick);
       * @endcode
 	  */
     template <typename T>
@@ -203,7 +203,7 @@ class EventModel
       * 	//do something
       * }
       *
-      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
+      * uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
       * @endcode
 	  */
 	int ignore(int id, int value, void (*handler)(MicroBitEvent))
@@ -234,7 +234,7 @@ class EventModel
       * 	//do something
       * }
       *
-      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
+      * uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
       * @endcode
 	  */
 	int ignore(int id, int value, void (*handler)(MicroBitEvent, void*))
@@ -268,7 +268,7 @@ class EventModel
       * }
       *
       * SomeClass s = new SomeClass();
-      * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick);
+      * uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, s, &SomeClass::onButtonBClick);
       * @endcode
 	  */
     template <typename T>
@@ -323,7 +323,7 @@ int EventModel::listen(uint16_t id, uint16_t value, T* object, void (T::*handler
  * 	//do something
  * }
  *
- * uBit.MessageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
+ * uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
  * @endcode
  */
 template <typename T>

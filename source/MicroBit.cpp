@@ -75,7 +75,7 @@ void MicroBit::onListenerRegisteredEvent(MicroBitEvent evt)
   * Exposed objects:
   * @code
   * uBit.systemTicker; //the Ticker callback that performs routines like updating the display.
-  * uBit.MessageBus; //The message bus where events are fired.
+  * uBit.messageBus; //The message bus where events are fired.
   * uBit.display; //The display object for the LED matrix.
   * uBit.buttonA; //The buttonA object for button a.
   * uBit.buttonB; //The buttonB object for button b.
