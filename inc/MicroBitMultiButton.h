@@ -2,6 +2,7 @@
 #define MICROBIT_MULTI_BUTTON_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitButton.h"
 #include "EventModel.h"
 

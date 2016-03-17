@@ -5,6 +5,7 @@
  * Also includes basic data caching and on demand activation.
  */
 
+#include "MicroBitConfig.h"
 #include "MicroBitAccelerometer.h"
 #include "ErrorNo.h"
 #include "MicroBitConfig.h"

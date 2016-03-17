@@ -4,6 +4,7 @@
   * This is an object that interleaves light sensing with uBit.display.
   */
 
+#include "MicroBitConfig.h"
 #include "MicroBitLightSensor.h"
 #include "MicroBitDisplay.h"
 

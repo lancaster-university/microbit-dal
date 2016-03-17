@@ -1,6 +1,7 @@
 #ifndef MANAGED_STRING_H
 #define MANAGED_STRING_H
 
+#include "MicroBitConfig.h"
 #include "RefCounted.h"
 
 struct StringData : RefCounted

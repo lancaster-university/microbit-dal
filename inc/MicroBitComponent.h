@@ -1,6 +1,7 @@
 #ifndef MICROBIT_COMPONENT_H
 #define MICROBIT_COMPONENT_H
 
+#include "MicroBitConfig.h"
 /**
   * Class definition for MicroBitComponent
   * All components should inherit from this class.

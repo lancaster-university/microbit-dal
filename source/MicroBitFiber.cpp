@@ -7,6 +7,7 @@
   * 2) To provide ISR decoupling for Messagebus events generted in an ISR context.
   */
 
+#include "MicroBitConfig.h"
 #include "MicroBitFiber.h"
 #include "MicroBitSystemTimer.h"
 

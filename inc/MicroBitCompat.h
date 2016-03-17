@@ -6,6 +6,7 @@
 #define MICROBIT_COMPAT_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 
 #define PI 3.14159265359
 

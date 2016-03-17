@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "Matrix4.h"
 #include "mbed.h"
 

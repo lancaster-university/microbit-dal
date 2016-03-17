@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "MicroBitThermometer.h"
 #include "MicroBitSystemTimer.h"
 #include "MicroBitFiber.h"

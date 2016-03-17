@@ -2,6 +2,7 @@
 #define MICROBIT_IMAGE_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "ManagedString.h"
 #include "RefCounted.h"
 

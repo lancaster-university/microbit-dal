@@ -1,5 +1,6 @@
 #ifndef MICROBIT_COORDINATE_SYSTEM_H
 #define MICROBIT_COORDINATE_SYSTEM_H
+#include "MicroBitConfig.h"
 
 /**
   * Co-ordinate systems that can be used.

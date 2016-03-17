@@ -1,6 +1,7 @@
 #ifndef MICROBIT_PANIC_H
 #define MICROBIT_PANIC_H
 
+#include "MicroBitConfig.h"
 #include "MicroBitDisplay.h"
 
 /**

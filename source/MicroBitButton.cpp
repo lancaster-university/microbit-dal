@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "MicroBitButton.h"
 #include "MicroBitSystemTimer.h"
 

@@ -1,6 +1,8 @@
 #ifndef ERROR_NO_H
 #define ERROR_NO_H
 
+#include "MicroBitConfig.h"
+
 /**
   * Error codes used in the micro:bit runtime.
   * These may be returned from functions implemented in the micro:bit runtime.

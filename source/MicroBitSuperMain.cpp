@@ -1,5 +1,6 @@
 #ifdef UBIT_SUPERMAIN
 
+#include "MicroBitConfig.h"
 #include "MicroBit.h"
 
 MicroBit        uBit;

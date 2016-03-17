@@ -1,6 +1,7 @@
 #ifndef MICROBIT_EVENT_SERVICE_H
 #define MICROBIT_EVENT_SERVICE_H
 
+#include "MicroBitConfig.h"
 #include "ble/BLE.h"
 #include "MicroBitEvent.h"
 #include "EventModel.h"

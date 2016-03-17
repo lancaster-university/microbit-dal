@@ -3,6 +3,7 @@
   *
   * A MicroBitDisplay represents the LED matrix array on the MicroBit device.
   */
+#include "MicroBitConfig.h"
 #include "MicroBitDisplay.h"
 #include "MicroBitSystemTimer.h"
 #include "MicroBitFiber.h"

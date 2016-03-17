@@ -1,6 +1,8 @@
 #ifndef MICROBIT_MANAGED_TYPE_H
 #define MICROBIT_MANAGED_TYPE_H
 
+#include "MicroBitConfig.h"
+
 /**
   * Class definition for a Generic Managed Type.
   *

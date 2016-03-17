@@ -3,6 +3,7 @@
   * It represents a font that can be used by the display to render text.
   */
 
+#include "MicroBitConfig.h"
 #include "MicroBitFont.h"
 
 /**

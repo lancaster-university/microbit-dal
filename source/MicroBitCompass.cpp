@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "MicroBitCompass.h"
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"

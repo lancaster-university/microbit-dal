@@ -2,6 +2,7 @@
 #define MICROBIT_RADIO_DATAGRAM_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitRadio.h"
 
 /**

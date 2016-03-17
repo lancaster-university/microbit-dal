@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "ManagedString.h"
 #include "MicroBitCompat.h"
 

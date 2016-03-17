@@ -2,6 +2,7 @@
 #define REF_COUNTED_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 
 /**
   * Base class for payload for ref-counted objects. Used by ManagedString and MicroBitImage.

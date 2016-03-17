@@ -2,6 +2,7 @@
 #define MICROBIT_PACKET_BUFFER_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "RefCounted.h"
 
 struct PacketData : RefCounted

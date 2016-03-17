@@ -3,6 +3,7 @@
   * This allows reading and writing of FLASH memory.
   */
 
+#include "MicroBitConfig.h"
 #include "MicroBitStorage.h"
 
 /*

@@ -2,6 +2,7 @@
 #define MICROBIT_BLE_MANAGER_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 
 /*
  * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ

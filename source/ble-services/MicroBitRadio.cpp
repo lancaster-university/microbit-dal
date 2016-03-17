@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "MicroBitRadio.h"
 #include "MicroBitComponent.h"
 #include "EventModel.h"

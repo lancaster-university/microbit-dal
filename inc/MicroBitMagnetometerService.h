@@ -2,6 +2,7 @@
 #define MICROBIT_MAGNETOMETER_SERVICE_H
 
 #include "ble/BLE.h"
+#include "MicroBitConfig.h"
 #include "MicroBitCompass.h"
 #include "EventModel.h"
 

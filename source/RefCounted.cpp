@@ -1,4 +1,5 @@
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "RefCounted.h"
 #include "MicroBitDisplay.h"
 

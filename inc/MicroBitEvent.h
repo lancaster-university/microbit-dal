@@ -2,6 +2,7 @@
 #define MICROBIT_EVENT_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 
 // Wildcard event codes
 #define MICROBIT_ID_ANY         0

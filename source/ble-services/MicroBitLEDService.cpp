@@ -2,6 +2,7 @@
   * Class definition for the custom MicroBit LED Service.
   * Provides a BLE service to remotely read and write the state of the LED display.
   */
+#include "MicroBitConfig.h"
 #include "ble/UUID.h"
 
 #include "MicroBitLEDService.h"

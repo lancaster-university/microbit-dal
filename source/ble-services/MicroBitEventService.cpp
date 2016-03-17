@@ -3,6 +3,7 @@
   * Provides a BLE gateway onto the MicroBit Message Bus.
   */
 
+#include "MicroBitConfig.h"
 #include "MicroBitEventService.h"
 #include "ble/UUID.h"
 #include "ExternalEvents.h"

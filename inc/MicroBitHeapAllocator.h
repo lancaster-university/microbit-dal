@@ -27,6 +27,7 @@
 #define MICROBIT_HEAP_ALLOCTOR_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include <new>
 
 // The number of heap segments created.

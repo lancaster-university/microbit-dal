@@ -2,6 +2,7 @@
 #define MEMBER_FUNCTION_CALLBACK_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitEvent.h"
 #include "MicroBitCompat.h"
 

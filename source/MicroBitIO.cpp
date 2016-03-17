@@ -4,6 +4,7 @@
   * Represents a single IO pin on the edge connector.
   */
 
+#include "MicroBitConfig.h"
 #include "MicroBitIO.h"
 
 /**

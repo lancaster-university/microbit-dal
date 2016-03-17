@@ -1,6 +1,7 @@
 #ifndef MICROBIT_LED_SERVICE_H
 #define MICROBIT_LED_SERVICE_H
 
+#include "MicroBitConfig.h"
 #include "ble/BLE.h"
 #include "MicroBitDisplay.h"
 

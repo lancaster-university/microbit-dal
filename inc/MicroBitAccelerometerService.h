@@ -1,6 +1,7 @@
 #ifndef MICROBIT_ACCELEROMETER_SERVICE_H
 #define MICROBIT_ACCELEROMETER_SERVICE_H
 
+#include "MicroBitConfig.h"
 #include "ble/BLE.h"
 #include "MicroBitAccelerometer.h"
 #include "EventModel.h"

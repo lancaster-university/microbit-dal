@@ -1,6 +1,7 @@
 /**
   * Compatibility / portability funcitons and constants for the MicroBit DAL.
   */
+#include "MicroBitConfig.h"
 #include "MicroBitCompat.h"
 #include "ErrorNo.h"
 

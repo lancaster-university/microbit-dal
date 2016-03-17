@@ -2,6 +2,7 @@
 #define MICROBIT_COMPASS_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 #include "MicroBitCoordinateSystem.h"
 #include "MicroBitAccelerometer.h"

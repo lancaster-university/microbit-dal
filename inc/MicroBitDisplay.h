@@ -2,6 +2,7 @@
 #define MICROBIT_DISPLAY_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "ManagedString.h"
 #include "MicroBitComponent.h"
 #include "MicroBitImage.h"

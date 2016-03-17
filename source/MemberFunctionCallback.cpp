@@ -9,6 +9,7 @@
   * events to C++ methods.
   */
 
+#include "MicroBitConfig.h"
 #include "MemberFunctionCallback.h"
 
 /**

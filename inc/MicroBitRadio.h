@@ -5,6 +5,7 @@ class MicroBitRadio;
 struct FrameBuffer;
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "PacketBuffer.h"
 #include "MicroBitRadioDatagram.h"
 #include "MicroBitRadioEvent.h"

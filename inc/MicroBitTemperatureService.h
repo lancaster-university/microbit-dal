@@ -1,6 +1,7 @@
 #ifndef MICROBIT_TEMPERATURE_SERVICE_H
 #define MICROBIT_TEMPERATURE_SERVICE_H
 
+#include "MicroBitConfig.h"
 #include "ble/BLE.h"
 #include "MicroBitThermometer.h"
 #include "EventModel.h"

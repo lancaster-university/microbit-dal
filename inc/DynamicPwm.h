@@ -1,4 +1,5 @@
 #include "mbed.h"
+#include "MicroBitConfig.h"
 
 #ifndef MICROBIT_DYNAMIC_PWM_H
 #define MICROBIT_DYNAMIC_PWM_H

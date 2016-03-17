@@ -2,6 +2,7 @@
 #define MICROBIT_BUTTON_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 #include "MicroBitEvent.h"
 

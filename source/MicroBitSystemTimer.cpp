@@ -9,6 +9,7 @@
   * The latter is useful to avoid costs associated with multiple mbed Ticker instances
   * in microbit-dal components, as each incurs a significant additional RAM overhead (circa 80 bytes).
   */
+#include "MicroBitConfig.h"
 #include "MicroBitSystemTimer.h"
 #include "ErrorNo.h"
 

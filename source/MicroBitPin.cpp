@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "MicroBitPin.h"
 #include "MicroBitButton.h"
 #include "DynamicPwm.h"

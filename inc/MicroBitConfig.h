@@ -37,6 +37,13 @@
 #define MICROBIT_HEAP_BLOCK_SIZE		4
 #endif
 
+// Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
+// reserved for SoftDevice is possible, and out of memory condition wil lno longer be trapped... 
+// i.e. panic() will no longer be triggered on memory full conditions.
+#ifndef MICROBIT_HEAP_ENABLED
+#define MICROBIT_HEAP_ENABLED           1	
+#endif
+
 // The proportion of SRAM available on the mbed heap to reserve for the micro:bit heap.
 #ifndef MICROBIT_HEAP_SIZE
 #define MICROBIT_HEAP_SIZE				0.75
@@ -382,4 +389,10 @@
 #define CONFIG_ENABLED(X) (X == 1)
 #define CONFIG_DISABLED(X) (X != 1)
 
+#if CONFIG_ENABLED(MICROBOT_HEAP_ALLOCATOR)
+#include "MicroBitHeapAllocator.h"
 #endif
+
+#endif
+
+

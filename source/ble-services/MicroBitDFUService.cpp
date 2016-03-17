@@ -7,6 +7,7 @@
  * We assume any device that is paied with the micro:bit is authorized to reprogram the device.
  *
  */
+#include "MicroBitConfig.h"
 #include "MicroBitDFUService.h"
 #include "ble/UUID.h"
 #include "MicroBitConfig.h"

@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "MicroBitI2C.h"
 #include "ErrorNo.h"
 #include "twi_master.h"

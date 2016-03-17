@@ -2,6 +2,7 @@
   * Class definition for the custom MicroBit Accelerometer Service.
   * Provides a BLE service to remotely read the state of the accelerometer, and configure its behaviour.
   */
+#include "MicroBitConfig.h"
 #include "ble/UUID.h"
 
 #include "MicroBitAccelerometerService.h"

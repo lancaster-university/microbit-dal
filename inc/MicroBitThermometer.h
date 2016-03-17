@@ -2,6 +2,7 @@
 #define MICROBIT_THERMOMETER_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 
 #define MICROBIT_THERMOMETER_PERIOD             1000

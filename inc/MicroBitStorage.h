@@ -2,6 +2,7 @@
 #define MICROBIT_STORAGE_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitBLEManager.h"
 #include "MicroBitCompass.h"
 

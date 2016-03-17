@@ -1,6 +1,7 @@
 #ifndef MICROBIT_BUTTON_SERVICE_H
 #define MICROBIT_BUTTON_SERVICE_H
 
+#include "MicroBitConfig.h"
 #include "ble/BLE.h"
 #include "EventModel.h"
 

@@ -2,6 +2,7 @@
 #define MICROBIT_LISTENER_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitEvent.h"
 #include "MemberFunctionCallback.h"
 #include "MicroBitConfig.h"

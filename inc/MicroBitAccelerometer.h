@@ -2,6 +2,7 @@
 #define MICROBIT_ACCELEROMETER_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 #include "MicroBitCoordinateSystem.h"
 #include "MicroBitI2C.h"

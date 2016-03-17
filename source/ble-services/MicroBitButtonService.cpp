@@ -2,6 +2,7 @@
   * Class definition for the custom MicroBit Button Service.
   * Provides a BLE service to remotely read the state of each button, and configure its behaviour.
   */
+#include "MicroBitConfig.h"
 #include "ble/UUID.h"
 
 #include "MicroBitButtonService.h"

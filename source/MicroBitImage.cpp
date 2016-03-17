@@ -5,6 +5,7 @@
   * n.b. This is a mutable, managed type.
   */
 
+#include "MicroBitConfig.h"
 #include "MicroBitImage.h"
 #include "MicroBitFont.h"
 #include "MicroBitCompat.h"

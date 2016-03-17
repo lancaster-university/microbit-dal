@@ -4,6 +4,7 @@
   * The MicroBitEvent is the event object that represents an event that has occurred on the ubit.
   */
 
+#include "MicroBitConfig.h"
 #include "MicroBitEvent.h"
 #include "MicroBitSystemTimer.h"
 #include "EventModel.h"

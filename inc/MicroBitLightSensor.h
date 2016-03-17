@@ -2,6 +2,7 @@
 #define MICROBIT_LIGHT_SENSOR_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 #include "EventModel.h"
 #include "MicroBitMatrixMaps.h"

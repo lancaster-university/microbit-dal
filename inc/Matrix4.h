@@ -1,6 +1,8 @@
 #ifndef MICROBIT_MATRIX4_H
 #define MICROBIT_MATRIX4_H
 
+#include "MicroBitConfig.h"
+
 /**
 * Class definition for a simple matrix, that is optimised for nx4 or 4xn matrices.
 *

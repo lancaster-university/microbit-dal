@@ -2,6 +2,7 @@
 #define MICROBIT_FONT_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 
 #define MICROBIT_FONT_WIDTH 5
 #define MICROBIT_FONT_HEIGHT 5

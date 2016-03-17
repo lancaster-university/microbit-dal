@@ -4,6 +4,7 @@
   * MicroBitListener holds all the information related to a single event handler required
   * to match and fire event handlers to incoming events.
   */
+#include "MicroBitConfig.h"
 #include "MicroBitListener.h"
 
 /**

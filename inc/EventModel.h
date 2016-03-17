@@ -2,6 +2,7 @@
 #define EVENT_MODEL_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 #include "MicroBitEvent.h"
 #include "MicroBitListener.h"

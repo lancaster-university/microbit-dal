@@ -2,6 +2,7 @@
 #define MICROBIT_IO_H
 
 #include "mbed.h"
+#include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 #include "MicroBitPin.h"
 

@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "PacketBuffer.h"
 #include "ErrorNo.h"
 
