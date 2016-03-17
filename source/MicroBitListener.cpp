@@ -9,7 +9,7 @@
 #include "MicroBit.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a new Message Bus Listener.
   * @param id The ID of the component you want to listen to.
   * @param value The event ID you would like to listen to from that component
@@ -27,7 +27,7 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(
 }
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a new parameterised Message Bus Listener.
   * @param id The ID of the component you want to listen to.
   * @param value The event ID you would like to listen to from that component.
@@ -76,7 +76,7 @@ void MicroBitListener::queue(MicroBitEvent e)
             queueDepth++;
         }
 
-        if (queueDepth < MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH) 
+        if (queueDepth < MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH)
             p->next = new MicroBitEventQueueItem(e);
     }
 }

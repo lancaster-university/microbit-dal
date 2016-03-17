@@ -14,16 +14,16 @@ extern const uint8_t  MicroBitButtonBServiceDataUUID[];
   * Provides access to live button data via BLE, and provides basic configuration options.
   */
 class MicroBitButtonService
-{                                    
+{
     public:
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of the ButtonService
       * @param _ble The instance of a BLE device that we're running on.
       */
     MicroBitButtonService(BLEDevice &_ble, MicroBitMessageBus &messageBus);
-    
+
 
     private:
 

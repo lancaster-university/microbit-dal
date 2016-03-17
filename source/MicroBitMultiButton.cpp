@@ -1,7 +1,7 @@
 #include "MicroBit.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a representation of a virtual button, that generates events based upon the combination
   * of two given buttons.
   * @param id the ID of the new MultiButton object.
@@ -10,26 +10,26 @@
   * @param name the physical pin on the processor that this butotn is connected to.
   *
   * Example:
-  * @code 
-  * multiButton(MICROBIT_ID_BUTTON_AB, MICROBIT_ID_BUTTON_A, MICROBIT_ID_BUTTON_B); 
+  * @code
+  * multiButton(MICROBIT_ID_BUTTON_AB, MICROBIT_ID_BUTTON_A, MICROBIT_ID_BUTTON_B);
   * @endcode
   *
   * Possible Events:
-  * @code 
+  * @code
   * MICROBIT_BUTTON_EVT_DOWN
   * MICROBIT_BUTTON_EVT_UP
   * MICROBIT_BUTTON_EVT_CLICK
   * MICROBIT_BUTTON_EVT_LONG_CLICK
   * MICROBIT_BUTTON_EVT_HOLD
   * @endcode
-  */  
+  */
 MicroBitMultiButton::MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, MicroBitMessageBus &messageBus)
 {
     this->id = id;
     this->button1 = button1;
     this->button2 = button2;
     this->eventConfiguration = MICROBIT_BUTTON_SIMPLE_EVENTS;
-    
+
     messageBus.listen(button1, MICROBIT_EVT_ANY, this, &MicroBitMultiButton::onButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
     messageBus.listen(button2, MICROBIT_EVT_ANY, this, &MicroBitMultiButton::onButtonEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
@@ -43,10 +43,10 @@ int MicroBitMultiButton::isSubButtonPressed(uint16_t button)
 {
     if (button == button1)
         return status & MICROBIT_MULTI_BUTTON_STATE_1;
-        
+
     if (button == button2)
         return status & MICROBIT_MULTI_BUTTON_STATE_2;
-        
+
     return 0;
 }
 
@@ -54,10 +54,10 @@ int MicroBitMultiButton::isSubButtonHeld(uint16_t button)
 {
     if (button == button1)
         return status & MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_1;
-        
+
     if (button == button2)
         return status & MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_2;
-        
+
     return 0;
 }
 
@@ -65,10 +65,10 @@ int MicroBitMultiButton::isSubButtonSupressed(uint16_t button)
 {
     if (button == button1)
         return status & MICROBIT_MULTI_BUTTON_SUPRESSED_1;
-        
+
     if (button == button2)
         return status & MICROBIT_MULTI_BUTTON_SUPRESSED_2;
-        
+
     return 0;
 }
 
@@ -81,7 +81,7 @@ void MicroBitMultiButton::setButtonState(uint16_t button, int value)
         else
             status &= ~MICROBIT_MULTI_BUTTON_STATE_1;
     }
-        
+
     if (button == button2)
     {
         if (value)
@@ -100,7 +100,7 @@ void MicroBitMultiButton::setHoldState(uint16_t button, int value)
         else
             status &= ~MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_1;
     }
-        
+
     if (button == button2)
     {
         if (value)
@@ -119,7 +119,7 @@ void MicroBitMultiButton::setSupressedState(uint16_t button, int value)
         else
             status &= ~MICROBIT_MULTI_BUTTON_SUPRESSED_1;
     }
-        
+
     if (button == button2)
     {
         if (value)
@@ -139,10 +139,10 @@ void MicroBitMultiButton::setSupressedState(uint16_t button, int value)
   * @code
   *
   * // configure a button to generate all possible events from attached buttons.
-  * uBit.buttonAB.setEventConfiguration(MICROBIT_BUTTON_ALL_EVENTS); 
+  * uBit.buttonAB.setEventConfiguration(MICROBIT_BUTTON_ALL_EVENTS);
   *
   * // configure a button to suppress MICROBIT_BUTTON_EVT_CLICK and MICROBIT_BUTTON_EVT_LONG_CLICK events.
-  * uBit.buttonAB.setEventConfiguration(MICROBIT_BUTTON_SIMPLE_EVENTS); 
+  * uBit.buttonAB.setEventConfiguration(MICROBIT_BUTTON_SIMPLE_EVENTS);
   *
   * @endcode
   */
@@ -154,28 +154,28 @@ void MicroBitMultiButton::onButtonEvent(MicroBitEvent evt)
 {
     int button = evt.source;
     int otherButton = otherSubButton(button);
-    
+
     switch(evt.value)
     {
         case MICROBIT_BUTTON_EVT_DOWN:
             setButtonState(button, 1);
             if(isSubButtonPressed(otherButton))
                 MicroBitEvent e(id, MICROBIT_BUTTON_EVT_DOWN);
-                
+
         break;
 
         case MICROBIT_BUTTON_EVT_HOLD:
             setHoldState(button, 1);
             if(isSubButtonHeld(otherButton))
                 MicroBitEvent e(id, MICROBIT_BUTTON_EVT_HOLD);
-            
+
         break;
-        
+
         case MICROBIT_BUTTON_EVT_UP:
             if(isSubButtonPressed(otherButton))
             {
                 MicroBitEvent e(id, MICROBIT_BUTTON_EVT_UP);
-                
+
                 if (isSubButtonHeld(button) && isSubButtonHeld(otherButton))
                     MicroBitEvent e(id, MICROBIT_BUTTON_EVT_LONG_CLICK);
                 else

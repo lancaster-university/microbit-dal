@@ -15,14 +15,14 @@
 class MicroBitFont
 {
     public:
-    
+
     static const unsigned char* defaultFont;
     static MicroBitFont systemFont;
-    
+
     const unsigned char* characters;
-    
+
     int asciiEnd;
-    
+
     /**
       * Constructor.
       * Sets the font represented by this font object.
@@ -31,8 +31,8 @@ class MicroBitFont
       *
       * @note see main_font_test.cpp in the test folder for an example.
       */
-    MicroBitFont(const unsigned char* font, int asciiEnd = MICROBIT_FONT_ASCII_END); 
-    
+    MicroBitFont(const unsigned char* font, int asciiEnd = MICROBIT_FONT_ASCII_END);
+
     /**
       * Default Constructor.
       * Sets the characters to defaultFont characters and asciiEnd to MICROBIT_FONT_ASCII_END.

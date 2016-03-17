@@ -15,16 +15,16 @@ extern const uint8_t  MicroBitMagnetometerServicePeriodUUID[];
   * Provides access to live magnetometer data via BLE, and provides basic configuration options.
   */
 class MicroBitMagnetometerService
-{                                    
+{
     public:
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of the MagnetometerService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, MicroBitMessageBus &messageBus);  
-    
+    MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, MicroBitMessageBus &messageBus);
+
 
     private:
 
@@ -41,7 +41,7 @@ class MicroBitMagnetometerService
     /**
      * Sample Period Change Needed callback.
      * Reconfiguring the magnetometer can to a REALLY long time (sometimes even seconds to complete)
-     * So we do this in the background when necessary, through this event handler. 
+     * So we do this in the background when necessary, through this event handler.
      */
     void samplePeriodUpdateNeeded(MicroBitEvent e);
 

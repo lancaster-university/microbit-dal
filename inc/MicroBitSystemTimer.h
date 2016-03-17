@@ -9,7 +9,7 @@
   * The latter is useful to avoid costs associated with multiple mbed Ticker instances
   * in microbit-dal components, as each incurs a significant additional RAM overhead (circa 80 bytes).
   */
-  
+
 #ifndef MICROBIT_SYSTEM_TIMER_H
 #define MICROBIT_SYSTEM_TIMER_H
 
@@ -18,7 +18,7 @@
 #include "MicroBitComponent.h"
 
 /**
-  * Initialises the system wide timer. 
+  * Initialises the system wide timer.
   * This must be called before any components register to receive periodic periodic callbacks.
   *
   * @param timer_period The initial period between interrupts, in millseconds.
@@ -48,7 +48,7 @@ unsigned long system_timer_current_time();
 
 /**
   * Timer callback. Called from interrupt context, once per period.
-  * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up 
+  * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up
   * and made runnable.
   */
 void system_timer_tick();

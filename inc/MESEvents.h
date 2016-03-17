@@ -76,7 +76,7 @@
 #define MES_DPAD_BUTTON_D_DOWN              7
 #define MES_DPAD_BUTTON_D_UP                8
 #define MES_DPAD_BUTTON_1_DOWN              9
-#define MES_DPAD_BUTTON_1_UP                10 
+#define MES_DPAD_BUTTON_1_UP                10
 #define MES_DPAD_BUTTON_2_DOWN              11
 #define MES_DPAD_BUTTON_2_UP                12
 #define MES_DPAD_BUTTON_3_DOWN              13

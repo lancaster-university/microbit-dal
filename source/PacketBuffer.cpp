@@ -4,12 +4,12 @@
 PacketBuffer PacketBuffer::EmptyPacket = PacketBuffer(1);
 
 /**
- * Default Constructor. 
- * Creates an empty Packet Buffer. 
+ * Default Constructor.
+ * Creates an empty Packet Buffer.
  *
  * Example:
  * @code
- * PacketBuffer p(); 
+ * PacketBuffer p();
  * @endcode
  */
 PacketBuffer::PacketBuffer()
@@ -18,8 +18,8 @@ PacketBuffer::PacketBuffer()
 }
 
 /**
- * Constructor. 
- * Creates an empty Packet Buffer of the given size. 
+ * Constructor.
+ * Creates an empty Packet Buffer of the given size.
  *
  * @param length The length of the buffer to create.
  *
@@ -34,14 +34,14 @@ PacketBuffer::PacketBuffer(int length)
 }
 
 /**
- * Constructor. 
+ * Constructor.
  * Creates a new PacketBuffer of the given size,
  * and fills it with the data provided.
  *
  * @param data The data with which to fill the buffer.
  * @param length The length of the buffer to create.
- * @param rssi The radio signal strength at the time this packet was recieved. 
- * 
+ * @param rssi The radio signal strength at the time this packet was recieved.
+ *
  * Example:
  * @code
  * uint8_t buf = {13,5,2};
@@ -54,15 +54,15 @@ PacketBuffer::PacketBuffer(uint8_t *data, int length, int rssi)
 }
 
 /**
- * Copy Constructor. 
+ * Copy Constructor.
  * Add ourselves as a reference to an existing PacketBuffer.
- * 
+ *
  * @param buffer The PacketBuffer to reference.
  *
  * Example:
  * @code
  * PacketBuffer p();
- * PacketBuffer p2(i);        // Refers to the same packet as p. 
+ * PacketBuffer p2(i);        // Refers to the same packet as p.
  * @endcode
  */
 PacketBuffer::PacketBuffer(const PacketBuffer &buffer)
@@ -76,8 +76,8 @@ PacketBuffer::PacketBuffer(const PacketBuffer &buffer)
  *
  * @param data The data with which to fill the buffer.
  * @param length The length of the buffer to create.
- * @param rssi The radio signal strength at the time this pacer was recieved. 
- * 
+ * @param rssi The radio signal strength at the time this pacer was recieved.
+ *
  */
 void PacketBuffer::init(uint8_t *data, int length, int rssi)
 {
@@ -96,7 +96,7 @@ void PacketBuffer::init(uint8_t *data, int length, int rssi)
 }
 
 /**
- * Destructor. 
+ * Destructor.
  * Removes buffer resources held by the instance.
  */
 PacketBuffer::~PacketBuffer()
@@ -105,7 +105,7 @@ PacketBuffer::~PacketBuffer()
 }
 
 /**
- * Copy assign operation. 
+ * Copy assign operation.
  *
  * Called when one PacketBuffer is assigned the value of another using the '=' operator.
  * Decrements our reference count and free up the buffer as necessary.
@@ -113,14 +113,14 @@ PacketBuffer::~PacketBuffer()
  * and increase its reference count.
  *
  * @param p The PacketBuffer to reference.
- * 
+ *
  * Example:
  * @code
  * uint8_t buf = {13,5,2};
- * PacketBuffer p1(16); 
- * PacketBuffer p2(buf, 3);        
+ * PacketBuffer p1(16);
+ * PacketBuffer p2(buf, 3);
  *
- * p1 = p2;  
+ * p1 = p2;
  * @endcode
  */
 PacketBuffer& PacketBuffer::operator = (const PacketBuffer &p)
@@ -136,14 +136,14 @@ PacketBuffer& PacketBuffer::operator = (const PacketBuffer &p)
 }
 
 /**
- * Array access operation (read). 
+ * Array access operation (read).
  *
  * Called when a PacketBuffer is dereferenced with a [] operation.
  * Transparently map this through to the underlying payload for elegance of programming.
  *
  * Example:
  * @code
- * PacketBuffer p1(16); 
+ * PacketBuffer p1(16);
  * uint8_t data = p1[0];
  * @endcode
  */
@@ -153,14 +153,14 @@ uint8_t PacketBuffer::operator [] (int i) const
 }
 
 /**
- * Array access operation (modify). 
+ * Array access operation (modify).
  *
  * Called when a PacketBuffer is dereferenced with a [] operation.
  * Transparently map this through to the underlying payload for elegance of programming.
  *
  * Example:
  * @code
- * PacketBuffer p1(16); 
+ * PacketBuffer p1(16);
  * p1[0] = 42;
  * @endcode
  */
@@ -176,13 +176,13 @@ uint8_t& PacketBuffer::operator [] (int i)
  *
  * @param p The PacketBuffer to test ourselves against.
  * @return true if this PacketBuffer is identical to the one supplied, false otherwise.
- * 
+ *
  * Example:
  * @code
  *
  * uint8_t buf = {13,5,2};
- * PacketBuffer p1(16); 
- * PacketBuffer p2(buf, 3);        
+ * PacketBuffer p1(16);
+ * PacketBuffer p2(buf, 3);
  *
  * if(p1 == p2)                    // will be true
  *     uBit.display.scroll("same!");
@@ -193,7 +193,7 @@ bool PacketBuffer::operator== (const PacketBuffer& p)
     if (ptr == p.ptr)
         return true;
     else
-        return (ptr->length == p.ptr->length && (memcmp(ptr->payload, p.ptr->payload, ptr->length)==0));    
+        return (ptr->length == p.ptr->length && (memcmp(ptr->payload, p.ptr->payload, ptr->length)==0));
 }
 
 /**
@@ -204,7 +204,7 @@ bool PacketBuffer::operator== (const PacketBuffer& p)
  *
  * Example:
  * @code
- * PacketBuffer p1(16); 
+ * PacketBuffer p1(16);
  * p1.setByte(0,255);              // Sets the firts byte in the buffer to the value 255.
  * @endcode
  */
@@ -229,7 +229,7 @@ int PacketBuffer::setByte(int position, uint8_t value)
  *
  * Example:
  * @code
- * PacketBuffer p1(16); 
+ * PacketBuffer p1(16);
  * p1.setByte(0,255);              // Sets the firts byte in the buffer to the value 255.
  * p1.getByte(0);                  // Returns 255.
  * @endcode
@@ -240,7 +240,7 @@ int PacketBuffer::getByte(int position)
         return ptr->payload[position];
     else
         return MICROBIT_INVALID_PARAMETER;
-} 
+}
 
 /**
  * Provide an array containing the packet data.
@@ -252,16 +252,16 @@ uint8_t*PacketBuffer::getBytes()
 }
 
 /**
- * Gets number of bytes in this buffer 
+ * Gets number of bytes in this buffer
  * @return The size of the buffer in bytes.
- * 
+ *
  * Example:
  * @code
- * PacketBuffer p1(16); 
+ * PacketBuffer p1(16);
  * p1.length();                 // Returns 16.
  * @endcode
  */
-int PacketBuffer::length() 
+int PacketBuffer::length()
 {
     return ptr->length;
 }
@@ -269,15 +269,15 @@ int PacketBuffer::length()
 /**
  * Gets the received signal strength of this packet.
  *
- * @return The signal strength of the radio when this packet was received. 
- * 
+ * @return The signal strength of the radio when this packet was received.
+ *
  * Example:
  * @code
- * PacketBuffer p1(16); 
- * p1.getRSSI();                 
+ * PacketBuffer p1(16);
+ * p1.getRSSI();
  * @endcode
  */
-int PacketBuffer::getRSSI() 
+int PacketBuffer::getRSSI()
 {
     return ptr->rssi;
 }
@@ -287,11 +287,11 @@ int PacketBuffer::getRSSI()
  *
  * Example:
  * @code
- * PacketBuffer p1(16); 
- * p1.setRSSI(37);                 
+ * PacketBuffer p1(16);
+ * p1.setRSSI(37);
  * @endcode
  */
-void PacketBuffer::setRSSI(uint8_t rssi) 
+void PacketBuffer::setRSSI(uint8_t rssi)
 {
     ptr->rssi = rssi;
 }

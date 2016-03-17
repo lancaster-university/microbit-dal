@@ -27,7 +27,7 @@ static Ticker timer;
 
 
 /**
-  * Initialises the system wide timer. 
+  * Initialises the system wide timer.
   * This must be called before any components register to receive periodic periodic callbacks.
   *
   * @param timer_period The initial period between interrupts, in millseconds.
@@ -55,7 +55,7 @@ int system_timer_set_period(int period)
 
 	// register a period callback to drive the scheduler and any other registered components.
     tick_period = period;
-    timer.attach_us(system_timer_tick, period * 1000);     
+    timer.attach_us(system_timer_tick, period * 1000);
 
     return MICROBIT_OK;
 }
@@ -80,7 +80,7 @@ unsigned long system_timer_current_time()
 
 /**
   * Timer callback. Called from interrupt context, once per period.
-  * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up 
+  * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up
   * and made runnable.
   */
 void system_timer_tick()
@@ -104,14 +104,14 @@ void system_timer_tick()
 int system_timer_add_component(MicroBitComponent *component)
 {
     int i = 0;
-    
-    while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)  
+
+    while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)
         i++;
-    
+
     if(i == MICROBIT_SYSTEM_COMPONENTS)
         return MICROBIT_NO_RESOURCES;
-        
-    systemTickComponents[i] = component;    
+
+    systemTickComponents[i] = component;
     return MICROBIT_OK;
 }
 
@@ -124,10 +124,10 @@ int system_timer_add_component(MicroBitComponent *component)
 int system_timer_remove_component(MicroBitComponent *component)
 {
     int i = 0;
-    
-    while(systemTickComponents[i] != component && i < MICROBIT_SYSTEM_COMPONENTS)  
+
+    while(systemTickComponents[i] != component && i < MICROBIT_SYSTEM_COMPONENTS)
         i++;
-    
+
     if(i == MICROBIT_SYSTEM_COMPONENTS)
         return MICROBIT_INVALID_PARAMETER;
 

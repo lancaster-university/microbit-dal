@@ -14,16 +14,16 @@ extern const uint8_t  MicroBitTemperatureServicePeriodUUID[];
   * Provides access to live temperature data via BLE.
   */
 class MicroBitTemperatureService
-{                                    
+{
     public:
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of the TempertureService
       * @param _ble The instance of a BLE device that we're running on.
       */
     MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, MicroBitMessageBus &messageBus);
-    
+
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
       */

@@ -1,7 +1,7 @@
 /**
   * Compatibility / portability funcitons and constants for the MicroBit DAL.
   */
-  
+
 #ifndef MICROBIT_COMPAT_H
 #define MICROBIT_COMPAT_H
 

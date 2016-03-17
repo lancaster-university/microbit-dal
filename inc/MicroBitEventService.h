@@ -5,15 +5,15 @@
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitEventServiceUUID[];
-extern const uint8_t  MicroBitEventServiceMicroBitEventCharacteristicUUID[]; 
+extern const uint8_t  MicroBitEventServiceMicroBitEventCharacteristicUUID[];
 extern const uint8_t  MicroBitEventServiceClientEventCharacteristicUUID[];
-extern const uint8_t  MicroBitEventServiceMicroBitRequirementsCharacteristicUUID[]; 
+extern const uint8_t  MicroBitEventServiceMicroBitRequirementsCharacteristicUUID[];
 extern const uint8_t  MicroBitEventServiceClientRequirementsCharacteristicUUID[];
 
 struct EventServiceEvent
 {
     uint16_t    type;
-    uint16_t    reason;    
+    uint16_t    reason;
 };
 
 
@@ -22,27 +22,27 @@ struct EventServiceEvent
   * Provides a _ble gateway onto the MicroBit Message Bus.
   */
 class MicroBitEventService : public MicroBitComponent
-{                                    
+{
     public:
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of the EventService
       * @param BLE The instance of a BLE device that we're running on.
       */
-    MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &_messageBus);  
-   
+    MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &_messageBus);
+
     /**
      * Periodic callback from MicroBit scheduler.
      * If we're no longer connected, remove any registered Message Bus listeners.
-     */  
-    virtual void idleTick();    
+     */
+    virtual void idleTick();
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
       */
     void onDataWritten(const GattWriteCallbackParams *params);
-    
+
     /**
       * Callback. Invoked when any events are sent on the microBit message bus.
       */
@@ -51,7 +51,7 @@ class MicroBitEventService : public MicroBitComponent
     /**
      * read callback on microBitRequirements characteristic.
      * Used to iterate through the events that the code on this micro:bit is interested in.
-     */  
+     */
     void onRequirementsRead(GattReadAuthCallbackParams *params);
 
     private:

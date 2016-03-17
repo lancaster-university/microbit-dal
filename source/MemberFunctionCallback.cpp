@@ -26,6 +26,6 @@ void MemberFunctionCallback::fire(MicroBitEvent e)
   */
 bool MemberFunctionCallback::operator==(const MemberFunctionCallback &mfc)
 {
-    return (object == mfc.object && (memcmp(method,mfc.method,sizeof(method))==0)); 
+    return (object == mfc.object && (memcmp(method,mfc.method,sizeof(method))==0));
 }
 

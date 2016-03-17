@@ -2,29 +2,29 @@
   * Class definition for the custom MicroBit Magnetometer Service.
   * Provides a BLE service to remotely read the state of the magnetometer, and configure its behaviour.
   */
-  
+
 #include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitMagnetometerService.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a representation of the MagnetometerService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, MicroBitMessageBus &messageBus) : 
-        ble(_ble), compass(_compass) 
+MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, MicroBitMessageBus &messageBus) :
+        ble(_ble), compass(_compass)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
-    GattCharacteristic  magnetometerDataCharacteristic(MicroBitMagnetometerServiceDataUUID, (uint8_t *)magnetometerDataCharacteristicBuffer, 0, 
+    GattCharacteristic  magnetometerDataCharacteristic(MicroBitMagnetometerServiceDataUUID, (uint8_t *)magnetometerDataCharacteristicBuffer, 0,
     sizeof(magnetometerDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
-    GattCharacteristic  magnetometerBearingCharacteristic(MicroBitMagnetometerServiceBearingUUID, (uint8_t *)&magnetometerBearingCharacteristicBuffer, 0, 
+    GattCharacteristic  magnetometerBearingCharacteristic(MicroBitMagnetometerServiceBearingUUID, (uint8_t *)&magnetometerBearingCharacteristicBuffer, 0,
     sizeof(magnetometerBearingCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
-    GattCharacteristic  magnetometerPeriodCharacteristic(MicroBitMagnetometerServicePeriodUUID, (uint8_t *)&magnetometerPeriodCharacteristicBuffer, 0, 
-    sizeof(magnetometerPeriodCharacteristicBuffer), 
+    GattCharacteristic  magnetometerPeriodCharacteristic(MicroBitMagnetometerServicePeriodUUID, (uint8_t *)&magnetometerPeriodCharacteristicBuffer, 0,
+    sizeof(magnetometerPeriodCharacteristicBuffer),
     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Initialise our characteristic values.
@@ -61,7 +61,7 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroB
   * Callback. Invoked when any of our attributes are written via BLE.
   */
 void MicroBitMagnetometerService::onDataWritten(const GattWriteCallbackParams *params)
-{   
+{
     if (params->handle == magnetometerPeriodCharacteristicHandle && params->len >= sizeof(magnetometerPeriodCharacteristicBuffer))
     {
         magnetometerPeriodCharacteristicBuffer = *((uint16_t *)params->data);
@@ -96,7 +96,7 @@ void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent)
 /**
  * Sample Period Change Needed callback.
  * Reconfiguring the magnetometer can to a REALLY long time (sometimes even seconds to complete)
- * So we do this in the background when necessary, through this event handler. 
+ * So we do this in the background when necessary, through this event handler.
  */
 void MicroBitMagnetometerService::samplePeriodUpdateNeeded(MicroBitEvent)
 {

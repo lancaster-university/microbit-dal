@@ -5,11 +5,11 @@
   * be designated as heap storage, and is designed to run in a static memory area or inside the standard C
   * heap for use by the micro:bit runtime. This is required for several reasons:
   *
-  * 1) It reduces memory fragmentation due to the high churn sometime placed on the heap 
+  * 1) It reduces memory fragmentation due to the high churn sometime placed on the heap
   * by ManagedTypes, fibers and user code. Underlying heap implentations are often have very simplistic
   * allocation pilicies and suffer from fragmentation in prolonged use - which can cause programs to
-  * stop working after a period of time. The algorithm implemented here is simple, but highly tolerant to 
-  * large amounts of churn. 
+  * stop working after a period of time. The algorithm implemented here is simple, but highly tolerant to
+  * large amounts of churn.
   *
   * 2) It allows us to reuse the 8K of SRAM set aside for SoftDevice as additional heap storage
   * when BLE is not in use.
@@ -19,7 +19,7 @@
   * N.B. The need for this should be reviewed in the future, should a different memory allocator be
   * made availiable in the mbed platform.
   *
-  * P.S. This is a very simple allocator, therefore not without its weaknesses. Why don't you consider 
+  * P.S. This is a very simple allocator, therefore not without its weaknesses. Why don't you consider
   * what these are, and consider the tradeoffs against simplicity...
   *
   * TODO: Consider caching recently freed blocks to improve allocation time.
@@ -32,7 +32,7 @@ struct HeapDefinition
 
 // Create the necessary heap definitions.
 // We use two heaps by default: one for SoftDevice reuse, and one to run inside the mbed heap.
-HeapDefinition heap[MICROBIT_HEAP_COUNT] = { }; 
+HeapDefinition heap[MICROBIT_HEAP_COUNT] = { };
 
 // Scans the status of the heap definition table, and returns the number of INITIALISED heaps.
 int microbit_active_heaps()
@@ -134,7 +134,7 @@ microbit_create_sd_heap(HeapDefinition &heap)
     // Reclaim RAM from unusused areas on the BLE stack GATT table.
     heap.heap_start = (uint32_t *)MICROBIT_HEAP_BASE_BLE_ENABLED;
     heap.heap_end = (uint32_t *)MICROBIT_HEAP_SD_LIMIT;
-#else    
+#else
     // Reclaim all the RAM normally reserved for the Nordic SoftDevice.
     heap.heap_start = (uint32_t *)MICROBIT_HEAP_BASE_BLE_DISABLED;
     heap.heap_end = (uint32_t *)MICROBIT_HEAP_SD_LIMIT;
@@ -152,7 +152,7 @@ microbit_create_nested_heap(HeapDefinition &heap)
 {
 	uint32_t mb_heap_max;
     void *p;
-  
+
     // Ensure we're configured to use this heap at all. If not, we can safely return.
     if (MICROBIT_HEAP_SIZE <= 0)
        return MICROBIT_INVALID_PARAMETER;
@@ -221,7 +221,7 @@ microbit_heap_init()
 
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     microbit_heap_print();
-#endif    
+#endif
 
     return MICROBIT_OK;
 }
@@ -244,7 +244,7 @@ void *microbit_malloc(size_t size, HeapDefinition &heap)
 
 	// Account for the index block;
 	blocksNeeded++;
-	
+
 	// Disable IRQ temporarily to ensure no race conditions!
     __disable_irq();
 
@@ -262,7 +262,7 @@ void *microbit_malloc(size_t size, HeapDefinition &heap)
 
 		blockSize = *block & ~MICROBIT_HEAP_BLOCK_FREE;
 
-		// We have a free block. Let's see if the subsequent ones are too. If so, we can merge... 
+		// We have a free block. Let's see if the subsequent ones are too. If so, we can merge...
 		next = block + blockSize;
 
 		while (*next & MICROBIT_HEAP_BLOCK_FREE)
@@ -273,11 +273,11 @@ void *microbit_malloc(size_t size, HeapDefinition &heap)
 			// We can merge!
 			blockSize += (*next & ~MICROBIT_HEAP_BLOCK_FREE);
 			*block = blockSize | MICROBIT_HEAP_BLOCK_FREE;
-			
+
 			next = block + blockSize;
 		}
 
-		// We have a free block. Let's see if it's big enough. 
+		// We have a free block. Let's see if it's big enough.
         // If so, we have a winner.
 		if (blockSize >= blocksNeeded)
 			break;
@@ -334,7 +334,7 @@ void *microbit_malloc(size_t size)
             {
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
                 uBit.serial.printf("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
-#endif    
+#endif
                 return p;
             }
         }
@@ -350,7 +350,7 @@ void *microbit_malloc(size_t size)
         // Keep everything trasparent if we've not been initialised yet
         if (microbit_active_heaps())
             uBit.serial.printf("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
-#endif    
+#endif
         return p;
     }
 
@@ -359,17 +359,17 @@ void *microbit_malloc(size_t size)
     // Keep everything trasparent if we've not been initialised yet
     if (microbit_active_heaps())
         uBit.serial.printf("microbit_malloc: OUT OF MEMORY\n");
-#endif    
-    
+#endif
+
 #if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
 	MicroBitDisplay::panic(MICROBIT_OOM);
-#endif        
+#endif
 
     return NULL;
 }
 
 /**
-  * Release a given area of memory from the heap. 
+  * Release a given area of memory from the heap.
   * @param mem The memory area to release.
   */
 void microbit_free(void *mem)
@@ -380,11 +380,11 @@ void microbit_free(void *mem)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     if (microbit_active_heaps())
         uBit.serial.printf("microbit_free:   %p\n", mem);
-#endif    
+#endif
     // Sanity check.
 	if (memory == NULL)
        return;
-   
+
     // If this memory was created from a heap registered with us, free it.
     for (int i=0; i < MICROBIT_HEAP_COUNT; i++)
     {

@@ -169,7 +169,7 @@ Matrix4 Matrix4::multiply(Matrix4 &matrix, bool transpose)
 {
     int w = transpose ? height() : width();
     int h = transpose ? width() : height();
-        
+
 	if (w != matrix.height())
 		return Matrix4(0, 0);
 

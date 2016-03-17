@@ -100,10 +100,10 @@ class MicroBitButton : public MicroBitComponent
      * @code
      *
      * // Configure a button to generate all possible events.
-     * uBit.buttonA.setEventConfiguration(MICROBIT_BUTTON_ALL_EVENTS); 
+     * uBit.buttonA.setEventConfiguration(MICROBIT_BUTTON_ALL_EVENTS);
      *
      * // Configure a button to suppress MICROBIT_BUTTON_EVT_CLICK and MICROBIT_BUTTON_EVT_LONG_CLICK events.
-     * uBit.buttonA.setEventConfiguration(MICROBIT_BUTTON_SIMPLE_EVENTS); 
+     * uBit.buttonA.setEventConfiguration(MICROBIT_BUTTON_SIMPLE_EVENTS);
      *
      * @endcode
      */

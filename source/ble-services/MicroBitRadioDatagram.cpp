@@ -24,7 +24,7 @@ MicroBitRadioDatagram::MicroBitRadioDatagram(MicroBitRadio &r) : radio(r)
 
 /**
  * Retreives packet payload data into the given buffer.
- * If a data packet is already available, then it will be returned immediately to the caller. 
+ * If a data packet is already available, then it will be returned immediately to the caller.
  * If no data is available the EmptyString is returned, then MICROBIT_INVALID_PARAMETER is returned.
  *
  * @param buf A pointer to a valid memory location where the received data is to be stored.
@@ -83,7 +83,7 @@ int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
 {
     if (buffer == NULL || len < 0 || len > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
- 
+
     FrameBuffer buf;
 
     buf.length = len + MICROBIT_RADIO_HEADER_SIZE - 1;
@@ -136,7 +136,7 @@ void MicroBitRadioDatagram::packetReceived()
         {
             delete packet;
             return;
-        } 
+        }
 
         p->next = packet;
     }

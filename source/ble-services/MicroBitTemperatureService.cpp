@@ -2,25 +2,25 @@
   * Class definition for the custom MicroBit Temperature Service.
   * Provides a BLE service to remotely read the state of the temperature, and configure its behaviour.
   */
-  
+
 #include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitTemperatureService.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a representation of the TemperatureService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, MicroBitMessageBus &messageBus) : 
-        ble(_ble), thermometer(_thermometer) 
+MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, MicroBitMessageBus &messageBus) :
+        ble(_ble), thermometer(_thermometer)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
-    GattCharacteristic  temperatureDataCharacteristic(MicroBitTemperatureServiceDataUUID, (uint8_t *)&temperatureDataCharacteristicBuffer, 0, 
+    GattCharacteristic  temperatureDataCharacteristic(MicroBitTemperatureServiceDataUUID, (uint8_t *)&temperatureDataCharacteristicBuffer, 0,
     sizeof(temperatureDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
-    GattCharacteristic  temperaturePeriodCharacteristic(MicroBitTemperatureServicePeriodUUID, (uint8_t *)&temperaturePeriodCharacteristicBuffer, 0, 
+    GattCharacteristic  temperaturePeriodCharacteristic(MicroBitTemperatureServicePeriodUUID, (uint8_t *)&temperaturePeriodCharacteristicBuffer, 0,
     sizeof(temperaturePeriodCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Initialise our characteristic values.
@@ -62,7 +62,7 @@ void MicroBitTemperatureService::temperatureUpdate(MicroBitEvent)
   * Callback. Invoked when any of our attributes are written via BLE.
   */
 void MicroBitTemperatureService::onDataWritten(const GattWriteCallbackParams *params)
-{   
+{
     if (params->handle == temperaturePeriodCharacteristicHandle && params->len >= sizeof(temperaturePeriodCharacteristicBuffer))
     {
         temperaturePeriodCharacteristicBuffer = *((uint16_t *)params->data);

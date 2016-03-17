@@ -11,10 +11,10 @@
   * This is an object that contains the pins on the edge connector as properties.
   */
 class MicroBitIO
-{   
+{
     public:
-   
-	MicroBitPin			 pin[0];	
+
+	MicroBitPin			 pin[0];
 	MicroBitPin          P0;
     MicroBitPin          P1;
     MicroBitPin          P2;
@@ -34,9 +34,9 @@ class MicroBitIO
     MicroBitPin          P16;
     MicroBitPin          P19;
     MicroBitPin          P20;
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of all given I/O pins on the edge connector
       */
     MicroBitIO(int ID_P0, int ID_P1, int ID_P2,

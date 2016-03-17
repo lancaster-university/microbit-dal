@@ -19,7 +19,7 @@ void ManagedString::initEmpty()
   * creates this ManagedString based on a given null terminated char array.
   */
 void ManagedString::initString(const char *str)
-{   
+{
     // Initialise this ManagedString as a new string, using the data provided.
     // We assume the string is sane, and null terminated.
     int len = strlen(str);
@@ -30,17 +30,17 @@ void ManagedString::initString(const char *str)
 }
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a managed string from a specially prepared string literal. It will ptr->incr().
   *
   * @param ptr The literal - first two bytes should be 0xff, then the length in little endian, then the literal. The literal has to be 4-byte aligned.
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * static const char hello[] __attribute__ ((aligned (4))) = "\xff\xff\x05\x00" "Hello";
   * ManagedString s((StringData*)(void*)hello);
   * @endcode
-  */    
+  */
 ManagedString::ManagedString(StringData *p)
 {
     ptr = p;
@@ -59,50 +59,50 @@ StringData* ManagedString::leakData()
 }
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a managed string from a given integer.
   *
   * @param value The integer from which to create the ManagedString
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * ManagedString s(20);
   * @endcode
-  */      
+  */
 ManagedString::ManagedString(const int value)
 {
     char str[12];
-        
+
     itoa(value, str);
-    initString(str);    
+    initString(str);
 }
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a managed string from a given char.
   *
   * @param value The char from which to create the ManagedString
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * ManagedString s('a');
   * @endcode
-  */      
+  */
 ManagedString::ManagedString(const char value)
 {
     char str[2] = {value, 0};
-    initString(str); 
+    initString(str);
 }
 
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a managed string from a pointer to an 8-bit character buffer.
   * The buffer is copied to ensure sane memory management (the supplied
   * character buffer may be decalred on the stack for instance).
   *
   * @param str The character array on which to base the new ManagedString.
-  */    
+  */
 ManagedString::ManagedString(const char *str)
 {
     // Sanity check. Return EmptyString for anything distasteful
@@ -111,7 +111,7 @@ ManagedString::ManagedString(const char *str)
         initEmpty();
         return;
     }
-    
+
     initString(str);
 }
 
@@ -133,7 +133,7 @@ ManagedString::ManagedString(const ManagedString &s1, const ManagedString &s2)
 
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a managed string from a pointer to an 8-bit character buffer of a given length.
   * The buffer is copied to ensure sane memory management (the supplied
   * character buffer may be declared on the stack for instance).
@@ -142,10 +142,10 @@ ManagedString::ManagedString(const ManagedString &s1, const ManagedString &s2)
   * @param length The number of characters to use.
   *
   * Example:
-  * @code 
-  * ManagedString s("abcdefg",7); 
+  * @code
+  * ManagedString s("abcdefg",7);
   * @endcode
-  */  
+  */
 ManagedString::ManagedString(const char *str, const int16_t length)
 {
     // Sanity check. Return EmptyString for anything distasteful
@@ -155,7 +155,7 @@ ManagedString::ManagedString(const char *str, const int16_t length)
         return;
     }
 
-    
+
     // Allocate a new buffer, and create a NULL terminated string.
     ptr = (StringData*) malloc(4+length+1);
     ptr->init();
@@ -166,14 +166,14 @@ ManagedString::ManagedString(const char *str, const int16_t length)
 }
 
 /**
-  * Copy constructor. 
-  * Makes a new ManagedString identical to the one supplied. 
+  * Copy constructor.
+  * Makes a new ManagedString identical to the one supplied.
   * Shares the character buffer and reference count with the supplied ManagedString.
   *
   * @param s The ManagedString to copy.
-  * 
+  *
   * Example:
-  * @code 
+  * @code
   * ManagedString s("abcdefg");
   * ManagedString p(s);
   * @endcode
@@ -186,12 +186,12 @@ ManagedString::ManagedString(const ManagedString &s)
 
 
 /**
-  * Default constructor. 
+  * Default constructor.
   *
-  * Create an empty ManagedString. 
+  * Create an empty ManagedString.
   *
   * Example:
-  * @code 
+  * @code
   * ManagedString s();
   * @endcode
   */
@@ -201,7 +201,7 @@ ManagedString::ManagedString()
 }
 
 /**
-  * Destructor. 
+  * Destructor.
   *
   * Free this ManagedString, and decrement the reference count to the
   * internal character buffer. If we're holding the last reference,
@@ -213,7 +213,7 @@ ManagedString::~ManagedString()
 }
 
 /**
-  * Copy assign operation. 
+  * Copy assign operation.
   *
   * Called when one ManagedString is assigned the value of another.
   * If the ManagedString being assigned is already refering to a character buffer,
@@ -224,16 +224,16 @@ ManagedString::~ManagedString()
   * @param s The ManagedString to copy.
   *
   * Example:
-  * @code 
+  * @code
   * ManagedString s("abcd");
   * ManagedString p("efgh");
-  * p = s   // p now points to s, s' ref is incremented 
+  * p = s   // p now points to s, s' ref is incremented
   * @endcode
   */
 ManagedString& ManagedString::operator = (const ManagedString& s)
 {
     if (this->ptr == s.ptr)
-        return *this; 
+        return *this;
 
     ptr->decr();
     ptr = s.ptr;
@@ -251,10 +251,10 @@ ManagedString& ManagedString::operator = (const ManagedString& s)
   * @return true if this ManagedString is identical to the one supplied, false otherwise.
   *
   * Example:
-  * @code 
+  * @code
   * ManagedString s("abcd");
   * ManagedString p("efgh");
-  * 
+  *
   * if(p==s)
   *     print("We are the same!");
   * else
@@ -275,14 +275,14 @@ bool ManagedString::operator== (const ManagedString& s)
   * @return true if this ManagedString is alphabetically less than to the one supplied, false otherwise.
   *
   * Example:
-  * @code 
+  * @code
   * ManagedString s("a");
   * ManagedString p("b");
-  * 
+  *
   * if(s<p)
   *     print("a is before b!"); //a is before b
   * else
-  *     print("b is before a!"); 
+  *     print("b is before a!");
   * @endcode
   */
 bool ManagedString::operator< (const ManagedString& s)
@@ -299,14 +299,14 @@ bool ManagedString::operator< (const ManagedString& s)
   * @return true if this ManagedString is alphabetically greater than to the one supplied, false otherwise.
   *
   * Example:
-  * @code 
+  * @code
   * ManagedString s("a");
   * ManagedString p("b");
-  * 
+  *
   * if(p>a)
   *     print("b is after a!"); //b is after a
   * else
-  *     print("a is after b!"); 
+  *     print("a is after b!");
   * @endcode
   */
 bool ManagedString::operator> (const ManagedString& s)
@@ -322,12 +322,12 @@ bool ManagedString::operator> (const ManagedString& s)
   * @return a ManagedString representing the requested substring.
   *
   * Example:
-  * @code 
+  * @code
   * ManagedString s("abcdefg");
   *
   * print(s.substring(0,2)) // prints "ab"
   * @endcode
-  */ 
+  */
 ManagedString ManagedString::substring(int16_t start, int16_t length)
 {
     // If the parameters are illegal, just return a reference to the empty string.
@@ -348,13 +348,13 @@ ManagedString ManagedString::substring(int16_t start, int16_t length)
   * @return a new ManagedString representing the joined strings.
   *
   * Example:
-  * @code 
+  * @code
   * ManagedString s("abcd");
   * ManagedString p("efgh")
   *
   * print(s + p) // prints "abcdefgh"
   * @endcode
-  */     
+  */
 ManagedString ManagedString::operator+ (ManagedString& s)
 {
     // If the other string is empty, nothing to do!
@@ -375,12 +375,12 @@ ManagedString ManagedString::operator+ (ManagedString& s)
   * @return the character at posisiton index, zero if index is invalid.
   *
   * Example:
-  * @code 
+  * @code
   * ManagedString s("abcd");
   *
   * print(s.charAt(1)) // prints "b"
   * @endcode
-  */     
+  */
 char ManagedString::charAt(int16_t index)
 {
     return (index >=0 && index < length()) ? ptr->data[index] : 0;

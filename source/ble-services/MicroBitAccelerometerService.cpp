@@ -2,26 +2,26 @@
   * Class definition for the custom MicroBit Accelerometer Service.
   * Provides a BLE service to remotely read the state of the accelerometer, and configure its behaviour.
   */
-  
+
 #include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitAccelerometerService.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a representation of the AccelerometerService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer, MicroBitMessageBus &messageBus) : 
-        ble(_ble), accelerometer(_accelerometer) 
+MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer, MicroBitMessageBus &messageBus) :
+        ble(_ble), accelerometer(_accelerometer)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
-    GattCharacteristic  accelerometerDataCharacteristic(MicroBitAccelerometerServiceDataUUID, (uint8_t *)accelerometerDataCharacteristicBuffer, 0, 
+    GattCharacteristic  accelerometerDataCharacteristic(MicroBitAccelerometerServiceDataUUID, (uint8_t *)accelerometerDataCharacteristicBuffer, 0,
     sizeof(accelerometerDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
-    GattCharacteristic  accelerometerPeriodCharacteristic(MicroBitAccelerometerServicePeriodUUID, (uint8_t *)&accelerometerPeriodCharacteristicBuffer, 0, 
-    sizeof(accelerometerPeriodCharacteristicBuffer), 
+    GattCharacteristic  accelerometerPeriodCharacteristic(MicroBitAccelerometerServicePeriodUUID, (uint8_t *)&accelerometerPeriodCharacteristicBuffer, 0,
+    sizeof(accelerometerPeriodCharacteristicBuffer),
     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Initialise our characteristic values.
@@ -53,7 +53,7 @@ MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, Micr
   * Callback. Invoked when any of our attributes are written via BLE.
   */
 void MicroBitAccelerometerService::onDataWritten(const GattWriteCallbackParams *params)
-{   
+{
     if (params->handle == accelerometerPeriodCharacteristicHandle && params->len >= sizeof(accelerometerPeriodCharacteristicBuffer))
     {
         accelerometerPeriodCharacteristicBuffer = *((uint16_t *)params->data);

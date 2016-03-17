@@ -41,10 +41,10 @@ MicroBitButton::MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventCon
   * @code
   *
   * // configure a button to generate all possible events.
-  * uBit.buttonA.setEventConfiguration(MICROBIT_BUTTON_ALL_EVENTS); 
+  * uBit.buttonA.setEventConfiguration(MICROBIT_BUTTON_ALL_EVENTS);
   *
   * // configure a button to suppress MICROBIT_BUTTON_EVT_CLICK and MICROBIT_BUTTON_EVT_LONG_CLICK events.
-  * uBit.buttonA.setEventConfiguration(MICROBIT_BUTTON_SIMPLE_EVENTS); 
+  * uBit.buttonA.setEventConfiguration(MICROBIT_BUTTON_SIMPLE_EVENTS);
   *
   * @endcode
   */

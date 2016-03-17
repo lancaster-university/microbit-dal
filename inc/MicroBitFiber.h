@@ -6,7 +6,7 @@
   * 1) To provide a clean abstraction for application languages to use when building async behaviour (callbacks).
   * 2) To provide ISR decoupling for Messagebus events generted in an ISR context.
   */
-  
+
 #ifndef MICROBIT_FIBER_H
 #define MICROBIT_FIBER_H
 
@@ -21,17 +21,17 @@
 #define MICROBIT_SCHEDULER_RUNNING	     	0x01
 
 // Fiber Flags
-#define MICROBIT_FIBER_FLAG_FOB             0x01 
-#define MICROBIT_FIBER_FLAG_PARENT          0x02 
-#define MICROBIT_FIBER_FLAG_CHILD           0x04 
+#define MICROBIT_FIBER_FLAG_FOB             0x01
+#define MICROBIT_FIBER_FLAG_PARENT          0x02
+#define MICROBIT_FIBER_FLAG_CHILD           0x04
 #define MICROBIT_FIBER_FLAG_DO_NOT_PAGE     0x08
 
 /**
   *  Thread Context for an ARM Cortex M0 core.
-  * 
+  *
   * This is probably overkill, but the ARMCC compiler uses a lot register optimisation
   * in its calling conventions, so better safe than sorry. :-)
-  * 
+  *
   */
 struct Cortex_M0_TCB
 {
@@ -50,7 +50,7 @@ struct Cortex_M0_TCB
     uint32_t R12;
     uint32_t SP;
     uint32_t LR;
-    uint32_t stack_base;                
+    uint32_t stack_base;
 };
 
 /**
@@ -62,7 +62,7 @@ struct Fiber
     Cortex_M0_TCB tcb;                  // Thread context when last scheduled out.
     uint32_t stack_bottom;              // The start sddress of this Fiber's stack. Stack is heap allocated, and full descending.
     uint32_t stack_top;                 // The end address of this Fiber's stack.
-    uint32_t context;                   // Context specific information. 
+    uint32_t context;                   // Context specific information.
     uint32_t flags;                     // Information about this fiber.
     Fiber **queue;                      // The queue this fiber is stored on.
     Fiber *next, *prev;                 // Position of this Fiber on the run queues.
@@ -72,7 +72,7 @@ extern Fiber *currentFiber;
 
 
 /**
-  * Initialises the Fiber scheduler. 
+  * Initialises the Fiber scheduler.
   * Creates a Fiber context around the calling thread, and adds it to the run queue as the current thread.
   *
   * This function must be called once only from the main thread, and before any other Fiber operation.
@@ -111,7 +111,7 @@ void launch_new_fiber_param(void (*ep)(void *), void (*cp)(void *), void *pm)
  * Creates a new Fiber, and launches it.
   *
   * @param entry_fn The function the new Fiber will begin execution in.
-  * @param completion_fn The function called when the thread completes execution of entry_fn.  
+  * @param completion_fn The function called when the thread completes execution of entry_fn.
   * @return The new Fiber.
   */
 Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void) = release_fiber);
@@ -122,7 +122,7 @@ Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void) = releas
   *
   * @param entry_fn The function the new Fiber will begin execution in.
   * @param param an untyped parameter passed into the entry_fn anf completion_fn.
-  * @param completion_fn The function called when the thread completes execution of entry_fn.  
+  * @param completion_fn The function called when the thread completes execution of entry_fn.
   * @return The new Fiber.
   */
 Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)(void *) = release_fiber);
@@ -137,9 +137,9 @@ void schedule();
 
 /**
   * Blocks the calling thread for the given period of time.
-  * The calling thread will be immediatley descheduled, and placed onto a 
-  * wait queue until the requested amount of time has elapsed. 
-  * 
+  * The calling thread will be immediatley descheduled, and placed onto a
+  * wait queue until the requested amount of time has elapsed.
+  *
   * n.b. the fiber will not be be made runnable until after the elasped time, but there
   * are no guarantees precisely when the fiber will next be scheduled.
   *
@@ -149,16 +149,16 @@ void fiber_sleep(unsigned long t);
 
 /**
   * Timer callback. Called from interrupt context, once every SYSTEM_TICK_PERIOD_MS milliseconds by default.
-  * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up 
+  * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up
   * and made runnable.
   */
 void scheduler_tick();
 
 /**
   * Blocks the calling thread until the specified event is raised.
-  * The calling thread will be immediatley descheduled, and placed onto a 
+  * The calling thread will be immediatley descheduled, and placed onto a
   * wait queue until the requested event is received.
-  * 
+  *
   * n.b. the fiber will not be be made runnable until after the event is raised, but there
   * are no guarantees precisely when the fiber will next be scheduled.
   *
@@ -170,30 +170,30 @@ int fiber_wait_for_event(uint16_t id, uint16_t value);
 
 /**
   * Executes the given function asynchronously if necessary.
-  * 
+  *
   * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
   * that complete very quickly, bringing unecessary RAM overhead.
   *
-  * This function takes a snapshot of the current processor context, then attempts to optimistically call the given function directly. 
-  * We only create an additional fiber if that function performs a block operation. 
+  * This function takes a snapshot of the current processor context, then attempts to optimistically call the given function directly.
+  * We only create an additional fiber if that function performs a block operation.
   *
   * @param entry_fn The function to execute.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER. 
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 int invoke(void (*entry_fn)(void));
 
 /**
   * Executes the given function asynchronously if necessary.
-  * 
-  * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
-  * that complete very quickly, bringing unecessary RAM. overhead 
   *
-  * This function takes a snapshot of the current fiber context, then attempt to optimistically call the given function directly. 
-  * We only create an additional fiber if that function performs a block operation. 
+  * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
+  * that complete very quickly, bringing unecessary RAM. overhead
+  *
+  * This function takes a snapshot of the current fiber context, then attempt to optimistically call the given function directly.
+  * We only create an additional fiber if that function performs a block operation.
   *
   * @param entry_fn The function to execute.
   * @param param an untyped parameter passed into the entry_fn and completion_fn.
-  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER. 
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 int invoke(void (*entry_fn)(void *), void *param);
 
@@ -209,8 +209,8 @@ int invoke(void (*entry_fn)(void *), void *param);
 inline void verify_stack_size(Fiber *f);
 
 /**
-  * Event callback. Called from the message bus whenever an event is raised. 
-  * Checks to determine if any fibers blocked on the wait queue need to be woken up 
+  * Event callback. Called from the message bus whenever an event is raised.
+  * Checks to determine if any fibers blocked on the wait queue need to be woken up
   * and made runnable due to the event.
   */
 void scheduler_event(MicroBitEvent evt);
@@ -222,7 +222,7 @@ void scheduler_event(MicroBitEvent evt);
 int scheduler_runqueue_empty();
 
 /**
-  * Utility function to add the currenty running fiber to the given queue. 
+  * Utility function to add the currenty running fiber to the given queue.
   * Perform a simple add at the head, to avoid complexity,
   * Queues are normally very short, so maintaining a doubly linked, sorted list typically outweighs the cost of
   * brute force searching.
@@ -233,7 +233,7 @@ int scheduler_runqueue_empty();
 void queue_fiber(Fiber *f, Fiber **queue);
 
 /**
-  * Utility function to the given fiber from whichever queue it is currently stored on. 
+  * Utility function to the given fiber from whichever queue it is currently stored on.
   * @param f the fiber to remove.
   */
 void dequeue_fiber(Fiber *f);

@@ -2,20 +2,20 @@
   * Class definition for a MicroBit BLE Event Service.
   * Provides a BLE gateway onto the MicroBit Message Bus.
   */
-  
+
 #include "MicroBit.h"
 #include "ble/UUID.h"
 #include "ExternalEvents.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a representation of the EventService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitEventService::MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &_messageBus) : 
-        ble(_ble),messageBus(_messageBus) 
+MicroBitEventService::MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &_messageBus) :
+        ble(_ble),messageBus(_messageBus)
 {
-    GattCharacteristic  microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent), 
+    GattCharacteristic  microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent),
     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
     GattCharacteristic  clientEventCharacteristic(MicroBitEventServiceClientEventCharacteristicUUID, (uint8_t *)&clientEventBuffer, 0, sizeof(EventServiceEvent),
@@ -29,11 +29,11 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &
 
     clientEventBuffer.type = 0x00;
     clientEventBuffer.reason = 0x00;
-    
+
     microBitEventBuffer = microBitRequirementsBuffer = clientRequirementsBuffer = clientEventBuffer;
 
     messageBusListenerOffset = 0;
-    
+
     // Set default security requirements
     microBitEventCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
     clientEventCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
@@ -59,12 +59,12 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &
   * Callback. Invoked when any of our attributes are written via BLE.
   */
 void MicroBitEventService::onDataWritten(const GattWriteCallbackParams *params)
-{   
-    int len = params->len; 
+{
+    int len = params->len;
     EventServiceEvent *e = (EventServiceEvent *)params->data;
-    
+
     if (params->handle == clientEventCharacteristicHandle) {
-    
+
         // Read and fire all events...
         while (len >= 4)
         {
@@ -94,23 +94,23 @@ void MicroBitEventService::onDataWritten(const GattWriteCallbackParams *params)
 void MicroBitEventService::onMicroBitEvent(MicroBitEvent evt)
 {
     EventServiceEvent *e = &microBitEventBuffer;
-    
+
     if (ble.getGapState().connected) {
         e->type = evt.source;
         e->reason = evt.value;
-        
+
         ble.gattServer().notify(microBitEventCharacteristicHandle, (const uint8_t *)e, sizeof(EventServiceEvent));
-    } 
+    }
 }
 
 /**
  * Periodic callback from MicroBit scheduler.
  * If we're no longer connected, remove any registered Message Bus listeners.
- */  
+ */
 void MicroBitEventService::idleTick()
 {
     if (!ble.getGapState().connected && messageBusListenerOffset >0) {
-        messageBusListenerOffset = 0;  
+        messageBusListenerOffset = 0;
         messageBus.ignore(MICROBIT_ID_ANY, MICROBIT_EVT_ANY, this, &MicroBitEventService::onMicroBitEvent);
     }
 }
@@ -118,14 +118,14 @@ void MicroBitEventService::idleTick()
 /**
  * read callback on data characteristic.
  * reads all the pins marked as inputs, and updates the data stored in the BLE stack.
- */  
+ */
 void MicroBitEventService::onRequirementsRead(GattReadAuthCallbackParams *params)
 {
     if (params->handle == microBitRequirementsCharacteristic->getValueHandle())
     {
         // Walk through the lsit of message bus listeners.
         // We send one at a time, and our client can keep reading from this characterisitic until we return an emtpy value.
-        MicroBitListener *l = messageBus.elementAt(messageBusListenerOffset++); 
+        MicroBitListener *l = messageBus.elementAt(messageBusListenerOffset++);
 
         if (l != NULL)
         {

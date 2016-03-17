@@ -32,27 +32,27 @@ class MicroBitStorage
 
     /*
      * Default constructor.
-     */  
-    MicroBitStorage();  
-  
+     */
+    MicroBitStorage();
+
     /*
      * Writes the given number of bytes to the address specified.
      * @param buffer the data to write.
      * @param address the location in memory to write to.
      * @param length the number of bytes to write.
      * TODO: Write this one!
-     */  
+     */
     int writeBytes(uint8_t *buffer, uint32_t address, int length);
 
-    /** 
+    /**
      * Method for erasing a page in flash.
      * @param page_address Address of the first word in the page to be erased.
      */
     void flashPageErase(uint32_t * page_address);
 
-    /** 
+    /**
      * Method for writing a word of data in flash with a value.
-     
+
      * @param address Address of the word to change.
      * @param value Value to be written to flash.
      */
@@ -60,14 +60,14 @@ class MicroBitStorage
 
     /*
      * Reads the micro:bit's configuration data block from FLASH into a RAM buffer.
-     * @return a structure containing the stored data. 
-     */  
+     * @return a structure containing the stored data.
+     */
     MicroBitConfigurationBlock *getConfigurationBlock();
 
     /*
      * Writes the micro:bit's configuration data block from FLASH into a RAM buffer.
-     * @return a structure containing the stored data. 
-     */  
+     * @return a structure containing the stored data.
+     */
     int setConfigurationBlock(MicroBitConfigurationBlock *block);
 };
 

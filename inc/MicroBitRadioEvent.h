@@ -17,7 +17,7 @@
  * For serious applications, BLE should be considered a substantially more secure alternative.
  */
 
-class MicroBitRadioEvent 
+class MicroBitRadioEvent
 {
     bool            suppressForwarding;     // A private flag used to prevent event forwarding loops.
     MicroBitRadio   &radio;                 // A reference to the underlying radio module to use.
@@ -31,7 +31,7 @@ class MicroBitRadioEvent
 
     /**
      * Associates the given MessageBus events with the radio channel.
-     * Once registered, all events matching the given registration sent to this micro:bit's 
+     * Once registered, all events matching the given registration sent to this micro:bit's
      * default MessageBus will be automaticlaly retrasmitted on the radio.
      *
      * @param id The ID of the events to register.
@@ -43,7 +43,7 @@ class MicroBitRadioEvent
 
     /**
      * Associates the given MessageBus events with the radio channel.
-     * Once registered, all events matching the given registration sent to the given 
+     * Once registered, all events matching the given registration sent to the given
      * MessageBus will be automaticlaly retrasmitted on the radio.
      *
      * @param id The ID of the events to register.
@@ -77,7 +77,7 @@ class MicroBitRadioEvent
 
     /**
      * Protocol handler callback. This is called when the radio receives a packet marked as using the event protocol.
-     * This function process this packet, and fires the event contained inside onto the local MessageBus. 
+     * This function process this packet, and fires the event contained inside onto the local MessageBus.
      */
     void packetReceived();
 

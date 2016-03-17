@@ -35,17 +35,17 @@ class ManagedString
     public:
 
     /**
-      * Constructor. 
+      * Constructor.
       * Create a managed string from a specially prepared string literal. It will ptr->incr().
       *
       * @param ptr The literal - first two bytes should be 0xff, then the length in little endian, then the literal. The literal has to be 4-byte aligned.
-      * 
+      *
       * Example:
-      * @code 
+      * @code
       * static const char hello[] __attribute__ ((aligned (4))) = "\xff\xff\x05\x00" "Hello";
       * ManagedString s((StringData*)(void*)hello);
       * @endcode
-      */    
+      */
     ManagedString(StringData *ptr);
 
     /**
@@ -55,49 +55,49 @@ class ManagedString
     StringData *leakData();
 
     /**
-      * Constructor. 
+      * Constructor.
       * Create a managed string from a pointer to an 8-bit character buffer.
       * The buffer is copied to ensure safe memory management (the supplied
       * character buffer may be decalred on the stack for instance).
       *
       * @param str The character array on which to base the new ManagedString.
-      * 
+      *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcdefg");
       * @endcode
-      */    
+      */
     ManagedString(const char *str);
 
     /**
-      * Constructor. 
+      * Constructor.
       * Create a managed string from a given integer.
       *
       * @param value The integer from which to create the ManagedString
-      * 
+      *
       * Example:
-      * @code 
+      * @code
       * ManagedString s(20);
       * @endcode
-      */    
+      */
     ManagedString(const int value);
 
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a managed string from a given char.
       *
       * @param value The char from which to create the ManagedString
-      * 
+      *
       * Example:
-      * @code 
+      * @code
       * ManagedString s('a');
       * @endcode
-      */      
+      */
     ManagedString(const char value);
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a managed string from a pointer to an 8-bit character buffer of a given length.
       * The buffer is copied to ensure sane memory management (the supplied
       * character buffer may be declared on the stack for instance).
@@ -106,50 +106,50 @@ class ManagedString
       * @param length The length of the character array
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcdefg",7); // this is generally used for substring... why not use a normal char * constructor?
       * @endcode
-      */    
+      */
     ManagedString(const char *str, const int16_t length);
 
     /**
-      * Copy constructor. 
-      * Makes a new ManagedString identical to the one supplied. 
+      * Copy constructor.
+      * Makes a new ManagedString identical to the one supplied.
       * Shares the character buffer and reference count with the supplied ManagedString.
       *
       * @param s The ManagedString to copy.
-      * 
+      *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcdefg");
       * ManagedString p(s);
       * @endcode
       */
     ManagedString(const ManagedString &s);
-    
+
     /**
-      * Default constructor. 
+      * Default constructor.
       *
-      * Create an empty ManagedString. 
+      * Create an empty ManagedString.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s();
       * @endcode
       */
     ManagedString();
-    
+
     /**
-      * Destructor. 
+      * Destructor.
       *
       * Free this ManagedString, and decrement the reference count to the
       * internal character buffer. If we're holding the last reference,
       * also free the character buffer.
       */
     ~ManagedString();
-    
+
     /**
-      * Copy assign operation. 
+      * Copy assign operation.
       *
       * Called when one ManagedString is assigned the value of another.
       * If the ManagedString being assigned is already refering to a character buffer,
@@ -160,14 +160,14 @@ class ManagedString
       * @param s The ManagedString to copy.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcd");
       * ManagedString p("efgh");
-      * p = s   // p now points to s, s' ref is incremented 
+      * p = s   // p now points to s, s' ref is incremented
       * @endcode
       */
     ManagedString& operator = (const ManagedString& s);
-    
+
     /**
       * Equality operation.
       *
@@ -177,10 +177,10 @@ class ManagedString
       * @return true if this ManagedString is identical to the one supplied, false otherwise.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcd");
       * ManagedString p("efgh");
-      * 
+      *
       * if(p==s)
       *     print("We are the same!");
       * else
@@ -198,14 +198,14 @@ class ManagedString
       * @return true if this ManagedString is alphabetically less than to the one supplied, false otherwise.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("a");
       * ManagedString p("b");
-      * 
+      *
       * if(s<p)
       *     print("a is before b!"); //a is before b
       * else
-      *     print("b is before a!"); 
+      *     print("b is before a!");
       * @endcode
       */
     bool operator< (const ManagedString& s);
@@ -219,14 +219,14 @@ class ManagedString
       * @return true if this ManagedString is alphabetically greater than to the one supplied, false otherwise.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("a");
       * ManagedString p("b");
-      * 
+      *
       * if(p>a)
       *     print("b is after a!"); //b is after a
       * else
-      *     print("a is after b!"); 
+      *     print("a is after b!");
       * @endcode
       */
     bool operator> (const ManagedString& s);
@@ -239,14 +239,14 @@ class ManagedString
       * @return a ManagedString representing the requested substring.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcdefg");
       *
       * print(s.substring(0,2)) // prints "ab"
       * @endcode
-      */    
+      */
     ManagedString substring(int16_t start, int16_t length);
-    
+
     /**
       * Concatenates this string with the one provided.
       *
@@ -254,13 +254,13 @@ class ManagedString
       * @return a new ManagedString representing the joined strings.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcd");
       * ManagedString p("efgh")
       *
       * print(s + p) // prints "abcdefgh"
       * @endcode
-      */    
+      */
     ManagedString operator+ (ManagedString& s);
 
     /**
@@ -270,12 +270,12 @@ class ManagedString
       * @return the character at posisiton index, zero if index is invalid.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcd");
       *
       * print(s.charAt(1)) // prints "b"
       * @endcode
-      */    
+      */
     char charAt(int16_t index);
 
 
@@ -283,24 +283,24 @@ class ManagedString
       * Provides an immutable 8 bit wide character buffer representing this string.
       *
       * @return a pointer to the character buffer.
-      */    
+      */
     const char *toCharArray() const
     {
         return ptr->data;
     }
-    
+
     /**
       * Determines the length of this ManagedString in characters.
       *
       * @return the length of the string in characters.
       *
       * Example:
-      * @code 
+      * @code
       * ManagedString s("abcd");
       *
       * print(s.length()) // prints "4"
       * @endcode
-      */ 
+      */
     int16_t length() const
     {
         return ptr->len;
@@ -308,7 +308,7 @@ class ManagedString
 
     /**
       * Empty String constant
-      */    
+      */
     static ManagedString EmptyString;
 
     private:
@@ -326,14 +326,14 @@ class ManagedString
     void initString(const char *str);
 
     /**
-    * Private Constructor. 
+    * Private Constructor.
     * Create a managed string based on a concat of two strings.
     * The buffer is copied to ensure sane memory management (the supplied
     * character buffer may be decalred on the stack for instance).
     *
     * @param str1 The first string on which to base the new ManagedString
     * @param str2 The second string on which to base the new ManagedString
-    */    
+    */
     ManagedString(const ManagedString &s1, const ManagedString &s2);
 
 };

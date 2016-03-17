@@ -16,7 +16,7 @@
  * For serious applications, BLE should be considered a substantially more secure alternative.
  */
 
-class MicroBitRadioDatagram 
+class MicroBitRadioDatagram
 {
     MicroBitRadio   &radio;     // The underlying radio module used to send and receive data.
     FrameBuffer     *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
@@ -32,7 +32,7 @@ class MicroBitRadioDatagram
 
     /**
      * Retreives packet payload data into the given buffer.
-     * If a data packet is already available, then it will be returned immediately to the caller. 
+     * If a data packet is already available, then it will be returned immediately to the caller.
      * If no data is available the EmptyString is returned, then MICROBIT_INVALID_PARAMETER is returned.
      *
      * @param buf A pointer to a valid memory location where the received data is to be stored.

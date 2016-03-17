@@ -12,14 +12,14 @@
   * It is common to need to send events from one part of a program (or system) to another.
   * The way that these events are stored and delivered is known as an Event Model...
   *
-  * The micro:bit can be programmed in a number of languages, and it not be good to  
+  * The micro:bit can be programmed in a number of languages, and it not be good to
   * constrain those languages to any particular event model (e.g. they may have their own already).
   *
-  * This class defines the functionality an event model needs to have to be able to interact 
+  * This class defines the functionality an event model needs to have to be able to interact
   * with events generated and/or used by the micro:bit runtime. Programmer may choose to implement
   * such funcitonality to integrate their own event models.
   *
-  * This is an example of a key principle in computing - ABSTRACTION. This is now part of the 
+  * This is an example of a key principle in computing - ABSTRACTION. This is now part of the
   * UK's Computing curriculum in schools... so ask your teacher about it. :-)
   *
   * An EventModel implementation is provided in the MicroBitMessageBus class.
@@ -31,7 +31,7 @@ class EventModel
     static EventModel *defaultEventBus;
 	/**
 	  * Queues the given event to be sent to all registered recipients.
-      * The method of delivery will vary depending on the 
+      * The method of delivery will vary depending on the
 	  *
 	  * @param The event to send.
       * @return MICROBIT_OK on success, or any valid error code defined in "ErrNo.h". The default implementation
@@ -100,7 +100,7 @@ class EventModel
 	  * Register a listener function.
       *
       * An EventModel implementing this interface may optionally choose to override this method,
-      * if that EventModel supports asynchronous callbacks to user code, but there is no 
+      * if that EventModel supports asynchronous callbacks to user code, but there is no
       * requirement to do so.
       *
 	  * @param id The source of messages to listen for. Events sent from any other IDs will be filtered.

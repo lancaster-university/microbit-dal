@@ -45,7 +45,7 @@ class MemberFunctionCallback
 };
 
 /**
- * Constructor. Creates a representation of a pointer to a C++ member function (method). 
+ * Constructor. Creates a representation of a pointer to a C++ member function (method).
  * @param object The object the callback method should be invooked on.
  * @param method The method to invoke.
  */

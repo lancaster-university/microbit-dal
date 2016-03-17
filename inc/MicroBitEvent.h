@@ -5,7 +5,7 @@
 
 enum MicroBitEventLaunchMode
 {
-    CREATE_ONLY,                        
+    CREATE_ONLY,
     CREATE_AND_FIRE
 };
 
@@ -21,13 +21,13 @@ class MicroBitEvent
 
     //These are public at the moment for backwards compatability with old code
     //will be refactored in the future!
-    
-    uint16_t source;         // ID of the MicroBit Component that generated the event e.g. MICROBIT_ID_BUTTON_A. 
+
+    uint16_t source;         // ID of the MicroBit Component that generated the event e.g. MICROBIT_ID_BUTTON_A.
     uint16_t value;          // Component specific code indicating the cause of the event.
     uint32_t timestamp;      // Time at which the event was generated. ms since power on.
 
     /**
-      * Constructor. 
+      * Constructor.
       * @param src ID of the MicroBit Component that generated the event e.g. MICROBIT_ID_BUTTON_A.
       * @param value Component specific code indicating the cause of the event.
       * @param mode optional definition of how the event should be processed after construction (if at all):
@@ -35,24 +35,24 @@ class MicroBitEvent
       * CREATE_ONLY: MicroBitEvent is initialised, and no further processing takes place.
       * CREATE_AND_QUEUE: MicroBitEvent is initialised, and queued on the MicroBitMessageBus.
       * CREATE_AND_FIRE: MicroBitEvent is initialised, and its event handlers are immediately fired (not suitable for use in interrupts!).
-      * 
+      *
       * Example: Create and launch an event using the default configuration
-      * @code 
-      * MicrobitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK); 
+      * @code
+      * MicrobitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK);
       * @endcode
       *
       * Example: Create and launch an event and process all registered event handlers immediately.
-      * @code 
-      * MicrobitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK,CREATE_AND_FIRE); 
+      * @code
+      * MicrobitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK,CREATE_AND_FIRE);
       * @endcode
       */
-   
-    MicroBitEvent(uint16_t source, uint16_t value, MicroBitEventLaunchMode mode = MICROBIT_EVENT_DEFAULT_LAUNCH_MODE);  
-    
+
+    MicroBitEvent(uint16_t source, uint16_t value, MicroBitEventLaunchMode mode = MICROBIT_EVENT_DEFAULT_LAUNCH_MODE);
+
     /**
       * Default constructor - initialises all values, and sets timestamp to the current time.
-      */ 
-    MicroBitEvent(); 
+      */
+    MicroBitEvent();
 
     /**
       * Fires the represented event onto the message bus using the default configuration.
@@ -69,7 +69,7 @@ struct MicroBitEventQueueItem
     MicroBitEventQueueItem *next;
 
     /**
-      * Constructor. 
+      * Constructor.
       * Creates a new MicroBitEventQueueItem.
       * @param evt The event that is to be queued.
       */

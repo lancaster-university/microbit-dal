@@ -2,25 +2,25 @@
   * Class definition for the custom MicroBit IOPin Service.
   * Provides a BLE service to remotely read the state of the ioPin, and configure its behaviour.
   */
-  
+
 #include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitIOPinService.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a representation of the IOPinService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io) : 
+MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io) :
         ble(_ble), io(_io)
 {
     // Create the AD characteristic, that defines whether each pin is treated as analogue or digital
-    GattCharacteristic ioPinServiceADCharacteristic(MicroBitIOPinServiceADConfigurationUUID, (uint8_t *)&ioPinServiceADCharacteristicBuffer, 0, sizeof(ioPinServiceADCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE); 
+    GattCharacteristic ioPinServiceADCharacteristic(MicroBitIOPinServiceADConfigurationUUID, (uint8_t *)&ioPinServiceADCharacteristicBuffer, 0, sizeof(ioPinServiceADCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Create the IO characteristic, that defines whether each pin is treated as input or output
-    GattCharacteristic ioPinServiceIOCharacteristic(MicroBitIOPinServiceIOConfigurationUUID, (uint8_t *)&ioPinServiceIOCharacteristicBuffer, 0, sizeof(ioPinServiceIOCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE); 
+    GattCharacteristic ioPinServiceIOCharacteristic(MicroBitIOPinServiceIOConfigurationUUID, (uint8_t *)&ioPinServiceIOCharacteristicBuffer, 0, sizeof(ioPinServiceIOCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Create the Data characteristic, that allows the actual read and write operations.
     ioPinServiceDataCharacteristic = new GattCharacteristic(MicroBitIOPinServiceDataUUID, (uint8_t *)ioPinServiceDataCharacteristicBuffer, 0, sizeof(ioPinServiceDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
@@ -35,7 +35,7 @@ MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io) :
     ioPinServiceADCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
     ioPinServiceIOCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
     ioPinServiceDataCharacteristic->requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
-       
+
     GattCharacteristic *characteristics[] = {&ioPinServiceADCharacteristic, &ioPinServiceIOCharacteristic, ioPinServiceDataCharacteristic};
     GattService         service(MicroBitIOPinServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
@@ -99,8 +99,8 @@ int MicroBitIOPinService::isOutput(int i)
   * Callback. Invoked when any of our attributes are written via BLE.
   */
 void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
-{   
-    // Check for writes to the IO configuration characteristic 
+{
+    // Check for writes to the IO configuration characteristic
     if (params->handle == ioPinServiceIOCharacteristicHandle && params->len >= sizeof(ioPinServiceIOCharacteristicBuffer))
     {
         uint32_t *value = (uint32_t *)params->data;
@@ -122,7 +122,7 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         }
     }
 
-    // Check for writes to the IO configuration characteristic 
+    // Check for writes to the IO configuration characteristic
     if (params->handle == ioPinServiceADCharacteristicHandle && params->len >= sizeof(ioPinServiceADCharacteristicBuffer))
     {
         uint32_t *value = (uint32_t *)params->data;
@@ -172,7 +172,7 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
 /**
  * read callback on data characteristic.
  * reads all the pins marked as inputs, and updates the data stored in the BLE stack.
- */  
+ */
 void MicroBitIOPinService::onDataRead(GattReadAuthCallbackParams *params)
 {
     if (params->handle == ioPinServiceDataCharacteristic->getValueHandle())
@@ -195,8 +195,8 @@ void MicroBitIOPinService::onDataRead(GattReadAuthCallbackParams *params)
                     //value = MicroBitIOPins[i]->getAnalogValue();
 
                 ioPinServiceIOData[i] = value;
-                ioPinServiceDataCharacteristicBuffer[pairs].pin = i; 
-                ioPinServiceDataCharacteristicBuffer[pairs].value = value; 
+                ioPinServiceDataCharacteristicBuffer[pairs].pin = i;
+                ioPinServiceDataCharacteristicBuffer[pairs].value = value;
 
                 pairs++;
 
@@ -214,8 +214,8 @@ void MicroBitIOPinService::onDataRead(GattReadAuthCallbackParams *params)
 
 /**
   * Periodic callback from MicroBit scheduler.
-  * Check if any of the pins we're watching need updating. Apply a BLE NOTIFY if so... 
-  */  
+  * Check if any of the pins we're watching need updating. Apply a BLE NOTIFY if so...
+  */
 void MicroBitIOPinService::idleTick()
 {
     // If we're not we're connected, then there's nothing to do...
@@ -243,8 +243,8 @@ void MicroBitIOPinService::idleTick()
             {
                 ioPinServiceIOData[i] = value;
 
-                ioPinServiceDataCharacteristicBuffer[pairs].pin = i; 
-                ioPinServiceDataCharacteristicBuffer[pairs].value = value; 
+                ioPinServiceDataCharacteristicBuffer[pairs].pin = i;
+                ioPinServiceDataCharacteristicBuffer[pairs].value = value;
 
                 pairs++;
 
@@ -276,25 +276,25 @@ const uint8_t MicroBitIOPinServiceDataUUID[] = {
 };
 
 /*
-MicroBitPin * const MicroBitIOPins[] = { 
-    &uBit.io.P0, 
-    &uBit.io.P1, 
+MicroBitPin * const MicroBitIOPins[] = {
+    &uBit.io.P0,
+    &uBit.io.P1,
     &uBit.io.P2,
-    &uBit.io.P3, 
-    &uBit.io.P4, 
+    &uBit.io.P3,
+    &uBit.io.P4,
     &uBit.io.P5,
-    &uBit.io.P6, 
-    &uBit.io.P7, 
+    &uBit.io.P6,
+    &uBit.io.P7,
     &uBit.io.P8,
-    &uBit.io.P9, 
-    &uBit.io.P10, 
+    &uBit.io.P9,
+    &uBit.io.P10,
     &uBit.io.P11,
-    &uBit.io.P12, 
-    &uBit.io.P13, 
+    &uBit.io.P12,
+    &uBit.io.P13,
     &uBit.io.P14,
-    &uBit.io.P15, 
-    &uBit.io.P16, 
-    &uBit.io.P19, 
+    &uBit.io.P15,
+    &uBit.io.P16,
+    &uBit.io.P19,
     &uBit.io.P20
 };
 */

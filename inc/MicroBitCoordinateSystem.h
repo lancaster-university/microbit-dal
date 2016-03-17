@@ -4,10 +4,10 @@
 /**
   * Co-ordinate systems that can be used.
   * RAW: Unaltered data. Data will be returned directly from the accelerometer.
-  * 
+  *
   * SIMPLE_CARTESIAN: Data will be returned based on an easy to understand alignment, consistent with the cartesian system taught in schools.
   * When held upright, facing the user:
-  * 
+  *
   *                            /
   *    +--------------------+ z
   *    |                    |
@@ -20,7 +20,7 @@
   *
   * NORTH_EAST_DOWN: Data will be returned based on the industry convention of the North East Down (NED) system.
   * When held upright, facing the user:
-  * 
+  *
   *                            z
   *    +--------------------+ /
   *    |                    |

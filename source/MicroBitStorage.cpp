@@ -19,17 +19,17 @@ MicroBitStorage::MicroBitStorage()
  * @param buffer the data to write.
  * @param address the location in memory to write to.
  * @param length the number of bytes to write.
- */  
+ */
 int MicroBitStorage::writeBytes(uint8_t *buffer, uint32_t address, int length)
 {
     (void) buffer;
     (void) address;
     (void) length;
-    
+
     return MICROBIT_OK;
 }
 
-/** 
+/**
  * Method for erasing a page in flash.
  *
  * @param page_address Address of the first word in the page to be erased.
@@ -55,19 +55,19 @@ void MicroBitStorage::flashPageErase(uint32_t * page_address)
 
 /*
  * Reads the micro:bit's configuration data block from FLASH into a RAM buffer.
- * @return a pointer to the structure containing the stored data. 
+ * @return a pointer to the structure containing the stored data.
  * NOTE: it is the callers responsibility to free the buffer.
- */  
+ */
 
 MicroBitConfigurationBlock *MicroBitStorage::getConfigurationBlock()
 {
     uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
-    uint32_t pg_num  = NRF_FICR->CODESIZE - 19;          // Use the page just below the BLE Bond Data 
+    uint32_t pg_num  = NRF_FICR->CODESIZE - 19;          // Use the page just below the BLE Bond Data
 
     MicroBitConfigurationBlock *block = new MicroBitConfigurationBlock();
     memcpy(block, (uint32_t *)(pg_size * pg_num), sizeof(MicroBitConfigurationBlock));
 
-    if (block->magic != MICROBIT_STORAGE_CONFIG_MAGIC) 
+    if (block->magic != MICROBIT_STORAGE_CONFIG_MAGIC)
         memclr(block, sizeof(MicroBitConfigurationBlock));
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
@@ -102,7 +102,7 @@ MicroBitConfigurationBlock *MicroBitStorage::getConfigurationBlock()
     return block;
 }
 
-/** 
+/**
  * Function for filling a page in flash with a value.
  *
  * @param address Address of the first word in the page to be filled.
@@ -128,8 +128,8 @@ void MicroBitStorage::flashWordWrite(uint32_t * address, uint32_t value)
 
 /*
  * Writes the micro:bit's configuration data block from FLASH into a RAM buffer.
- * @return a structure containing the stored data. 
- */  
+ * @return a structure containing the stored data.
+ */
 int MicroBitStorage::setConfigurationBlock(MicroBitConfigurationBlock *block)
 {
 
@@ -167,9 +167,9 @@ int MicroBitStorage::setConfigurationBlock(MicroBitConfigurationBlock *block)
     uint32_t   pg_size;
     uint32_t   pg_num;
     int   wordsToWrite = sizeof(MicroBitConfigurationBlock) / 4 + 1;
-    
+
     pg_size = NRF_FICR->CODEPAGESIZE;
-    pg_num  = NRF_FICR->CODESIZE - 19;          // Use the page just below the BLE Bond Data 
+    pg_num  = NRF_FICR->CODESIZE - 19;          // Use the page just below the BLE Bond Data
 
     addr = (uint32_t *)(pg_size * pg_num);
 

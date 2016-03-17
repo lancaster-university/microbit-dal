@@ -5,9 +5,9 @@
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitLEDServiceUUID[];
-extern const uint8_t  MicroBitLEDServiceMatrixUUID[]; 
-extern const uint8_t  MicroBitLEDServiceTextUUID[]; 
-extern const uint8_t  MicroBitLEDServiceScrollingSpeedUUID[]; 
+extern const uint8_t  MicroBitLEDServiceMatrixUUID[];
+extern const uint8_t  MicroBitLEDServiceTextUUID[];
+extern const uint8_t  MicroBitLEDServiceScrollingSpeedUUID[];
 
 
 /**
@@ -15,17 +15,17 @@ extern const uint8_t  MicroBitLEDServiceScrollingSpeedUUID[];
   * Provides a _ble gateway onto the MicroBit Message Bus.
   */
 class MicroBitLEDService
-{                                    
+{
     public:
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of the LEDService
       * @param BLE The instance of a BLE device that we're running on.
       * @param display The instance of a MicroBitDisplay to interface with.
       */
-    MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display);  
-    
+    MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display);
+
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
       */
@@ -35,7 +35,7 @@ class MicroBitLEDService
       * Callback. Invoked when any of our attributes are read via BLE.
       */
     void onDataRead(GattReadAuthCallbackParams *params);
-    
+
     private:
 
     // Bluetooth stack we're running on.

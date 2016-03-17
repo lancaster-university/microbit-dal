@@ -8,7 +8,7 @@
  */
 #ifndef MICROBIT_DEVICE_H
 #define MICROBIT_DEVICE_H
-/* 
+/*
  * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this

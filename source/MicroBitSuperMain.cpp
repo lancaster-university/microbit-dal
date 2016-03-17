@@ -4,12 +4,12 @@
 MicroBit        uBit;
 
 int main()
-{    
+{
 #if CONFIG_ENABLED(MICROBIT_DBG)
     uBit.serial.printf("micro:bit runtime version %s\n", MICROBIT_DAL_VERSION);
-#endif    
+#endif
 
-    // Bring up random number generator, BLE, display and system timers.    
+    // Bring up random number generator, BLE, display and system timers.
     uBit.init();
 
     // Start the user application

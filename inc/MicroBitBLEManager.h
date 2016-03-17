@@ -3,7 +3,7 @@
 
 #include "mbed.h"
 
-/* 
+/*
  * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
@@ -15,7 +15,7 @@
 #endif
 #include "ble/BLE.h"
 
-/* 
+/*
  * Return to our predefined compiler settings.
  */
 #if !defined (__arm)
@@ -54,25 +54,25 @@ class MicroBitBLEManager : MicroBitComponent
 
 	// The mbed abstraction of the BlueTooth Low Energy (BLE) hardware
     BLEDevice                       *ble;
-    
+
     /**
-     * Constructor. 
+     * Constructor.
      *
      * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
      * Note that the BLE stack *cannot*  be brought up in a static context.
      * (the software simply hangs or corrupts itself).
      * Hence, we bring it up in an explicit init() method, rather than in the constructor.
      */
-    MicroBitBLEManager();  
+    MicroBitBLEManager();
 
     /**
       * Post constructor initialisation method.
-      * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a 
+      * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a
       * static context, so we bring it up here rather than in the constructor.
       * n.b. This method *must* be called in main() or later, not before.
       *
       * Example:
-      * @code 
+      * @code
       * uBit.init();
       * @endcode
       */
@@ -81,12 +81,12 @@ class MicroBitBLEManager : MicroBitComponent
     /**
      * Change the output power level of the transmitter to the given value.
      *
-     * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest. 
+     * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest.
      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
      *
      */
     int setTransmitPower(int power);
-    
+
     /**
      * Enter pairing mode. This is mode is called to initiate pairing, and to enable FOTA programming
      * of the micro:bit in cases where BLE is disabled during normal operation.
@@ -98,7 +98,7 @@ class MicroBitBLEManager : MicroBitComponent
 
     /**
      * Makes the micro:bit discoverable via BLE, such that bonded devices can connect
-     * When called, the micro:bit will begin advertising for a predefined period, 
+     * When called, the micro:bit will begin advertising for a predefined period,
      * (MICROBIT_BLE_ADVERTISING_TIMEOUT seconds) thereby allowing bonded devices to connect.
      */
     void advertise();

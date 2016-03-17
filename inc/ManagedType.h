@@ -24,13 +24,13 @@ public:
     * @param object the object that you would like to be ref counted - of class T
     *
     * Example:
-    * @code 
+    * @code
     * T object = new T();
     * ManagedType<T> mt(t);
     * @endcode
     */
     ManagedType(T* object);
-    
+
   /**
     * Default constructor for the managed type, given a class space T.
     */
@@ -41,7 +41,7 @@ public:
     * @param t another managed type instance of class type T.
     *
     * Example:
-    * @code 
+    * @code
     * T* object = new T();
     * ManagedType<T> mt(t);
     * ManagedType<T> mt1(mt);
@@ -58,19 +58,19 @@ public:
     * Copy-assign member function for the managed type, given a class space.
     *
     * Example:
-    * @code 
+    * @code
     * T* object = new T();
     * ManagedType<T> mt(t);
     * ManagedType<T> mt1 = mt;
     * @endcode
     */
     ManagedType<T>& operator = (const ManagedType<T>&i);
-    
+
   /**
     * Returns the references to this ManagedType
     *
     * Example:
-    * @code 
+    * @code
     * T* object = new T();
     * ManagedType<T> mt(t);
     * ManagedType<T> mt1(mt);
@@ -170,7 +170,7 @@ ManagedType<T>::~ManagedType()
         free(ref);
     }
 
-    // Normal case - we have a valid piece of data. 
+    // Normal case - we have a valid piece of data.
     // Decrement our reference counter and free all allocated memory if we're deleting the last reference.
     else if (--(*ref) == 0)
     {
@@ -215,6 +215,6 @@ ManagedType<T>& ManagedType<T>::operator = (const ManagedType<T>&t)
 template<typename T>
 int ManagedType<T>::getReferences()
 {
-    return (*ref);   
+    return (*ref);
 }
 #endif

@@ -9,14 +9,14 @@
 #define MICROBIT_MULTI_BUTTON_STATE_2               0x02
 #define MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_1      0x04
 #define MICROBIT_MULTI_BUTTON_HOLD_TRIGGERED_2      0x08
-#define MICROBIT_MULTI_BUTTON_SUPRESSED_1           0X10 
+#define MICROBIT_MULTI_BUTTON_SUPRESSED_1           0X10
 #define MICROBIT_MULTI_BUTTON_SUPRESSED_2           0x20
 #define MICROBIT_MULTI_BUTTON_ATTACHED              0x40
 
 /**
   * Class definition for MicroBitMultiButton.
   *
-  * Represents a virtual button, capable of reacting to simultaneous presses of multiple 
+  * Represents a virtual button, capable of reacting to simultaneous presses of multiple
   * other buttons.
   */
 class MicroBitMultiButton : public MicroBitComponent
@@ -36,7 +36,7 @@ class MicroBitMultiButton : public MicroBitComponent
     public:
 
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of a vurtual button, that generates events based upon the combination
       * of two given buttons.
       * @param id the ID of the new MultiButton object.
@@ -45,12 +45,12 @@ class MicroBitMultiButton : public MicroBitComponent
       * @param name the physical pin on the processor that this butotn is connected to.
       *
       * Example:
-      * @code 
-      * multiButton(MICROBIT_ID_BUTTON_AB, MICROBIT_ID_BUTTON_A, MICROBIT_ID_BUTTON_B); 
+      * @code
+      * multiButton(MICROBIT_ID_BUTTON_AB, MICROBIT_ID_BUTTON_A, MICROBIT_ID_BUTTON_B);
       * @endcode
       *
       * Possible Events:
-      * @code 
+      * @code
       * MICROBIT_BUTTON_EVT_DOWN
       * MICROBIT_BUTTON_EVT_UP
       * MICROBIT_BUTTON_EVT_CLICK
@@ -58,15 +58,15 @@ class MicroBitMultiButton : public MicroBitComponent
       * MICROBIT_BUTTON_EVT_DOUBLE_CLICK
       * MICROBIT_BUTTON_EVT_HOLD
       * @endcode
-      */  
-    MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, MicroBitMessageBus &messageBus);    
+      */
+    MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, MicroBitMessageBus &messageBus);
 
     /**
       * Tests if this MultiButton is currently pressed.
       * @return 1 if both physical buttons are pressed simultaneously.
       *
       * Example:
-      * @code 
+      * @code
       * if(uBit.buttonAB.isPressed())
       *     print("Pressed!");
       * @endcode
@@ -83,10 +83,10 @@ class MicroBitMultiButton : public MicroBitComponent
      * @code
      *
      * // Configure a button to generate all possible events.
-     * uBit.buttonAB.setEventConfiguration(MICROBIT_BUTTON_ALL_EVENTS); 
+     * uBit.buttonAB.setEventConfiguration(MICROBIT_BUTTON_ALL_EVENTS);
      *
      * // Configure a button to suppress MICROBIT_BUTTON_EVT_CLICK and MICROBIT_BUTTON_EVT_LONG_CLICK events.
-     * uBit.buttonAB.setEventConfiguration(MICROBIT_BUTTON_SIMPLE_EVENTS); 
+     * uBit.buttonAB.setEventConfiguration(MICROBIT_BUTTON_SIMPLE_EVENTS);
      *
      * @endcode
      *
@@ -101,7 +101,7 @@ class MicroBitMultiButton : public MicroBitComponent
      */
     void setEventConfiguration(MicroBitButtonEventConfiguration config);
 
-    private:    
+    private:
     void onButtonEvent(MicroBitEvent evt);
 };
 

@@ -24,7 +24,7 @@ MicroBitRadioEvent::MicroBitRadioEvent(MicroBitRadio &r) : radio(r)
 
 /**
  * Associates the given MicroBitEvent with the radio channel.
- * Once registered, all events matching the given registration sent to this micro:bit's 
+ * Once registered, all events matching the given registration sent to this micro:bit's
  * default EventBus will be automatically retrasmitted on the radio.
  *
  * @param id The ID of the events to register.
@@ -42,7 +42,7 @@ int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
 
 /**
  * Associates the given MicroBitEvent events with the radio channel.
- * Once registered, all events matching the given registration sent to the given 
+ * Once registered, all events matching the given registration sent to the given
  * MessageBus will be automaticlaly retrasmitted on the radio.
  *
  * @param id The ID of the events to register.
@@ -88,7 +88,7 @@ int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value, EventModel &eventBus
 
 /**
  * Protocol handler callback. This is called when the radio receives a packet marked as an event
- * This function process this packet, and fires the event contained inside onto the local MessageBus. 
+ * This function process this packet, and fires the event contained inside onto the local MessageBus.
  */
 void MicroBitRadioEvent::packetReceived()
 {

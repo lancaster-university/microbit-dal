@@ -7,7 +7,7 @@
 #define MICROBIT_THERMOMETER_PERIOD             1000
 
 
-#define MAG3110_SAMPLE_RATES                    11 
+#define MAG3110_SAMPLE_RATES                    11
 
 /*
  * Temperature events
@@ -25,21 +25,21 @@ class MicroBitThermometer : public MicroBitComponent
 {
     unsigned long           sampleTime;
     uint32_t                samplePeriod;
-    int16_t                 temperature;              
+    int16_t                 temperature;
 
     public:
     /**
-     * Constructor. 
+     * Constructor.
      * Create new object that can sense temperature.
      * @param id the ID of the new MicroBitThermometer object.
      *
      * Example:
-     * @code 
-     * thermometer(MICROBIT_ID_THERMOMETER); 
+     * @code
+     * thermometer(MICROBIT_ID_THERMOMETER);
      * @endcode
      *
      * Possible Events:
-     * @code 
+     * @code
      * MICROBIT_THERMOMETER_EVT_CHANGED
      * @endcode
      */
@@ -48,14 +48,14 @@ class MicroBitThermometer : public MicroBitComponent
     /**
      * Set the sample rate at which the temperatureis read (in ms).
      * n.b. the temperature is alwasy read in the background, so wis only updated
-     * when the processor is idle, or when the temperature is explicitly read. 
+     * when the processor is idle, or when the temperature is explicitly read.
      * The default sample period is 1 second.
      * @param period the requested time between samples, in milliseconds.
      */
     void setPeriod(int period);
 
     /**
-      * Reads the currently configured sample rate of the thermometer. 
+      * Reads the currently configured sample rate of the thermometer.
       * @return The time between samples, in milliseconds.
       */
     int getPeriod();
@@ -70,13 +70,13 @@ class MicroBitThermometer : public MicroBitComponent
       * @endcode
       */
     int getTemperature();
-    
+
     /**
       * Periodic callback from MicroBit idle thread.
       * Check if any data is ready for reading by checking the interrupt.
-      */  
+      */
     virtual void idleTick();
-    
+
     /**
       * Indicates if we'd like some processor time to sense the temperature. 0 means we're not due to read the tmeperature yet.
       * @returns 1 if we'd like some processor time, 0 otherwise.
@@ -96,7 +96,7 @@ class MicroBitThermometer : public MicroBitComponent
       */
     void updateTemperature();
 
-    
+
 };
 
 #endif

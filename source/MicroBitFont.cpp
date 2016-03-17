@@ -9,7 +9,7 @@
   * The original MicroBit font.
   * The font is 5x5.
   * Each Row is represented by a byte in the array.
-  * 
+  *
   * Row Format:|  N/A  |  N/A  |  N/A  | Col 1 | Col 2 | Col 3 | Col 4 | Col 5 |
   *            |  0x80 |  0x40 |  0x20 | 0x10  | 0x08  | 0x04  | 0x02  | 0x01  |
   *
@@ -41,8 +41,8 @@ MicroBitFont MicroBitFont::systemFont = MicroBitFont(defaultFont, MICROBIT_FONT_
   */
 MicroBitFont::MicroBitFont(const unsigned char* characters, int asciiEnd)
 {
-    this->characters = characters;   
-    this->asciiEnd = asciiEnd;   
+    this->characters = characters;
+    this->asciiEnd = asciiEnd;
 }
 
 /**
@@ -51,9 +51,9 @@ MicroBitFont::MicroBitFont(const unsigned char* characters, int asciiEnd)
   */
 MicroBitFont::MicroBitFont()
 {
-    this->characters = defaultFont;   
-    this->asciiEnd = MICROBIT_FONT_ASCII_END;   
-}    
+    this->characters = defaultFont;
+    this->asciiEnd = MICROBIT_FONT_ASCII_END;
+}
 
 /**
   * Changes the current system font to the one specified.

@@ -10,18 +10,18 @@
   * @param s the char* to reverse.
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
-int string_reverse(char *s) 
+int string_reverse(char *s)
 {
     //sanity check...
     if(s == NULL)
         return MICROBIT_INVALID_PARAMETER;
-    
+
     char *j;
     int c;
- 
+
     j = s + strlen(s) - 1;
-    
-    while(s < j) 
+
+    while(s < j)
     {
         c = *s;
         *s++ = *j;
@@ -49,20 +49,20 @@ int itoa(int n, char *s)
     // Record the sign of the number,
     // Ensure our working value is positive.
     if (positive)
-        n = -n;          
+        n = -n;
 
-    // Calculate each character, starting with the LSB.    
-    do {       
+    // Calculate each character, starting with the LSB.
+    do {
          s[i++] = abs(n % 10) + '0';
     } while (abs(n /= 10) > 0);
-    
+
     // Add a negative sign as needed
     if (!positive)
         s[i++] = '-';
-    
+
     // Terminate the string.
     s[i] = '\0';
-    
+
     // Flip the order.
     string_reverse(s);
 

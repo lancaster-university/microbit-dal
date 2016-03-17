@@ -2,25 +2,25 @@
   * Class definition for the custom MicroBit Button Service.
   * Provides a BLE service to remotely read the state of each button, and configure its behaviour.
   */
-  
+
 #include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitButtonService.h"
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create a representation of the ButtonService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble, MicroBitMessageBus &messageBus) : 
-        ble(_ble) 
+MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble, MicroBitMessageBus &messageBus) :
+        ble(_ble)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
-    GattCharacteristic  buttonADataCharacteristic(MicroBitButtonAServiceDataUUID, (uint8_t *)&buttonADataCharacteristicBuffer, 0, 
+    GattCharacteristic  buttonADataCharacteristic(MicroBitButtonAServiceDataUUID, (uint8_t *)&buttonADataCharacteristicBuffer, 0,
     sizeof(buttonADataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
-    GattCharacteristic  buttonBDataCharacteristic(MicroBitButtonBServiceDataUUID, (uint8_t *)&buttonADataCharacteristicBuffer, 0, 
+    GattCharacteristic  buttonBDataCharacteristic(MicroBitButtonBServiceDataUUID, (uint8_t *)&buttonADataCharacteristicBuffer, 0,
     sizeof(buttonADataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
 
@@ -31,7 +31,7 @@ MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble, MicroBitMessageBus
     // Set default security requirements
     buttonADataCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
     buttonBDataCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
-    
+
     GattCharacteristic *characteristics[] = {&buttonADataCharacteristic, &buttonBDataCharacteristic};
     GattService         service(MicroBitButtonServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 

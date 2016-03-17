@@ -14,7 +14,7 @@
   */
 
 
-/* 
+/*
  * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
@@ -29,7 +29,7 @@
 #include "nrf_soc.h"
 #include "nrf_sdm.h"
 
-/* 
+/*
  * Return to our predefined compiler settings.
  */
 #if !defined(__arm)
@@ -37,17 +37,17 @@
 #endif
 
 /**
-  * Constructor. 
+  * Constructor.
   * Create new object that can sense temperature.
   * @param id the ID of the new MicroBitThermometer object.
   *
   * Example:
-  * @code 
-  * thermometer(MICROBIT_ID_THERMOMETER); 
+  * @code
+  * thermometer(MICROBIT_ID_THERMOMETER);
   * @endcode
   *
   * Possible Events:
-  * @code 
+  * @code
   * MICROBIT_THERMOMETER_EVT_CHANGED
   * @endcode
   */
@@ -85,14 +85,14 @@ int MicroBitThermometer::getTemperature()
  */
 int MicroBitThermometer::isIdleCallbackNeeded()
 {
-    return isSampleNeeded();    
+    return isSampleNeeded();
 }
 /**
   * periodic callback.
   * Check once every second or so for a new temperature reading.
-  */  
+  */
 void MicroBitThermometer::idleTick()
-{   
+{
     if (isSampleNeeded())
         updateTemperature();
 }
@@ -102,24 +102,24 @@ void MicroBitThermometer::idleTick()
  * @return 1 if we're due to take a temperature reading, 0 otherwise.
  */
 int MicroBitThermometer::isSampleNeeded()
-{ 
+{
     return  system_timer_current_time() >= sampleTime;
 }
 
 /**
  * Set the sample rate at which the temperatureis read (in ms).
  * n.b. the temperature is alwasy read in the background, so wis only updated
- * when the processor is idle, or when the temperature is explicitly read. 
+ * when the processor is idle, or when the temperature is explicitly read.
  * The default sample period is 1 second.
  * @param period the requested time between samples, in milliseconds.
  */
 void MicroBitThermometer::setPeriod(int period)
 {
-    samplePeriod = period; 
+    samplePeriod = period;
 }
 
 /**
- * Reads the currently configured sample rate of the thermometer. 
+ * Reads the currently configured sample rate of the thermometer.
  * @return The time between samples, in milliseconds.
  */
 int MicroBitThermometer::getPeriod()
@@ -155,7 +155,7 @@ void MicroBitThermometer::updateTemperature()
 
         while (NRF_TEMP->EVENTS_DATARDY == 0);
 
-        NRF_TEMP->EVENTS_DATARDY = 0;  
+        NRF_TEMP->EVENTS_DATARDY = 0;
 
         processorTemperature = *TEMP;
 
@@ -168,7 +168,7 @@ void MicroBitThermometer::updateTemperature()
 
     // Schedule our next sample.
     sampleTime = system_timer_current_time() + samplePeriod;
-    
+
     // Send an event to indicate that we'e updated our temperature.
     MicroBitEvent e(id, MICROBIT_THERMOMETER_EVT_UPDATE);
 }

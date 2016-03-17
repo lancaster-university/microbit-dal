@@ -14,16 +14,16 @@ extern const uint8_t  MicroBitAccelerometerServicePeriodUUID[];
   * Provides access to live accelerometer data via BLE, and provides basic configuration options.
   */
 class MicroBitAccelerometerService
-{                                    
+{
     public:
-    
+
     /**
-      * Constructor. 
+      * Constructor.
       * Create a representation of the AccelerometerService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_acclerometer, MicroBitMessageBus &messageBus);  
-    
+    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_acclerometer, MicroBitMessageBus &messageBus);
+
 
     private:
 
