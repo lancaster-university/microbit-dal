@@ -9,8 +9,8 @@
   * The latter is useful to avoid costs associated with multiple mbed Ticker instances
   * in microbit-dal components, as each incurs a significant additional RAM overhead (circa 80 bytes).
   */
-
-#include "MicroBit.h"
+#include "MicroBitSystemTimer.h"
+#include "ErrorNo.h"
 
 /*
  * Time since power on. Measured in milliseconds.
@@ -135,4 +135,3 @@ int system_timer_remove_component(MicroBitComponent *component)
 
     return MICROBIT_OK;
 }
-

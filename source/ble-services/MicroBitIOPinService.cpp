@@ -2,11 +2,10 @@
   * Class definition for the custom MicroBit IOPin Service.
   * Provides a BLE service to remotely read the state of the ioPin, and configure its behaviour.
   */
-
-#include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitIOPinService.h"
+#include "MicroBitFiber.h"
 
 /**
   * Constructor.
@@ -298,4 +297,3 @@ MicroBitPin * const MicroBitIOPins[] = {
     &uBit.io.P20
 };
 */
-

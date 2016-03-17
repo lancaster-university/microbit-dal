@@ -1,7 +1,8 @@
 #ifndef MICROBIT_BUTTON_SERVICE_H
 #define MICROBIT_BUTTON_SERVICE_H
 
-#include "MicroBit.h"
+#include "ble/BLE.h"
+#include "MicroBitMessageBus.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitButtonServiceUUID[];
@@ -51,4 +52,3 @@ class MicroBitButtonService
 
 
 #endif
-

@@ -1,7 +1,9 @@
 #ifndef MICROBIT_TEMPERATURE_SERVICE_H
 #define MICROBIT_TEMPERATURE_SERVICE_H
 
-#include "MicroBit.h"
+#include "ble/BLE.h"
+#include "MicroBitThermometer.h"
+#include "MicroBitMessageBus.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitTemperatureServiceUUID[];
@@ -51,4 +53,3 @@ class MicroBitTemperatureService
 
 
 #endif
-

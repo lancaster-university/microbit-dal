@@ -1,7 +1,8 @@
 #ifndef MICROBIT_LED_SERVICE_H
 #define MICROBIT_LED_SERVICE_H
 
-#include "MicroBit.h"
+#include "ble/BLE.h"
+#include "MicroBitDisplay.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitLEDServiceUUID[];
@@ -58,4 +59,3 @@ class MicroBitLEDService
 
 
 #endif
-

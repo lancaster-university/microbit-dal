@@ -3,7 +3,7 @@
   * This allows reading and writing of FLASH memory.
   */
 
-#include "MicroBit.h"
+#include "MicroBitStorage.h"
 
 /*
  * Default constructor
@@ -186,4 +186,3 @@ int MicroBitStorage::setConfigurationBlock(MicroBitConfigurationBlock *block)
 
     return MICROBIT_OK;
 }
-

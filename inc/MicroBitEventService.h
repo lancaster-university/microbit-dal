@@ -1,7 +1,9 @@
 #ifndef MICROBIT_EVENT_SERVICE_H
 #define MICROBIT_EVENT_SERVICE_H
 
+#include "ble/BLE.h"
 #include "MicroBitEvent.h"
+#include "MicroBitMessageBus.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitEventServiceUUID[];
@@ -79,4 +81,3 @@ class MicroBitEventService : public MicroBitComponent
 
 
 #endif
-

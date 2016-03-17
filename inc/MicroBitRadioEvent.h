@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "MicroBitRadio.h"
+#include "EventModel.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.

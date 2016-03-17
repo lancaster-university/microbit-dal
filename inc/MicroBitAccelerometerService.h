@@ -1,7 +1,9 @@
 #ifndef MICROBIT_ACCELEROMETER_SERVICE_H
 #define MICROBIT_ACCELEROMETER_SERVICE_H
 
-#include "MicroBit.h"
+#include "ble/BLE.h"
+#include "MicroBitAccelerometer.h"
+#include "MicroBitMessageBus.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitAccelerometerServiceUUID[];
@@ -52,4 +54,3 @@ class MicroBitAccelerometerService
 
 
 #endif
-

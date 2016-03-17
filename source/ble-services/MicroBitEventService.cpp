@@ -3,9 +3,10 @@
   * Provides a BLE gateway onto the MicroBit Message Bus.
   */
 
-#include "MicroBit.h"
+#include "MicroBitEventService.h"
 #include "ble/UUID.h"
 #include "ExternalEvents.h"
+#include "MicroBitFiber.h"
 
 /**
   * Constructor.
@@ -157,4 +158,3 @@ const uint8_t  MicroBitEventServiceMicroBitRequirementsCharacteristicUUID[] = {
 const uint8_t  MicroBitEventServiceClientRequirementsCharacteristicUUID[] = {
     0xe9,0x5d,0x23,0xc4,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
-

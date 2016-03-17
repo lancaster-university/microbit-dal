@@ -7,7 +7,8 @@
   * 2) To provide ISR decoupling for Messagebus events generted in an ISR context.
   */
 
-#include "MicroBit.h"
+#include "MicroBitFiber.h"
+#include "MicroBitSystemTimer.h"
 
 /*
  * Statically allocated values used to create and destroy Fibers.

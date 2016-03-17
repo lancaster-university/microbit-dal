@@ -2,8 +2,6 @@
   * Class definition for the custom MicroBit LED Service.
   * Provides a BLE service to remotely read and write the state of the LED display.
   */
-
-#include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitLEDService.h"
@@ -123,5 +121,3 @@ const uint8_t  MicroBitLEDServiceTextUUID[] = {
 const uint8_t  MicroBitLEDServiceScrollingSpeedUUID[] = {
     0xe9,0x5d,0x0d,0x2d,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
-
-

@@ -5,6 +5,7 @@
 #include "MicroBitComponent.h"
 #include "MicroBitEvent.h"
 #include "MicroBitListener.h"
+#include "ErrorNo.h"
 
 /**
   * Class definition for the micro:bit EventModel.

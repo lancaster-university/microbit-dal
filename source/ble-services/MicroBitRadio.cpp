@@ -1,4 +1,10 @@
-#include "MicroBit.h"
+#include "MicroBitRadio.h"
+#include "MicroBitComponent.h"
+#include "EventModel.h"
+#include "MicroBitDevice.h"
+#include "ErrorNo.h"
+#include "MicroBitFiber.h"
+#include "MicroBitBLEManager.h"
 
 /**
   * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.

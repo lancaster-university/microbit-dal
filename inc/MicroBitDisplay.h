@@ -1,6 +1,14 @@
 #ifndef MICROBIT_DISPLAY_H
 #define MICROBIT_DISPLAY_H
 
+#include "mbed.h"
+#include "ManagedString.h"
+#include "MicroBitComponent.h"
+#include "MicroBitImage.h"
+#include "MicroBitFont.h"
+#include "MicroBitMatrixMaps.h"
+#include "MicroBitLightSensor.h"
+
 /**
   * MessageBus Event Codes
   */
@@ -21,13 +29,6 @@ const uint8_t panicFace[5] = {0x1B, 0x1B,0x0,0x0E,0x11};
 #define MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS    -255
 
 #define MICROBIT_DISPLAY_ROW_RESET              0x20
-
-#include "mbed.h"
-#include "ManagedString.h"
-#include "MicroBitComponent.h"
-#include "MicroBitImage.h"
-#include "MicroBitFont.h"
-#include "MicroBitMatrixMaps.h"
 
 enum AnimationMode {
     ANIMATION_MODE_NONE,

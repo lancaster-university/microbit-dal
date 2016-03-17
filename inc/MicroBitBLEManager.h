@@ -32,6 +32,7 @@
 #include "MicroBitIOPinService.h"
 #include "MicroBitTemperatureService.h"
 #include "ExternalEvents.h"
+#include "MicroBitButton.h"
 
 #define MICROBIT_BLE_PAIR_REQUEST               0x01
 #define MICROBIT_BLE_PAIR_COMPLETE              0x02
@@ -141,4 +142,3 @@ class MicroBitBLEManager : MicroBitComponent
 };
 
 #endif
-

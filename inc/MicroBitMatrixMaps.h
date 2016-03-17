@@ -8,6 +8,7 @@
 #ifndef MICROBIT_MATRIX_MAPS_H
 #define MICROBIT_MATRIX_MAPS_H
 
+#include "MicroBitConfig.h"
 #include "mbed.h"
 
 #define NO_CONN 0

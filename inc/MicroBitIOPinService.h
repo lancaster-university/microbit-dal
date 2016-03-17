@@ -1,7 +1,8 @@
 #ifndef MICROBIT_IO_PIN_SERVICE_H
 #define MICROBIT_IO_PIN_SERVICE_H
 
-#include "MicroBit.h"
+#include "ble/BLE.h"
+#include "MicroBitIO.h"
 
 #define MICROBIT_IO_PIN_SERVICE_PINCOUNT       20
 #define MICROBIT_IO_PIN_SERVICE_DATA_SIZE      10
@@ -109,4 +110,3 @@ class MicroBitIOPinService : public MicroBitComponent
 
 
 #endif
-

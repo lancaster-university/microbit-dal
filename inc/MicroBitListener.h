@@ -4,6 +4,7 @@
 #include "mbed.h"
 #include "MicroBitEvent.h"
 #include "MemberFunctionCallback.h"
+#include "MicroBitConfig.h"
 
 // MicroBitListener flags...
 #define MESSAGE_BUS_LISTENER_PARAMETERISED          0x0001
@@ -98,5 +99,3 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, T* object, void 
 }
 
 #endif
-
-

@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "ble/BLE.h"
+#include "MicroBitEvent.h"
 // MicroBit ControlPoint OpCodes
 
 // Requests transfer to the Nordic DFU bootloader.

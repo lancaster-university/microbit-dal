@@ -4,6 +4,7 @@
 #include "mbed.h"
 #include "MicroBitComponent.h"
 #include "MicroBitCoordinateSystem.h"
+#include "MicroBitI2C.h"
 
 /**
  * Relevant pin assignments

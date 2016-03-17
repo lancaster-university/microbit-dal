@@ -1,7 +1,9 @@
 #ifndef MICROBIT_MAGNETOMETER_SERVICE_H
 #define MICROBIT_MAGNETOMETER_SERVICE_H
 
-#include "MicroBit.h"
+#include "ble/BLE.h"
+#include "MicroBitCompass.h"
+#include "MicroBitMessageBus.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitMagnetometerServiceUUID[];
@@ -61,4 +63,3 @@ class MicroBitMagnetometerService
 };
 
 #endif
-

@@ -1,4 +1,4 @@
-#include "MicroBit.h"
+#include "MicroBitRadio.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -122,4 +122,3 @@ void MicroBitRadioEvent::eventReceived(MicroBitEvent e)
 
     radio.send(&buf);
 }
-

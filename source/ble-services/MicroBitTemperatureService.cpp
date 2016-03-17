@@ -2,8 +2,6 @@
   * Class definition for the custom MicroBit Temperature Service.
   * Provides a BLE service to remotely read the state of the temperature, and configure its behaviour.
   */
-
-#include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitTemperatureService.h"
@@ -87,5 +85,3 @@ const uint8_t  MicroBitTemperatureServiceDataUUID[] = {
 const uint8_t  MicroBitTemperatureServicePeriodUUID[] = {
     0xe9,0x5d,0x1b,0x25,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
-
-

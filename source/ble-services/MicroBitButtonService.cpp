@@ -2,11 +2,10 @@
   * Class definition for the custom MicroBit Button Service.
   * Provides a BLE service to remotely read the state of each button, and configure its behaviour.
   */
-
-#include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitButtonService.h"
+#include "MicroBitButton.h"
 
 /**
   * Constructor.
@@ -113,4 +112,3 @@ const uint8_t  MicroBitButtonAServiceDataUUID[] = {
 const uint8_t  MicroBitButtonBServiceDataUUID[] = {
     0xe9,0x5d,0xda,0x91,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
-

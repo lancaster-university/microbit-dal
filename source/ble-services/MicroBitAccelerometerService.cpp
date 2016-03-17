@@ -2,8 +2,6 @@
   * Class definition for the custom MicroBit Accelerometer Service.
   * Provides a BLE service to remotely read the state of the accelerometer, and configure its behaviour.
   */
-
-#include "MicroBit.h"
 #include "ble/UUID.h"
 
 #include "MicroBitAccelerometerService.h"
@@ -92,5 +90,3 @@ const uint8_t  MicroBitAccelerometerServiceDataUUID[] = {
 const uint8_t  MicroBitAccelerometerServicePeriodUUID[] = {
     0xe9,0x5d,0xfb,0x24,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
-
-

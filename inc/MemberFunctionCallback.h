@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "MicroBitEvent.h"
+#include "MicroBitCompat.h"
 
 /**
   * Class definition for a MemberFunctionCallback.
@@ -73,5 +74,3 @@ void MemberFunctionCallback::methodCall(void *object, uint32_t *method, MicroBit
 }
 
 #endif
-
-

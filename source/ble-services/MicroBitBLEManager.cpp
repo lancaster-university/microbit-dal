@@ -1,4 +1,7 @@
-#include "MicroBit.h"
+#include "MicroBitBLEManager.h"
+#include "MicroBitStorage.h"
+#include "MicroBitFiber.h"
+#include "MicroBitPanic.h"
 
 
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
@@ -491,7 +494,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay& display, MicroBitButton& a
 			}
 		}
 
-		MicroBit::sleep(100);
+		fiber_sleep(100);
 		timeInPairingMode++;
 
 		if (timeInPairingMode >= MICROBIT_BLE_PAIRING_TIMEOUT * 30)

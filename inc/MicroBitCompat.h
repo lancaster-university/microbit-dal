@@ -5,8 +5,7 @@
 #ifndef MICROBIT_COMPAT_H
 #define MICROBIT_COMPAT_H
 
-#include "ErrorNo.h"
-#include "MicroBitDevice.h"
+#include "mbed.h"
 
 #define PI 3.14159265359
 
@@ -66,6 +65,6 @@ int string_reverse(char *s);
   * @param s A pointer to the buffer in which to store the resulting string.
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
-void itoa(int n, char *s);
+int itoa(int n, char *s);
 
 #endif

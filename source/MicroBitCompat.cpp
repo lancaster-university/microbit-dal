@@ -1,7 +1,7 @@
 /**
   * Compatibility / portability funcitons and constants for the MicroBit DAL.
   */
-#include "mbed.h"
+#include "MicroBitCompat.h"
 #include "ErrorNo.h"
 
 
@@ -68,4 +68,3 @@ int itoa(int n, char *s)
 
     return MICROBIT_OK;
 }
-

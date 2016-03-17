@@ -5,7 +5,12 @@
  * Also includes basic data caching and on demand activation.
  */
 
-#include "MicroBit.h"
+#include "MicroBitAccelerometer.h"
+#include "ErrorNo.h"
+#include "MicroBitConfig.h"
+#include "MicroBitEvent.h"
+#include "MicroBitCompat.h"
+#include "MicroBitFiber.h"
 
 /**
  * Configures the accelerometer for G range and sample rate defined
