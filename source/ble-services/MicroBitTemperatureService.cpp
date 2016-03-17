@@ -11,7 +11,7 @@
   * Create a representation of the TemperatureService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, MicroBitMessageBus &messageBus) :
+MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, EventModel &messageBus) :
         ble(_ble), thermometer(_thermometer)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.

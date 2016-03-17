@@ -186,7 +186,7 @@ void MicroBitBLEManager::advertise()
   * bleManager.init("zevug");
   * @endcode
   */
-void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, MicroBitMessageBus& messageBus, bool enableBonding)
+void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding)
 {
 	ManagedString BLEName("BBC micro:bit");
 	this->deviceName = deviceName;

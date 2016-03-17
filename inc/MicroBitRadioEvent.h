@@ -8,7 +8,7 @@
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
  *
- * This class provides the ability to extend the micro:bit's MessageBus to other micro:bits in the vicinity,
+ * This class provides the ability to extend the micro:bit's default EventModel to other micro:bits in the vicinity,
  * in a very similar way to the MicroBitEventService for BLE interfaces.
  * It is envisaged that this would provide the basis for children to experiment with building their own, simple,
  * custom asynchronous events and actions.
@@ -31,32 +31,32 @@ class MicroBitRadioEvent
     MicroBitRadioEvent(MicroBitRadio &r);
 
     /**
-     * Associates the given MessageBus events with the radio channel.
+     * Associates the given event with the radio channel.
      * Once registered, all events matching the given registration sent to this micro:bit's
-     * default MessageBus will be automaticlaly retrasmitted on the radio.
+     * default EventModel will be automaticlaly retrasmitted on the radio.
      *
      * @param id The ID of the events to register.
      * @param value the VALUE of the event to register. use MICROBIT_EVT_ANY for all event values matching the given id.
      *
-     * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if no defult MessageBus is available.
+     * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if no default EventModel is available.
      */
     int listen(uint16_t id, uint16_t value);
 
     /**
-     * Associates the given MessageBus events with the radio channel.
+     * Associates the given events with the radio channel.
      * Once registered, all events matching the given registration sent to the given
-     * MessageBus will be automaticlaly retrasmitted on the radio.
+     * EventModel will be automaticlaly retrasmitted on the radio.
      *
      * @param id The ID of the events to register.
      * @param value the VALUE of the event to register. use MICROBIT_EVT_ANY for all event values matching the given id.
-     * @param The message bus to listen for events on.
+     * @param eventBus The EventModel to listen for events on.
      *
      * @return MICROBIT_OK on success.
      */
     int listen(uint16_t id, uint16_t value, EventModel &eventBus);
 
     /**
-     * Disassociates the given MessageBus events with the radio channel.
+     * Disassociates the given events with the radio channel.
      *
      * @param id The ID of the events to deregister.
      * @param value the VALUE of the event to deregister. use MICROBIT_EVT_ANY for all event values matching the given ID.
@@ -66,11 +66,11 @@ class MicroBitRadioEvent
     int ignore(uint16_t id, uint16_t value);
 
     /**
-     * Disassociates the given MessageBus events with the radio channel.
+     * Disassociates the given events with the radio channel.
      *
      * @param id The ID of the events to deregister.
      * @param value the VALUE of the event to deregister. use MICROBIT_EVT_ANY for all event values matching the given ID.
-     * @param The message bus to deregister on.
+     * @param eventBus The EventModel to deregister on.
      *
      * @return MICROBIT_OK on success.
      */
@@ -78,7 +78,7 @@ class MicroBitRadioEvent
 
     /**
      * Protocol handler callback. This is called when the radio receives a packet marked as using the event protocol.
-     * This function process this packet, and fires the event contained inside onto the local MessageBus.
+     * This function process this packet, and fires the event contained inside onto the default EventModel.
      */
     void packetReceived();
 

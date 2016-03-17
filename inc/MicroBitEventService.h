@@ -3,7 +3,7 @@
 
 #include "ble/BLE.h"
 #include "MicroBitEvent.h"
-#include "MicroBitMessageBus.h"
+#include "EventModel.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitEventServiceUUID[];
@@ -32,7 +32,7 @@ class MicroBitEventService : public MicroBitComponent
       * Create a representation of the EventService
       * @param BLE The instance of a BLE device that we're running on.
       */
-    MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &_messageBus);
+    MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus);
 
     /**
      * Periodic callback from MicroBit scheduler.
@@ -60,7 +60,7 @@ class MicroBitEventService : public MicroBitComponent
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
-	MicroBitMessageBus	&messageBus;
+	EventModel	        &messageBus;
 
     // memory for our event characteristics.
     EventServiceEvent   clientEventBuffer;

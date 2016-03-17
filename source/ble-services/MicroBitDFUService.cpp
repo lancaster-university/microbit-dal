@@ -37,8 +37,8 @@ extern "C" {
 
 /**
  * Constructor.
- * Create a representation of a MicroBit device.
- * @param messageBus callback function to receive MicroBitMessageBus events.
+ * Initialise the Device Firmware Update service.
+ * @param BLE Areference to the BLE stack to advertise this service under.
  */
 MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     ble(_ble)

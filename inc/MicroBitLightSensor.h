@@ -3,7 +3,7 @@
 
 #include "mbed.h"
 #include "MicroBitComponent.h"
-#include "MicroBitMessageBus.h"
+#include "EventModel.h"
 #include "MicroBitMatrixMaps.h"
 
 #define MICROBIT_LIGHT_SENSOR_CHAN_NUM      3
@@ -100,7 +100,7 @@ class MicroBitLightSensor
 
     /**
       * The destructor restores the default Display Mode and tick speed, and also
-      * removes the listener from the MessageBus.
+      * removes the listener from the default EventModel.
       */
     ~MicroBitLightSensor();
 };

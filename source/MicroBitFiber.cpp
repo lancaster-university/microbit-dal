@@ -33,9 +33,9 @@ static uint8_t fiber_flags = 0;
 
 
 /*
- * Fibers may perform wait/notify semantics on events. If set, these operations will be permitted on this MicroBitMessageBus.
+ * Fibers may perform wait/notify semantics on events. If set, these operations will be permitted on this EventModel.
  */
-static MicroBitMessageBus *messageBus = NULL;
+static EventModel *messageBus = NULL;
 
 // Array of components which are iterated during idle thread execution, isIdleCallbackNeeded is polled during a systemTick.
 static MicroBitComponent* idleThreadComponents[MICROBIT_IDLE_COMPONENTS];
@@ -152,7 +152,7 @@ Fiber *getFiberContext()
   *
   * This function must be called once only from the main thread, and before any other Fiber operation.
   */
-void scheduler_init(MicroBitMessageBus *_messageBus)
+void scheduler_init(EventModel *_messageBus)
 {
 	// Store a reference to the messageBus provided.
 	// This parameter will be NULL if we're being run without a message bus.
@@ -222,11 +222,11 @@ void scheduler_tick()
 }
 
 /**
-  * Event callback. Called from the message bus whenever an event is raised.
+  * Event callback. Called whenever an event is raised on the registered EventModel.
   * Checks to determine if any fibers blocked on the wait queue need to be woken up
   * and made runnable due to the event.
   * @param evt The event to be processed.
-  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not associated with a MicroBitMessageBus.
+  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
   */
 void scheduler_event(MicroBitEvent evt)
 {
@@ -329,7 +329,7 @@ void fiber_sleep(unsigned long t)
   *
   * @param id The ID field of the event to listen for (e.g. MICROBIT_ID_BUTTON_A)
   * @param value The VALUE of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
-  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not associated with a MicroBitMessageBus.
+  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
   */
 int fiber_wait_for_event(uint16_t id, uint16_t value)
 {

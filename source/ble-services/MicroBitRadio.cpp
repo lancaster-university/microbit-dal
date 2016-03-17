@@ -352,9 +352,6 @@ int MicroBitRadio::setGroup(uint8_t group)
 /**
   * A background, low priority callback that is triggered whenever the processor is idle.
   * Here, we empty our queue of received packets, and pass them onto higher level protocol handlers.
-  *
-  * We provide optimised handling of well known, simple protocols and events on the MicroBitMessageBus
-  * to provide extensibility to other protocols that may be written in the future.
   */
 void MicroBitRadio::idleTick()
 {

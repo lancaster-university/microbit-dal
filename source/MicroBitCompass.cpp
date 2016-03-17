@@ -655,7 +655,7 @@ int MicroBitCompass::isIdleCallbackNeeded()
 }
 
 /**
-  * Destructor for MicroBitMessageBus, so that we deregister ourselves as an idleComponent
+  * Destructor for MicroBitCompass
   */
 MicroBitCompass::~MicroBitCompass()
 {

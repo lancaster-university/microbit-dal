@@ -7,7 +7,7 @@
   * @param id the ID of the new MultiButton object.
   * @param button1 the ID of the first button to integrate.
   * @param button2 the ID of the second button to integrate.
-  * @param name the physical pin on the processor that this butotn is connected to.
+  * @param messageBus the EventModel (e.g. uBit.messageBus) where button events will be sent and received.
   *
   * Example:
   * @code
@@ -23,7 +23,7 @@
   * MICROBIT_BUTTON_EVT_HOLD
   * @endcode
   */
-MicroBitMultiButton::MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, MicroBitMessageBus &messageBus)
+MicroBitMultiButton::MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, EventModel &messageBus)
 {
     this->id = id;
     this->button1 = button1;

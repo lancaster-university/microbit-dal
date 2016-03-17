@@ -13,7 +13,7 @@
   * Create a representation of the EventService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitEventService::MicroBitEventService(BLEDevice &_ble, MicroBitMessageBus &_messageBus) :
+MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus) :
         ble(_ble),messageBus(_messageBus)
 {
     GattCharacteristic  microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent),

@@ -3,7 +3,7 @@
 
 #include "ble/BLE.h"
 #include "MicroBitCompass.h"
-#include "MicroBitMessageBus.h"
+#include "EventModel.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitMagnetometerServiceUUID[];
@@ -25,7 +25,7 @@ class MicroBitMagnetometerService
       * Create a representation of the MagnetometerService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, MicroBitMessageBus &messageBus);
+    MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, EventModel &messageBus);
 
 
     private:

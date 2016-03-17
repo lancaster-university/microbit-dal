@@ -3,7 +3,7 @@
 
 #include "ble/BLE.h"
 #include "MicroBitAccelerometer.h"
-#include "MicroBitMessageBus.h"
+#include "EventModel.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitAccelerometerServiceUUID[];
@@ -24,7 +24,7 @@ class MicroBitAccelerometerService
       * Create a representation of the AccelerometerService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_acclerometer, MicroBitMessageBus &messageBus);
+    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_acclerometer, EventModel &messageBus);
 
 
     private:

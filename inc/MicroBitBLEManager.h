@@ -77,7 +77,7 @@ class MicroBitBLEManager : MicroBitComponent
       * uBit.init();
       * @endcode
       */
-    void init(ManagedString deviceName, ManagedString serialNumber, MicroBitMessageBus& messageBus, bool enableBonding);
+    void init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding);
 
     /**
      * Change the output power level of the transmitter to the given value.

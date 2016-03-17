@@ -11,7 +11,7 @@
   * Create a representation of the MagnetometerService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, MicroBitMessageBus &messageBus) :
+MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, EventModel &messageBus) :
         ble(_ble), compass(_compass)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.

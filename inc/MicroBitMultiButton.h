@@ -3,7 +3,7 @@
 
 #include "mbed.h"
 #include "MicroBitButton.h"
-#include "MicroBitMessageBus.h"
+#include "EventModel.h"
 
 #define MICROBIT_MULTI_BUTTON_STATE_1               0x01
 #define MICROBIT_MULTI_BUTTON_STATE_2               0x02
@@ -42,7 +42,7 @@ class MicroBitMultiButton : public MicroBitComponent
       * @param id the ID of the new MultiButton object.
       * @param button1 the ID of the first button to integrate.
       * @param button2 the ID of the second button to integrate.
-      * @param name the physical pin on the processor that this butotn is connected to.
+      * @param messageBus the EventModel (e.g. uBit.messageBus) where button events will be sent and received.
       *
       * Example:
       * @code
@@ -59,7 +59,7 @@ class MicroBitMultiButton : public MicroBitComponent
       * MICROBIT_BUTTON_EVT_HOLD
       * @endcode
       */
-    MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, MicroBitMessageBus &messageBus);
+    MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, EventModel &messageBus);
 
     /**
       * Tests if this MultiButton is currently pressed.

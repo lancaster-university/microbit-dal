@@ -11,7 +11,7 @@
   * Create a representation of the AccelerometerService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer, MicroBitMessageBus &messageBus) :
+MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer, EventModel &messageBus) :
         ble(_ble), accelerometer(_accelerometer)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.

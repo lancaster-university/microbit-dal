@@ -8,10 +8,6 @@
 #include "EventModel.h"
 
 // Enumeration of core components.
-#define MICROBIT_CONTROL_BUS_ID         0
-#define MICROBIT_ID_ANY					0
-#define MICROBIT_EVT_ANY				0
-
 /**
   * Class definition for the MicroBitMessageBus.
   *

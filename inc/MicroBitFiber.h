@@ -13,7 +13,7 @@
 #include "mbed.h"
 #include "MicroBitConfig.h"
 #include "MicroBitEvent.h"
-#include "MicroBitMessageBus.h"
+#include "EventModel.h"
 
 // TODO: Consider a split mode scheduler, that monitors used stack size, and maintains a dedicated, persistent
 // stack for any long lived fibers with large stack
@@ -78,7 +78,7 @@ extern Fiber *currentFiber;
   *
   * This function must be called once only from the main thread, and before any other Fiber operation.
   */
-void scheduler_init(MicroBitMessageBus *_messageBus);
+void scheduler_init(EventModel *_messageBus);
 
 /**
   * Determines if the fiber scheduler is operational.
@@ -165,7 +165,7 @@ void scheduler_tick();
   *
   * @param id The ID field of the event to listen for (e.g. MICROBIT_ID_BUTTON_A)
   * @param value The VALUE of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
-  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not associated with a MicroBitMessageBus.
+  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
   */
 int fiber_wait_for_event(uint16_t id, uint16_t value);
 

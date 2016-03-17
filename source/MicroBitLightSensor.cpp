@@ -143,7 +143,7 @@ int MicroBitLightSensor::read()
 
 /**
   * The destructor restores the default Display Mode and tick speed, and also
-  * removes the listener from the MessageBus.
+  * removes the listener from the default EventModel.
   */
 MicroBitLightSensor::~MicroBitLightSensor()
 {

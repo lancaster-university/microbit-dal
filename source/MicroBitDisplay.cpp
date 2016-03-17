@@ -282,8 +282,8 @@ MicroBitDisplay::animationUpdate()
 }
 
 /**
-  * Broadcasts an event onto the shared MessageBus
-  * @param eventCode The ID of the event that has occurred.
+  * Broadcasts an event onto the defult EventModel indicating that the
+  * current animation has completed.
   */
 void MicroBitDisplay::sendAnimationCompleteEvent()
 {

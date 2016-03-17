@@ -4,13 +4,12 @@
 #include "mbed.h"
 #include "ble/BLE.h"
 #include "MicroBitEvent.h"
+
 // MicroBit ControlPoint OpCodes
-
 // Requests transfer to the Nordic DFU bootloader.
-// This will only occur if
 #define MICROBIT_DFU_OPCODE_START_DFU       1
-#define MICROBIT_DFU_OPCODE_START_PAIR      2
 
+// visual ID code constants
 #define MICROBIT_DFU_HISTOGRAM_WIDTH        5
 #define MICROBIT_DFU_HISTOGRAM_HEIGHT       5
 
@@ -43,8 +42,8 @@ class MicroBitDFUService
 
     /**
       * Constructor.
-      * Create a representation of a MicroBit device.
-      * @param messageBus callback function to receive MicroBitMessageBus events.
+      * Initialise the Device Firmware Update service.
+      * @param BLE Areference to the BLE stack to advertise this service under.
       */
     MicroBitDFUService(BLEDevice &BLE);
 

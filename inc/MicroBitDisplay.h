@@ -10,7 +10,7 @@
 #include "MicroBitLightSensor.h"
 
 /**
-  * MessageBus Event Codes
+  * Event codes raised by MicroBitDisplay
   */
 #define MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE         1
 #define MICROBIT_DISPLAY_EVT_FREE                       2
@@ -193,9 +193,9 @@ class MicroBitDisplay : public MicroBitComponent
     void updateAnimateImage();
 
     /**
-      * Broadcasts an event onto the shared MessageBus
-      * @param eventCode The ID of the event that has occurred.
-      */
+     * Broadcasts an event onto the defult EventModel indicating that the
+     * current animation has completed.
+     */
     void sendAnimationCompleteEvent();
 
     /**

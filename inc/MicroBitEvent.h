@@ -3,6 +3,10 @@
 
 #include "mbed.h"
 
+// Wildcard event codes
+#define MICROBIT_ID_ANY         0
+#define MICROBIT_EVT_ANY        0
+
 enum MicroBitEventLaunchMode
 {
     CREATE_ONLY,
@@ -33,7 +37,7 @@ class MicroBitEvent
       * @param mode optional definition of how the event should be processed after construction (if at all):
       *
       * CREATE_ONLY: MicroBitEvent is initialised, and no further processing takes place.
-      * CREATE_AND_QUEUE: MicroBitEvent is initialised, and queued on the MicroBitMessageBus.
+      * CREATE_AND_QUEUE: MicroBitEvent is initialised, and queued on the default EventModel (if one has been registered).
       * CREATE_AND_FIRE: MicroBitEvent is initialised, and its event handlers are immediately fired (not suitable for use in interrupts!).
       *
       * Example: Create and launch an event using the default configuration

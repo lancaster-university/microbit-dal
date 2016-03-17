@@ -2,7 +2,7 @@
 #define MICROBIT_BUTTON_SERVICE_H
 
 #include "ble/BLE.h"
-#include "MicroBitMessageBus.h"
+#include "EventModel.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitButtonServiceUUID[];
@@ -23,7 +23,7 @@ class MicroBitButtonService
       * Create a representation of the ButtonService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitButtonService(BLEDevice &_ble, MicroBitMessageBus &messageBus);
+    MicroBitButtonService(BLEDevice &_ble, EventModel &messageBus);
 
 
     private:

@@ -3,7 +3,7 @@
 
 #include "ble/BLE.h"
 #include "MicroBitThermometer.h"
-#include "MicroBitMessageBus.h"
+#include "EventModel.h"
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitTemperatureServiceUUID[];
@@ -24,7 +24,7 @@ class MicroBitTemperatureService
       * Create a representation of the TempertureService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, MicroBitMessageBus &messageBus);
+    MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, EventModel &messageBus);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.

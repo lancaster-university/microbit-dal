@@ -12,7 +12,7 @@
   * Create a representation of the ButtonService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble, MicroBitMessageBus &messageBus) :
+MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble, EventModel &messageBus) :
         ble(_ble)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
