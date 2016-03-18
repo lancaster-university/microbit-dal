@@ -155,6 +155,10 @@ Fiber *getFiberContext()
   */
 void scheduler_init(EventModel *_messageBus)
 {
+    // If we're already initialised, then nothing to do.
+    if (fiber_scheduler_running())
+        return;
+
 	// Store a reference to the messageBus provided.
 	// This parameter will be NULL if we're being run without a message bus.
 	messageBus = _messageBus;
@@ -236,7 +240,7 @@ void scheduler_event(MicroBitEvent evt)
     int notifyOneComplete = 0;
 
 	// This should never happen.
-	// It is however, safe to simply ignore any events provided, ans if no messageBus if recorded,
+	// It is however, safe to simply ignore any events provided, as if no messageBus if recorded,
 	// no fibers are permitted to block on events.
 	if (messageBus == NULL)
 		return;
@@ -292,6 +296,12 @@ void scheduler_event(MicroBitEvent evt)
 void fiber_sleep(unsigned long t)
 {
     Fiber *f = currentFiber;
+
+    if (!fiber_scheduler_running())
+    {
+        wait_ms(t);
+        return;
+    }
 
     // Sleep is a blocking call, so if we're in a fork on block context,
     // it's time to spawn a new fiber...
@@ -391,6 +401,9 @@ int invoke(void (*entry_fn)(void))
     if (entry_fn == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
+    if (!fiber_scheduler_running())
+		return MICROBIT_NOT_SUPPORTED;
+
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
     {
         // If we attempt a fork on block whilst already in  fork n block context,
@@ -448,6 +461,9 @@ int invoke(void (*entry_fn)(void *), void *param)
     // Validate our parameters.
     if (entry_fn == NULL)
         return MICROBIT_INVALID_PARAMETER;
+
+    if (!fiber_scheduler_running())
+		return MICROBIT_NOT_SUPPORTED;
 
     if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD))
     {
@@ -545,10 +561,13 @@ Fiber *__create_fiber(uint32_t ep, uint32_t cp, uint32_t pm, int parameterised)
   *
   * @param entry_fn The function the new Fiber will begin execution in.
   * @param completion_fn The function called when the thread completes execution of entry_fn.
-  * @return The new Fiber.
+  * @return The new Fiber, or NULL if the operation could not be completed.
   */
 Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void))
 {
+    if (!fiber_scheduler_running())
+		return NULL;
+
     return __create_fiber((uint32_t) entry_fn, (uint32_t)completion_fn, 0, 0);
 }
 
@@ -559,10 +578,13 @@ Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void))
   * @param entry_fn The function the new Fiber will begin execution in.
   * @param param an untyped parameter passed into the entry_fn anf completion_fn.
   * @param completion_fn The function called when the thread completes execution of entry_fn.
-  * @return The new Fiber.
+  * @return The new Fiber, or NULL if the operation could not be completed.
   */
 Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)(void *))
 {
+    if (!fiber_scheduler_running())
+		return NULL;
+
     return __create_fiber((uint32_t) entry_fn, (uint32_t)completion_fn, (uint32_t) param, 1);
 }
 
@@ -572,6 +594,9 @@ Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)
   */
 void release_fiber(void *)
 {
+    if (!fiber_scheduler_running())
+		return;
+
     release_fiber();
 }
 
@@ -581,6 +606,9 @@ void release_fiber(void *)
   */
 void release_fiber(void)
 {
+    if (!fiber_scheduler_running())
+		return;
+
     // Remove ourselves form the runqueue.
     dequeue_fiber(currentFiber);
 
@@ -645,6 +673,9 @@ int scheduler_runqueue_empty()
   */
 void schedule()
 {
+    if (!fiber_scheduler_running())
+		return;
+
     // First, take a reference to the currently running fiber;
     Fiber *oldFiber = currentFiber;
 

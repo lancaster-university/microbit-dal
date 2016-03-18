@@ -30,22 +30,44 @@
 #include "MicroBitConfig.h"
 #include <new>
 
-// The number of heap segments created.
-#define MICROBIT_HEAP_COUNT             2
+// The maximum number of heap segments that can be created.
+#define MICROBIT_MAXIMUM_HEAPS          2
 
 // Flag to indicate that a given block is FREE/USED
 #define MICROBIT_HEAP_BLOCK_FREE		0x80000000
 
 /**
-  * Initialise the microbit heap according to the parameters defined in MicroBitConfig.h
-  * After this is called, any future calls to malloc, new, free or delete will use the new heap.
+  * Create and initialise a given memory region as for heap storage.
+  * After this is called, any future calls to malloc, new, free or delete may use the new heap.
+  * The heap allocaor will give attempt to allocate memory from heaps in the order that they are created.
+  * i.e. memory will be allocated from first heap created until it is full, then the second heap, and so on.
+  *
   * n.b. only code that #includes MicroBitHeapAllocator.h will use this heap. This includes all micro:bit runtime
   * code, and user code targetting the runtime. External code can choose to include this file, or
-  * simply use the standard mbed heap.
+  * simply use the standard heap.
   *
-  * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocted.
+  * @param start The start address of memory to use as a heap region.
+  * @param end The end address of memory to use as a heap region.
+  *
+  * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocated.
   */
-int microbit_heap_init();
+int microbit_create_heap(uint32_t start, uint32_t end);
+
+/**
+  * Create and initialise a heap region within the current underlying heap region. 
+  *
+  * If the requested amount is not available, then the amount requested will be reduced 
+  * automatically to fir the space available. 
+  *
+  * n.b. only code that #includes MicroBitHeapAllocator.h will use this heap. This includes all micro:bit runtime
+  * code, and user code targetting the runtime. External code can choose to include this file, or
+  * simply use the standard heap.
+  *
+  * @param ratio The proportion of the underlying heap to allocate. 
+  *
+  * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocated.
+  */
+int microbit_create_nested_heap(float ratio);
 
 /**
   * Attempt to allocate a given amount of memory from any of our configured heap areas.

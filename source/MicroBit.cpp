@@ -128,8 +128,10 @@ MicroBit::MicroBit() :
   */
 void MicroBit::init()
 {
-    // Bring up the heap allocator, and reclaim as much memory from SoftDevice as possible.
-    microbit_heap_init();
+#if CONFIG_ENABLED(MICROBIT_HEAP_ALLOCATOR)
+    // Bring up a nested heap allocator.
+    microbit_create_nested_heap(MICROBIT_NESTED_HEAP_SIZE);
+#endif
 
     // Bring up the system timer.
     system_timer_init(SYSTEM_TICK_PERIOD_MS);
@@ -150,7 +152,6 @@ void MicroBit::init()
 
     delete b;
 
-
     // Seed our random number generator
     seedRandom();
 
@@ -161,6 +162,7 @@ void MicroBit::init()
 #if CONFIG_ENABLED(MICROBIT_BLE_PAIRING_MODE)
     // Test if we need to enter BLE pairing mode...
     int i=0;
+    sleep(100);
     while (buttonA.isPressed() && buttonB.isPressed() && i<10)
     {
         sleep(100);
@@ -168,6 +170,9 @@ void MicroBit::init()
 
         if (i == 10)
         {
+#if CONFIG_ENABLED(MICROBIT_HEAP_ALLOCATOR) && CONFIG_ENABLED(MICROBIT_HEAP_REUSE_SD)
+            microbit_create_heap(MICROBIT_SD_GATT_TABLE_START + MICROBIT_SD_GATT_TABLE_SIZE, MICROBIT_SD_LIMIT);
+#endif
             // Start the BLE stack, if it isn't already running.
             if (!ble)
             {
@@ -179,6 +184,15 @@ void MicroBit::init()
             bleManager.pairingMode(display, buttonA);
         }
     }
+#endif
+
+    // Attempt to bring up a second heap region, using unused memory normally reserved for Soft Device.
+#if CONFIG_ENABLED(MICROBIT_HEAP_ALLOCATOR) && CONFIG_ENABLED(MICROBIT_HEAP_REUSE_SD)
+#if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)
+    microbit_create_heap(MICROBIT_SD_GATT_TABLE_START + MICROBIT_SD_GATT_TABLE_SIZE, MICROBIT_SD_LIMIT);
+#else
+    microbit_create_heap(MICROBIT_SRAM_BASE, MICROBIT_SD_LIMIT);
+#endif
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_ENABLED)

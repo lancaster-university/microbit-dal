@@ -73,30 +73,30 @@ MicroBitConfigurationBlock *MicroBitStorage::getConfigurationBlock()
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
 
-    uBit.serial.printf("RETREIVE:\r\n");
+    SERIAL_DEBUG.printf("RETREIVE:\r\n");
 
     if(block->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
     {
-        uBit.serial.printf("magic: %.2x\r\n", block->magic);
+        SERIAL_DEBUG.printf("magic: %.2x\r\n", block->magic);
 
         for(int attrIterator = 0; attrIterator < MICROBIT_BLE_MAXIMUM_BONDS; attrIterator++)
         {
             if(block->sysAttrs[attrIterator].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
             {
-                uBit.serial.printf("systemAttrs[%d]: ", attrIterator);
+                SERIAL_DEBUG.printf("systemAttrs[%d]: ", attrIterator);
 
                 for(int i = 0; i < 8; i++)
                 {
-                    uBit.serial.printf("%.2x\r\n", block->sysAttrs[attrIterator].sys_attr[i]);
+                    SERIAL_DEBUG.printf("%.2x\r\n", block->sysAttrs[attrIterator].sys_attr[i]);
                 }
 
-                uBit.serial.printf("\r\n");
+                SERIAL_DEBUG.printf("\r\n");
             }
         }
 
-        uBit.serial.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
+        SERIAL_DEBUG.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
 
-        uBit.serial.printf("temperature: %d\r\n", block->thermometerCalibration);
+        SERIAL_DEBUG.printf("temperature: %d\r\n", block->thermometerCalibration);
     }
 #endif
 
@@ -136,30 +136,30 @@ int MicroBitStorage::setConfigurationBlock(MicroBitConfigurationBlock *block)
 
     #if CONFIG_ENABLED(MICROBIT_DBG)
 
-        uBit.serial.printf("STORE:\r\n");
+        SERIAL_DEBUG.printf("STORE:\r\n");
 
         if(block->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
         {
-            uBit.serial.printf("magic: %.2x\r\n", block->magic);
+            SERIAL_DEBUG.printf("magic: %.2x\r\n", block->magic);
 
             for(int attrIterator = 0; attrIterator < MICROBIT_BLE_MAXIMUM_BONDS; attrIterator++)
             {
                 if(block->sysAttrs[attrIterator].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
                 {
-                    uBit.serial.printf("systemAttrs[%d]: ", attrIterator);
+                    SERIAL_DEBUG.printf("systemAttrs[%d]: ", attrIterator);
 
                     for(int i = 0; i < 8; i++)
                     {
-                        uBit.serial.printf("%.2x\r\n", block->sysAttrs[attrIterator].sys_attr[i]);
+                        SERIAL_DEBUG.printf("%.2x\r\n", block->sysAttrs[attrIterator].sys_attr[i]);
                     }
 
-                    uBit.serial.printf("\r\n");
+                    SERIAL_DEBUG.printf("\r\n");
                 }
             }
 
-            uBit.serial.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
+            SERIAL_DEBUG.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
 
-            uBit.serial.printf("temperature: %d\r\n", block->thermometerCalibration);
+            SERIAL_DEBUG.printf("temperature: %d\r\n", block->thermometerCalibration);
         }
     #endif
 

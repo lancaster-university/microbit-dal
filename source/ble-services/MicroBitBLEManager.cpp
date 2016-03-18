@@ -200,7 +200,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     // Start the BLE stack.
 #if CONFIG_ENABLED(MICROBIT_HEAP_REUSE_SD)
-    btle_set_gatt_table_size(MICROBIT_SD_GATT_TABLE_SIZE - (MICROBIT_HEAP_SD_LIMIT - MICROBIT_HEAP_BASE_BLE_ENABLED));
+    btle_set_gatt_table_size(MICROBIT_SD_GATT_TABLE_SIZE);
 #endif
 
     ble = new BLEDevice();

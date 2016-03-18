@@ -113,7 +113,7 @@ void launch_new_fiber_param(void (*ep)(void *), void (*cp)(void *), void *pm)
   *
   * @param entry_fn The function the new Fiber will begin execution in.
   * @param completion_fn The function called when the thread completes execution of entry_fn.
-  * @return The new Fiber.
+  * @return The new Fiber, or NULL if the operation could not be completed.
   */
 Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void) = release_fiber);
 
@@ -124,7 +124,7 @@ Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void) = releas
   * @param entry_fn The function the new Fiber will begin execution in.
   * @param param an untyped parameter passed into the entry_fn anf completion_fn.
   * @param completion_fn The function called when the thread completes execution of entry_fn.
-  * @return The new Fiber.
+  * @return The new Fiber, or NULL if the operation could not be completed.
   */
 Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)(void *) = release_fiber);
 
