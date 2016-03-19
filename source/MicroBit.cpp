@@ -137,9 +137,6 @@ void MicroBit::init()
     microbit_create_nested_heap(MICROBIT_NESTED_HEAP_SIZE);
 #endif
 
-    // Bring up the system timer.
-    system_timer_init(SYSTEM_TICK_PERIOD_MS);
-
     // Bring up fiber scheduler.
     scheduler_init(&messageBus);
 

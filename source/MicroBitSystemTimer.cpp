@@ -24,7 +24,7 @@ static unsigned int tick_period = 0;
 static MicroBitComponent* systemTickComponents[MICROBIT_SYSTEM_COMPONENTS];
 
 // Periodic callback interrupt
-static Ticker timer;
+static Ticker *timer = NULL;
 
 
 /**
@@ -36,6 +36,9 @@ static Ticker timer;
   */
 int system_timer_init(int period)
 {
+    if (timer == NULL)
+        timer = new Ticker();
+
     return system_timer_set_period(period);
 }
 
@@ -52,11 +55,11 @@ int system_timer_set_period(int period)
 
     // If a timer is already running, ensure it is disabled before reconfiguring.
     if (tick_period)
-        timer.detach();
+        timer->detach();
 
 	// register a period callback to drive the scheduler and any other registered components.
     tick_period = period;
-    timer.attach_us(system_timer_tick, period * 1000);
+    timer->attach_us(system_timer_tick, period * 1000);
 
     return MICROBIT_OK;
 }
@@ -107,7 +110,7 @@ int system_timer_add_component(MicroBitComponent *component)
     int i = 0;
 
     // If we haven't been initialized, bring up the timer with the default period.
-    if (tick_period == 0)
+    if (timer == NULL)
         system_timer_init(SYSTEM_TICK_PERIOD_MS);
 
     while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)
