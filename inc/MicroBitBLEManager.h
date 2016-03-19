@@ -34,6 +34,7 @@
 #include "MicroBitTemperatureService.h"
 #include "ExternalEvents.h"
 #include "MicroBitButton.h"
+#include "MicroBitStorage.h"
 
 #define MICROBIT_BLE_PAIR_REQUEST               0x01
 #define MICROBIT_BLE_PAIR_COMPLETE              0x02
@@ -46,6 +47,16 @@
 #define MICROBIT_BLE_ENABLE_BONDING 	        true
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
+struct BLESysAttribute
+{
+    uint8_t         sys_attr[8] = { 0 };
+};
+
+struct BLESysAttributeStore
+{
+    BLESysAttribute sys_attrs[MICROBIT_BLE_MAXIMUM_BONDS];
+};
+
 /**
   * Class definition for the MicroBitBLEManager.
   *
@@ -56,6 +67,21 @@ class MicroBitBLEManager : MicroBitComponent
 
 	// The mbed abstraction of the BlueTooth Low Energy (BLE) hardware
     BLEDevice                       *ble;
+
+    //an instance of MicroBitStorage used to store sysAttrs from softdevice
+    MicroBitStorage* storage;
+
+    /**
+     * Constructor.
+     *
+     * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
+     * Note that the BLE stack *cannot*  be brought up in a static context.
+     * (the software simply hangs or corrupts itself).
+     * Hence, we bring it up in an explicit init() method, rather than in the constructor.
+     *
+     * @param _storage an instance of MicroBitStorage used to persist sys attribute information.
+     */
+    MicroBitBLEManager(MicroBitStorage& _storage);
 
     /**
      * Constructor.

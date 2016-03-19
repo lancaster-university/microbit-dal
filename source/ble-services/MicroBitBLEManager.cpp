@@ -51,25 +51,32 @@ static Gap::Handle_t pairingHandle = 0;                         // The connectio
 
 static void storeSystemAttributes(Gap::Handle_t handle)
 {
-    BLESysAttribute attrib;
-    uint16_t len = sizeof(attrib.sys_attr);
-
-    sd_ble_gatts_sys_attr_get(handle, attrib.sys_attr, &len, BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
-
-    if (deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    if(manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
-        MicroBitStorage s = MicroBitStorage();
-        MicroBitConfigurationBlock *b = s.getConfigurationBlock();
+        ManagedString key("bleSysAttrs");
 
-        if(b->sysAttrs[deviceID].magic != MICROBIT_STORAGE_CONFIG_MAGIC || memcmp(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(attrib.sys_attr)) != 0)
+        KeyValuePair* bleSysAttrs = manager->storage->get(key);
+
+        BLESysAttribute attrib;
+        BLESysAttributeStore attribStore;
+
+        uint16_t len = sizeof(attrib.sys_attr);
+
+        sd_ble_gatts_sys_attr_get(handle, attrib.sys_attr, &len, BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
+
+        //copy our stored sysAttrs
+        if(bleSysAttrs != NULL)
         {
-            b->magic = MICROBIT_STORAGE_CONFIG_MAGIC;
-            b->sysAttrs[deviceID].magic = MICROBIT_STORAGE_CONFIG_MAGIC;
-            memcpy(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(attrib.sys_attr));
-            s.setConfigurationBlock(b);
+            memcpy(&attribStore, bleSysAttrs->value, sizeof(BLESysAttributeStore));
+            delete bleSysAttrs;
         }
 
-        delete b;
+        //check if we need to update
+        if(memcmp(attribStore.sys_attrs[deviceID].sys_attr, attrib.sys_attr, len) != 0)
+        {
+            attribStore.sys_attrs[deviceID] = attrib;
+            manager->storage->put(key, (uint8_t *)&attribStore);
+        }
     }
 }
 
@@ -99,23 +106,30 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
     if (ret == 0)
         deviceID = dm_handle.device_id;
 
-    if (deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    if(manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
-        // Ensure that there's no stale, cached information in the client... invalidate all characteristics.
-        MicroBitStorage s = MicroBitStorage();
-        MicroBitConfigurationBlock *b = s.getConfigurationBlock();
+        ManagedString key("bleSysAttrs");
 
-        if(b->sysAttrs[deviceID].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+        KeyValuePair* bleSysAttrs = manager->storage->get(key);
+
+        BLESysAttributeStore attribStore;
+        BLESysAttribute attrib;
+
+        if(bleSysAttrs != NULL)
         {
-            ret = sd_ble_gatts_sys_attr_set(params->connHandle, b->sysAttrs[deviceID].sys_attr, sizeof(b->sysAttrs[deviceID].sys_attr), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
+            //restore our sysAttrStore
+            memcpy(&attribStore, bleSysAttrs->value, sizeof(BLESysAttributeStore));
+            delete bleSysAttrs;
+
+            attrib = attribStore.sys_attrs[deviceID];
+
+            ret = sd_ble_gatts_sys_attr_set(params->connHandle, attrib.sys_attr, sizeof(attrib.sys_attr), BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
 
             complete = 1;
 
             if(ret == 0)
                 ret = sd_ble_gatts_service_changed(params->connHandle, 0x000c, 0xffff);
         }
-
-        delete b;
     }
 
     if (!complete)
@@ -151,6 +165,24 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
 }
 
 /**
+ * Constructor.
+ *
+ * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
+ * Note that the BLE stack *cannot*  be brought up in a static context.
+ * (the software simply hangs or corrupts itself).
+ * Hence, we bring it up in an explicit init() method, rather than in the constructor.
+ *
+ * @param _storage an instance of MicroBitStorage used to persist sys attribute information.
+ */
+MicroBitBLEManager::MicroBitBLEManager(MicroBitStorage& _storage) :
+    storage(&_storage)
+{
+    manager = this;
+	this->ble = NULL;
+	this->pairingStatus = 0;
+}
+
+/**
   * Constructor.
   *
   * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
@@ -158,9 +190,10 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
   * (the software simply hangs or corrupts itself).
   * Hence, we bring it up in an explicit init() method, rather than in the constructor.
   */
-MicroBitBLEManager::MicroBitBLEManager()
+MicroBitBLEManager::MicroBitBLEManager() :
+    storage(NULL)
 {
-	manager = this;
+    manager = this;
 	this->ble = NULL;
 	this->pairingStatus = 0;
 }

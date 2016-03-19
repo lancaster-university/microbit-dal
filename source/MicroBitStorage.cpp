@@ -5,6 +5,7 @@
 
 #include "MicroBitConfig.h"
 #include "MicroBitStorage.h"
+#include "MicroBitCompat.h"
 
 /*
  * Default constructor
@@ -53,54 +54,29 @@ void MicroBitStorage::flashPageErase(uint32_t * page_address)
     while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
 }
 
-
-/*
- * Reads the micro:bit's configuration data block from FLASH into a RAM buffer.
- * @return a pointer to the structure containing the stored data.
- * NOTE: it is the callers responsibility to free the buffer.
+/**
+ * Function for copying words from one location to another.
+ *
+ * @param from the address to copy data from.
+ * @param to the address to copy the data to.
+ * @param sizeInWords the number of words to copy
  */
-
-MicroBitConfigurationBlock *MicroBitStorage::getConfigurationBlock()
+void MicroBitStorage::flashCopy(uint32_t* from, uint32_t* to, int sizeInWords)
 {
-    uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
-    uint32_t pg_num  = NRF_FICR->CODESIZE - 19;          // Use the page just below the BLE Bond Data
+    // Turn on flash write enable and wait until the NVMC is ready:
+    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos);
 
-    MicroBitConfigurationBlock *block = new MicroBitConfigurationBlock();
-    memcpy(block, (uint32_t *)(pg_size * pg_num), sizeof(MicroBitConfigurationBlock));
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
 
-    if (block->magic != MICROBIT_STORAGE_CONFIG_MAGIC)
-        memclr(block, sizeof(MicroBitConfigurationBlock));
-
-#if CONFIG_ENABLED(MICROBIT_DBG)
-
-    SERIAL_DEBUG.printf("RETREIVE:\r\n");
-
-    if(block->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
+    for(int i = 0; i < sizeInWords; i++)
     {
-        SERIAL_DEBUG.printf("magic: %.2x\r\n", block->magic);
-
-        for(int attrIterator = 0; attrIterator < MICROBIT_BLE_MAXIMUM_BONDS; attrIterator++)
-        {
-            if(block->sysAttrs[attrIterator].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
-            {
-                SERIAL_DEBUG.printf("systemAttrs[%d]: ", attrIterator);
-
-                for(int i = 0; i < 8; i++)
-                {
-                    SERIAL_DEBUG.printf("%.2x\r\n", block->sysAttrs[attrIterator].sys_attr[i]);
-                }
-
-                SERIAL_DEBUG.printf("\r\n");
-            }
-        }
-
-        SERIAL_DEBUG.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
-
-        SERIAL_DEBUG.printf("temperature: %d\r\n", block->thermometerCalibration);
+        *(to + i) = *(from + i);
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
     }
-#endif
 
-    return block;
+    // Turn off flash write enable and wait until the NVMC is ready:
+    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
 }
 
 /**
@@ -126,64 +102,343 @@ void MicroBitStorage::flashWordWrite(uint32_t * address, uint32_t value)
     while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
 }
 
-
-/*
- * Writes the micro:bit's configuration data block from FLASH into a RAM buffer.
- * @return a structure containing the stored data.
+/**
+ * Function for populating the scratch page with a KeyValueStore.
+ *
+ * @param store the KeyValueStore struct to write to the scratch page.
  */
-int MicroBitStorage::setConfigurationBlock(MicroBitConfigurationBlock *block)
+void MicroBitStorage::scratchKeyValueStore(KeyValueStore store)
 {
+    //calculate our various offsets
+    uint32_t *s = (uint32_t *) &store;
+    uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
 
-    #if CONFIG_ENABLED(MICROBIT_DBG)
+    uint32_t *scratchPointer = (uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET));
 
-        SERIAL_DEBUG.printf("STORE:\r\n");
+    //KeyValueStore is word aligned.
+    int wordsToWrite = sizeof(KeyValueStore) / 4;
 
-        if(block->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
-        {
-            SERIAL_DEBUG.printf("magic: %.2x\r\n", block->magic);
-
-            for(int attrIterator = 0; attrIterator < MICROBIT_BLE_MAXIMUM_BONDS; attrIterator++)
-            {
-                if(block->sysAttrs[attrIterator].magic == MICROBIT_STORAGE_CONFIG_MAGIC)
-                {
-                    SERIAL_DEBUG.printf("systemAttrs[%d]: ", attrIterator);
-
-                    for(int i = 0; i < 8; i++)
-                    {
-                        SERIAL_DEBUG.printf("%.2x\r\n", block->sysAttrs[attrIterator].sys_attr[i]);
-                    }
-
-                    SERIAL_DEBUG.printf("\r\n");
-                }
-            }
-
-            SERIAL_DEBUG.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
-
-            SERIAL_DEBUG.printf("temperature: %d\r\n", block->thermometerCalibration);
-        }
-    #endif
-
-
-    uint32_t * addr;
-    uint32_t   pg_size;
-    uint32_t   pg_num;
-    int   wordsToWrite = sizeof(MicroBitConfigurationBlock) / 4 + 1;
-
-    pg_size = NRF_FICR->CODEPAGESIZE;
-    pg_num  = NRF_FICR->CODESIZE - 19;          // Use the page just below the BLE Bond Data
-
-    addr = (uint32_t *)(pg_size * pg_num);
-
-    flashPageErase(addr);
-
-    uint32_t *b = (uint32_t *) block;
-
+    //write the given KeyValueStore
     for (int i = 0; i < wordsToWrite; i++)
     {
-        flashWordWrite(addr, *b);
-        addr++;
-        b++;
+        flashWordWrite(scratchPointer, *s);
+        scratchPointer++;
+        s++;
+    }
+}
+
+/**
+ * Function for populating the scratch page with a KeyValuePair.
+ *
+ * @param pair the KeyValuePair struct to write to the scratch page.
+ * @param flashPointer the pointer in flash where this KeyValuePair resides. This pointer
+ * is used to determine the offset into the scratch page, where the KeyValuePair should
+ * be written.
+ */
+void MicroBitStorage::scratchKeyValuePair(KeyValuePair pair, uint32_t* flashPointer)
+{
+    //we can only write using words
+    uint32_t *p = (uint32_t *) &pair;
+
+    //calculate our various offsets
+    uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
+    uint32_t pg_num  = NRF_FICR->CODESIZE - MICROBIT_STORAGE_STORE_PAGE_OFFSET;
+
+    uint32_t *scratchPointer = (uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET));
+    uint32_t *flashBlockPointer = (uint32_t *)(pg_size * pg_num);
+
+    uint32_t flashPointerOffset = flashPointer - flashBlockPointer;
+
+    scratchPointer += flashPointerOffset;
+
+    //KeyValuePair is word aligned...
+    int wordsToWrite = sizeof(KeyValuePair) / 4;
+
+    //write
+    for (int i = 0; i < wordsToWrite; i++)
+    {
+        flashWordWrite(scratchPointer, *p);
+        scratchPointer++;
+        p++;
+    }
+}
+
+/**
+ * Places a given key, and it's corresponding value into flash at the earliest
+ * available point.
+ *
+ * @param key the unique name that should be used as an identifier for the given data.
+ * The key is presumed to be null terminated.
+ * @param data a pointer to the beginning of the data to be persisted.
+ *
+ * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if our storage page is full
+ */
+int MicroBitStorage::put(char *key, uint8_t *data)
+{
+    KeyValuePair pair = KeyValuePair();
+
+    memcpy(pair.key, key, min(sizeof(pair.key), strlen(key)));
+    memcpy(pair.value, data, sizeof(pair.value));
+
+    //calculate our various offsets.
+    uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
+    uint32_t *flashPointer = (uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_STORE_PAGE_OFFSET));
+    uint32_t *flashBlockPointer = flashPointer;
+    uint32_t *scratchPointer = (uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET));
+
+    uint32_t kvStoreSize = sizeof(KeyValueStore) / 4;
+    uint32_t kvPairSize = sizeof(KeyValuePair) / 4;
+
+    int storeSize = size();
+
+    //our KeyValueStore struct is always at 0
+    flashPointer += kvStoreSize;
+
+    KeyValuePair storedPair = KeyValuePair();
+
+    int found = 0;
+
+    //erase our scratch page
+    flashPageErase(scratchPointer);
+
+    //iterate through key value pairs in flash, writing them to the scratch page.
+    for(int i = 0; i < storeSize; i++)
+    {
+        memcpy(&storedPair, flashPointer, sizeof(KeyValuePair));
+
+        //check if the keys match...
+        if(strcmp((char *)storedPair.key, (char *)pair.key) == 0)
+        {
+            found = 1;
+            //scratch our KeyValueStore struct so that it is preserved.
+            scratchKeyValueStore(KeyValueStore(MICROBIT_STORAGE_MAGIC, storeSize));
+            scratchKeyValuePair(pair, flashPointer);
+        }
+        else
+        {
+            scratchKeyValuePair(storedPair, flashPointer);
+        }
+
+        flashPointer += kvPairSize;
     }
 
+    if(!found)
+    {
+        //if we haven't got a match for the key, check we can add a new KeyValuePair
+        if(storeSize == (int)((pg_size - kvStoreSize) / MICROBIT_STORAGE_BLOCK_SIZE))
+            return MICROBIT_NO_RESOURCES;
+
+        storeSize += 1;
+
+        //scratch our updated values.
+        scratchKeyValueStore(KeyValueStore(MICROBIT_STORAGE_MAGIC, storeSize));
+        scratchKeyValuePair(pair, flashPointer);
+    }
+
+    //erase our storage page
+    flashPageErase((uint32_t *)flashBlockPointer);
+
+    //copy from scratch to storage.
+    flashCopy((uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET)), flashBlockPointer, kvStoreSize + (storeSize * kvPairSize));
+
     return MICROBIT_OK;
+}
+
+/**
+ * Places a given key, and it's corresponding value into flash at the earliest
+ * available point.
+ *
+ * @param key the unique name that should be used as an identifier for the given data.
+ * @param data a pointer to the beginning of the data to be persisted.
+ */
+int MicroBitStorage::put(ManagedString key, uint8_t* data)
+{
+    return put((char *)key.toCharArray(), data);
+}
+
+/**
+ * Retreives a KeyValuePair identified by a given key.
+ *
+ * @param key the unique name used to identify a KeyValuePair in flash.
+ *
+ * @return a pointer to a heap allocated KeyValuePair struct, this pointer will be
+ * NULL if the key was not found in storage.
+ *
+ * @note it is up to the user to free the returned struct.
+ */
+KeyValuePair* MicroBitStorage::get(char* key)
+{
+    //calculate our offsets for our storage page
+    uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
+    uint32_t pg_num  = NRF_FICR->CODESIZE - MICROBIT_STORAGE_STORE_PAGE_OFFSET;
+
+    uint32_t *flashBlockPointer = (uint32_t *)(pg_size * pg_num);
+
+    int storeSize = size();
+
+    //we haven't got anything stored, so return...
+    if(storeSize == 0)
+        return NULL;
+
+    //our KeyValueStore struct is always at 0
+    flashBlockPointer += sizeof(KeyValueStore) / 4;
+
+    KeyValuePair *pair = new KeyValuePair();
+
+    int i;
+
+    //iterate through flash until we have a match, or drop out.
+    for(i = 0; i < storeSize; i++)
+    {
+        memcpy(pair, flashBlockPointer, sizeof(KeyValuePair));
+
+        if(strcmp(key,(char *)pair->key) == 0)
+            break;
+
+        flashBlockPointer += sizeof(KeyValuePair) / 4;
+    }
+
+    //clean up
+    if(i == storeSize)
+    {
+        delete pair;
+        return NULL;
+    }
+
+    return pair;
+}
+
+/**
+ * Retreives a KeyValuePair identified by a given key.
+ *
+ * @param key the unique name used to identify a KeyValuePair in flash.
+ *
+ * @return a pointer to a heap allocated KeyValuePair struct, this pointer will be
+ * NULL if the key was not found in storage.
+ *
+ * @note it is up to the user to free the returned struct.
+ */
+KeyValuePair* MicroBitStorage::get(ManagedString key)
+{
+    return get((char *)key.toCharArray());
+}
+
+/**
+ * Removes a KeyValuePair identified by a given key.
+ *
+ * @param key the unique name used to identify a KeyValuePair in flash.
+ *
+ * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the given key
+ * was not found in flash.
+ */
+int MicroBitStorage::remove(char* key)
+{
+    //calculate our various offsets
+    uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
+    uint32_t *flashPointer = (uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_STORE_PAGE_OFFSET));
+    uint32_t *flashBlockPointer = flashPointer;
+    uint32_t *scratchPointer = (uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET));
+
+    uint32_t kvStoreSize = sizeof(KeyValueStore) / 4;
+    uint32_t kvPairSize = sizeof(KeyValuePair) / 4;
+
+    int storeSize = size();
+
+    //if we have no data, we have nothing to do.
+    if(storeSize == 0)
+        return MICROBIT_NOT_SUPPORTED;
+
+    //our KeyValueStore struct is always at 0
+    flashPointer += kvStoreSize;
+    scratchPointer += kvStoreSize;
+
+    KeyValuePair storedPair = KeyValuePair();
+
+    int found = 0;
+
+    //set up our scratch area
+    flashPageErase(scratchPointer);
+
+    //iterate through our flash copy pairs to scratch, unless there is a key patch
+    for(int i = 0; i < storeSize; i++)
+    {
+        memcpy(&storedPair, flashPointer, sizeof(KeyValuePair));
+
+        //if we have a match, don't increment our scratchPointer
+        if(strcmp((char *)storedPair.key, (char *)key) == 0)
+        {
+            found = 1;
+            //write our new KeyValueStore data
+            scratchKeyValueStore(KeyValueStore(MICROBIT_STORAGE_MAGIC, storeSize - 1));
+        }
+        else
+        {
+            //otherwise copy the KeyValuePair from our storage page.
+            flashCopy(flashPointer, scratchPointer, sizeof(KeyValuePair) / 4);
+            scratchPointer += sizeof(KeyValuePair) / 4;
+        }
+
+        flashPointer += sizeof(KeyValuePair) / 4;
+    }
+
+    //if we haven't got a match, write our old KeyValueStore struct
+    if(!found)
+    {
+        scratchKeyValueStore(KeyValueStore(MICROBIT_STORAGE_MAGIC, storeSize));
+        return MICROBIT_NOT_SUPPORTED;
+    }
+
+    //copy scratch to our storage page
+    flashPageErase((uint32_t *)flashBlockPointer);
+    flashCopy((uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET)), flashBlockPointer, kvStoreSize + (storeSize * kvPairSize));
+
+    return MICROBIT_OK;
+}
+
+/**
+ * Removes a KeyValuePair identified by a given key.
+ *
+ * @param key the unique name used to identify a KeyValuePair in flash.
+ *
+ * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the given key
+ * was not found in flash.
+ */
+int MicroBitStorage::remove(ManagedString key)
+{
+    return remove((char *)key.toCharArray());
+}
+
+/**
+ * The size of the flash based KeyValueStore.
+ *
+ * @return the number of entries in the key value store
+ */
+int MicroBitStorage::size()
+{
+    uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
+    uint32_t pg_num  = NRF_FICR->CODESIZE - MICROBIT_STORAGE_STORE_PAGE_OFFSET;
+
+    uint32_t *flashBlockPointer = (uint32_t *)(pg_size * pg_num);
+
+    KeyValueStore store = KeyValueStore();
+
+    //read our data!
+    memcpy(&store, flashBlockPointer, sizeof(KeyValueStore));
+
+    //if we haven't used flash before, we need to configure it
+    if(store.magic != MICROBIT_STORAGE_MAGIC)
+    {
+        store.magic = MICROBIT_STORAGE_MAGIC;
+        store.size = 0;
+
+        //erase the scratch page and write our new KeyValueStore
+        flashPageErase((uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET)));
+        scratchKeyValueStore(store);
+
+        //erase flash, and copy the scratch page over
+        flashPageErase((uint32_t *)flashBlockPointer);
+        flashCopy((uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET)), flashBlockPointer, pg_size/4);
+    }
+
+    return store.size;
 }

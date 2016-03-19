@@ -11,7 +11,7 @@
 // Memory configuration
 //
 
-// The start address of usable RAM memory.  
+// The start address of usable RAM memory.
 #ifndef MICROBIT_SRAM_BASE
 #define MICROBIT_SRAM_BASE                      0x20000008
 #endif
@@ -47,10 +47,10 @@
 #endif
 
 // Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
-// reserved for SoftDevice is possible, and out of memory condition wil lno longer be trapped... 
+// reserved for SoftDevice is possible, and out of memory condition wil lno longer be trapped...
 // i.e. panic() will no longer be triggered on memory full conditions.
 #ifndef MICROBIT_HEAP_ALLOCATOR
-#define MICROBIT_HEAP_ALLOCATOR                 1    
+#define MICROBIT_HEAP_ALLOCATOR                 1
 #endif
 
 // Block size used by the allocator in bytes.
@@ -71,7 +71,7 @@
 #define MICROBIT_HEAP_REUSE_SD                  1
 #endif
 
-// The amount of memory allocated to Soft Device to hold its BLE GATT table. 
+// The amount of memory allocated to Soft Device to hold its BLE GATT table.
 // For standard S110 builds, this should be word aligned and in the range 0x300 - 0x700.
 // Any unused memory will be automatically reclaimed as HEAP memory if both MICROBIT_HEAP_REUSE_SD and MICROBIT_HEAP_ALLOCATOR are enabled.
 #ifndef MICROBIT_SD_GATT_TABLE_SIZE
@@ -340,5 +340,3 @@ extern Serial& SERIAL_DEBUG;
 #endif
 
 #endif
-
-

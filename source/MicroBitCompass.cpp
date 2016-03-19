@@ -1,6 +1,5 @@
 #include "MicroBitConfig.h"
 #include "MicroBitCompass.h"
-#include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
 #include "ErrorNo.h"
 
@@ -12,9 +11,6 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
     this->id = id;
     this->address = address;
 
-    // We presume the device calibrated until the average values are read.
-    this->status = 0x01;
-
     // Select 10Hz update rate, with oversampling, and enable the device.
     this->samplePeriod = 100;
     this->configure();
@@ -22,8 +18,56 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
     // Assume that we have no calibration information.
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 
+    if(this->storage != NULL)
+    {
+        KeyValuePair *calibrationData =  storage->get(ManagedString("compassCal"));
+
+        if(calibrationData != NULL)
+        {
+            CompassSample storedSample = CompassSample();
+
+            memcpy(&storedSample, calibrationData->value, sizeof(CompassSample));
+
+            setCalibration(storedSample);
+
+            delete calibrationData;
+        }
+    }
+
     // Indicate that we're up and running.
     status |= MICROBIT_COMPONENT_RUNNING;
+}
+
+/**
+  * Constructor.
+  * Create a compass representation with the given ID.
+  * @param id the event ID of the compass object.
+  * @param address the default address for the compass register
+  * @param _i2c an instance of i2c, which the compass is accessible from.
+  * @param _accelerometer an instance of the accelerometer, used for tilt compensation.
+  * @param _storage an instance of MicroBitStorage, used to persist calibration data across resets.
+  *
+  * Example:
+  * @code
+  * compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR);
+  * @endcode
+  *
+  * Possible Events for the compass are as follows:
+  * @code
+  * MICROBIT_COMPASS_EVT_CAL_REQUIRED   // triggered when no magnetometer data is available in persistent storage
+  * MICROBIT_COMPASS_EVT_CAL_START      // triggered when calibration has begun
+  * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
+  * @endcode
+  */
+MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage) :
+    average(),
+    sample(),
+    int1(MICROBIT_PIN_COMPASS_DATA_READY),
+    i2c(_i2c),
+    accelerometer(&_accelerometer),
+    storage(&_storage)
+{
+    init(id, address);
 }
 
 /**
@@ -46,7 +90,46 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
   * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer) : average(), sample(), int1(MICROBIT_PIN_COMPASS_DATA_READY), i2c(_i2c), accelerometer(&_accelerometer)
+MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer) :
+    average(),
+    sample(),
+    int1(MICROBIT_PIN_COMPASS_DATA_READY),
+    i2c(_i2c),
+    accelerometer(&_accelerometer),
+    storage(NULL)
+{
+    init(id, address);
+}
+
+/**
+  * Constructor.
+  * Create a compass representation with the given ID.
+  * @param id the event ID of the compass object.
+  * @param address the default address for the compass register
+  * @param _i2c an instance of i2c, which the compass is accessible from.
+  * @param _storage an instance of MicroBitStorage, used to persist calibration data across resets.
+  *
+  * @note This creates a non-tilt compensated compass.
+  *
+  * Example:
+  * @code
+  * compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR);
+  * @endcode
+  *
+  * Possible Events for the compass are as follows:
+  * @code
+  * MICROBIT_COMPASS_EVT_CAL_REQUIRED   // triggered when no magnetometer data is available in persistent storage
+  * MICROBIT_COMPASS_EVT_CAL_START      // triggered when calibration has begun
+  * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
+  * @endcode
+  */
+MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitStorage& _storage) :
+    average(),
+    sample(),
+    int1(MICROBIT_PIN_COMPASS_DATA_READY),
+    i2c(_i2c),
+    accelerometer(NULL),
+    storage(&_storage)
 {
     init(id, address);
 }
@@ -72,7 +155,13 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2
   * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c) : average(), sample(), int1(MICROBIT_PIN_COMPASS_DATA_READY), i2c(_i2c), accelerometer(NULL)
+MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c) :
+    average(),
+    sample(),
+    int1(MICROBIT_PIN_COMPASS_DATA_READY),
+    i2c(_i2c),
+    accelerometer(NULL),
+    storage(NULL)
 {
     init(id, address);
 }
@@ -588,23 +677,8 @@ void MicroBitCompass::calibrateEnd()
   */
 void MicroBitCompass::setCalibration(CompassSample calibration)
 {
-
-    MicroBitStorage s = MicroBitStorage();
-    MicroBitConfigurationBlock *b = s.getConfigurationBlock();
-
-    //check we are not storing our restored calibration data.
-    if(b->compassCalibrationData != calibration)
-    {
-        b->magic = MICROBIT_STORAGE_CONFIG_MAGIC;
-
-        b->compassCalibrationData.x = calibration.x;
-        b->compassCalibrationData.y = calibration.y;
-        b->compassCalibrationData.z = calibration.z;
-
-        s.setConfigurationBlock(b);
-    }
-
-    delete b;
+    if(this->storage != NULL)
+        this->storage->put(ManagedString("compassCal"), (uint8_t *)&calibration);
 
     average = calibration;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;

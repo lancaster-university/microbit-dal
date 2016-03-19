@@ -76,6 +76,9 @@ class MicroBit
 	// Reset Button
 	InterruptIn     		resetButton;
 
+    // Persistent key value store
+    MicroBitStorage         storage;
+
     // I2C Interface
     MicroBitI2C             i2c;
 

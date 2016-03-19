@@ -93,6 +93,7 @@ void MicroBit::onListenerRegisteredEvent(MicroBitEvent evt)
   */
 MicroBit::MicroBit() :
 	resetButton(MICROBIT_PIN_BUTTON_RESET),
+    storage(),
     i2c(MICROBIT_PIN_SDA, MICROBIT_PIN_SCL),
     serial(USBTX, USBRX),
     messageBus(),
@@ -101,7 +102,7 @@ MicroBit::MicroBit() :
     buttonB(MICROBIT_ID_BUTTON_B,MICROBIT_PIN_BUTTON_B, MICROBIT_BUTTON_ALL_EVENTS),
     buttonAB(MICROBIT_ID_BUTTON_AB,MICROBIT_ID_BUTTON_A,MICROBIT_ID_BUTTON_B, messageBus),
     accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR, i2c),
-    compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR,i2c,accelerometer),
+    compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR,i2c,accelerometer,storage),
     thermometer(MICROBIT_ID_THERMOMETER),
     io(MICROBIT_ID_IO_P0,MICROBIT_ID_IO_P1,MICROBIT_ID_IO_P2,
        MICROBIT_ID_IO_P3,MICROBIT_ID_IO_P4,MICROBIT_ID_IO_P5,
@@ -110,7 +111,7 @@ MicroBit::MicroBit() :
        MICROBIT_ID_IO_P12,MICROBIT_ID_IO_P13,MICROBIT_ID_IO_P14,
        MICROBIT_ID_IO_P15,MICROBIT_ID_IO_P16,MICROBIT_ID_IO_P19,
        MICROBIT_ID_IO_P20),
-    bleManager(),
+    bleManager(storage),
     radio(MICROBIT_ID_RADIO),
     ble(NULL)
 {
@@ -139,19 +140,6 @@ void MicroBit::init()
 
     // Bring up fiber scheduler.
     scheduler_init(&messageBus);
-
-    // Load any stored calibration data from persistent storage.
-    MicroBitStorage s = MicroBitStorage();
-    MicroBitConfigurationBlock *b = s.getConfigurationBlock();
-
-    //if we have some calibrated data, calibrate the compass!
-    if(b->magic == MICROBIT_STORAGE_CONFIG_MAGIC)
-    {
-        if(b->compassCalibrationData != CompassSample(0,0,0))
-            compass.setCalibration(b->compassCalibrationData);
-    }
-
-    delete b;
 
     // Seed our random number generator
     seedRandom();

@@ -6,6 +6,7 @@
 #include "MicroBitComponent.h"
 #include "MicroBitCoordinateSystem.h"
 #include "MicroBitAccelerometer.h"
+#include "MicroBitStorage.h"
 
 /**
   * Relevant pin assignments
@@ -132,9 +133,33 @@ class MicroBitCompass : public MicroBitComponent
     CompassSample           sample;                   // The latest sample data recorded.
     DigitalIn               int1;                     // Data ready interrupt.
     MicroBitI2C&		    i2c;                      // The I2C interface the sensor is connected to.
-    MicroBitAccelerometer* accelerometer;            // The accelerometer to use for tilt compensation.
+    MicroBitAccelerometer*  accelerometer;            // The accelerometer to use for tilt compensation.
+    MicroBitStorage*        storage;                  // An instance of MicroBitStorage used for persistence.
 
     public:
+
+    /**
+      * Constructor.
+      * Create a compass representation with the given ID.
+      * @param id the event ID of the compass object.
+      * @param address the default address for the compass register
+      * @param _i2c an instance of i2c, which the compass is accessible from.
+      * @param _accelerometer an instance of the accelerometer, used for tilt compensation.
+      * @param _storage an instance of MicroBitStorage, used to persist calibration data across resets.
+      *
+      * Example:
+      * @code
+      * compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR);
+      * @endcode
+      *
+      * Possible Events for the compass are as follows:
+      * @code
+      * MICROBIT_COMPASS_EVT_CAL_REQUIRED   // triggered when no magnetometer data is available in persistent storage
+      * MICROBIT_COMPASS_EVT_CAL_START      // triggered when calibration has begun
+      * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
+      * @endcode
+      */
+    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage);
 
     /**
       * Constructor.
@@ -156,8 +181,31 @@ class MicroBitCompass : public MicroBitComponent
       * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
       * @endcode
       */
-    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer &_accelerometer);
+    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer);
 
+    /**
+      * Constructor.
+      * Create a compass representation with the given ID.
+      * @param id the event ID of the compass object.
+      * @param address the default address for the compass register
+      * @param _i2c an instance of i2c, which the compass is accessible from.
+      * @param _storage an instance of MicroBitStorage, used to persist calibration data across resets.
+      *
+      * @note This creates a non-tilt compensated compass.
+      *
+      * Example:
+      * @code
+      * compass(MICROBIT_ID_COMPASS, MAG3110_DEFAULT_ADDR);
+      * @endcode
+      *
+      * Possible Events for the compass are as follows:
+      * @code
+      * MICROBIT_COMPASS_EVT_CAL_REQUIRED   // triggered when no magnetometer data is available in persistent storage
+      * MICROBIT_COMPASS_EVT_CAL_START      // triggered when calibration has begun
+      * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
+      * @endcode
+      */
+    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitStorage& _storage);
 
     /**
       * Constructor.
@@ -379,7 +427,7 @@ class MicroBitCompass : public MicroBitComponent
     virtual int isIdleCallbackNeeded();
 
     /**
-      * Destructor for MicroBitCompass. 
+      * Destructor for MicroBitCompass.
       */
     ~MicroBitCompass();
 
