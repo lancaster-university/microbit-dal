@@ -106,6 +106,10 @@ int system_timer_add_component(MicroBitComponent *component)
 {
     int i = 0;
 
+    // If we haven't been initialized, bring up the timer with the default period.
+    if (tick_period == 0)
+        system_timer_init(SYSTEM_TICK_PERIOD_MS);
+
     while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)
         i++;
 
