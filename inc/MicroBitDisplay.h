@@ -82,7 +82,7 @@ class MicroBitDisplay : public MicroBitComponent
     //
 
     // The animation mode that's currently running (if any)
-    AnimationMode animationMode;
+    volatile AnimationMode animationMode;
 
     // The time in milliseconds between each frame update.
     uint16_t animationDelay;

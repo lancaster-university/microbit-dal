@@ -430,7 +430,7 @@ void MicroBitDisplay::waitForFreeDisplay()
 void MicroBitDisplay::fiberWait()
 {
     if (fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE) == MICROBIT_NOT_SUPPORTED)
-        while(animationMode != ANIMATION_MODE_NONE)
+        while(animationMode != ANIMATION_MODE_NONE && animationMode != ANIMATION_MODE_STOPPED)
             __WFE();
 }
 
