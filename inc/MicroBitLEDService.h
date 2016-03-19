@@ -5,6 +5,10 @@
 #include "ble/BLE.h"
 #include "MicroBitDisplay.h"
 
+// Defines the buffer size for scrolling text over BLE, hence also defines
+// the maximum string length that can be scrolled via the BLE service.
+#define MICROBIT_BLE_MAXIMUM_SCROLLTEXT         20
+
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitLEDServiceUUID[];
 extern const uint8_t  MicroBitLEDServiceMatrixUUID[];

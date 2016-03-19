@@ -335,7 +335,7 @@ void *microbit_malloc(size_t size)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     // Keep everything transparent if we've not been initialised yet
     if (heap_count > 0)
-        SERIAL_DEBUG.printf("microbit_malloc: OUT OF MEMORY\n");
+        SERIAL_DEBUG.printf("microbit_malloc: OUT OF MEMORY [%d]\n", size);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)

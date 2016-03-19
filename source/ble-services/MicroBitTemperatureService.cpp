@@ -12,7 +12,7 @@
   * Create a representation of the TemperatureService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, EventModel &messageBus) :
+MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer) :
         ble(_ble), thermometer(_thermometer)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
@@ -42,7 +42,8 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBit
     ble.gattServer().write(temperaturePeriodCharacteristicHandle,(uint8_t *)&temperaturePeriodCharacteristicBuffer, sizeof(temperaturePeriodCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitTemperatureService::onDataWritten);
-    messageBus.listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    if (EventModel::defaultEventBus)
+        EventModel::defaultEventBus->listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 /**

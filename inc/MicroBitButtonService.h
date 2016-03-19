@@ -24,7 +24,7 @@ class MicroBitButtonService
       * Create a representation of the ButtonService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitButtonService(BLEDevice &_ble, EventModel &messageBus);
+    MicroBitButtonService(BLEDevice &_ble);
 
 
     private:

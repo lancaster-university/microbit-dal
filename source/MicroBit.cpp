@@ -56,12 +56,16 @@ void MicroBit::onListenerRegisteredEvent(MicroBitEvent evt)
             break;
 
         case MICROBIT_ID_COMPASS:
-            //a listener has been registered for the compass, add it to our idle fiber
-            compass.updateSample();
+            // A listener has been registered for the compass.
+            // The compass uses lazy instantiation, we just need to read the data once to start it running.
+            // Touch the compass through the heading() function to ensure it is calibrated. if it isn't this will launch any associated calibration algorithms.
+            compass.heading();
+
             break;
 
         case MICROBIT_ID_ACCELEROMETER:
-            //a listener has been registered for the accelerometer, add it to our idle fiber
+            // A listener has been registered for the accelerometer.
+            // The accelerometer uses lazy instantiation, we just need to read the data once to start it running.
             accelerometer.updateSample();
             break;
     }
@@ -157,7 +161,7 @@ void MicroBit::init()
 
     // Register our compass calibration algorithm.
     messageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBit::compassCalibrator, MESSAGE_BUS_LISTENER_IMMEDIATE);
-    messageBus.listen(MICROBIT_ID_MESSAGE_BUS_LISTENER, MICROBIT_EVT_ANY, this, &MicroBit::onListenerRegisteredEvent,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+    messageBus.listen(MICROBIT_ID_MESSAGE_BUS_LISTENER, MICROBIT_EVT_ANY, this, &MicroBit::onListenerRegisteredEvent);
 
 #if CONFIG_ENABLED(MICROBIT_BLE_PAIRING_MODE)
     // Test if we need to enter BLE pairing mode...
@@ -223,6 +227,8 @@ void MicroBit::compassCalibrator(MicroBitEvent)
     const int PIXEL1_THRESHOLD = 200;
     const int PIXEL2_THRESHOLD = 800;
 
+    wait_ms(100);
+
 	Matrix4 X(PERIMETER_POINTS, 4);
     Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {4,1,0}, {4,2,0}, {4,3,0}, {3,4,0}, {2,4,0}, {1,4,0}, {0,3,0}, {0,2,0}, {0,1,0}};
     Point cursor = {2,2,0};
@@ -234,13 +240,14 @@ void MicroBit::compassCalibrator(MicroBitEvent)
     // Firstly, we need to take over the display. Ensure all active animations are paused.
     display.stopAnimation();
     display.scrollAsync("DRAW A CIRCLE");
+
     for (int i=0; i<110; i++)
     {
         if (buttonA.isPressed() || buttonB.isPressed())
         {
             break;
         }
-        sleep(100);
+        wait_ms(100);
     }
 
     display.stopAnimation();
@@ -255,8 +262,8 @@ void MicroBit::compassCalibrator(MicroBitEvent)
         int x = accelerometer.getX();
         int y = accelerometer.getY();
 
-	// Wait a little whie for the button state to stabilise (one scheduler tick).
-    sleep(10);
+        // Wait a little whie for the button state to stabilise (one scheduler tick).
+        wait_ms(10);
 
         // Deterine the position of the user controlled pixel on the screen.
         if (x < -PIXEL2_THRESHOLD)
@@ -311,7 +318,7 @@ void MicroBit::compassCalibrator(MicroBitEvent)
             }
         }
 
-        sleep(100);
+        wait_ms(100);
     }
 
     // We have enough sample data to make a fairly accurate calibration.
@@ -337,7 +344,8 @@ void MicroBit::compassCalibrator(MicroBitEvent)
 
     // Show a smiley to indicate that we're done, and continue on with the user program.
     display.clear();
-    display.print(smiley, 0, 0, 0, 1500);
+    display.printAsync(smiley, 0, 0, 0, 1500);
+    wait_ms(1000);
     display.clear();
 }
 

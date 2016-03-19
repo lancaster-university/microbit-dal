@@ -26,8 +26,7 @@ class MicroBitMagnetometerService
       * Create a representation of the MagnetometerService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, EventModel &messageBus);
-
+    MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass);
 
     private:
 

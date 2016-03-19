@@ -25,7 +25,7 @@ class MicroBitAccelerometerService
       * Create a representation of the AccelerometerService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_acclerometer, EventModel &messageBus);
+    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_acclerometer);
 
 
     private:

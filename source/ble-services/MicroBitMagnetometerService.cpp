@@ -12,7 +12,7 @@
   * Create a representation of the MagnetometerService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass, EventModel &messageBus) :
+MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass) :
         ble(_ble), compass(_compass)
 {
     // Create the data structures that represent each of our characteristics in Soft Device.
@@ -52,8 +52,11 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroB
     ble.gattServer().write(magnetometerPeriodCharacteristicHandle, (const uint8_t *)&magnetometerPeriodCharacteristicBuffer, sizeof(magnetometerPeriodCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitMagnetometerService::onDataWritten);
-    messageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
-    messageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
+    if (EventModel::defaultEventBus)
+    {
+        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
+    }
 }
 
 /**
@@ -78,7 +81,6 @@ void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent)
         magnetometerDataCharacteristicBuffer[0] = compass.getX();
         magnetometerDataCharacteristicBuffer[1] = compass.getY();
         magnetometerDataCharacteristicBuffer[2] = compass.getZ();
-        magnetometerBearingCharacteristicBuffer = (uint16_t) compass.heading();
         magnetometerPeriodCharacteristicBuffer = compass.getPeriod();
 
         ble.gattServer().write(magnetometerPeriodCharacteristicHandle, (const uint8_t *)&magnetometerPeriodCharacteristicBuffer, sizeof(magnetometerPeriodCharacteristicBuffer));

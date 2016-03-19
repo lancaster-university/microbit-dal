@@ -96,7 +96,7 @@
 //   MESSAGE_BUS_LISTENER_REENTRANT
 //   MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY
 //   MESSAGE_BUS_LISTENER_DROP_IF_BUSY
-//   MESSAGE_BUS_LISTENER_NONBLOCKING
+//   MESSAGE_BUS_LISTENER_IMMEDIATE
 
 #ifndef EVENT_LISTENER_DEFAULT_FLAGS
 #define EVENT_LISTENER_DEFAULT_FLAGS            MESSAGE_BUS_LISTENER_QUEUE_IF_BUSY
@@ -222,53 +222,6 @@
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_DEVICE_INFORMATION_SERVICE
 #define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE 1
-#endif
-
-
-// Enable/Disable BLE Service: MicroBitLEDService
-// This enables the control and the LED matrix display via BLE.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_LED_SERVICE
-#define MICROBIT_BLE_LED_SERVICE                0
-#endif
-
-// Enable/Disable BLE Service: MicroBitAccelerometerService
-// This enables live access to the on board 3 axis accelerometer.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_ACCELEROMETER_SERVICE
-#define MICROBIT_BLE_ACCELEROMETER_SERVICE      0
-#endif
-
-// Enable/Disable BLE Service: MicroBitMagnetometerService
-// This enables live access to the on board 3 axis magnetometer.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_MAGNETOMETER_SERVICE
-#define MICROBIT_BLE_MAGNETOMETER_SERVICE       0
-#endif
-
-// Enable/Disable BLE Service: MicroBitButtonService
-// This enables live access to the two micro:bit buttons.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_BUTTON_SERVICE
-#define MICROBIT_BLE_BUTTON_SERVICE             0
-#endif
-
-// This enables live access to the two micro:bit buttons.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_IO_PIN_SERVICE
-#define MICROBIT_BLE_IO_PIN_SERVICE             0
-#endif
-
-// This enables live access to the die temperature sensors on the micro:bit.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_TEMPERATURE_SERVICE
-#define MICROBIT_BLE_TEMPERATURE_SERVICE        0
-#endif
-
-// Defines the maximum length strong that can be written to the
-// display over BLE.
-#ifndef MICROBIT_BLE_MAXIMUM_SCROLLTEXT
-#define MICROBIT_BLE_MAXIMUM_SCROLLTEXT         20
 #endif
 
 //

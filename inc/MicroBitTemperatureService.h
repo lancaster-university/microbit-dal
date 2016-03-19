@@ -25,7 +25,7 @@ class MicroBitTemperatureService
       * Create a representation of the TempertureService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer, EventModel &messageBus);
+    MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
