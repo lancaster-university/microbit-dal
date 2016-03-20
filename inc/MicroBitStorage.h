@@ -112,7 +112,7 @@ class MicroBitStorage
      *
      * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if our storage page is full
      */
-    int put(char* key, uint8_t* data);
+    int put(const char* key, uint8_t* data);
 
     /**
      * Places a given key, and it's corresponding value into flash at the earliest
@@ -133,7 +133,7 @@ class MicroBitStorage
      *
      * @note it is up to the user to free the returned struct.
      */
-    KeyValuePair* get(char* key);
+    KeyValuePair* get(const char* key);
 
     /**
      * Retreives a KeyValuePair identified by a given key.
@@ -155,7 +155,7 @@ class MicroBitStorage
      * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the given key
      * was not found in flash.
      */
-    int remove(char* key);
+    int remove(const char* key);
 
     /**
      * Removes a KeyValuePair identified by a given key.

@@ -173,7 +173,7 @@ void MicroBitStorage::scratchKeyValuePair(KeyValuePair pair, uint32_t* flashPoin
  *
  * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if our storage page is full
  */
-int MicroBitStorage::put(char *key, uint8_t *data)
+int MicroBitStorage::put(const char *key, uint8_t *data)
 {
     KeyValuePair pair = KeyValuePair();
 
@@ -266,7 +266,7 @@ int MicroBitStorage::put(ManagedString key, uint8_t* data)
  *
  * @note it is up to the user to free the returned struct.
  */
-KeyValuePair* MicroBitStorage::get(char* key)
+KeyValuePair* MicroBitStorage::get(const char* key)
 {
     //calculate our offsets for our storage page
     uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
@@ -331,7 +331,7 @@ KeyValuePair* MicroBitStorage::get(ManagedString key)
  * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the given key
  * was not found in flash.
  */
-int MicroBitStorage::remove(char* key)
+int MicroBitStorage::remove(const char* key)
 {
     //calculate our various offsets
     uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
