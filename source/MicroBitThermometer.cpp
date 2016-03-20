@@ -43,6 +43,7 @@
   * Constructor.
   * Create new object that can sense temperature.
   * @param id the ID of the new MicroBitThermometer object.
+  * @param _storage an instance of MicroBitStorage used to persist temperature offset data
   *
   * Example:
   * @code
@@ -54,11 +55,49 @@
   * MICROBIT_THERMOMETER_EVT_CHANGED
   * @endcode
   */
-MicroBitThermometer::MicroBitThermometer(uint16_t id)
+MicroBitThermometer::MicroBitThermometer(uint16_t id, MicroBitStorage& _storage) :
+    storage(&_storage)
 {
     this->id = id;
     this->samplePeriod = MICROBIT_THERMOMETER_PERIOD;
     this->sampleTime = 0;
+    this->offset = 0;
+
+    KeyValuePair *tempCalibration =  storage->get(ManagedString("tempCal"));
+
+    if(tempCalibration != NULL)
+    {
+        memcpy(&offset, tempCalibration->value, sizeof(int16_t));
+        delete tempCalibration;
+    }
+
+	// If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
+	// Otherwise, we do just do this on demand, when polled through our read() interface.
+    fiber_add_idle_component(this);
+}
+
+/**
+  * Constructor.
+  * Create new object that can sense temperature.
+  * @param id the ID of the new MicroBitThermometer object.
+  *
+  * Example:
+  * @code
+  * thermometer(MICROBIT_ID_THERMOMETER);
+  * @endcode
+  *
+  * Possible Events:
+  * @code
+  * MICROBIT_THERMOMETER_EVT_CHANGED
+  * @endcode
+  */
+MicroBitThermometer::MicroBitThermometer(uint16_t id) :
+    storage(NULL)
+{
+    this->id = id;
+    this->samplePeriod = MICROBIT_THERMOMETER_PERIOD;
+    this->sampleTime = 0;
+    this->offset = 0;
 
 	// If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
 	// Otherwise, we do just do this on demand, when polled through our read() interface.
@@ -79,7 +118,7 @@ int MicroBitThermometer::getTemperature()
     if (isSampleNeeded())
         updateTemperature();
 
-    return temperature;
+    return temperature - offset;
 }
 
 /**
@@ -131,6 +170,46 @@ int MicroBitThermometer::getPeriod()
 }
 
 /**
+  * Set the value that is used to offset the raw silicon temperature.
+  *
+  * @param offset the offset for the silicon temperature
+  *
+  * @return MICROBIT_OK on success
+  */
+int MicroBitThermometer::setOffset(int offset)
+{
+    if(this->storage != NULL)
+        this->storage->put(ManagedString("tempCal"), (uint8_t *)&offset);
+
+    this->offset = offset;
+
+    return MICROBIT_OK;
+}
+
+/**
+  * Retreive the value that is used to offset the raw silicon temperature.
+  */
+int MicroBitThermometer::getOffset()
+{
+    return offset;
+}
+
+/**
+  * This member function fetches the raw silicon temperature, and calculates
+  * the value used to offset the raw silicon temperature based on a given temperature.
+  *
+  * @param calibrationTemp the temperature used to calculate the raw silicon temperature
+  * offset.
+  *
+  * @return MICROBIT_OK on success
+  */
+int MicroBitThermometer::setCalibration(int calibrationTemp)
+{
+    updateTemperature();
+    return setOffset(temperature - calibrationTemp);
+}
+
+/**
  * Updates our recorded temperature from the many sensors on the micro:bit!
  */
 void MicroBitThermometer::updateTemperature()
@@ -175,5 +254,3 @@ void MicroBitThermometer::updateTemperature()
     // Send an event to indicate that we'e updated our temperature.
     MicroBitEvent e(id, MICROBIT_THERMOMETER_EVT_UPDATE);
 }
-
-

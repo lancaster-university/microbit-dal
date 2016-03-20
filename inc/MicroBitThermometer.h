@@ -4,6 +4,7 @@
 #include "mbed.h"
 #include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
+#include "MicroBitStorage.h"
 
 #define MICROBIT_THERMOMETER_PERIOD             1000
 
@@ -27,8 +28,29 @@ class MicroBitThermometer : public MicroBitComponent
     unsigned long           sampleTime;
     uint32_t                samplePeriod;
     int16_t                 temperature;
+    int16_t                 offset;
+    MicroBitStorage*        storage;
 
     public:
+
+    /**
+      * Constructor.
+      * Create new object that can sense temperature.
+      * @param id the ID of the new MicroBitThermometer object.
+      * @param _storage an instance of MicroBitStorage used to persist temperature offset data
+      *
+      * Example:
+      * @code
+      * thermometer(MICROBIT_ID_THERMOMETER);
+      * @endcode
+      *
+      * Possible Events:
+      * @code
+      * MICROBIT_THERMOMETER_EVT_CHANGED
+      * @endcode
+      */
+    MicroBitThermometer(uint16_t id, MicroBitStorage& _storage);
+
     /**
      * Constructor.
      * Create new object that can sense temperature.
@@ -60,6 +82,33 @@ class MicroBitThermometer : public MicroBitComponent
       * @return The time between samples, in milliseconds.
       */
     int getPeriod();
+
+    /**
+      * Set the value that is used to offset the raw silicon temperature.
+      *
+      * @param offset the offset for the silicon temperature
+      *
+      * @return MICROBIT_OK on success
+      */
+    int setOffset(int offset);
+
+    /**
+      * Retreive the value that is used to offset the raw silicon temperature.
+      *
+      * @return
+      */
+    int getOffset();
+
+    /**
+      * This member function fetches the raw silicon temperature, and calculates
+      * the value used to offset the raw silicon temperature based on a given temperature.
+      *
+      * @param calibrationTemp the temperature used to calculate the raw silicon temperature
+      * offset.
+      *
+      * @return MICROBIT_OK on success
+      */
+    int setCalibration(int calibrationTemp);
 
     /**
       * Gets the current temperature of the microbit.
