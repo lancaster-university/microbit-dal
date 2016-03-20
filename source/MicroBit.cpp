@@ -68,6 +68,11 @@ void MicroBit::onListenerRegisteredEvent(MicroBitEvent evt)
             // The accelerometer uses lazy instantiation, we just need to read the data once to start it running.
             accelerometer.updateSample();
             break;
+
+        case MICROBIT_ID_THERMOMETER:
+            //a listener has been registered for the accelerometer, add it to our idle fiber
+            thermometer.updateSample();
+            break;
     }
 }
 

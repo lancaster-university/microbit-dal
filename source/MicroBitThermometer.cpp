@@ -70,10 +70,6 @@ MicroBitThermometer::MicroBitThermometer(uint16_t id, MicroBitStorage& _storage)
         memcpy(&offset, tempCalibration->value, sizeof(int16_t));
         delete tempCalibration;
     }
-
-	// If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
-	// Otherwise, we do just do this on demand, when polled through our read() interface.
-    fiber_add_idle_component(this);
 }
 
 /**
@@ -98,10 +94,6 @@ MicroBitThermometer::MicroBitThermometer(uint16_t id) :
     this->samplePeriod = MICROBIT_THERMOMETER_PERIOD;
     this->sampleTime = 0;
     this->offset = 0;
-
-	// If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
-	// Otherwise, we do just do this on demand, when polled through our read() interface.
-    fiber_add_idle_component(this);
 }
 
 /**
@@ -115,11 +107,75 @@ MicroBitThermometer::MicroBitThermometer(uint16_t id) :
  */
 int MicroBitThermometer::getTemperature()
 {
-    if (isSampleNeeded())
-        updateTemperature();
-
+    updateSample();
     return temperature - offset;
 }
+
+
+/**
+  * Updates the temperature sample of this instance of MicroBitThermometer,
+  * only if isSampleNeeded() indicates that an update is required.
+  * This call also will add the thermometer to fiber components to receive
+  * periodic callbacks.
+  *
+  * @return MICROBIT_OK on success.
+  */
+int MicroBitThermometer::updateSample()
+{
+    if(!(status & MICROBIT_THERMOMETER_ADDED_TO_IDLE))
+    {
+        // If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
+        // Otherwise, we do just do this on demand, when polled through our read() interface.
+        fiber_add_idle_component(this);
+        status |= MICROBIT_THERMOMETER_ADDED_TO_IDLE;
+    }
+
+    // check if we need to update our sample...
+    if(isSampleNeeded())
+    {
+        int32_t processorTemperature;
+        uint8_t sd_enabled;
+
+        // For now, we just rely on the nrf senesor to be the most accurate.
+        // The compass module also has a temperature sensor, and has the lowest power consumption, so will run the cooler...
+        // ...however it isn't trimmed for accuracy during manufacture, so requires calibration.
+
+        sd_softdevice_is_enabled(&sd_enabled);
+
+        if (sd_enabled)
+        {
+            // If Bluetooth is enabled, we need to go through the Nordic software to safely do this
+            sd_temp_get(&processorTemperature);
+        }
+        else
+        {
+            // Othwerwise, we access the information directly...
+            uint32_t *TEMP = (uint32_t *)0x4000C508;
+
+            NRF_TEMP->TASKS_START = 1;
+
+            while (NRF_TEMP->EVENTS_DATARDY == 0);
+
+            NRF_TEMP->EVENTS_DATARDY = 0;
+
+            processorTemperature = *TEMP;
+
+            NRF_TEMP->TASKS_STOP = 1;
+        }
+
+
+        // Record our reading...
+        temperature = processorTemperature / 4;
+
+        // Schedule our next sample.
+        sampleTime = system_timer_current_time() + samplePeriod;
+
+        // Send an event to indicate that we'e updated our temperature.
+        MicroBitEvent e(id, MICROBIT_THERMOMETER_EVT_UPDATE);
+    }
+
+    return MICROBIT_OK;
+};
 
 /**
  * Indicates if we'd like some processor time to sense the temperature. 0 means we're not due to read the tmeperature yet.
@@ -135,8 +191,7 @@ int MicroBitThermometer::isIdleCallbackNeeded()
   */
 void MicroBitThermometer::idleTick()
 {
-    if (isSampleNeeded())
-        updateTemperature();
+    updateSample();
 }
 
 /**
@@ -150,13 +205,14 @@ int MicroBitThermometer::isSampleNeeded()
 
 /**
  * Set the sample rate at which the temperatureis read (in ms).
- * n.b. the temperature is alwasy read in the background, so wis only updated
+ * n.b. the temperature is always read in the background, so is only updated
  * when the processor is idle, or when the temperature is explicitly read.
  * The default sample period is 1 second.
  * @param period the requested time between samples, in milliseconds.
  */
 void MicroBitThermometer::setPeriod(int period)
 {
+    updateSample();
     samplePeriod = period;
 }
 
@@ -205,52 +261,6 @@ int MicroBitThermometer::getOffset()
   */
 int MicroBitThermometer::setCalibration(int calibrationTemp)
 {
-    updateTemperature();
+    updateSample();
     return setOffset(temperature - calibrationTemp);
-}
-
-/**
- * Updates our recorded temperature from the many sensors on the micro:bit!
- */
-void MicroBitThermometer::updateTemperature()
-{
-    int32_t processorTemperature;
-	uint8_t sd_enabled;
-
-    // For now, we just rely on the nrf senesor to be the most accurate.
-    // The compass module also has a temperature sensor, and has the lowest power consumption, so will run the cooler...
-    // ...however it isn't trimmed for accuracy during manufacture, so requires calibration.
-
-    sd_softdevice_is_enabled(&sd_enabled);
-
-    if (sd_enabled)
-    {
-        // If Bluetooth is enabled, we need to go through the Nordic software to safely do this
-        sd_temp_get(&processorTemperature);
-    }
-    else
-    {
-        // Othwerwise, we access the information directly...
-        uint32_t *TEMP = (uint32_t *)0x4000C508;
-
-        NRF_TEMP->TASKS_START = 1;
-
-        while (NRF_TEMP->EVENTS_DATARDY == 0);
-
-        NRF_TEMP->EVENTS_DATARDY = 0;
-
-        processorTemperature = *TEMP;
-
-        NRF_TEMP->TASKS_STOP = 1;
-    }
-
-
-    // Record our reading...
-    temperature = processorTemperature / 4;
-
-    // Schedule our next sample.
-    sampleTime = system_timer_current_time() + samplePeriod;
-
-    // Send an event to indicate that we'e updated our temperature.
-    MicroBitEvent e(id, MICROBIT_THERMOMETER_EVT_UPDATE);
 }

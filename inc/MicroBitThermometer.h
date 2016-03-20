@@ -16,6 +16,8 @@
  */
 #define MICROBIT_THERMOMETER_EVT_UPDATE         1
 
+#define MICROBIT_THERMOMETER_ADDED_TO_IDLE      2
+
 /**
   * Class definition for MicroBit Thermometer.
   *
@@ -122,6 +124,16 @@ class MicroBitThermometer : public MicroBitComponent
     int getTemperature();
 
     /**
+      * Updates the temperature sample of this instance of MicroBitThermometer,
+      * only if isSampleNeeded() indicates that an update is required.
+      * This call also will add the thermometer to fiber components to receive
+      * periodic callbacks.
+      *
+      * @return MICROBIT_OK on success.
+      */
+    int updateSample();
+
+    /**
       * Periodic callback from MicroBit idle thread.
       * Check if any data is ready for reading by checking the interrupt.
       */
@@ -140,13 +152,6 @@ class MicroBitThermometer : public MicroBitComponent
       * @return 1 if we're due to take a temperature reading, 0 otherwise.
       */
     int isSampleNeeded();
-
-    /**
-      * Updates our recorded temeprature from the many sensors on the micro:bit!
-      */
-    void updateTemperature();
-
-
 };
 
 #endif
