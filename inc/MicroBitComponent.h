@@ -48,6 +48,7 @@
 #define MICROBIT_ID_RADIO               29
 #define MICROBIT_ID_RADIO_DATA_READY    30
 #define MICROBIT_ID_MULTIBUTTON_ATTACH  31
+#define MICROBIT_ID_SERIAL              32
 
 #define MICROBIT_ID_MESSAGE_BUS_LISTENER            1021          // Message bus indication that a handler for a given ID has been registered.
 #define MICROBIT_ID_NOTIFY_ONE                      1022          // Notfication channel, for general purpose synchronisation

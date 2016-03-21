@@ -15,7 +15,7 @@ enum ErrorCode{
     // Invalid parameter given.
     MICROBIT_INVALID_PARAMETER = -1001,
 
-    // Requested operation is unspupported.
+    // Requested operation is unsupported.
     MICROBIT_NOT_SUPPORTED = -1002,
 
     // Device calibration errors
@@ -32,7 +32,13 @@ enum ErrorCode{
     MICROBIT_CANCELLED = -1007,
 
     // I2C Communication error occured (typically I2C module on processor has locked up.)
-    MICROBIT_I2C_ERROR = -1010
+    MICROBIT_I2C_ERROR = -1010,
+
+    // The serial bus is currently in use by another fiber.
+    MICROBIT_SERIAL_IN_USE = -1011,
+
+    // The requested operation had no data to return.
+    MICROBIT_NO_DATA = -1012
 };
 
 /**
