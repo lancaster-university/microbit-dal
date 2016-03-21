@@ -1,5 +1,8 @@
 #include "mbed.h"
-#include "MicroBit.h"
+#include "MicroBitSerial.h"
+#include "ErrorNo.h"
+#include "MicroBitComponent.h"
+#include "MicroBitFiber.h"
 
 uint8_t MicroBitSerial::status = 0;
 
