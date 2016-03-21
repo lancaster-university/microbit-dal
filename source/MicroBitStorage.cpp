@@ -328,7 +328,7 @@ KeyValuePair* MicroBitStorage::get(ManagedString key)
  *
  * @param key the unique name used to identify a KeyValuePair in flash.
  *
- * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the given key
+ * @return MICROBIT_OK on success, or MICROBIT_NO_DATA if the given key
  * was not found in flash.
  */
 int MicroBitStorage::remove(const char* key)
@@ -346,7 +346,7 @@ int MicroBitStorage::remove(const char* key)
 
     //if we have no data, we have nothing to do.
     if(storeSize == 0)
-        return MICROBIT_NOT_SUPPORTED;
+        return MICROBIT_NO_DATA;
 
     //our KeyValueStore struct is always at 0
     flashPointer += kvStoreSize;
@@ -385,7 +385,7 @@ int MicroBitStorage::remove(const char* key)
     if(!found)
     {
         scratchKeyValueStore(KeyValueStore(MICROBIT_STORAGE_MAGIC, storeSize));
-        return MICROBIT_NOT_SUPPORTED;
+        return MICROBIT_NO_DATA;
     }
 
     //copy scratch to our storage page

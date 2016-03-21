@@ -152,7 +152,7 @@ class MicroBitStorage
      *
      * @param key the unique name used to identify a KeyValuePair in flash.
      *
-     * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the given key
+     * @return MICROBIT_OK on success, or MICROBIT_NO_DATA if the given key
      * was not found in flash.
      */
     int remove(const char* key);
