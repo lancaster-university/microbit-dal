@@ -55,7 +55,7 @@
   * MICROBIT_THERMOMETER_EVT_CHANGED
   * @endcode
   */
-MicroBitThermometer::MicroBitThermometer(uint16_t id, MicroBitStorage& _storage) :
+MicroBitThermometer::MicroBitThermometer(MicroBitStorage& _storage, uint16_t id) :
     storage(&_storage)
 {
     this->id = id;

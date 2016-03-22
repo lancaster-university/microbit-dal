@@ -29,14 +29,22 @@ struct MatrixPoint
 */
 struct MatrixMap
 {
-    int         rows;
-    int         columns;
+    int         width;                      // The physical width of the LED matrix, in pixels.
+    int         height;                     // The physical height of the LED matrix, in pixels.
+    int         rows;                       // The number of drive pins connected to LEDs.
+    int         columns;                    // The number of sink pins connected to the LEDs.
 
-    PinName     rowStart;
-    PinName     columnStart;
+    PinName     rowStart;                   // ID of the first drive pin.
+    PinName     columnStart;                // ID of the first sink pink.
 
-    const MatrixPoint *map;
+    const MatrixPoint *map;                 // Table mapping logical LED positions to physical positions.
 };
+
+/*
+ * Dimensions for well known micro:bit LED configurations
+ */
+#define MICROBIT_DISPLAY_WIDTH                  5
+#define MICROBIT_DISPLAY_HEIGHT                 5
 
 #if MICROBIT_DISPLAY_TYPE == MICROBUG_REFERENCE_DEVICE
 
@@ -112,6 +120,8 @@ struct MatrixMap
 //https://github.com/mbedmicro/mbed/blob/master/libraries/mbed/targets/hal/TARGET_NORDIC/TARGET_MCU_NRF51822/TARGET_NRF51_MICROBIT/PinNames.h
 const MatrixMap microbitMatrixMap =
 {
+    MICROBIT_DISPLAY_WIDTH, 
+    MICROBIT_DISPLAY_HEIGHT,
     MICROBIT_DISPLAY_ROW_COUNT,
     MICROBIT_DISPLAY_COLUMN_COUNT,
     ROW1,

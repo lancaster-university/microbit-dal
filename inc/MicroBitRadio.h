@@ -85,7 +85,7 @@ class MicroBitRadio : MicroBitComponent
      * Initialise the MicroBitRadio. Note that this class is demand activated, so most resources are only
      * committed if send/recv or event registrations calls are made.
      */
-    MicroBitRadio(uint16_t id);
+    MicroBitRadio(uint16_t id = MICROBIT_ID_RADIO);
 
     /**
      * Change the output power level of the transmitter to the given value.

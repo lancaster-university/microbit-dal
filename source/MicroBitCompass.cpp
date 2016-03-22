@@ -59,7 +59,7 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
   * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage) :
+MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address,  uint16_t id) :
     average(),
     sample(),
     int1(MICROBIT_PIN_COMPASS_DATA_READY),
@@ -90,7 +90,7 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2
   * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer) :
+MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, uint16_t address, uint16_t id) :
     average(),
     sample(),
     int1(MICROBIT_PIN_COMPASS_DATA_READY),
@@ -123,7 +123,7 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2
   * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitStorage& _storage) :
+MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address, uint16_t id) :
     average(),
     sample(),
     int1(MICROBIT_PIN_COMPASS_DATA_READY),
@@ -155,7 +155,7 @@ MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2
   * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c) :
+MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, uint16_t address, uint16_t id) :
     average(),
     sample(),
     int1(MICROBIT_PIN_COMPASS_DATA_READY),

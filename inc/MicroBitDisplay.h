@@ -22,8 +22,7 @@ const uint8_t panicFace[5] = {0x1B, 0x1B,0x0,0x0E,0x11};
 //
 // Internal constants
 //
-#define MICROBIT_DISPLAY_WIDTH                  5
-#define MICROBIT_DISPLAY_HEIGHT                 5
+
 #define MICROBIT_DISPLAY_SPACING                1
 #define MICROBIT_DISPLAY_ERROR_CHARS            4
 #define MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH    8
@@ -220,15 +219,16 @@ public:
       * Create a representation of a display of a given size.
       * The display is initially blank.
       *
-      * @param x the width of the display in pixels.
+      * @param id The ID display should use when sending events on the MessageBus.
+      * @param map The mapping information that relates pin inputs/outputs to physical screen coordinates.
       * @param y the height of the display in pixels.
       *
       * Example:
       * @code
-      * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
+      * MicroBitDisplay display(MICROBIT_ID_DISPLAY, microbitMatrixMap),
       * @endcode
       */
-    MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y, const MatrixMap &map);
+    MicroBitDisplay(uint16_t id = MICROBIT_ID_DISPLAY, const MatrixMap &map = microbitMatrixMap);
 
     /**
       * Stops any currently running animation, and any that are waiting to be displayed.

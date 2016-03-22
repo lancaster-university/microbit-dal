@@ -60,7 +60,7 @@ class MicroBitMultiButton : public MicroBitComponent
       * MICROBIT_BUTTON_EVT_HOLD
       * @endcode
       */
-    MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2, EventModel &messageBus);
+    MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2);
 
     /**
       * Tests if this MultiButton is currently pressed.

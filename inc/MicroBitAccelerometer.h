@@ -173,7 +173,7 @@ class MicroBitAccelerometer : public MicroBitComponent
      * accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR)
      * @endcode
      */
-    MicroBitAccelerometer(uint16_t id, uint16_t address, MicroBitI2C &_i2c);
+    MicroBitAccelerometer(MicroBitI2C &_i2c, uint16_t address = MMA8653_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_ACCELEROMETER);
 
     /**
      * Configures the accelerometer for G range and sample rate defined

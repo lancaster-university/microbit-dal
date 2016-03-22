@@ -28,16 +28,16 @@ MicroBitDisplay *MicroBitDisplay::defaultDisplay = NULL;
   * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
   * @endcode
   */
-MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y, const MatrixMap &map) :
+MicroBitDisplay::MicroBitDisplay(uint16_t id, const MatrixMap &map) :
     matrixMap(map),
-    image(x*2,y)
+    image(map.width*2,map.height)
 {
     //set pins as output
     nrf_gpio_range_cfg_output(matrixMap.columnStart, matrixMap.columnStart + matrixMap.columns + matrixMap.rows);
 
     this->id = id;
-    this->width = x;
-    this->height = y;
+    this->width = map.width;
+    this->height = map.height;
     this->strobeRow = 0;
     this->strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     this->rotation = MICROBIT_DISPLAY_ROTATION_0;

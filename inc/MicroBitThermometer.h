@@ -51,7 +51,7 @@ class MicroBitThermometer : public MicroBitComponent
       * MICROBIT_THERMOMETER_EVT_CHANGED
       * @endcode
       */
-    MicroBitThermometer(uint16_t id, MicroBitStorage& _storage);
+    MicroBitThermometer(MicroBitStorage& _storage, uint16_t id = MICROBIT_ID_THERMOMETER);
 
     /**
      * Constructor.
@@ -68,7 +68,7 @@ class MicroBitThermometer : public MicroBitComponent
      * MICROBIT_THERMOMETER_EVT_CHANGED
      * @endcode
      */
-    MicroBitThermometer(uint16_t id);
+    MicroBitThermometer(uint16_t id = MICROBIT_ID_THERMOMETER);
 
     /**
      * Set the sample rate at which the temperatureis read (in ms).

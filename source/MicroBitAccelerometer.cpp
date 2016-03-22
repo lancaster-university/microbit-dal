@@ -140,7 +140,7 @@ int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
  * accelerometer(MICROBIT_ID_ACCELEROMETER, MMA8653_DEFAULT_ADDR)
  * @endcode
  */
-MicroBitAccelerometer::MicroBitAccelerometer(uint16_t id, uint16_t address, MicroBitI2C& _i2c) : sample(), int1(MICROBIT_PIN_ACCEL_DATA_READY), i2c(_i2c)
+MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address, uint16_t id) : sample(), int1(MICROBIT_PIN_ACCEL_DATA_READY), i2c(_i2c)
 {
     // Store our identifiers.
     this->id = id;

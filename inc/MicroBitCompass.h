@@ -159,7 +159,7 @@ class MicroBitCompass : public MicroBitComponent
       * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
       * @endcode
       */
-    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage);
+    MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
       * Constructor.
@@ -181,7 +181,7 @@ class MicroBitCompass : public MicroBitComponent
       * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
       * @endcode
       */
-    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer);
+    MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
       * Constructor.
@@ -205,7 +205,7 @@ class MicroBitCompass : public MicroBitComponent
       * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
       * @endcode
       */
-    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c, MicroBitStorage& _storage);
+    MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
       * Constructor.
@@ -228,7 +228,7 @@ class MicroBitCompass : public MicroBitComponent
       * MICROBIT_COMPASS_EVT_CAL_END        // triggered when calibration has finished.
       * @endcode
       */
-    MicroBitCompass(uint16_t id, uint16_t address, MicroBitI2C& _i2c);
+    MicroBitCompass(MicroBitI2C& _i2c, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
      * Configures the compass for the sample rate defined
