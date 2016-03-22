@@ -120,7 +120,10 @@ MicroBit::MicroBit() :
     radio(),
     ble(NULL)
 {
-	// Bring up soft reset functionality as soon as possible.
+    // Clear our status
+    status = 0;
+
+    // Bring up soft reset functionality as soon as possible.
     resetButton.mode(PullUp);
     resetButton.fall(this, &MicroBit::reset);
 }
@@ -138,6 +141,9 @@ MicroBit::MicroBit() :
   */
 void MicroBit::init()
 {
+    if (status & MICROBIT_INITIALIZED)
+        return;
+
 #if CONFIG_ENABLED(MICROBIT_HEAP_ALLOCATOR)
     // Bring up a nested heap allocator.
     microbit_create_nested_heap(MICROBIT_NESTED_HEAP_SIZE);
@@ -152,6 +158,8 @@ void MicroBit::init()
     // Register our compass calibration algorithm.
     messageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBit::compassCalibrator, MESSAGE_BUS_LISTENER_IMMEDIATE);
     messageBus.listen(MICROBIT_ID_MESSAGE_BUS_LISTENER, MICROBIT_EVT_ANY, this, &MicroBit::onListenerRegisteredEvent);
+
+    status |= MICROBIT_INITIALIZED;
 
 #if CONFIG_ENABLED(MICROBIT_BLE_PAIRING_MODE)
     // Test if we need to enter BLE pairing mode...

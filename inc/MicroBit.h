@@ -41,10 +41,7 @@
 #include "MicroBitStorage.h"
 
 // MicroBit::flags values
-#define MICROBIT_FLAG_SCHEDULER_RUNNING         0x00000001
-#define MICROBIT_FLAG_ACCELEROMETER_RUNNING     0x00000002
-#define MICROBIT_FLAG_DISPLAY_RUNNING           0x00000004
-#define MICROBIT_FLAG_COMPASS_RUNNING           0x00000008
+#define MICROBIT_INITIALIZED                    0x01
 
 // MicroBit naming constants
 #define MICROBIT_NAME_LENGTH                    5
@@ -70,6 +67,7 @@ class MicroBit
     void                    compassCalibrator(MicroBitEvent e);
     void                    onListenerRegisteredEvent(MicroBitEvent evt);
     uint32_t                randomValue;
+    uint8_t                 status;
 
     public:
 
