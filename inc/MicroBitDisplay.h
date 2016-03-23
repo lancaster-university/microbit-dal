@@ -22,7 +22,6 @@
 //
 
 #define MICROBIT_DISPLAY_SPACING                1
-#define MICROBIT_DISPLAY_ROW_RESET              0x20
 #define MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH    8
 #define MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS    -255
 
@@ -60,12 +59,14 @@ class MicroBitDisplay : public MicroBitComponent
     uint8_t height;
     uint8_t brightness;
     uint8_t strobeRow;
-    uint8_t strobeBitMsk;
     uint8_t rotation;
     uint8_t mode;
     uint8_t greyscaleBitMsk;
     uint8_t timingCount;
+    uint32_t col_mask;
+
     Timeout renderTimer;
+    PortOut *LEDMatrix;
 
     //
     // State used by all animation routines.
@@ -212,7 +213,6 @@ public:
       *
       * @param id The ID display should use when sending events on the MessageBus.
       * @param map The mapping information that relates pin inputs/outputs to physical screen coordinates.
-      * @param y the height of the display in pixels.
       *
       * Example:
       * @code

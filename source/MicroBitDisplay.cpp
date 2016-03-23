@@ -18,8 +18,8 @@ const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 1
   * Create a representation of a display of a given size.
   * The display is initially blank.
   *
-  * @param x the width of the display in pixels.
-  * @param y the height of the display in pixels.
+  * @param id The ID display should use when sending events on the MessageBus.
+  * @param map The mapping information that relates pin inputs/outputs to physical screen coordinates.
   *
   * Example:
   * @code
@@ -30,23 +30,31 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, const MatrixMap &map) :
     matrixMap(map),
     image(map.width*2,map.height)
 {
-    //set pins as output
-    nrf_gpio_range_cfg_output(matrixMap.columnStart, matrixMap.columnStart + matrixMap.columns + matrixMap.rows);
+    uint32_t row_mask;
 
     this->id = id;
     this->width = map.width;
     this->height = map.height;
-    this->strobeRow = 0;
-    this->strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     this->rotation = MICROBIT_DISPLAY_ROTATION_0;
+
+    row_mask = 0;
+    col_mask = 0;
+    strobeRow = 0;
+    row_mask = 0;
+
+    for (int i = matrixMap.rowStart; i < matrixMap.rowStart + matrixMap.rows; i++)
+        row_mask |= 0x01 << i;
+
+    for (int i = matrixMap.columnStart; i < matrixMap.columnStart + matrixMap.columns; i++)
+        col_mask |= 0x01 << i;
+
+    LEDMatrix = new PortOut(Port0, row_mask | col_mask);
+
     this->greyscaleBitMsk = 0x01;
     this->timingCount = 0;
-
     this->setBrightness(MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS);
-
     this->mode = DISPLAY_MODE_BLACK_AND_WHITE;
     this->animationMode = ANIMATION_MODE_NONE;
-
     this->lightSensor = NULL;
 
 	system_timer_add_component(this);
@@ -72,14 +80,11 @@ void MicroBitDisplay::systemTick()
     }
 
     // Move on to the next row.
-    strobeBitMsk <<= 1;
     strobeRow++;
 
     //reset the row counts and bit mask when we have hit the max.
-    if(strobeRow == matrixMap.rows){
+    if(strobeRow == matrixMap.rows)
         strobeRow = 0;
-        strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
-    }
 
     if(mode == DISPLAY_MODE_BLACK_AND_WHITE)
         render();
@@ -97,24 +102,20 @@ void MicroBitDisplay::systemTick()
 
 void MicroBitDisplay::renderFinish()
 {
-    //kept inline to reduce overhead
-    //clear the old bit pattern for this row.
-    //clear port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0 | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
-
-    // clear port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | 0x1F);
+    *LEDMatrix = 0;
 }
 
 void MicroBitDisplay::render()
 {
-    // Simple optimisation. If display is at zero brightness, there's nothign to do.
+    // Simple optimisation. 
+    // If display is at zero brightness, there's nothing to do.
     if(brightness == 0)
         return;
 
-    int coldata = 0;
-
     // Calculate the bitpattern to write.
+    uint32_t row_data = 0x01 << (microbitMatrixMap.rowStart + strobeRow);
+    uint32_t col_data = 0;
+
     for (int i = 0; i < matrixMap.columns; i++)
     {
         int index = (i * matrixMap.rows) + strobeRow;
@@ -142,15 +143,14 @@ void MicroBitDisplay::render()
         }
 
         if(image.getBitmap()[y*(width*2)+x])
-            coldata |= (1 << i);
+            col_data |= (1 << i);
     }
 
-    //write the new bit pattern
-    //set port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
+    // Invert column bits (as we're sinking not sourcing power), and mask off any unused bits.
+    col_data = ~col_data << matrixMap.columnStart & col_mask;
 
-    //set port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F));
+    // Write the new bit pattern
+    *LEDMatrix = col_data | row_data;
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
     if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
@@ -166,20 +166,15 @@ void MicroBitDisplay::renderWithLightSense()
     //reset the row counts and bit mask when we have hit the max.
     if(strobeRow == matrixMap.rows + 1)
     {
-
         MicroBitEvent(id, MICROBIT_DISPLAY_EVT_LIGHT_SENSE);
-
         strobeRow = 0;
-        strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     }
     else
     {
-
         render();
         this->animationUpdate();
 
         // Move on to the next row.
-        strobeBitMsk <<= 1;
         strobeRow++;
     }
 
@@ -187,7 +182,8 @@ void MicroBitDisplay::renderWithLightSense()
 
 void MicroBitDisplay::renderGreyscale()
 {
-    int coldata = 0;
+    uint32_t row_data = 0x01 << (microbitMatrixMap.rowStart + strobeRow);
+    uint32_t col_data = 0;
 
     // Calculate the bitpattern to write.
     for (int i = 0; i < matrixMap.columns; i++)
@@ -217,14 +213,14 @@ void MicroBitDisplay::renderGreyscale()
         }
 
         if(min(image.getBitmap()[y * (width * 2) + x],brightness) & greyscaleBitMsk)
-            coldata |= (1 << i);
+            col_data |= (1 << i);
     }
-    //write the new bit pattern
-    //set port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
 
-    //set port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F));
+    // Invert column bits (as we're sinking not sourcing power), and mask off any unused bits.
+    col_data = ~col_data << matrixMap.columnStart & col_mask;
+
+    // Write the new bit pattern
+    *LEDMatrix = col_data | row_data;
 
     if(timingCount > MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH-1)
         return;
