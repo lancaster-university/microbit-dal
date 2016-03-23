@@ -67,6 +67,7 @@
 
 // mbr_t.flags field to indicate if an MBR is free/busy.
 #define MBR_FREE 0x80000000
+#define MBR_BUSY 0x00000000
 
 // mbr_t.flags field mask to get the file length.
 #define MBR_SIZE_MASK 0x7FFFFFFF
@@ -76,6 +77,8 @@
 
 // Check if a given MBR is free.
 #define MBR_IS_FREE(mbr) ( (mbr).flags & MBR_FREE)
+
+
 
 // open() flags.
 #define MB_READ 0x01
@@ -97,9 +100,12 @@
 // Obtain pointer to the indexed mbr entry.
 #define mbr_by_id(index) (&mbr_loc[index])
 
-// Check if init() has been called 
-#define FS_INITIALIZED() (flash_start != NULL)
-#define MBR_INITIALIZED() (mbr_loc != NULL)
+// Test if init()/mbr_init have been called.
+#define FS_INITIALIZED() (this->flash_start != NULL)
+#define MBR_INITIALIZED() (this->mbr_loc != NULL)
+
+// Check if a mbr pointer is within table.
+#define MBR_PTR_VALID(p) ( (p >= this->mbr_loc) && (p-this->mbr_loc)<=(this->mbr_entries-1) )
 
 /**
   * @brief MBR entry struct, for each file.
