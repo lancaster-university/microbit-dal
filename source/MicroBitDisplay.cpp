@@ -8,12 +8,10 @@
 #include "MicroBitSystemTimer.h"
 #include "MicroBitFiber.h"
 #include "MicroBitButton.h"
-#include "MicroBitPanic.h"
 #include "ErrorNo.h"
 #include "nrf_gpio.h"
 
 const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
-MicroBitDisplay *MicroBitDisplay::defaultDisplay = NULL;
 
 /**
   * Constructor.
@@ -43,7 +41,6 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, const MatrixMap &map) :
     this->rotation = MICROBIT_DISPLAY_ROTATION_0;
     this->greyscaleBitMsk = 0x01;
     this->timingCount = 0;
-    this->errorTimeout = 0;
 
     this->setBrightness(MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS);
 
@@ -51,9 +48,6 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, const MatrixMap &map) :
     this->animationMode = ANIMATION_MODE_NONE;
 
     this->lightSensor = NULL;
-
-    if (!this->defaultDisplay)
-        this->defaultDisplay = this;
 
 	system_timer_add_component(this);
 
@@ -1057,131 +1051,6 @@ void MicroBitDisplay::disable()
 void MicroBitDisplay::clear()
 {
     image.clear();
-}
-
-/**
- * Defines the length of time that the device will remain in a error state before resetting.
- * @param iteration The number of times the error code will be displayed before resetting. Set to zero to remain in error state forever.
- *
- * Example:
- * @code
- * uBit.display.setErrorTimeout(4);
- * @endcode
- */
-void MicroBitDisplay::setErrorTimeout(int iterations)
-{
-    this->errorTimeout = iterations;
-}
-
-/**
-  * Displays "=(" and an accompanying status code on the default display.
-  * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-  *
-  * Example:
-  * @code
-  * uBit.display.error(20);
-  * @endcode
-  */
-void MicroBitDisplay::panic(int statusCode)
-{
-	if(MicroBitDisplay::defaultDisplay)
-		defaultDisplay->error(statusCode);
-
-}
-/**
-  * Displays "=(" and an accompanying status code on the default display.
-  * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-  *
-  * Example:
-  * @code
-  * uBit.display.error(20);
-  * @endcode
-  */
-void MicroBitDisplay::error(int statusCode)
-{
-    DigitalIn resetButton(MICROBIT_PIN_BUTTON_RESET);
-    resetButton.mode(PullUp);
-
-    __disable_irq(); //stop ALL interrupts
-
-    if(statusCode < 0 || statusCode > 255)
-        statusCode = 0;
-
-    uint8_t strobeRow = 0;
-    uint8_t strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
-    uint8_t count = errorTimeout ? errorTimeout : 1;
-
-    //point to the font stored in Flash
-    const unsigned char * fontLocation = MicroBitFont::defaultFont;
-
-    //get individual digits of status code, and place it into a single array/
-    const uint8_t* chars[MICROBIT_DISPLAY_ERROR_CHARS] = { panicFace, fontLocation+((((statusCode/100 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode/10 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode % 10)+48)-MICROBIT_FONT_ASCII_START) * 5)};
-
-    //enter infinite loop.
-    while(count)
-    {
-        //iterate through our chars :)
-        for(int characterCount = 0; characterCount < MICROBIT_DISPLAY_ERROR_CHARS; characterCount++)
-        {
-            int outerCount = 0;
-
-            //display the current character
-            while(outerCount < 500)
-            {
-                int coldata = 0;
-
-                int i = 0;
-
-                //if we have hit the row limit - reset both the bit mask and the row variable
-                if(strobeRow == 3)
-                {
-                    strobeRow = 0;
-                    strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
-                }
-
-                // Calculate the bitpattern to write.
-                for (i = 0; i < matrixMap.columns; i++)
-                {
-
-                    int index = (i * matrixMap.rows) + strobeRow;
-
-                    int bitMsk = 0x10 >> matrixMap.map[index].x; //chars are right aligned but read left to right
-                    int y = matrixMap.map[index].y;
-
-                    if(chars[characterCount][y] & bitMsk)
-                        coldata |= (1 << i);
-                }
-
-                nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0); //clear port 0 4-7
-                nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | 0x1F); // clear port 1 8-12
-
-                //write the new bit pattern
-                nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, ~coldata<<4 & 0xF0); //set port 0 4-7
-                nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); //set port 1 8-12
-
-                //burn cycles
-                i = 1000;
-                while(i>0)
-                {
-                    // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
-                    if (resetButton == 0)
-                        microbit_reset();
-
-                    i--;
-                }
-
-                //update the bit mask and row count
-                strobeBitMsk <<= 1;
-                strobeRow++;
-                outerCount++;
-            }
-        }
-
-        if (errorTimeout)
-            count--;
-    }
-
-    microbit_reset();
 }
 
 /**

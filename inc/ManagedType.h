@@ -106,7 +106,7 @@ public:
      */
     T* operator->() {
         if (object == NULL)
-            panic(MICROBIT_NULL_DEREFERENCE);
+            microbit_panic(MICROBIT_NULL_DEREFERENCE);
         return object;
     }
 

@@ -297,6 +297,7 @@ void fiber_sleep(unsigned long t)
 {
     Fiber *f = currentFiber;
 
+    // If the scheduler is not running, then simply perform a spin wait and exit.
     if (!fiber_scheduler_running())
     {
         wait_ms(t);

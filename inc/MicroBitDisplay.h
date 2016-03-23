@@ -17,18 +17,14 @@
 #define MICROBIT_DISPLAY_EVT_FREE                       2
 #define MICROBIT_DISPLAY_EVT_LIGHT_SENSE                4
 
-const uint8_t panicFace[5] = {0x1B, 0x1B,0x0,0x0E,0x11};
-
 //
 // Internal constants
 //
 
 #define MICROBIT_DISPLAY_SPACING                1
-#define MICROBIT_DISPLAY_ERROR_CHARS            4
+#define MICROBIT_DISPLAY_ROW_RESET              0x20
 #define MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH    8
 #define MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS    -255
-
-#define MICROBIT_DISPLAY_ROW_RESET              0x20
 
 enum AnimationMode {
     ANIMATION_MODE_NONE,
@@ -69,12 +65,7 @@ class MicroBitDisplay : public MicroBitComponent
     uint8_t mode;
     uint8_t greyscaleBitMsk;
     uint8_t timingCount;
-    uint8_t errorTimeout;
     Timeout renderTimer;
-
-	//
-	// Reference to the first display created. Used as a defaut output channel, such as panic().
-	static MicroBitDisplay *defaultDisplay;
 
     //
     // State used by all animation routines.
@@ -525,39 +516,6 @@ public:
       * @endcode
       */
     void clear();
-
-    /**
-     * Displays "=(" and an accompanying status code on the default display.
-     * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-     *
-     * Example:
-     * @code
-     * uBit.display.error(20);
-     * @endcode
-     */
-    static void panic(int statusCode);
-
-    /**
-     * Displays "=(" and an accompanying status code infinitely.
-     * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-     *
-     * Example:
-     * @code
-     * uBit.display.error(20);
-     * @endcode
-     */
-    void error(int statusCode);
-
-	/**
-     * Defines the length of time that the device will remain in a error state before resetting.
-     * @param iteration The number of times the error code will be displayed before resetting. Set to zero to remain in error state forever.
-     *
-     * Example:
-     * @code
-     * uBit.display.setErrorTimeout(4);
-     * @endcode
-     */
-    void setErrorTimeout(int iterations);
 
     /**
       * Updates the font that will be used for display operations.
