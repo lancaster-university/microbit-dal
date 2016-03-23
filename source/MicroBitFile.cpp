@@ -236,7 +236,7 @@ int MicroBitFile::mbr_pop_free_block() {
 int MicroBitFile::mbr_init(void* mbr_location, int mbr_no) {
     if(MBR_INITIALIZED()) return 0;
 
-    uBit.serial.printf("initializing mbr\n");
+    PRINTF("initializing mbr\n");
 
     this->mbr_free_loc = (mbr*)mbr_location;
     this->mbr_loc = (mbr*)mbr_location + 1;
@@ -314,7 +314,8 @@ int MicroBitFile::mbr_build() {
   * Constructor. Calls the necessary init() functions.
   */
 MicroBitFile::MicroBitFile() {
-    PRINTF("initializing.. %d\n", this->init());
+    int initialized = this->init();
+    PRINTF("initializing.. %d\n", initialized);
     memset(this->fd_table, 0x00, sizeof(tinyfs_fd) * MAX_FD);
 }
 
