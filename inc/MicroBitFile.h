@@ -97,6 +97,10 @@
 // Obtain pointer to the indexed mbr entry.
 #define mbr_by_id(index) (&mbr_loc[index])
 
+// Check if init() has been called 
+#define FS_INITIALIZED() (flash_start != NULL)
+#define MBR_INITIALIZED() (mbr_loc != NULL)
+
 /**
   * @brief MBR entry struct, for each file.
   * 
