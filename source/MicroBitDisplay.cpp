@@ -7,9 +7,7 @@
 #include "MicroBitDisplay.h"
 #include "MicroBitSystemTimer.h"
 #include "MicroBitFiber.h"
-#include "MicroBitButton.h"
 #include "ErrorNo.h"
-#include "nrf_gpio.h"
 
 const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
 
