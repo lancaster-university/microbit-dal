@@ -20,6 +20,9 @@
     "nrf51-sdk": "lancaster-university/nrf51-sdk#v2.2.0+mb3"
   },
   "extraIncludes": [
-    "inc"
+    "inc/core",
+    "inc/types",
+    "inc/drivers",
+    "inc/bluetooth"
   ]
 }
