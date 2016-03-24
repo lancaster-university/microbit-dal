@@ -344,6 +344,22 @@ void fiber_sleep(unsigned long t)
   */
 int fiber_wait_for_event(uint16_t id, uint16_t value)
 {
+    int ret = fiber_wake_on_event(id, value);
+    
+    schedule();
+
+	return ret;
+}
+
+/**
+  * Blocks the calling thread until the specified event is raised.
+  *
+  * @param id The ID field of the event to listen for (e.g. MICROBIT_ID_BUTTON_A)
+  * @param value The VALUE of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
+  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
+  */
+int fiber_wake_on_event(uint16_t id, uint16_t value)
+{
     Fiber *f = currentFiber;
 
 	if (messageBus == NULL || !fiber_scheduler_running())
@@ -377,10 +393,7 @@ int fiber_wait_for_event(uint16_t id, uint16_t value)
     if (id != MICROBIT_ID_NOTIFY && id != MICROBIT_ID_NOTIFY_ONE)
         messageBus->listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
-    // Finally, enter the scheduler.
-    schedule();
-
-	return MICROBIT_OK;
+    return MICROBIT_OK;
 }
 
 /**

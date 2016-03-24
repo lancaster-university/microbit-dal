@@ -170,6 +170,15 @@ void scheduler_tick();
 int fiber_wait_for_event(uint16_t id, uint16_t value);
 
 /**
+  * Blocks the calling thread until the specified event is raised.
+  *
+  * @param id The ID field of the event to listen for (e.g. MICROBIT_ID_BUTTON_A)
+  * @param value The VALUE of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
+  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
+  */
+int fiber_wake_on_event(uint16_t id, uint16_t value);
+
+/**
   * Executes the given function asynchronously if necessary.
   *
   * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
