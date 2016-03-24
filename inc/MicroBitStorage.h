@@ -12,8 +12,8 @@
 #define MICROBIT_STORAGE_KEY_SIZE               16
 #define MICROBIT_STORAGE_VALUE_SIZE             MICROBIT_STORAGE_BLOCK_SIZE - MICROBIT_STORAGE_KEY_SIZE
 
-#define MICROBIT_STORAGE_STORE_PAGE_OFFSET      19      //Use the page just below the BLE Bond Data.
-#define MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET    20      //Use the page just below our storage page as our scratch area.
+#define MICROBIT_STORAGE_STORE_PAGE_OFFSET      17      //Use the page just above the BLE Bond Data.
+#define MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET    19      //Use the page just below the BLE Bond Data.
 
 struct KeyValuePair
 {
@@ -43,6 +43,20 @@ struct KeyValueStore
 /**
   * Class definition for the MicroBitStorage class.
   * This allows reading and writing of small blocks of data to FLASH memory.
+  *
+  * This class operates as a key value store, it allows the retrieval, addition
+  * and deletion of KeyValuePairs.
+  *
+  * The first 8 bytes are reserved for the KeyValueStore struct which gives core
+  * information such as the number of KeyValuePairs in the store, and whether the
+  * store has been initialised.
+  *
+  * After the KeyValueStore struct, KeyValuePairs are arranged contiguously until
+  * the end of the block used as persistent storage.
+  *
+  * |-------8-------|--------48-------|-----|---------48--------|
+  * | KeyValueStore | KeyValuePair[0] | ... | KeyValuePair[N-1] |
+  * |---------------|-----------------|-----|-------------------|
   */
 class MicroBitStorage
 {
