@@ -78,7 +78,7 @@ extern Fiber *currentFiber;
   *
   * This function must be called once only from the main thread, and before any other Fiber operation.
   */
-void scheduler_init(EventModel *_messageBus);
+void scheduler_init(EventModel &_messageBus);
 
 /**
   * Determines if the fiber scheduler is operational.

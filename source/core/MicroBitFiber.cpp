@@ -153,7 +153,7 @@ Fiber *getFiberContext()
   *
   * This function must be called once only from the main thread, and before any other Fiber operation.
   */
-void scheduler_init(EventModel *_messageBus)
+void scheduler_init(EventModel &_messageBus)
 {
     // If we're already initialised, then nothing to do.
     if (fiber_scheduler_running())
@@ -161,7 +161,7 @@ void scheduler_init(EventModel *_messageBus)
 
 	// Store a reference to the messageBus provided.
 	// This parameter will be NULL if we're being run without a message bus.
-	messageBus = _messageBus;
+	messageBus = &_messageBus;
 
     // Create a new fiber context
     currentFiber = getFiberContext();
