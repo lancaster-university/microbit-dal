@@ -17,19 +17,13 @@
 #define MICROBIT_DISPLAY_EVT_FREE                       2
 #define MICROBIT_DISPLAY_EVT_LIGHT_SENSE                4
 
-const uint8_t panicFace[5] = {0x1B, 0x1B,0x0,0x0E,0x11};
-
 //
 // Internal constants
 //
-#define MICROBIT_DISPLAY_WIDTH                  5
-#define MICROBIT_DISPLAY_HEIGHT                 5
+
 #define MICROBIT_DISPLAY_SPACING                1
-#define MICROBIT_DISPLAY_ERROR_CHARS            4
 #define MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH    8
 #define MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS    -255
-
-#define MICROBIT_DISPLAY_ROW_RESET              0x20
 
 enum AnimationMode {
     ANIMATION_MODE_NONE,
@@ -65,17 +59,14 @@ class MicroBitDisplay : public MicroBitComponent
     uint8_t height;
     uint8_t brightness;
     uint8_t strobeRow;
-    uint8_t strobeBitMsk;
     uint8_t rotation;
     uint8_t mode;
     uint8_t greyscaleBitMsk;
     uint8_t timingCount;
-    uint8_t errorTimeout;
-    Timeout renderTimer;
+    uint32_t col_mask;
 
-	//
-	// Reference to the first display created. Used as a defaut output channel, such as panic().
-	static MicroBitDisplay *defaultDisplay;
+    Timeout renderTimer;
+    PortOut *LEDMatrix;
 
     //
     // State used by all animation routines.
@@ -211,6 +202,13 @@ class MicroBitDisplay : public MicroBitComponent
       */
     void fiberWait();
 
+    /**
+      * Enables or disables the display entirely, and releases the pins for other uses.
+      *
+      * @param enableDisplay true to enabled the display, or false to disable it.
+      */
+    void setEnable(bool enableDisplay);
+
 public:
     // The mutable bitmap buffer being rendered to the LED matrix.
     MicroBitImage image;
@@ -220,15 +218,15 @@ public:
       * Create a representation of a display of a given size.
       * The display is initially blank.
       *
-      * @param x the width of the display in pixels.
-      * @param y the height of the display in pixels.
+      * @param id The ID display should use when sending events on the MessageBus.
+      * @param map The mapping information that relates pin inputs/outputs to physical screen coordinates.
       *
       * Example:
       * @code
-      * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
+      * MicroBitDisplay display(MICROBIT_ID_DISPLAY, microbitMatrixMap),
       * @endcode
       */
-    MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y, const MatrixMap &map);
+    MicroBitDisplay(uint16_t id = MICROBIT_ID_DISPLAY, const MatrixMap &map = microbitMatrixMap);
 
     /**
       * Stops any currently running animation, and any that are waiting to be displayed.
@@ -525,39 +523,6 @@ public:
       * @endcode
       */
     void clear();
-
-    /**
-     * Displays "=(" and an accompanying status code on the default display.
-     * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-     *
-     * Example:
-     * @code
-     * uBit.display.error(20);
-     * @endcode
-     */
-    static void panic(int statusCode);
-
-    /**
-     * Displays "=(" and an accompanying status code infinitely.
-     * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-     *
-     * Example:
-     * @code
-     * uBit.display.error(20);
-     * @endcode
-     */
-    void error(int statusCode);
-
-	/**
-     * Defines the length of time that the device will remain in a error state before resetting.
-     * @param iteration The number of times the error code will be displayed before resetting. Set to zero to remain in error state forever.
-     *
-     * Example:
-     * @code
-     * uBit.display.setErrorTimeout(4);
-     * @endcode
-     */
-    void setErrorTimeout(int iterations);
 
     /**
       * Updates the font that will be used for display operations.

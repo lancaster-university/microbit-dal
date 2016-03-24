@@ -6,7 +6,6 @@
 #include "MicroBitComponent.h"
 #include "MicroBitEvent.h"
 
-//TODO: When platform is built for MB2 - pins will be defined by default, these will change...
 #define MICROBIT_PIN_BUTTON_A                   P0_17
 #define MICROBIT_PIN_BUTTON_B                   P0_26
 #define MICROBIT_PIN_BUTTON_RESET               P0_19
@@ -77,7 +76,7 @@ class MicroBitButton : public MicroBitComponent
       * MICROBIT_BUTTON_EVT_HOLD
       * @endcode
       */
-    MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventConfiguration eventConfiguration = MICROBIT_BUTTON_ALL_EVENTS, PinMode mode = PullNone);
+    MicroBitButton(PinName name, uint16_t id, MicroBitButtonEventConfiguration eventConfiguration = MICROBIT_BUTTON_ALL_EVENTS, PinMode mode = PullNone);
 
     /**
       * Tests if this Button is currently pressed.

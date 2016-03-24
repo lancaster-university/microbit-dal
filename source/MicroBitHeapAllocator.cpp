@@ -1,6 +1,6 @@
 #include "MicroBitConfig.h"
 #include "MicroBitHeapAllocator.h"
-#include "MicroBitPanic.h"
+#include "MicroBitDevice.h"
 #include "ErrorNo.h"
 
 /**
@@ -339,7 +339,7 @@ void *microbit_malloc(size_t size)
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
-	MicroBitDisplay::panic(MICROBIT_OOM);
+	microbit_panic(MICROBIT_OOM);
 #endif
 
     return NULL;

@@ -7,53 +7,53 @@
 #include "MicroBitDisplay.h"
 #include "MicroBitSystemTimer.h"
 #include "MicroBitFiber.h"
-#include "MicroBitButton.h"
-#include "MicroBitPanic.h"
 #include "ErrorNo.h"
-#include "nrf_gpio.h"
 
 const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
-MicroBitDisplay *MicroBitDisplay::defaultDisplay = NULL;
 
 /**
   * Constructor.
   * Create a representation of a display of a given size.
   * The display is initially blank.
   *
-  * @param x the width of the display in pixels.
-  * @param y the height of the display in pixels.
+  * @param id The ID display should use when sending events on the MessageBus.
+  * @param map The mapping information that relates pin inputs/outputs to physical screen coordinates.
   *
   * Example:
   * @code
   * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
   * @endcode
   */
-MicroBitDisplay::MicroBitDisplay(uint16_t id, uint8_t x, uint8_t y, const MatrixMap &map) :
+MicroBitDisplay::MicroBitDisplay(uint16_t id, const MatrixMap &map) :
     matrixMap(map),
-    image(x*2,y)
+    image(map.width*2,map.height)
 {
-    //set pins as output
-    nrf_gpio_range_cfg_output(matrixMap.columnStart, matrixMap.columnStart + matrixMap.columns + matrixMap.rows);
+    uint32_t row_mask;
 
     this->id = id;
-    this->width = x;
-    this->height = y;
-    this->strobeRow = 0;
-    this->strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
+    this->width = map.width;
+    this->height = map.height;
     this->rotation = MICROBIT_DISPLAY_ROTATION_0;
+
+    row_mask = 0;
+    col_mask = 0;
+    strobeRow = 0;
+    row_mask = 0;
+
+    for (int i = matrixMap.rowStart; i < matrixMap.rowStart + matrixMap.rows; i++)
+        row_mask |= 0x01 << i;
+
+    for (int i = matrixMap.columnStart; i < matrixMap.columnStart + matrixMap.columns; i++)
+        col_mask |= 0x01 << i;
+
+    LEDMatrix = new PortOut(Port0, row_mask | col_mask);
+
     this->greyscaleBitMsk = 0x01;
     this->timingCount = 0;
-    this->errorTimeout = 0;
-
     this->setBrightness(MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS);
-
     this->mode = DISPLAY_MODE_BLACK_AND_WHITE;
     this->animationMode = ANIMATION_MODE_NONE;
-
     this->lightSensor = NULL;
-
-    if (!this->defaultDisplay)
-        this->defaultDisplay = this;
 
 	system_timer_add_component(this);
 
@@ -78,14 +78,11 @@ void MicroBitDisplay::systemTick()
     }
 
     // Move on to the next row.
-    strobeBitMsk <<= 1;
     strobeRow++;
 
     //reset the row counts and bit mask when we have hit the max.
-    if(strobeRow == matrixMap.rows){
+    if(strobeRow == matrixMap.rows)
         strobeRow = 0;
-        strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
-    }
 
     if(mode == DISPLAY_MODE_BLACK_AND_WHITE)
         render();
@@ -103,24 +100,20 @@ void MicroBitDisplay::systemTick()
 
 void MicroBitDisplay::renderFinish()
 {
-    //kept inline to reduce overhead
-    //clear the old bit pattern for this row.
-    //clear port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0 | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
-
-    // clear port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | 0x1F);
+    *LEDMatrix = 0;
 }
 
 void MicroBitDisplay::render()
 {
-    // Simple optimisation. If display is at zero brightness, there's nothign to do.
+    // Simple optimisation. 
+    // If display is at zero brightness, there's nothing to do.
     if(brightness == 0)
         return;
 
-    int coldata = 0;
-
     // Calculate the bitpattern to write.
+    uint32_t row_data = 0x01 << (microbitMatrixMap.rowStart + strobeRow);
+    uint32_t col_data = 0;
+
     for (int i = 0; i < matrixMap.columns; i++)
     {
         int index = (i * matrixMap.rows) + strobeRow;
@@ -148,15 +141,14 @@ void MicroBitDisplay::render()
         }
 
         if(image.getBitmap()[y*(width*2)+x])
-            coldata |= (1 << i);
+            col_data |= (1 << i);
     }
 
-    //write the new bit pattern
-    //set port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
+    // Invert column bits (as we're sinking not sourcing power), and mask off any unused bits.
+    col_data = ~col_data << matrixMap.columnStart & col_mask;
 
-    //set port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F));
+    // Write the new bit pattern
+    *LEDMatrix = col_data | row_data;
 
     //timer does not have enough resolution for brightness of 1. 23.53 us
     if(brightness != MICROBIT_DISPLAY_MAXIMUM_BRIGHTNESS && brightness > MICROBIT_DISPLAY_MINIMUM_BRIGHTNESS)
@@ -172,20 +164,15 @@ void MicroBitDisplay::renderWithLightSense()
     //reset the row counts and bit mask when we have hit the max.
     if(strobeRow == matrixMap.rows + 1)
     {
-
         MicroBitEvent(id, MICROBIT_DISPLAY_EVT_LIGHT_SENSE);
-
         strobeRow = 0;
-        strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
     }
     else
     {
-
         render();
         this->animationUpdate();
 
         // Move on to the next row.
-        strobeBitMsk <<= 1;
         strobeRow++;
     }
 
@@ -193,7 +180,8 @@ void MicroBitDisplay::renderWithLightSense()
 
 void MicroBitDisplay::renderGreyscale()
 {
-    int coldata = 0;
+    uint32_t row_data = 0x01 << (microbitMatrixMap.rowStart + strobeRow);
+    uint32_t col_data = 0;
 
     // Calculate the bitpattern to write.
     for (int i = 0; i < matrixMap.columns; i++)
@@ -223,14 +211,14 @@ void MicroBitDisplay::renderGreyscale()
         }
 
         if(min(image.getBitmap()[y * (width * 2) + x],brightness) & greyscaleBitMsk)
-            coldata |= (1 << i);
+            col_data |= (1 << i);
     }
-    //write the new bit pattern
-    //set port 0 4-7 and retain lower 4 bits
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, (~coldata<<4 & 0xF0) | (nrf_gpio_port_read(NRF_GPIO_PORT_SELECT_PORT0) & 0x0F));
 
-    //set port 1 8-12 for the current row
-    nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F));
+    // Invert column bits (as we're sinking not sourcing power), and mask off any unused bits.
+    col_data = ~col_data << matrixMap.columnStart & col_mask;
+
+    // Write the new bit pattern
+    *LEDMatrix = col_data | row_data;
 
     if(timingCount > MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH-1)
         return;
@@ -1014,6 +1002,39 @@ void MicroBitDisplay::rotateTo(DisplayRotation rotation)
 }
 
 /**
+ * Enables or disables the display entirely, and releases the pins for other uses.
+ *
+ * @param enableDisplay true to enabled the display, or false to disable it.
+ */
+void MicroBitDisplay::setEnable(bool enableDisplay)
+{
+    // If we're already in the correct state, then there's nothing to do.
+    if(((status & MICROBIT_COMPONENT_RUNNING) && enableDisplay) || (!(status & MICROBIT_COMPONENT_RUNNING) && !enableDisplay))
+        return;
+
+    uint32_t rmask = 0;
+    uint32_t cmask = 0;
+
+    for (int i = matrixMap.rowStart; i < matrixMap.rowStart + matrixMap.rows; i++)
+        rmask |= 0x01 << i;
+
+    for (int i = matrixMap.columnStart; i < matrixMap.columnStart + matrixMap.columns; i++)
+        cmask |= 0x01 << i;
+
+    if (enableDisplay)
+    {
+        PortOut p(Port0, rmask | cmask);
+        status |= MICROBIT_COMPONENT_RUNNING;
+    }
+    else
+    {
+        PortIn p(Port0, rmask | cmask);
+        p.mode(PullNone);
+        status &= ~MICROBIT_COMPONENT_RUNNING;
+    }
+}
+
+/**
   * Enables the display, should only be called if the display is disabled.
   *
   * Example:
@@ -1023,11 +1044,7 @@ void MicroBitDisplay::rotateTo(DisplayRotation rotation)
   */
 void MicroBitDisplay::enable()
 {
-    if(!(status & MICROBIT_COMPONENT_RUNNING))
-    {
-        setBrightness(brightness);
-    	status |= MICROBIT_COMPONENT_RUNNING;
-    }
+    setEnable(true);
 }
 
 /**
@@ -1041,8 +1058,7 @@ void MicroBitDisplay::enable()
   */
 void MicroBitDisplay::disable()
 {
-    if(status & MICROBIT_COMPONENT_RUNNING)
-        status &= ~MICROBIT_COMPONENT_RUNNING;           //unset the display running flag
+    setEnable(false);
 }
 
 /**
@@ -1057,131 +1073,6 @@ void MicroBitDisplay::disable()
 void MicroBitDisplay::clear()
 {
     image.clear();
-}
-
-/**
- * Defines the length of time that the device will remain in a error state before resetting.
- * @param iteration The number of times the error code will be displayed before resetting. Set to zero to remain in error state forever.
- *
- * Example:
- * @code
- * uBit.display.setErrorTimeout(4);
- * @endcode
- */
-void MicroBitDisplay::setErrorTimeout(int iterations)
-{
-    this->errorTimeout = iterations;
-}
-
-/**
-  * Displays "=(" and an accompanying status code on the default display.
-  * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-  *
-  * Example:
-  * @code
-  * uBit.display.error(20);
-  * @endcode
-  */
-void MicroBitDisplay::panic(int statusCode)
-{
-	if(MicroBitDisplay::defaultDisplay)
-		defaultDisplay->error(statusCode);
-
-}
-/**
-  * Displays "=(" and an accompanying status code on the default display.
-  * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
-  *
-  * Example:
-  * @code
-  * uBit.display.error(20);
-  * @endcode
-  */
-void MicroBitDisplay::error(int statusCode)
-{
-    DigitalIn resetButton(MICROBIT_PIN_BUTTON_RESET);
-    resetButton.mode(PullUp);
-
-    __disable_irq(); //stop ALL interrupts
-
-    if(statusCode < 0 || statusCode > 255)
-        statusCode = 0;
-
-    uint8_t strobeRow = 0;
-    uint8_t strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
-    uint8_t count = errorTimeout ? errorTimeout : 1;
-
-    //point to the font stored in Flash
-    const unsigned char * fontLocation = MicroBitFont::defaultFont;
-
-    //get individual digits of status code, and place it into a single array/
-    const uint8_t* chars[MICROBIT_DISPLAY_ERROR_CHARS] = { panicFace, fontLocation+((((statusCode/100 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode/10 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode % 10)+48)-MICROBIT_FONT_ASCII_START) * 5)};
-
-    //enter infinite loop.
-    while(count)
-    {
-        //iterate through our chars :)
-        for(int characterCount = 0; characterCount < MICROBIT_DISPLAY_ERROR_CHARS; characterCount++)
-        {
-            int outerCount = 0;
-
-            //display the current character
-            while(outerCount < 500)
-            {
-                int coldata = 0;
-
-                int i = 0;
-
-                //if we have hit the row limit - reset both the bit mask and the row variable
-                if(strobeRow == 3)
-                {
-                    strobeRow = 0;
-                    strobeBitMsk = MICROBIT_DISPLAY_ROW_RESET;
-                }
-
-                // Calculate the bitpattern to write.
-                for (i = 0; i < matrixMap.columns; i++)
-                {
-
-                    int index = (i * matrixMap.rows) + strobeRow;
-
-                    int bitMsk = 0x10 >> matrixMap.map[index].x; //chars are right aligned but read left to right
-                    int y = matrixMap.map[index].y;
-
-                    if(chars[characterCount][y] & bitMsk)
-                        coldata |= (1 << i);
-                }
-
-                nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, 0xF0); //clear port 0 4-7
-                nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | 0x1F); // clear port 1 8-12
-
-                //write the new bit pattern
-                nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT0, ~coldata<<4 & 0xF0); //set port 0 4-7
-                nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, strobeBitMsk | (~coldata>>4 & 0x1F)); //set port 1 8-12
-
-                //burn cycles
-                i = 1000;
-                while(i>0)
-                {
-                    // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
-                    if (resetButton == 0)
-                        microbit_reset();
-
-                    i--;
-                }
-
-                //update the bit mask and row count
-                strobeBitMsk <<= 1;
-                strobeRow++;
-                outerCount++;
-            }
-        }
-
-        if (errorTimeout)
-            count--;
-    }
-
-    microbit_reset();
 }
 
 /**

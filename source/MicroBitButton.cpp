@@ -23,7 +23,7 @@
   * MICROBIT_BUTTON_EVT_HOLD
   * @endcode
   */
-MicroBitButton::MicroBitButton(uint16_t id, PinName name, MicroBitButtonEventConfiguration eventConfiguration, PinMode mode) : pin(name, mode)
+MicroBitButton::MicroBitButton(PinName name, uint16_t id, MicroBitButtonEventConfiguration eventConfiguration, PinMode mode) : pin(name, mode)
 {
     this->id = id;
     this->name = name;

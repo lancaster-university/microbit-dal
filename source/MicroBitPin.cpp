@@ -284,7 +284,7 @@ int MicroBitPin::isTouched()
     // Move into a touch input state if necessary.
     if (!(status & IO_STATUS_TOUCH_IN)){
         disconnect();
-        pin = new MicroBitButton(id, name);
+        pin = new MicroBitButton(name, id);
         status |= IO_STATUS_TOUCH_IN;
     }
 

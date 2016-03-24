@@ -2,7 +2,6 @@
 #include "MicroBitBLEManager.h"
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
-#include "MicroBitPanic.h"
 
 
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
