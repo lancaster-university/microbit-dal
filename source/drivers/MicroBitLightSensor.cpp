@@ -49,34 +49,6 @@ void MicroBitLightSensor::analogDisable()
 }
 
 /**
-  * The method that is invoked by sending MICROBIT_DISPLAY_EVT_LIGHT_SENSE
-  * using the id MICROBIT_ID_DISPLAY.
-  *
-  * If you want to manually trigger this method, you should use the event bus.
-  *
-  * @note This is currently too churny, and allocates a lot of stuff on the stack
-  * however, this makes this chunk of code platform agnostic in mbed land.
-  */
-void MicroBitLightSensor::startSensing(MicroBitEvent)
-{
-    for(int rowCount = 0; rowCount < matrixMap.rows; rowCount++)
-        DigitalOut((PinName)(matrixMap.rowStart + rowCount)).write(0);
-
-    PinName currentPin = (PinName)(matrixMap.columnStart + chan);
-
-    DigitalOut(currentPin).write(1);
-
-    DigitalIn(currentPin, PullNone).~DigitalIn();
-
-    if(this->sensePin != NULL)
-        delete this->sensePin;
-
-    this->sensePin = new AnalogIn(currentPin);
-
-    analogTrigger.attach_us(this, &MicroBitLightSensor::analogReady, MICROBIT_LIGHT_SENSOR_AN_SET_TIME);
-}
-
-/**
   * Constructor.
   * Create a representation of the light sensor
   */
@@ -141,6 +113,28 @@ int MicroBitLightSensor::read()
     return normalised;
 }
 
+/**
+  * The method that is invoked by sending MICROBIT_DISPLAY_EVT_LIGHT_SENSE
+  * using the id MICROBIT_ID_DISPLAY.
+  */
+void MicroBitLightSensor::startSensing(MicroBitEvent)
+{
+    for(int rowCount = 0; rowCount < matrixMap.rows; rowCount++)
+        DigitalOut((PinName)(matrixMap.rowStart + rowCount)).write(0);
+
+    PinName currentPin = (PinName)(matrixMap.columnStart + chan);
+
+    DigitalOut(currentPin).write(1);
+
+    DigitalIn(currentPin, PullNone).~DigitalIn();
+
+    if(this->sensePin != NULL)
+        delete this->sensePin;
+
+    this->sensePin = new AnalogIn(currentPin);
+
+    analogTrigger.attach_us(this, &MicroBitLightSensor::analogReady, MICROBIT_LIGHT_SENSOR_AN_SET_TIME);
+}
 
 /**
   * The destructor restores the default Display Mode and tick speed, and also

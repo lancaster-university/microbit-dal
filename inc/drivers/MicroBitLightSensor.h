@@ -56,14 +56,6 @@ class MicroBitLightSensor
       */
     void analogDisable();
 
-    /**
-      * The method that is invoked by sending MICROBIT_DISPLAY_EVT_LIGHT_SENSE
-      * using the id MICROBIT_ID_DISPLAY.
-      *
-      * If you want to manually trigger this method, you should use the event bus.
-      */
-    void startSensing(MicroBitEvent);
-
     public:
 
     /**
@@ -98,6 +90,12 @@ class MicroBitLightSensor
       * TODO.
       */
     int read();
+
+    /**
+      * The method that is invoked by sending MICROBIT_DISPLAY_EVT_LIGHT_SENSE
+      * using the id MICROBIT_ID_DISPLAY.
+      */
+    void startSensing(MicroBitEvent);
 
     /**
       * The destructor restores the default Display Mode and tick speed, and also
