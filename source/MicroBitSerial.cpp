@@ -348,7 +348,7 @@ void MicroBitSerial::circularCopy(uint8_t *circularBuff, uint8_t circularBuffSiz
   * @return the number of bytes written, or MICROBIT_SERIAL_IN_USE if another fiber
   *         is using the serial instance for transmission.
   */
-int MicroBitSerial::send(char c, MicroBitSerialMode mode)
+int MicroBitSerial::sendChar(char c, MicroBitSerialMode mode)
 {
     if(txInUse())
         return MICROBIT_SERIAL_IN_USE;

@@ -286,6 +286,11 @@
 #define MICROBIT_DEFAULT_PRINT_SPEED            400
 #endif
 
+//Configures the default serial mode used by serial read and send calls.
+#ifndef MICROBIT_DEFAULT_SERIAL_MODE
+#define MICROBIT_DEFAULT_SERIAL_MODE            SYNC_SLEEP
+#endif
+
 
 //
 // Panic options

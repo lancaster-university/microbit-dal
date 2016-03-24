@@ -206,7 +206,7 @@ class MicroBitSerial : public RawSerial
       * @return the number of bytes written, or MICROBIT_SERIAL_IN_USE if another fiber
       *         is using the serial instance for transmission.
       */
-    int send(char c, MicroBitSerialMode mode = SYNC_SLEEP);
+    int sendChar(char c, MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
     /**
       * Sends a ManagedString via Serial
@@ -230,7 +230,7 @@ class MicroBitSerial : public RawSerial
       * @return the number of bytes written, or MICROBIT_SERIAL_IN_USE if another fiber
       *         is using the serial instance for transmission.
       */
-    int send(ManagedString s, MicroBitSerialMode mode = SYNC_SLEEP);
+    int send(ManagedString s, MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
     /**
       * Sends a buffer of known length via serial
@@ -255,7 +255,7 @@ class MicroBitSerial : public RawSerial
       * @return the number of bytes written, or MICROBIT_SERIAL_IN_USE if another fiber
       *         is using the serial instance for transmission.
       */
-    int send(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode = SYNC_SLEEP);
+    int send(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
     /**
       * Reads a single character from the rxBuff
@@ -280,7 +280,7 @@ class MicroBitSerial : public RawSerial
       *         MICROBIT_NO_RESOURCES if buffer allocation did not complete successfully, or MICROBIT_NO_DATA if
       *         the rx buffer is empty and the mode given is ASYNC.
       */
-    int read(MicroBitSerialMode mode = SYNC_SLEEP);
+    int read(MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
     /**
       * Reads multiple characters from the rxBuff and returns them as a ManagedString
@@ -306,7 +306,7 @@ class MicroBitSerial : public RawSerial
       * @return A ManagedString with the length > 0, or an empty ManagedString if
       *         an error was encountered during the read.
       */
-    ManagedString read(int size, MicroBitSerialMode mode = SYNC_SLEEP);
+    ManagedString read(int size, MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
     /**
       * Reads multiple characters from the rxBuff and fills a user buffer.
@@ -333,7 +333,7 @@ class MicroBitSerial : public RawSerial
       * @return the number of characters read, or MICROBIT_SERIAL_IN_USE if another fiber
       *         is using the instance for receiving.
       */
-    int read(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode = SYNC_SLEEP);
+    int read(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
     /**
       * Reads until one of the delimeters matches a character in the rxBuff
@@ -363,7 +363,7 @@ class MicroBitSerial : public RawSerial
       *
       * @note delimeters are matched on a per byte basis.
       */
-    ManagedString readUntil(ManagedString delimeters, MicroBitSerialMode mode = SYNC_SLEEP);
+    ManagedString readUntil(ManagedString delimeters, MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
     /**
       * A wrapper around the inherited method "baud" so we can trap the baud rate
