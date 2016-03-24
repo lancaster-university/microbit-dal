@@ -27,7 +27,7 @@ int MicroBitSerial::baudrate = 0;
   *
   *       Buffers aren't allocated until the first send or receive respectively.
   */
-MicroBitSerial::MicroBitSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uint8_t txBufferSize) : Serial(tx,rx), delimeters()
+MicroBitSerial::MicroBitSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uint8_t txBufferSize) : RawSerial(tx,rx), delimeters()
 {
     this->rxBuffSize = rxBufferSize;
     this->txBuffSize = txBufferSize;
@@ -58,7 +58,7 @@ void MicroBitSerial::dataReceived()
         return;
 
     //get the received character
-    char c = _getc();
+    char c = getc();
 
     int delimeterOffset = 0;
     int delimLength = this->delimeters.length();
@@ -107,15 +107,15 @@ void MicroBitSerial::dataWritten()
         return;
 
     //send our current char
-    _putc(txBuff[txBuffTail]);
+    putc(txBuff[txBuffTail]);
 
     uint16_t nextTail = (txBuffTail + 1) % txBuffSize;
 
     //unblock any waiting fibers that are waiting for transmission to finish.
     if(nextTail == txBuffHead)
     {
-        MicroBitEvent(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_TX_EMPTY);
-        detach(TxIrq);
+        MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_SERIAL_EVT_TX_EMPTY);
+        detach(Serial::IrqType::TxIrq);
     }
 
     //update our tail!
@@ -148,8 +148,10 @@ int MicroBitSerial::setTxInterrupt(uint8_t *string, int len)
             break;
     }
 
+    fiber_wake_on_event(MICROBIT_ID_NOTIFY, MICROBIT_SERIAL_EVT_TX_EMPTY);
+
     //set the TX interrupt
-    Serial::attach(this, &MicroBitSerial::dataWritten, TxIrq);
+    attach(this, &MicroBitSerial::dataWritten, Serial::IrqType::TxIrq);
 
     return copiedBytes;
 }
@@ -193,23 +195,23 @@ void MicroBitSerial::unlockTx()
 int MicroBitSerial::initialiseRx()
 {
     if((status & MICROBIT_SERIAL_RX_BUFF_INIT))
+    {
+        //ensure that we receive no interrupts after freeing our buffer
+        detach(Serial::IrqType::RxIrq);
         free(this->rxBuff);
+    }
+
+    status &= ~MICROBIT_SERIAL_RX_BUFF_INIT;
 
     if((this->rxBuff = (uint8_t *)malloc(rxBuffSize)) == NULL)
-    {
-        status &= ~MICROBIT_SERIAL_RX_BUFF_INIT;
         return MICROBIT_NO_RESOURCES;
-    }
 
     this->rxBuffHead = 0;
     this->rxBuffTail = 0;
 
     //set the receive interrupt
-    if(!(status & MICROBIT_SERIAL_RX_BUFF_INIT))
-    {
-        Serial::attach(this, &MicroBitSerial::dataReceived, RxIrq);
-        status |= MICROBIT_SERIAL_RX_BUFF_INIT;
-    }
+    status |= MICROBIT_SERIAL_RX_BUFF_INIT;
+    attach(this, &MicroBitSerial::dataReceived, Serial::IrqType::RxIrq);
 
     return MICROBIT_OK;
 }
@@ -221,19 +223,21 @@ int MicroBitSerial::initialiseRx()
 int MicroBitSerial::initialiseTx()
 {
     if((status & MICROBIT_SERIAL_TX_BUFF_INIT))
+    {
+        //ensure that we receive no interrupts after freeing our buffer
+        detach(Serial::IrqType::TxIrq);
         free(this->txBuff);
+    }
+
+    status &= ~MICROBIT_SERIAL_TX_BUFF_INIT;
 
     if((this->txBuff = (uint8_t *)malloc(txBuffSize)) == NULL)
-    {
-        status &= ~MICROBIT_SERIAL_TX_BUFF_INIT;
         return MICROBIT_NO_RESOURCES;
-    }
 
     this->txBuffHead = 0;
     this->txBuffTail = 0;
 
-    if(!(status & MICROBIT_SERIAL_TX_BUFF_INIT))
-        status |= MICROBIT_SERIAL_TX_BUFF_INIT;
+    status |= MICROBIT_SERIAL_TX_BUFF_INIT;
 
     return MICROBIT_OK;
 }
@@ -250,7 +254,7 @@ void MicroBitSerial::send(MicroBitSerialMode mode)
         while(txBufferedSize() > 0);
 
     if(mode == SYNC_SLEEP)
-        fiber_wait_for_event(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_TX_EMPTY);
+        fiber_sleep(0);
 }
 
 /**
@@ -608,58 +612,6 @@ int MicroBitSerial::read(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode
     return bufferIndex;
 }
 
-/**
-  * Reads multiple characters from the rxBuff and returns them as a ManagedString
-  *
-  * @param size the number of characters to read.
-  * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
-  *        gives a different behaviour:
-  *
-  *            ASYNC - If the desired number of characters are available, this will return
-  *                    a ManagedString with the expected size. Otherwise, it will read however
-  *                    many characters there are available.
-  *
-  *            SYNC_SPINWAIT - If the desired number of characters are available, this will return
-  *                            a ManagedString with the expected size. Otherwise, this method will spin
-  *                            (lock up the processor) until the desired number of characters have been read.
-  *
-  *            SYNC_SLEEP - If the desired number of characters are available, this will return
-  *                         a ManagedString with the expected size. Otherwise, the calling fiber sleeps
-  *                         until the desired number of characters have been read.
-  *
-  *         Defaults to SYNC_SLEEP.
-  *
-  * @return A ManagedString with the length > 0, or an empty ManagedString if
-  *         an error was encountered during the read.
-  */
-ManagedString read(int size, MicroBitSerialMode mode = SYNC_SLEEP);
-
-/**
-  * Reads multiple characters from the rxBuff and fills a user buffer.
-  *
-  * @param buffer a pointer to a user allocated buffer
-  * @param bufferLen the amount of data that can be safely stored
-  * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
-  *        gives a different behaviour:
-  *
-  *            ASYNC - If the desired number of characters are available, this will fill
-  *                    the given buffer. Otherwise, it will fill the buffer with however
-  *                    many characters there are available.
-  *
-  *            SYNC_SPINWAIT - If the desired number of characters are available, this will fill
-  *                            the given buffer. Otherwise, this method will spin (lock up the processor)
-  *                            and fill the buffer until the desired number of characters have been read.
-  *
-  *            SYNC_SLEEP - If the desired number of characters are available, this will fill
-  *                         the given buffer. Otherwise, the calling fiber sleeps
-  *                         until the desired number of characters have been read.
-  *
-  *         Defaults to SYNC_SLEEP.
-  *
-  * @return the number of characters read, or MICROBIT_SERIAL_IN_USE if another fiber
-  *         is using the instance for receiving.
-  */
-int read(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode = SYNC_SLEEP);
 
 /**
   * Reads until one of the delimeters matches a character in the rxBuff
@@ -793,7 +745,7 @@ void MicroBitSerial::baud(int baudrate)
 
     this->baudrate = baudrate;
 
-    Serial::baud(baudrate);
+    RawSerial::baud(baudrate);
 }
 
 /**
@@ -813,17 +765,17 @@ int MicroBitSerial::redirect(PinName tx, PinName rx)
     lockRx();
 
     if(txBufferedSize() > 0)
-        detach(TxIrq);
+        detach(Serial::IrqType::TxIrq);
 
-    detach(RxIrq);
+    detach(Serial::IrqType::RxIrq);
 
     serial_free(&_serial);
     serial_init(&_serial, tx, rx);
 
-    Serial::attach(this, &MicroBitSerial::dataReceived, RxIrq);
+    attach(this, &MicroBitSerial::dataReceived, Serial::IrqType::RxIrq);
 
     if(txBufferedSize() > 0)
-        Serial::attach(this, &MicroBitSerial::dataWritten, TxIrq);
+        attach(this, &MicroBitSerial::dataWritten, Serial::IrqType::TxIrq);
 
     this->baud(this->baudrate);
 
@@ -1080,5 +1032,5 @@ int MicroBitSerial::txInUse()
 void MicroBitSerial::detach(Serial::IrqType interruptType)
 {
     //we detach by sending a bad value to attach, for some weird reason...
-    Serial::attach((MicroBitSerial *)NULL, &MicroBitSerial::dataReceived, interruptType);
+    attach((MicroBitSerial *)NULL, &MicroBitSerial::dataReceived, interruptType);
 }

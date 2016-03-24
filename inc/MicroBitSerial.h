@@ -3,7 +3,6 @@
 
 #include "mbed.h"
 #include "ManagedString.h"
-#include "MicroBitImage.h"
 
 #define MICROBIT_SERIAL_DEFAULT_BAUD_RATE   115200
 #define MICROBIT_SERIAL_DEFAULT_BUFFER_SIZE 20
@@ -31,7 +30,7 @@ enum MicroBitSerialMode
   *
   * Represents an instance of Serial which accepts micro:bit specific data types.
   */
-class MicroBitSerial : public Serial
+class MicroBitSerial : public RawSerial
 {
 
     //holds that state of the mutex locks for all MicroBitSerial instances.
