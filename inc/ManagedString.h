@@ -3,6 +3,7 @@
 
 #include "MicroBitConfig.h"
 #include "RefCounted.h"
+#include "PacketBuffer.h"
 
 struct StringData : RefCounted
 {
@@ -96,6 +97,22 @@ class ManagedString
       * @endcode
       */
     ManagedString(const char value);
+
+    /**
+     * Constructor.
+     * Create a ManagedString from a PacketBuffer. All bytes in the
+     * PacketBuffer are added to the ManagedString.
+     *
+     * @param buffer The PacktBuffer to generate the ManagedString from.
+     *
+     * Example:
+     * @code
+     *
+     * ManagedString s = uBit.radio.datagram.recv();
+     *
+     * @endcode
+     */
+    ManagedString(PacketBuffer buffer);
 
     /**
       * Constructor.

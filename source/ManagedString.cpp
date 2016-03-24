@@ -137,6 +137,32 @@ ManagedString::ManagedString(const ManagedString &s1, const ManagedString &s2)
 
 /**
   * Constructor.
+  * Create a managed string from a PacketBuffer. All bytes in the
+  * PacketBuffer are added to the ManagedString.
+  *
+  * @param buffer The PacktBuffer to generate the ManagedString from.
+  *
+  * Example:
+  * @code
+  *
+  * ManagedString s = uBit.radio.datagram.recv();
+  *
+  * @endcode
+  */
+ManagedString::ManagedString(PacketBuffer buffer)
+{
+    // Allocate a new buffer ( just in case the data is not NULL terminated).
+    ptr = (StringData*) malloc(4+buffer.length()+1);
+    ptr->init();
+
+    // Store the length of the new string
+    ptr->len = buffer.length();
+    memcpy(ptr->data, buffer.getBytes(), buffer.length());
+    ptr->data[buffer.length()] = 0;
+}
+
+/**
+  * Constructor.
   * Create a managed string from a pointer to an 8-bit character buffer of a given length.
   * The buffer is copied to ensure sane memory management (the supplied
   * character buffer may be declared on the stack for instance).

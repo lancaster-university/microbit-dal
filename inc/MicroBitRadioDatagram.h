@@ -4,6 +4,7 @@
 #include "mbed.h"
 #include "MicroBitConfig.h"
 #include "MicroBitRadio.h"
+#include "ManagedString.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -70,6 +71,15 @@ class MicroBitRadioDatagram
      * @return MICROBIT_OK on success.
      */
     int send(PacketBuffer data);
+
+    /**
+     * Transmits the given string onto the broadcast radio.
+     * The call will wait until the transmission of the packet has completed before returning.
+     *
+     * @param data The packet contents to transmit.
+     * @return MICROBIT_OK on success.
+     */
+    int send(ManagedString data);
 
     /**
      * Protocol handler callback. This is called when the radio receives a packet marked as a datagram.

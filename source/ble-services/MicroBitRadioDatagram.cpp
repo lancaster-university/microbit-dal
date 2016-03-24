@@ -97,7 +97,7 @@ int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
 }
 
 /**
- * Transmits the given string onto the broadcast radio.
+ * Transmits the given buffer onto the broadcast radio.
  * The call will wait until the transmission of the packet has completed before returning.
  *
  * @param data The packet contents to transmit.
@@ -106,6 +106,18 @@ int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
 int MicroBitRadioDatagram::send(PacketBuffer data)
 {
     return send((uint8_t *)data.getBytes(), data.length());
+}
+
+/**
+ * Transmits the given string onto the broadcast radio.
+ * The call will wait until the transmission of the packet has completed before returning.
+ *
+ * @param data The packet contents to transmit.
+ * @return MICROBIT_OK on success.
+ */
+int MicroBitRadioDatagram::send(ManagedString data)
+{
+    return send((uint8_t *)data.toCharArray(), data.length());
 }
 
 /**
