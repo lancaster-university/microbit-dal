@@ -251,7 +251,7 @@ public:
      * uBit.display.printAsync('p',100);
      * @endcode
      */
-    int printAsync(char c, int delay = 0);
+    int printCharAsync(char c, int delay = 0);
 
     /**
       * Prints the given string to the display, one character at a time.
@@ -299,7 +299,7 @@ public:
       * uBit.display.print('p');
       * @endcode
       */
-    int print(char c, int delay = 0);
+    int printChar(char c, int delay = 0);
 
     /**
       * Prints the given string to the display, one character at a time.

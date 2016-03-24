@@ -435,7 +435,7 @@ void MicroBitDisplay::fiberWait()
   * uBit.display.printAsync('p',100);
   * @endcode
   */
-int MicroBitDisplay::printAsync(char c, int delay)
+int MicroBitDisplay::printCharAsync(char c, int delay)
 {
     //sanitise this value
     if(delay < 0)
@@ -476,8 +476,11 @@ int MicroBitDisplay::printAsync(char c, int delay)
   */
 int MicroBitDisplay::printAsync(ManagedString s, int delay)
 {
+    if (s.length() == 1)
+        return printCharAsync(s.charAt(0));
+
     //sanitise this value
-    if(delay <= 0 )
+    if (delay <= 0 )
         return MICROBIT_INVALID_PARAMETER;
 
     if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
@@ -495,7 +498,6 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
     }
 
     return MICROBIT_OK;
-
 }
 
 /**
@@ -551,7 +553,7 @@ int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int de
   * uBit.display.print('p',100);
   * @endcode
   */
-int MicroBitDisplay::print(char c, int delay)
+int MicroBitDisplay::printChar(char c, int delay)
 {
     if (delay < 0)
         return MICROBIT_INVALID_PARAMETER;
@@ -563,7 +565,7 @@ int MicroBitDisplay::print(char c, int delay)
     // If someone called stopAnimation(), then we simply skip...
     if (animationMode == ANIMATION_MODE_NONE)
     {
-        this->printAsync(c, delay);
+        this->printCharAsync(c, delay);
 
         if (delay > 0)
             fiberWait();
@@ -603,8 +605,15 @@ int MicroBitDisplay::print(ManagedString s, int delay)
     // If someone called stopAnimation(), then we simply skip...
     if (animationMode == ANIMATION_MODE_NONE)
     {
-        this->printAsync(s, delay);
-        fiberWait();
+        if (s.length() == 1)
+        {
+            return printCharAsync(s.charAt(0));
+        }
+        else
+        {
+            this->printAsync(s, delay);
+            fiberWait();
+        }
     }
     else
     {
