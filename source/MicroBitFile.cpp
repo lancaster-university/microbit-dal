@@ -715,6 +715,7 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size) {
         // File size has changed, update MBR.
         if(!this->mbr_set_filesize(this->fd_table[fd].mbr_entry, filesize)) {
             return -1;
+	}
     }
     return bytesWritten;
 }
