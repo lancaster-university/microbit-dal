@@ -346,8 +346,9 @@ void fiber_sleep(unsigned long t)
 int fiber_wait_for_event(uint16_t id, uint16_t value)
 {
     int ret = fiber_wake_on_event(id, value);
-    
-    schedule();
+
+    if(ret == MICROBIT_OK)
+        schedule();
 
 	return ret;
 }
