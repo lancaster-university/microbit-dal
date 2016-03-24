@@ -202,6 +202,13 @@ class MicroBitDisplay : public MicroBitComponent
       */
     void fiberWait();
 
+    /**
+      * Enables or disables the display entirely, and releases the pins for other uses.
+      *
+      * @param enableDisplay true to enabled the display, or false to disable it.
+      */
+    void setEnable(bool enableDisplay);
+
 public:
     // The mutable bitmap buffer being rendered to the LED matrix.
     MicroBitImage image;

@@ -1002,6 +1002,39 @@ void MicroBitDisplay::rotateTo(DisplayRotation rotation)
 }
 
 /**
+ * Enables or disables the display entirely, and releases the pins for other uses.
+ *
+ * @param enableDisplay true to enabled the display, or false to disable it.
+ */
+void MicroBitDisplay::setEnable(bool enableDisplay)
+{
+    // If we're already in the correct state, then there's nothing to do.
+    if(((status & MICROBIT_COMPONENT_RUNNING) && enableDisplay) || (!(status & MICROBIT_COMPONENT_RUNNING) && !enableDisplay))
+        return;
+
+    uint32_t rmask = 0;
+    uint32_t cmask = 0;
+
+    for (int i = matrixMap.rowStart; i < matrixMap.rowStart + matrixMap.rows; i++)
+        rmask |= 0x01 << i;
+
+    for (int i = matrixMap.columnStart; i < matrixMap.columnStart + matrixMap.columns; i++)
+        cmask |= 0x01 << i;
+
+    if (enableDisplay)
+    {
+        PortOut p(Port0, rmask | cmask);
+        status |= MICROBIT_COMPONENT_RUNNING;
+    }
+    else
+    {
+        PortIn p(Port0, rmask | cmask);
+        p.mode(PullNone);
+        status &= ~MICROBIT_COMPONENT_RUNNING;
+    }
+}
+
+/**
   * Enables the display, should only be called if the display is disabled.
   *
   * Example:
@@ -1011,11 +1044,7 @@ void MicroBitDisplay::rotateTo(DisplayRotation rotation)
   */
 void MicroBitDisplay::enable()
 {
-    if(!(status & MICROBIT_COMPONENT_RUNNING))
-    {
-        setBrightness(brightness);
-    	status |= MICROBIT_COMPONENT_RUNNING;
-    }
+    setEnable(true);
 }
 
 /**
@@ -1029,8 +1058,7 @@ void MicroBitDisplay::enable()
   */
 void MicroBitDisplay::disable()
 {
-    if(status & MICROBIT_COMPONENT_RUNNING)
-        status &= ~MICROBIT_COMPONENT_RUNNING;           //unset the display running flag
+    setEnable(false);
 }
 
 /**
