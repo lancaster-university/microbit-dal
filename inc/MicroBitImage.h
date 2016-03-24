@@ -269,7 +269,7 @@ class MicroBitImage
       * i.paste(-5,0,i); //displays a small heart :)
       * @endcode
       */
-    int paste(const MicroBitImage &image, int16_t x, int16_t y, uint8_t alpha);
+    int paste(const MicroBitImage &image, int16_t x = 0, int16_t y = 0, uint8_t alpha = 0);
 
      /**
       * Prints a character to the display at the given location
@@ -285,7 +285,7 @@ class MicroBitImage
       * i.print('a',0,0);
       * @endcode
       */
-    int print(char c, int16_t x, int16_t y);
+    int print(char c, int16_t x = 0, int16_t y = 0);
 
     /**
       * Shifts the pixels in this Image a given number of pixels to the Left.
