@@ -16,7 +16,7 @@
   * entry (struct mbr_t), which stores:
   *  - Filename
   *  - File size
-  *  - An enumerated list of blocks that store the file data itself.
+  *  - An ordered list of pages/blocks that store the file data itself.
   * 
   * The table housing these records is referred to as the Master Block
   * Record (MBR), and looks something like this:
@@ -32,12 +32,18 @@
   * to how many can fit in a single flash page. Hence, this is the 
   * maximum number of files that can be stored.
   * 
+  * The filesize is stored in the MBR, but cached in the tinyfs_fd struct.
+  * Writes to the MBR filesize are made sparingly in write() and close(), to
+  * reduce erasures.
+  * @warning close() *must* be called to ensure the MBR is synched, before 
+  * the microbit is finished.
+  * 
   * -- API overview.
   * Source code is divided logically into two parts:
   * mbr_*() functions - to access and modify the mbr entries.
   *                     E.g., to create a new file, change a files size,
   *                     or append new blocks to the file.
-  *  			These are private methods internal to the class.
+  *  			        These are private methods internal to the class.
   * 
   * read/write/seek/unlink - POSIX-style file access functions.
   *                          These are the functions used to interact with the
@@ -60,9 +66,8 @@
   * 
   * -- Notes
   * - There should exist only one instance of this class.
-  * @todo Reduce the number of mbr_set_filesize() by caching filesize
-  * information in the tinyfs_fd struct.
   * @todo implement simple wear levelling for file data writes.
+  * @todo implement MB_APPEND flag in open()
   */
 
 // mbr_t.flags field to indicate if an MBR is free/busy.
@@ -78,18 +83,8 @@
 // Check if a given MBR is free.
 #define MBR_IS_FREE(mbr) ( (mbr).flags & MBR_FREE)
 
-
-
-// open() flags.
-#define MB_READ 0x01
-#define MB_WRITE 0x02
-#define MB_CREAT 0x04
+// mb_fd.flag to mark if FD is in use.
 #define MB_FD_BUSY 0x10
-
-// seek() flags.
-#define MB_SEEK_SET 0x01
-#define MB_SEEK_END 0x02
-#define MB_SEEK_CUR 0x04
 
 // Macro to read the file size from an mbr_t pointer.
 #define mbr_get_filesize(m)  (m->flags & MBR_SIZE_MASK)
@@ -100,12 +95,22 @@
 // Obtain pointer to the indexed mbr entry.
 #define mbr_by_id(index) (&mbr_loc[index])
 
+// Check if a mbr pointer is within table.
+#define MBR_PTR_VALID(p) ( (p >= this->mbr_loc) && (p-this->mbr_loc)<=(this->mbr_entries-1) )
+
+// open() flags.
+#define MB_READ 0x01
+#define MB_WRITE 0x02
+#define MB_CREAT 0x04
+
+// seek() flags.
+#define MB_SEEK_SET 0x01
+#define MB_SEEK_END 0x02
+#define MB_SEEK_CUR 0x04
+
 // Test if init()/mbr_init have been called.
 #define FS_INITIALIZED() (this->flash_start != NULL)
 #define MBR_INITIALIZED() (this->mbr_loc != NULL)
-
-// Check if a mbr pointer is within table.
-#define MBR_PTR_VALID(p) ( (p >= this->mbr_loc) && (p-this->mbr_loc)<=(this->mbr_entries-1) )
 
 /**
   * @brief MBR entry struct, for each file.
@@ -145,6 +150,9 @@ typedef struct mbr_t {
   * - read/write/create flags.
   * - current seek position.
   * - pointer to the files' mbr struct.
+  * The file size is stored in the MBR, but cached here.
+  * Writes to the MBR are made sparingly in tfs_write, and tfs_close(),
+  * to reduce erasures.
   */
 typedef struct tinyfs_fd_t {
     
@@ -153,6 +161,9 @@ typedef struct tinyfs_fd_t {
    
     // current seek position.
     int32_t seek; 
+  
+    // the cached file size.
+    uint32_t filesize;
    
     // pointer to the files' mbr struct.
     // A tinyfs_fd_t struct cannot be in use without a valid mbr_entry pointer.
@@ -348,8 +359,6 @@ class MicroBitFile
       *
       * If a file is opened that doesn't exist, and MB_CREAT isn't passed,
       * an error is returned, otherwise the file is created.
-      * If the seek pointer is set beyond the current end of the file,
-      * which is then written to, the file is padded with 0x00.
       *
       * @todo The same file can only be opened by a single handle at once.
       * @todo Add MB_APPEND flag.
@@ -371,6 +380,12 @@ class MicroBitFile
     /**
       * Close the specified file handle.
       * File handle resources are then made available for future open() calls.
+      * 
+      * close() must be called at some point to ensure the filesize in the
+      * MBR is synced with the cached value in the FD.
+      *
+      * @warning if close() is not called, the MBR may not be correct,
+      * leading to data loss.
       *
       * @param fd file descriptor - obtained with open().
       * @return non-zero on success, zero on error.
@@ -415,6 +430,10 @@ class MicroBitFile
       * Write from buffer, len bytes to the current seek position.
       * On each invocation to write, the seek position of the file handle
       * is incremented atomically, by the number of bytes returned.
+      *
+      * The cached filesize in the FD is updated on this call. Also, the
+      * MBR file size is updated only if a new page(s) has been written too,
+      * to reduce the number of MBR writes.
       *
       * @param fd File handle
       * @param buffer the buffer from which to write data

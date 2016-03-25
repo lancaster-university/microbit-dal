@@ -20,7 +20,6 @@
   * @return pointer to the MBR struct if found, NULL otherwise or on error.
   */
 mbr* MicroBitFile::mbr_by_name(char const * const filename) {
-    if(!MBR_INITIALIZED() || strlen(filename) > MAX_FILENAME_LEN) return NULL;
    
     for(int i=0;i<this->mbr_entries;++i) {
         if(strcmp(filename, this->mbr_loc[i].name) == 0) {
@@ -37,7 +36,6 @@ mbr* MicroBitFile::mbr_by_name(char const * const filename) {
   *         NULL if there are none available.
   */
 mbr* MicroBitFile::mbr_get_free() {
-    if(!MBR_INITIALIZED()) return NULL;
    
     for(int i=0;i<this->mbr_entries;++i) {
         if(MBR_IS_FREE(this->mbr_loc[i])) return &this->mbr_loc[i];
@@ -58,8 +56,6 @@ mbr* MicroBitFile::mbr_get_free() {
   * @return non-zero on success, zero on error.
   */
 int MicroBitFile::mbr_add(mbr* m, char const * const filename) {
-    if(!MBR_INITIALIZED() || !MBR_PTR_VALID(m) ||
-       !MBR_IS_FREE((*m)) || strlen(filename) > MAX_FILENAME_LEN) return 0;
    
     uint32_t t = MBR_BUSY;
     
@@ -91,7 +87,6 @@ int MicroBitFile::mbr_add(mbr* m, char const * const filename) {
   * @return non-zero on success, zero on error.
   */
 int MicroBitFile::mbr_add_block(mbr* m, uint8_t blockNo) {
-    if(!MBR_INITIALIZED() || !MBR_PTR_VALID(m)) return 0;
    
     // Find the lowest unused block entry.
     int b = 0;
@@ -119,7 +114,6 @@ int MicroBitFile::mbr_add_block(mbr* m, uint8_t blockNo) {
   * @return non-zero on success, zero on error.
   */
 int MicroBitFile::mbr_remove(mbr* m) {
-    if(!MBR_INITIALIZED() || !MBR_PTR_VALID(m)) return 0;
 
     // ----------------------------------------------
     // Return block numbers in the mbr entry to the mbr_free_loc->blocks list.
@@ -185,7 +179,6 @@ int MicroBitFile::mbr_remove(mbr* m) {
   * @return block number on success, -1 on error (out of space).
   */
 int MicroBitFile::mbr_pop_free_block() {
-    if(!MBR_INITIALIZED()) return -1;
   
     // ----------------------------------------------
     // Find a free block in mbr_free_loc->blocks.
@@ -234,7 +227,6 @@ int MicroBitFile::mbr_pop_free_block() {
   * @return non-zero on success, zero on error.
  */
 int MicroBitFile::mbr_init(void* mbr_location, int mbr_no) {
-    if(MBR_INITIALIZED()) return 0;
 
     PRINTF("initializing mbr\n");
 
@@ -255,7 +247,6 @@ int MicroBitFile::mbr_init(void* mbr_location, int mbr_no) {
   * @return non-zero on success, zero on error.
   */
 int MicroBitFile::mbr_set_filesize(mbr* m, uint32_t fz) {
-    if(!MBR_INITIALIZED() || !MBR_PTR_VALID(m) || MBR_IS_FREE(*m)) return 0;
   
     PRINTF("set filesize: %s to %d bytes\n", m->name, fz);
     return this->flash.flash_write((uint8_t*)&m->flags, (uint8_t*)&fz, 4);
@@ -277,7 +268,6 @@ int MicroBitFile::mbr_set_filesize(mbr* m, uint32_t fz) {
   * @return non-zero on success, zero otherwise.
   */
 int MicroBitFile::mbr_build() {
-    if(!MBR_INITIALIZED()) return 0;
   
     // Only build the MBR table if not already initialized.
     if(*((uint32_t*)this->mbr_free_loc) == MAGIC_WORD) {
@@ -298,7 +288,6 @@ int MicroBitFile::mbr_build() {
                                 (uint8_t*)&magic, sizeof(magic))) {
         return 0;
     }
-  
   
     // Populate the free block list.
     uint8_t bl[DATA_BLOCK_COUNT-1];
@@ -353,8 +342,6 @@ int MicroBitFile::init() {
   *
   * If a file is opened that doesn't exist, and MB_CREAT isn't passed,
   * an error is returned, otherwise the file is created.
-  * If the seek pointer is set beyond the current end of the file,
-  * which is then written to, the file is padded with 0x00.
   *
   * @todo The same file can only be opened by a single handle at once.
   * @todo Add MB_APPEND flag.
@@ -405,12 +392,19 @@ int MicroBitFile::open(char const * const filename, uint8_t flags) {
     this->fd_table[fd].flags = (flags & ~(MB_CREAT)) | MB_FD_BUSY;
     this->fd_table[fd].mbr_entry = m;
     this->fd_table[fd].seek = 0;
+    this->fd_table[fd].filesize = mbr_get_filesize(m);
     return fd;
 }
 
 /**
   * Close the specified file handle.
   * File handle resources are then made available for future open() calls.
+  *
+  * tfs_close() must be called at some point to ensure the filesize in the
+  * MBR is synced with the cached value in the FD.
+  *
+  * @warning if tfs_close() is not called, the MBR may not be correct, l
+  * leading to data loss.
   *
   * @param fd file descriptor - obtained with open().
   * @return non-zero on success, zero on error.
@@ -426,6 +420,9 @@ int MicroBitFile::open(char const * const filename, uint8_t flags) {
 int MicroBitFile::close(int fd) {
     if(!FS_INITIALIZED() ||
       (this->fd_table[fd].flags & MB_FD_BUSY) != MB_FD_BUSY) return 0;
+
+    this->mbr_set_filesize(this->fd_table[fd].mbr_entry,
+                           this->fd_table[fd].filesize);
 
     this->fd_table[fd].flags = 0x00;
     return 1;
@@ -458,7 +455,7 @@ int MicroBitFile::seek(int fd, int offset, uint8_t flags) {
       (this->fd_table[fd].flags & MB_FD_BUSY) != MB_FD_BUSY) return -1;
     
     int32_t new_pos = 0;
-    int max_size = mbr_get_filesize(this->fd_table[fd].mbr_entry);
+    int max_size = this->fd_table[fd].filesize;
    
     if(flags == MB_SEEK_SET && offset <= max_size) {
         new_pos = offset;
@@ -508,59 +505,56 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size) {
     // Basic algorithm:
     // Find the starting block number & offset,
     //
-    //  blockInd = starting block index in list
-    //  blockOffset = offset within first block
-    // 
+    //  bInd = starting block index in list
+    //  ofs = offset within first block
+    //
     //  while [still have bytes to read
-    //   b = block number (from blockInd)
+    //   b = block number (from bInd)
     //   s = how many bytes to read from this block
     //   if(s > bytes remaining in file)
     //    s = bytes remaining in file
     //   end
-    // 
-    //   memcpy(destination buffer, this->flash_start 
-    //      + (b * PAGE_SIZE) + blockOffset)
+    //
+    //   memcpy(destination buffer, flash_start + (b * PAGE_SIZE) + ofs)
     //   seek += s
-    //   bytesRead += s 
-    //   blockOffset = 0
-    //   blockInd++
+    //   bytesRead += s
+    //   ofs = 0
+    //   bInd++
     //  end
     //
     //  return bytesRead
     //
-   
-    int blockInd = this->fd_table[fd].seek / PAGE_SIZE;
-    int blockOffset = this->fd_table[fd].seek % PAGE_SIZE;
-    int32_t filesize = mbr_get_filesize(this->fd_table[fd].mbr_entry);
+
+    int bInd = this->fd_table[fd].seek / PAGE_SIZE;
+    int ofs = this->fd_table[fd].seek % PAGE_SIZE;
+    int32_t filesize = this->fd_table[fd].filesize; 
     int bytesRead = 0;
-  
-    // Write until requested number of bytes have been read. 
+
     for(int sz = size;sz > 0 && this->fd_table[fd].seek<filesize;) {
-  
-        // b = block number 
-        int b = mbr_get_block(this->fd_table[fd].mbr_entry, blockInd);
 
-        // s = no. bytes to read from this page.
-        int s = MIN(PAGE_SIZE-blockOffset,sz);
+        // b = block number.
+        int b = mbr_get_block(this->fd_table[fd].mbr_entry, bInd);
 
-        // Can't read beyond the end of the file.
+        // s  no. bytes to read from this page.
+        int s = MIN(PAGE_SIZE-ofs,sz);
+
+        //Can't read beyond the end of the file.
         if((this->fd_table[fd].seek+s) > filesize) {
             s = filesize - this->fd_table[fd].seek;
         }
-   
-        PRINTF("Read %d bytes from block %d (%d) offset: %d\n",
-   	            s, blockInd, b, s, blockOffset);
-   
-        memcpy( buffer, this->flash_start + (PAGE_SIZE * b) + blockOffset, s);
-    
+
+        PRINTF("Read %d bytes from block %d (%d) offset: %d\n",s,bInd,b,ofs);
+
+        memcpy( buffer, flash_start + (PAGE_SIZE * b) + ofs, s);
+
         sz -= s;
         buffer += s;
-        blockInd++;
-        blockOffset=0;
+        bInd++;
+        ofs=0;
         this->fd_table[fd].seek += s;
         bytesRead += s;
     }
-   
+
     return bytesRead;
 }
 
@@ -571,6 +565,10 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size) {
   * Write from buffer, len bytes to the current seek position.
   * On each invocation to write, the seek position of the file handle
   * is incremented atomically, by the number of bytes returned.
+  *
+  * The cached filesize in the FD is updated on this call. Also, the
+  * MBR file size is updated only if a new page(s) has been written too,
+  * to reduce the number of MBR writes.
   *
   * @param fd File handle
   * @param buffer the buffer from which to write data
@@ -590,132 +588,92 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size) {
       (this->fd_table[fd].flags & MB_FD_BUSY) != MB_FD_BUSY ||
       (this->fd_table[fd].flags & MB_WRITE) != MB_WRITE) return -1;
    
-    // More complex than tfs_read(), because we have to account for the
-    // file increasing in size, and padding 0x00 if starting past current end.
-    // 
-    // allocated_blocks = current no. allocated blocks to mbr
-    // 
-    // while still data to write
-    //  if(seek extends beyond current file size)
-    //   bInd = final block in file
-    //   ofs = current end-offset in last block
-    //   wr = how many bytes to write 0x00 to
-    //   writeData = false (don't write data on this iteration, just fill 0x00)
-    //  else
-    //   bInd = block Index to start writing.
-    //   ofs = offset within block
-    //   wr = number of bytes to write.
-    //   writeData = true (write data from buffer on this iteration)
-    //  end
-    // 
-    //  if(bInd >= allocated_blocks)
-    //   b = pop_free_block()
-    //   add_block(b)
-    //  else
-    //   b = get_block(bInd)
-    //  end
-    // 
-    //  if(writeData)
-    //   write to(this->flash_start + PAGE_SIZE * b + ofs, buffer, wr)
-    //  else
-    //   flash_memset(this->flash_start + PAGE_SIZE + b + ofs, 0x00, wr)
-    //  end
-    // 
-    //  bytesWritten += wr
-    //  bInd++
+    // Basic algorithm for writing:
     //
-    //  if filesize has changed
-    //   set new filesize.
-    // 
-    //  return bytesWritten
-    //  
-   
-    int bInd; //block index
-    int b; //absolute block number to write.
-    int ofs; //offset within block to write.
-    int wr; //no. bytes to write on a pass.
-    
+    // bytesWritten = 0
+    //
+    // while [still have bytes to write]
+    //  bInd = block Index to write too
+    //  ofs = ofet within block.
+    //  wr = number of bytes to write
+    //
+    //  if [new block required]
+    //   b = pop_free_block()
+    //   newPages=1
+    //  else
+    //   b = get absolute block No. from MBR
+    //  end
+    //
+    //  flash_write(flash_start + b + ofs, buffer, wr)
+    //
+    //  set cached file size if changed.
+    //  bytesWritten = wr
+    // end
+    //
+    // if [newPages]
+    //  write file size to MBR
+    // end
+    //
+    // return bytesWritten
+
     int bytesWritten = 0;
-    int writeData; //flag: 1=write data, 0=pad 0x00.
-   
-    int filesize = mbr_get_filesize(this->fd_table[fd].mbr_entry); 
-    int origSize = filesize;
-   
+    int newPages=0;
+
+    int filesize = this->fd_table[fd].filesize;
     int allocated_blocks = filesize / PAGE_SIZE; //current no. blocks assigned.
     if( (filesize % PAGE_SIZE) != 0) allocated_blocks++;
-   
+
     for(int sz = size;sz > 0;) {
-   
-        if(this->fd_table[fd].seek > filesize) {
-            // Starting beyond current EOF, pad with 0x00.
-            bInd = (filesize) / PAGE_SIZE;
-            ofs = (filesize) % PAGE_SIZE;
-            wr = MIN(PAGE_SIZE-ofs, this->fd_table[fd].seek-filesize);
-            writeData = 0;
-        }
-        else { 
-            // Starting before EOF, write from buffer.
-            bInd = this->fd_table[fd].seek / PAGE_SIZE;
-            ofs = this->fd_table[fd].seek % PAGE_SIZE;
-            wr = MIN(PAGE_SIZE-ofs,sz);
-            writeData = 1;
-        }
-    
+
+        int bInd = this->fd_table[fd].seek / PAGE_SIZE; // Block index.
+        int ofs = this->fd_table[fd].seek % PAGE_SIZE;  // offset within block.
+        int wr = MIN(PAGE_SIZE-ofs,sz);  // No. bytes to write.
+        int b = 0;                       //absolute block number.
+
         if(bInd >= allocated_blocks) { 
 
-            // File must increase in size, append file with new block.
-            if((b = this->mbr_pop_free_block()) < 0) {
+           // File must increase in size, append with new block.
+            if( (b = mbr_pop_free_block()) < 0) {
                 break;
             }
-            if(!this->mbr_add_block(this->fd_table[fd].mbr_entry, b)) {
+            if(!mbr_add_block(this->fd_table[fd].mbr_entry, b)) {
                 break;
             }
 
             allocated_blocks++;
+            newPages=1;
             PRINTF("New block allocated: %d\n", b);
         }
         else {
-            // Write position requires no new block allocation.
+           // Write position requires no new block allocation.
             b = mbr_get_block(this->fd_table[fd].mbr_entry, bInd);
-        } 
-   
+        }
+
         PRINTF("Write %s block index %d, number %d, offset %d, length %d\n",
                (writeData?"data":"0x00"), bInd, b, ofs, wr);
-   
-        if(writeData) { 
-            //write data from buffer.
-            if(!this->flash.flash_write(this->flash_start+(PAGE_SIZE * b)+ofs,
-                                        buffer, wr)) {
-                break;
-            }
 
-            //Set the new file size.
-            if((this->fd_table[fd].seek + wr) > filesize) { 
-                filesize = this->fd_table[fd].seek + wr;
-            }
-   
-            sz -= wr; 
-            buffer += wr;
-            this->fd_table[fd].seek += wr;
+        if(!this->flash.flash_write(this->flash_start+(PAGE_SIZE*b)+ofs,
+                                    buffer,wr)) {
+            break;
         }
-        else { 
-            // Pad with 0x00.
-            if(!this->flash.flash_memset(this->flash_start+(PAGE_SIZE*b)+ofs, 
-                                         0x00, wr)) {
-                break;
-            }
-            //set the new file length.
-            filesize += wr; 
+
+        //set the new file length, if changed. 
+        if((this->fd_table[fd].seek + wr) > this->fd_table[fd].filesize) {
+            this->fd_table[fd].filesize = this->fd_table[fd].seek + wr;
         }
-   
+
+        sz -= wr;
+        buffer += wr;
+        this->fd_table[fd].seek += wr;
         bytesWritten += wr;
     }
-   
-    if(origSize != filesize) {
-        // File size has changed, update MBR.
-        if(!this->mbr_set_filesize(this->fd_table[fd].mbr_entry, filesize)) {
+
+    //change the file size if we used new pages.
+    if(newPages) {
+        if(!this->mbr_set_filesize(this->fd_table[fd].mbr_entry, 
+                                   this->fd_table[fd].filesize)) {
             return -1;
-	}
+        }
     }
     return bytesWritten;
 }
