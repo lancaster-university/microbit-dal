@@ -33,7 +33,7 @@
 // The number of flash pages available to the file system.
 // The total number available for flash storage is 1 less: used for the MBR table.
 // This can be no greater than (2^7-1 = 127), as block numbers are stored in uint8_t's.
-#define DATA_BLOCK_COUNT 60
+#define DATA_BLOCK_COUNT 40
 
 // Number of MBR entries in the MBR table. Since this is a flat file system, without directories, this determines the maximum number of files the system can hold.
 // The number of MBR entries includes the free mbr list. 
