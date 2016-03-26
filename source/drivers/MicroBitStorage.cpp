@@ -12,6 +12,8 @@
  */
 MicroBitStorage::MicroBitStorage()
 {
+    //initialise our magic block, if required.
+    size();
 }
 
 /*
