@@ -45,6 +45,11 @@ MicroBitSerial::MicroBitSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uin
     this->rxBuffHeadMatch = -1;
 
     this->baud(MICROBIT_SERIAL_DEFAULT_BAUD_RATE);
+
+#if CONFIG_ENABLED(MICROBIT_DBG)
+    SERIAL_DEBUG = this;
+#endif
+
 }
 
 /**

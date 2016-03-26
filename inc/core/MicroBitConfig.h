@@ -341,7 +341,7 @@
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
-extern RawSerial& SERIAL_DEBUG;
+extern RawSerial* SERIAL_DEBUG;
 #endif
 
 #endif
