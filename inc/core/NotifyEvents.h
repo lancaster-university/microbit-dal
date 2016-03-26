@@ -3,5 +3,6 @@
 
 #define MICROBIT_DISPLAY_EVT_FREE           1
 #define MICROBIT_SERIAL_EVT_TX_EMPTY        2
+#define MICROBIT_UART_S_EVT_TX_EMPTY        3
 
 #endif
