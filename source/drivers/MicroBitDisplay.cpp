@@ -8,6 +8,7 @@
 #include "MicroBitSystemTimer.h"
 #include "MicroBitFiber.h"
 #include "ErrorNo.h"
+#include "NotifyEvents.h"
 
 const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
 
@@ -105,7 +106,7 @@ void MicroBitDisplay::renderFinish()
 
 void MicroBitDisplay::render()
 {
-    // Simple optimisation. 
+    // Simple optimisation.
     // If display is at zero brightness, there's nothing to do.
     if(brightness == 0)
         return;

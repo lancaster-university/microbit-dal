@@ -14,8 +14,7 @@
   * Event codes raised by MicroBitDisplay
   */
 #define MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE         1
-#define MICROBIT_DISPLAY_EVT_FREE                       2
-#define MICROBIT_DISPLAY_EVT_LIGHT_SENSE                4
+#define MICROBIT_DISPLAY_EVT_LIGHT_SENSE                2
 
 //
 // Internal constants

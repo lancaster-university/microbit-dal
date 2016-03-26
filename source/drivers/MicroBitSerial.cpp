@@ -3,6 +3,7 @@
 #include "ErrorNo.h"
 #include "MicroBitComponent.h"
 #include "MicroBitFiber.h"
+#include "NotifyEvents.h"
 
 uint8_t MicroBitSerial::status = 0;
 
