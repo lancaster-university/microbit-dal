@@ -12,7 +12,7 @@
   *
   * Example:
   * @code
-  * multiButton(MICROBIT_ID_BUTTON_AB, MICROBIT_ID_BUTTON_A, MICROBIT_ID_BUTTON_B);
+  * multiButton(MICROBIT_ID_BUTTON_A, MICROBIT_ID_BUTTON_B, MICROBIT_ID_BUTTON_AB);
   * @endcode
   *
   * Possible Events:
@@ -24,7 +24,7 @@
   * MICROBIT_BUTTON_EVT_HOLD
   * @endcode
   */
-MicroBitMultiButton::MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2)
+MicroBitMultiButton::MicroBitMultiButton(uint16_t button1, uint16_t button2, uint16_t id)
 {
     this->id = id;
     this->button1 = button1;

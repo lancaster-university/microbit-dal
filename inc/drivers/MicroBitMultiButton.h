@@ -47,7 +47,7 @@ class MicroBitMultiButton : public MicroBitComponent
       *
       * Example:
       * @code
-      * multiButton(MICROBIT_ID_BUTTON_AB, MICROBIT_ID_BUTTON_A, MICROBIT_ID_BUTTON_B);
+      * multiButton(MICROBIT_ID_BUTTON_A, MICROBIT_ID_BUTTON_B, MICROBIT_ID_BUTTON_AB);
       * @endcode
       *
       * Possible Events:
@@ -60,7 +60,7 @@ class MicroBitMultiButton : public MicroBitComponent
       * MICROBIT_BUTTON_EVT_HOLD
       * @endcode
       */
-    MicroBitMultiButton(uint16_t id, uint16_t button1, uint16_t button2);
+    MicroBitMultiButton(uint16_t button1, uint16_t button2, uint16_t id);
 
     /**
       * Tests if this MultiButton is currently pressed.
