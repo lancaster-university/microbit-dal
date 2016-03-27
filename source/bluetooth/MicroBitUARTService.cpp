@@ -17,7 +17,7 @@ static GattCharacteristic* rxCharacteristic = NULL;
 void on_confirmation_received_callback(uint16_t handle)
 {
 #if CONFIG_ENABLED(MICROBIT_DBG)
-    SERIAL_DEBUG.printf("RECEIVED!! %d \r\n",handle);
+    SERIAL_DEBUG->printf("RECEIVED!! %d \r\n",handle);
 #endif
     if(handle == rxCharacteristic->getValueAttribute().getHandle())
     {
@@ -220,7 +220,7 @@ int MicroBitUARTService::send(const uint8_t *buf, int length)
         int size = txBufferedSize();
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
-        SERIAL_DEBUG.printf("tx size: %d", size);
+        SERIAL_DEBUG->printf("tx size: %d", size);
 #endif
 
         uint8_t temp[size] = { 0 };
@@ -229,14 +229,14 @@ int MicroBitUARTService::send(const uint8_t *buf, int length)
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
         for(int i = 0; i < size; i++)
-            SERIAL_DEBUG.printf("%c",temp[i]);
+            SERIAL_DEBUG->printf("%c",temp[i]);
 #endif
 
         ble.gattServer().write(rxCharacteristic->getValueAttribute().getHandle(), temp, size);
     }
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
-    SERIAL_DEBUG.printf("written: %d \r\n",bytesWritten);
+    SERIAL_DEBUG->printf("written: %d \r\n",bytesWritten);
 #endif
 
     return bytesWritten;
