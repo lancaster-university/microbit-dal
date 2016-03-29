@@ -45,6 +45,7 @@
 #define MICROBIT_BLE_POWER_LEVELS               8
 #define MICROBIT_BLE_MAXIMUM_BONDS              4
 #define MICROBIT_BLE_ENABLE_BONDING 	        true
+
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
 struct BLESysAttribute
@@ -75,11 +76,11 @@ class MicroBitBLEManager : MicroBitComponent
      * Constructor.
      *
      * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
-     * Note that the BLE stack *cannot*  be brought up in a static context.
-     * (the software simply hangs or corrupts itself).
-     * Hence, we bring it up in an explicit init() method, rather than in the constructor.
      *
-     * @param _storage an instance of MicroBitStorage used to persist sys attribute information.
+     * @param _storage an instance of MicroBitStorage used to persist sys attribute information. (This is required for compatability with iOS).
+     *
+     * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
+     * Hence, the init() member function should be used to initialise the BLE stack.
      */
     MicroBitBLEManager(MicroBitStorage& _storage);
 
@@ -87,21 +88,23 @@ class MicroBitBLEManager : MicroBitComponent
      * Constructor.
      *
      * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
-     * Note that the BLE stack *cannot*  be brought up in a static context.
-     * (the software simply hangs or corrupts itself).
-     * Hence, we bring it up in an explicit init() method, rather than in the constructor.
+     *
+     * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
+     * Hence, the init() member function should be used to initialise the BLE stack.
      */
     MicroBitBLEManager();
 
     /**
-      * Post constructor initialisation method.
-      * After *MUCH* pain, it's noted that the BLE stack can't be brought up in a
-      * static context, so we bring it up here rather than in the constructor.
-      * n.b. This method *must* be called in main() or later, not before.
+      * Post constructor initialisation method as the BLE stack cannot be brought
+      * up in a static context.
       *
-      * Example:
+      * @param deviceName The name used when advertising
+      * @param serialNumber The serial number exposed by the device information service
+      * @param messageBus An instance of an EventModel, used during pairing.
+      * @param enableBonding If true, the security manager enabled bonding.
+      *
       * @code
-      * uBit.init();
+      * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
       * @endcode
       */
     void init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding);
@@ -110,8 +113,13 @@ class MicroBitBLEManager : MicroBitComponent
      * Change the output power level of the transmitter to the given value.
      *
      * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest.
+     *
      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
      *
+     * @code
+     * // maximum transmission power.
+     * bleManager.setTransmitPower(7);
+     * @endcode
      */
     int setTransmitPower(int power);
 
@@ -119,33 +127,42 @@ class MicroBitBLEManager : MicroBitComponent
      * Enter pairing mode. This is mode is called to initiate pairing, and to enable FOTA programming
      * of the micro:bit in cases where BLE is disabled during normal operation.
      *
-     * @param display a MicroBitDisplay to use when displaying pairing information.
-     * @prarm authorizationButton The button to use to authorise a pairing request.
+     * @param display An instance of MicroBitDisplay used when displaying pairing information.
+     * @param authorizationButton The button to use to authorise a pairing request.
+     *
+     * @code
+     * // initiate pairing mode
+     * bleManager.pairingMode(uBit.display, uBit.buttonA);
+     * @endcode
      */
     void pairingMode(MicroBitDisplay &display, MicroBitButton &authorisationButton);
 
     /**
-     * Makes the micro:bit discoverable via BLE, such that bonded devices can connect
      * When called, the micro:bit will begin advertising for a predefined period,
-     * (MICROBIT_BLE_ADVERTISING_TIMEOUT seconds) thereby allowing bonded devices to connect.
+     * MICROBIT_BLE_ADVERTISING_TIMEOUT seconds to bonded devices.
      */
     void advertise();
 
     /**
-     * Determines the number of devices currently bonded with this micro:bit
+     * Determines the number of devices currently bonded with this micro:bit.
      * @return The number of active bonds.
      */
     int getBondCount();
 
 	/**
 	 * A request to pair has been received from a BLE device.
-	 * If we're in pairing mode, display the passkey to the user.
+     * If we're in pairing mode, display the passkey to the user.
+     * Also, purge the bonding table if it has reached capacity.
+     *
+     * @note for internal use only.
 	 */
 	void pairingRequested(ManagedString passKey);
 
 	/**
-	 * A pairing request has been sucesfully completed.
-	 * If we're in pairing mode, display feedback to the user.
+	 * A pairing request has been sucessfully completed.
+	 * If we're in pairing mode, display a success or failure message.
+     *
+     * @note for internal use only.
 	 */
 	void pairingComplete(bool success);
 
@@ -158,7 +175,9 @@ class MicroBitBLEManager : MicroBitComponent
     private:
 
 	/**
-	 * Displays the device's ID code as a histogram on the LED matrix display.
+	 * Displays the device's ID code as a histogram on the provided MicroBitDisplay instance.
+     *
+     * @param display The display instance used for displaying the histogram.
 	 */
 	void showNameHistogram(MicroBitDisplay &display);
 

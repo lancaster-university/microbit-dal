@@ -9,20 +9,6 @@
 #include "ErrorNo.h"
 
 /*
- * Turn off warnings under gcc -Wall. We turn off unused-function for the
- * entire compilation unit as the compiler can't tell if a function is
- * unused until the end of the unit.  The macro expansion for SVCALL()
- * in nrf_soc.h and nrf_srv.h tries to leave unused-function turned off,
- * but we restore the state from before the include with our diagnostics
- * pop.
- * It might be cleaner to add
- * #pragram GCC system header
- * as the first line of nrf_soc.h, but that's a different
- * module ...
- */
-
-
-/*
  * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
@@ -51,6 +37,7 @@ static uint32_t random_value = 0;
 
 /**
   * Determines if a BLE stack is currently running.
+  *
   * @return true is a bluetooth stack is operational, false otherwise.
   */
 bool ble_running()
@@ -132,9 +119,9 @@ microbit_dal_version()
 
 /**
  * Defines the length of time that the device will remain in a error state before resetting.
+ *
  * @param iteration The number of times the error code will be displayed before resetting. Set to zero to remain in error state forever.
  *
- * Example:
  * @code
  * microbit_panic_timeout(4);
  * @endcode
@@ -143,14 +130,14 @@ void microbit_panic_timeout(int iterations)
 {
     panic_timeout = iterations;
 }
+
 /**
   * Disables all interrupts and user processing.
   * Displays "=(" and an accompanying status code on the default display.
   * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
   *
-  * Example:
   * @code
-  * panic(20);
+  * microbit_panic(20);
   * @endcode
   */
 void microbit_panic(int statusCode)
@@ -223,7 +210,7 @@ void microbit_panic(int statusCode)
                 col_data = ~col_data << microbitMatrixMap.columnStart & col_mask;
 
                 LEDMatrix = col_data | row_data;
-            
+
                 //burn cycles
                 i = 1000;
                 while(i>0)
@@ -253,18 +240,19 @@ void microbit_panic(int statusCode)
   * Generate a random number in the given range.
   * We use a simple Galois LFSR random number generator here,
   * as a Galois LFSR is sufficient for our applications, and much more lightweight
-  * than the hardware random number generator built into the processor, which takes
+  * than the hardware random number generator built int the processor, which takes
   * a long time and uses a lot of energy.
   *
   * KIDS: You shouldn't use this is the real world to generte cryptographic keys though...
   * have a think why not. :-)
   *
-  * @param max the upper range to generate a number for. This number cannot be negative
-  * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_VALUE (defined in ErrorNo.h) if max is <= 0.
+  * @param max the upper range to generate a number for. This number cannot be negative.
+  *
+  * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_VALUE if max is <= 0.
   *
   * Example:
   * @code
-  * uBit.random(200); //a number between 0 and 199
+  * microbit_random(200); //a number between 0 and 199
   * @endcode
   */
 int microbit_random(int max)
@@ -309,8 +297,9 @@ int microbit_random(int max)
 
 /**
   * Seed the random number generator (RNG).
-  * We use the NRF51822 in built cryptographic random number generator to seed a Galois LFSR.
-  * We do this as the hardware RNG is relatively high power, and use the the BLE stack internally,
+  *
+  * This function uses the NRF51822's in built cryptographic random number generator to seed a Galois LFSR.
+  * We do this as the hardware RNG is relatively high power, and is locked out by the BLE stack internally,
   * with a less than optimal application interface. A Galois LFSR is sufficient for our
   * applications, and much more lightweight.
   */
@@ -352,6 +341,7 @@ void microbit_seed_random()
 
 /**
   * Seed the pseudo random number generator (RNG) using the given 32-bit value.
+  * This function does not use the NRF51822's in built cryptographic random number generator.
   *
   * @param seed The value to use as a seed.
   */
@@ -359,4 +349,3 @@ void microbit_seed_random(uint32_t seed)
 {
     random_value = seed;
 }
-

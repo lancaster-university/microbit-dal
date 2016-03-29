@@ -1,12 +1,11 @@
 /**
- * The MicroBit Fiber scheduler.
+  * Functionality definitions for the MicroBit Fiber scheduler.
   *
   * This lightweight, non-preemptive scheduler provides a simple threading mechanism for two main purposes:
   *
   * 1) To provide a clean abstraction for application languages to use when building async behaviour (callbacks).
-  * 2) To provide ISR decoupling for Messagebus events generted in an ISR context.
+  * 2) To provide ISR decoupling for EventModel events generated in an ISR context.
   */
-
 #include "MicroBitConfig.h"
 #include "MicroBitFiber.h"
 #include "MicroBitSystemTimer.h"
@@ -15,9 +14,9 @@
  * Statically allocated values used to create and destroy Fibers.
  * required to be defined here to allow persistence during context switches.
  */
-Fiber *currentFiber = NULL;                 // The context in which the current fiber is executing.
+Fiber *currentFiber = NULL;                        // The context in which the current fiber is executing.
 static Fiber *forkedFiber = NULL;                  // The context in which a newly created child fiber is executing.
-static Fiber *idleFiber = NULL;                    // IDLE task - performs a power efficient sleep, and system maintenance tasks.
+static Fiber *idleFiber = NULL;                    // the idle task - performs a power efficient sleep, and system maintenance tasks.
 
 /*
  * Scheduler state.
@@ -43,11 +42,14 @@ static MicroBitComponent* idleThreadComponents[MICROBIT_IDLE_COMPONENTS];
 
 /**
   * Utility function to add the currenty running fiber to the given queue.
+  *
   * Perform a simple add at the head, to avoid complexity,
+  *
   * Queues are normally very short, so maintaining a doubly linked, sorted list typically outweighs the cost of
   * brute force searching.
   *
   * @param f The fiber to add to the queue
+  *
   * @param queue The run queue to add the fiber to.
   */
 void queue_fiber(Fiber *f, Fiber **queue)
@@ -84,6 +86,7 @@ void queue_fiber(Fiber *f, Fiber **queue)
 
 /**
   * Utility function to the given fiber from whichever queue it is currently stored on.
+  *
   * @param f the fiber to remove.
   */
 void dequeue_fiber(Fiber *f)
@@ -152,6 +155,8 @@ Fiber *getFiberContext()
   * Creates a Fiber context around the calling thread, and adds it to the run queue as the current thread.
   *
   * This function must be called once only from the main thread, and before any other Fiber operation.
+  *
+  * @param _messageBus An event model, used to direct the priorities of the scheduler.
   */
 void scheduler_init(EventModel &_messageBus)
 {
@@ -190,6 +195,7 @@ void scheduler_init(EventModel &_messageBus)
 
 /**
   * Determines if the fiber scheduler is operational.
+  *
   * @return 1 if the fber scheduler is running, 0 otherwise.
   */
 int fiber_scheduler_running()
@@ -201,8 +207,8 @@ int fiber_scheduler_running()
 }
 
 /**
-  * Timer callback. Called from interrupt context, once every SYSTEM_TICK_PERIOD_MS milliseconds, by default.
-  * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up
+  * The timer callback, called from interrupt context once every SYSTEM_TICK_PERIOD_MS milliseconds.
+  * This function checks to determine if any fibers blocked on the sleep queue need to be woken up
   * and made runnable.
   */
 void scheduler_tick()
@@ -227,11 +233,12 @@ void scheduler_tick()
 }
 
 /**
-  * Event callback. Called whenever an event is raised on the registered EventModel.
-  * Checks to determine if any fibers blocked on the wait queue need to be woken up
+  * Event callback. Called from an instance of MicroBitMessageBus whenever an event is raised.
+  *
+  * This function checks to determine if any fibers blocked on the wait queue need to be woken up
   * and made runnable due to the event.
-  * @param evt The event to be processed.
-  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
+  *
+  * @param evt the event that has just been raised on an instance of MicroBitMessageBus.
   */
 void scheduler_event(MicroBitEvent evt)
 {
@@ -285,13 +292,13 @@ void scheduler_event(MicroBitEvent evt)
 
 /**
   * Blocks the calling thread for the given period of time.
-  * The calling thread will be immediatley descheduled, and placed onto a
+  * The calling thread will be immediateley descheduled, and placed onto a
   * wait queue until the requested amount of time has elapsed.
   *
-  * n.b. the fiber will not be be made runnable until after the elasped time, but there
-  * are no guarantees precisely when the fiber will next be scheduled.
-  *
   * @param t The period of time to sleep, in milliseconds.
+  *
+  * @note the fiber will not be be made runnable until after the elapsed time, but there
+  * are no guarantees precisely when the fiber will next be scheduled.
   */
 void fiber_sleep(unsigned long t)
 {
@@ -333,15 +340,21 @@ void fiber_sleep(unsigned long t)
 
 /**
   * Blocks the calling thread until the specified event is raised.
-  * The calling thread will be immediately descheduled, and placed onto a
+  * The calling thread will be immediateley descheduled, and placed onto a
   * wait queue until the requested event is received.
   *
-  * n.b. the fiber will not be be made runnable until after the event is raised, but there
-  * are no guarantees precisely when the fiber will next be scheduled.
-  *
   * @param id The ID field of the event to listen for (e.g. MICROBIT_ID_BUTTON_A)
-  * @param value The VALUE of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
+  *
+  * @param value The value of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
+  *
   * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
+  *
+  * @code
+  * fiber_wait_for_event(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK);
+  * @endcode
+  *
+  * @note the fiber will not be be made runnable until after the event is raised, but there
+  * are no guarantees precisely when the fiber will next be scheduled.
   */
 int fiber_wait_for_event(uint16_t id, uint16_t value)
 {
@@ -354,11 +367,23 @@ int fiber_wait_for_event(uint16_t id, uint16_t value)
 }
 
 /**
-  * Blocks the calling thread until the specified event is raised.
+  * Configures the fiber context for the current fiber to block on an event ID
+  * and value, but does not deschedule the fiber.
   *
   * @param id The ID field of the event to listen for (e.g. MICROBIT_ID_BUTTON_A)
-  * @param value The VALUE of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
+  *
+  * @param value The value of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
+  *
   * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
+  *
+  * @code
+  * fiber_wake_on_event(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK);
+  *
+  * //perform some time critical operation.
+  *
+  * //deschedule the current fiber manually, waiting for the previously configured event.
+  * schedule();
+  * @endcode
   */
 int fiber_wake_on_event(uint16_t id, uint16_t value)
 {
@@ -399,7 +424,7 @@ int fiber_wake_on_event(uint16_t id, uint16_t value)
 }
 
 /**
-  * Executes the given function asynchronously.
+  * Executes the given function asynchronously if necessary.
   *
   * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
   * that complete very quickly, bringing unecessary RAM overhead.
@@ -408,6 +433,7 @@ int fiber_wake_on_event(uint16_t id, uint16_t value)
   * We only create an additional fiber if that function performs a block operation.
   *
   * @param entry_fn The function to execute.
+  *
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 int invoke(void (*entry_fn)(void))
@@ -459,16 +485,18 @@ int invoke(void (*entry_fn)(void))
 }
 
 /**
-  * Executes the given parameterized function asynchronously.
+  * Executes the given function asynchronously if necessary, and offers the ability to provide a parameter.
   *
   * Fibers are often used to run event handlers, however many of these event handlers are very simple functions
-  * that complete very quickly, bringing unecessary RAM overhead.
+  * that complete very quickly, bringing unecessary RAM. overhead
   *
-  * This function takes a snapshot of the current processor context, then attempt to optimistically call the given function directly.
+  * This function takes a snapshot of the current fiber context, then attempt to optimistically call the given function directly.
   * We only create an additional fiber if that function performs a block operation.
   *
   * @param entry_fn The function to execute.
-  * @param param an untyped parameter passed into the entry_fn.
+  *
+  * @param param an untyped parameter passed into the entry_fn and completion_fn.
+  *
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 int invoke(void (*entry_fn)(void *), void *param)
@@ -519,6 +547,13 @@ int invoke(void (*entry_fn)(void *), void *param)
     return MICROBIT_OK;
 }
 
+/**
+ * Launches a fiber.
+ *
+ * @param ep the entry point for the fiber.
+ *
+ * @param cp the completion routine after ep has finished execution
+ */
 void launch_new_fiber(void (*ep)(void), void (*cp)(void))
 {
     // Execute the thread's entrypoint
@@ -531,6 +566,15 @@ void launch_new_fiber(void (*ep)(void), void (*cp)(void))
     release_fiber();
 }
 
+/**
+ * Launches a fiber with a parameter
+ *
+ * @param ep the entry point for the fiber.
+ *
+ * @param cp the completion routine after ep has finished execution
+ *
+ * @param pm the parameter to provide to ep and cp.
+ */
 void launch_new_fiber_param(void (*ep)(void *), void (*cp)(void *), void *pm)
 {
     // Execute the thread's entrypoint.
@@ -572,10 +616,13 @@ Fiber *__create_fiber(uint32_t ep, uint32_t cp, uint32_t pm, int parameterised)
 }
 
 /**
- * Creates a new Fiber, and launches it.
+  * Creates a new Fiber, and launches it.
   *
   * @param entry_fn The function the new Fiber will begin execution in.
+  *
   * @param completion_fn The function called when the thread completes execution of entry_fn.
+  *                      Defaults to release_fiber.
+  *
   * @return The new Fiber, or NULL if the operation could not be completed.
   */
 Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void))
@@ -591,8 +638,12 @@ Fiber *create_fiber(void (*entry_fn)(void), void (*completion_fn)(void))
   * Creates a new parameterised Fiber, and launches it.
   *
   * @param entry_fn The function the new Fiber will begin execution in.
-  * @param param an untyped parameter passed into the entry_fn anf completion_fn.
+  *
+  * @param param an untyped parameter passed into the entry_fn and completion_fn.
+  *
   * @param completion_fn The function called when the thread completes execution of entry_fn.
+  *                      Defaults to release_fiber.
+  *
   * @return The new Fiber, or NULL if the operation could not be completed.
   */
 Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)(void *))
@@ -604,8 +655,9 @@ Fiber *create_fiber(void (*entry_fn)(void *), void *param, void (*completion_fn)
 }
 
 /**
-  * Default exit point for all parameterised fibers.
-  * Any fiber reaching the end of its entry function will return here for recycling.
+  * Exit point for all fibers.
+  *
+  * Any fiber reaching the end of its entry function will return here  for recycling.
   */
 void release_fiber(void *)
 {
@@ -616,8 +668,9 @@ void release_fiber(void *)
 }
 
 /**
-  * Default exit point for all fibers.
-  * Any fiber reaching the end of its entry function will return here for recycling.
+  * Exit point for all fibers.
+  *
+  * Any fiber reaching the end of its entry function will return here  for recycling.
   */
 void release_fiber(void)
 {
@@ -637,10 +690,12 @@ void release_fiber(void)
 /**
   * Resizes the stack allocation of the current fiber if necessary to hold the system stack.
   *
-  * If the stack allocaiton is large enough to hold the current system stack, then this function does nothing.
+  * If the stack allocation is large enough to hold the current system stack, then this function does nothing.
   * Otherwise, the the current allocation of the fiber is freed, and a larger block is allocated.
   *
   * @param f The fiber context to verify.
+  *
+  * @return The stack depth of the given fiber.
   */
 void verify_stack_size(Fiber *f)
 {
@@ -674,7 +729,8 @@ void verify_stack_size(Fiber *f)
 
 /**
   * Determines if any fibers are waiting to be scheduled.
-  * @return '1' if there is at least one fiber currently on the run queue, and '0' otherwise.
+  *
+  * @return The number of fibers currently on the run queue
   */
 int scheduler_runqueue_empty()
 {
@@ -684,7 +740,7 @@ int scheduler_runqueue_empty()
 /**
   * Calls the Fiber scheduler.
   * The calling Fiber will likely be blocked, and control given to another waiting fiber.
-  * Call this to yield control of the processor when you have nothing more to do.
+  * Call this function to yield control of the processor when you have nothing more to do.
   */
 void schedule()
 {
@@ -785,11 +841,25 @@ void schedule()
 }
 
 /**
-  * add a component to the array of components which invocate the systemTick member function during a systemTick
-  * @param component The component to add.
-  * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
-  * @note this will be converted into a dynamic list of components
-  */
+ * Adds a component to the array of idle thread components, which are processed
+ * when the run queue is empty.
+ *
+ * The system timer will poll isIdleCallbackNeeded on each component to determine
+ * if the scheduler should schedule the idle_task imminently.
+ *
+ * @param component The component to add to the array.
+ *
+ * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned the array is full.
+ *
+ * @code
+ * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
+ *
+ * // heap allocated - otherwise it will be paged out!
+ * MicroBitAccelerometer accelerometer = new MicroBitAccelerometer(i2c);
+ *
+ * fiber_add_idle_component(accelerometer);
+ * @endcode
+ */
 int fiber_add_idle_component(MicroBitComponent *component)
 {
     int i = 0;
@@ -806,11 +876,22 @@ int fiber_add_idle_component(MicroBitComponent *component)
 }
 
 /**
-  * remove a component from the array of components
-  * @param component The component to remove.
-  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMTER is returned if the given component has not been previous added.
-  * @note this will be converted into a dynamic list of components
-  */
+ * Remove a component from the array of idle thread components
+ *
+ * @param component The component to remove from the idle component array.*
+ *
+ * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previously added.
+ * @code
+ * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
+ *
+ * // heap allocated - otherwise it will be paged out!
+ * MicroBitAccelerometer accelerometer = new MicroBitAccelerometer(i2c);
+ *
+ * fiber_add_idle_component(accelerometer);
+ *
+ * fiber_remove_idle_component(accelerometer);
+ * @endcode
+ */
 int fiber_remove_idle_component(MicroBitComponent *component)
 {
     int i = 0;
@@ -828,7 +909,7 @@ int fiber_remove_idle_component(MicroBitComponent *component)
 
 /**
   * Set of tasks to perform when idle.
-  * Service any background tasks that are required, and attmept power efficient sleep.
+  * Service any background tasks that are required, and attempt a power efficient sleep.
   */
 void idle()
 {
@@ -841,10 +922,11 @@ void idle()
     if(scheduler_runqueue_empty())
     	__WFE();
 }
+
 /**
-  * IDLE task.
-  * Only scheduled for execution when the runqueue is empty.
-  * Performs a procressor sleep operation, then returns to the scheduler - most likely after a timer interrupt.
+  * The idle task, which is called when the runtime has no fibers that require execution.
+  *
+  * This function typically calls idle().
   */
 void idle_task()
 {

@@ -29,10 +29,12 @@ static Ticker *timer = NULL;
 
 /**
   * Initialises the system wide timer.
+  *
   * This must be called before any components register to receive periodic periodic callbacks.
   *
   * @param timer_period The initial period between interrupts, in millseconds.
-  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if period is illegal.
+  *
+  * @return MICROBIT_OK on success.
   */
 int system_timer_init(int period)
 {
@@ -42,12 +44,13 @@ int system_timer_init(int period)
     return system_timer_set_period(period);
 }
 
-/*
- * Reconfigures the system wide timer to the given period in milliseconds.
- *
- * @param period the new period of the timer in milliseconds
- * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if period < 1
- */
+/**
+  * Reconfigures the system wide timer to the given period in milliseconds.
+  *
+  * @param period the new period of the timer in milliseconds
+  *
+  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if period < 1
+  */
 int system_timer_set_period(int period)
 {
     if (period < 1)
@@ -64,19 +67,21 @@ int system_timer_set_period(int period)
     return MICROBIT_OK;
 }
 
-/*
- * Provides the current tick period in milliseconds
- * @return the current tick period in milliseconds
- */
+/**
+  * Accessor to obtain the current tick period in milliseconds
+  *
+  * @return the current tick period in milliseconds
+  */
 int system_timer_get_period()
 {
     return tick_period;
 }
 
-/*
- * Determines the time since the device was powered on.
- * @return the current time since poweron in milliseconds
- */
+/**
+  * Determines the time since the device was powered on.
+  *
+  * @return the current time since power on in milliseconds
+  */
 unsigned long system_timer_current_time()
 {
     return ticks;
@@ -84,6 +89,7 @@ unsigned long system_timer_current_time()
 
 /**
   * Timer callback. Called from interrupt context, once per period.
+  *
   * Simply checks to determine if any fibers blocked on the sleep queue need to be woken up
   * and made runnable.
   */
@@ -99,12 +105,15 @@ void system_timer_tick()
 }
 
 /**
- * Add a component to the array of system components. This component will then receive
- * period callbacks, once every tick period.
- *
- * @param component The component to add.
- * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if further components cannot be supported.
- */
+  * Add a component to the array of system components. This component will then receive
+  * periodic callbacks, once every tick period.
+  *
+  * @param component The component to add.
+  *
+  * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if the component array is full.
+  *
+  * @note The callback will be in interrupt context.
+  */
 int system_timer_add_component(MicroBitComponent *component)
 {
     int i = 0;
@@ -124,11 +133,13 @@ int system_timer_add_component(MicroBitComponent *component)
 }
 
 /**
- * remove a component from the array of system components. this component will no longer receive
- * period callbacks.
- * @param component The component to remove.
- * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previous added.
- */
+  * Remove a component from the array of system components. This component will no longer receive
+  * periodic callbacks.
+  *
+  * @param component The component to remove.
+  *
+  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previously added.
+  */
 int system_timer_remove_component(MicroBitComponent *component)
 {
     int i = 0;

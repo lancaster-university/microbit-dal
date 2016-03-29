@@ -13,6 +13,11 @@
 #define MICROBIT_UART_S_EVT_HEAD_MATCH      2
 #define MICROBIT_UART_S_EVT_RX_FULL         3
 
+/**
+  * Class definition for the custom MicroBit UART Service.
+  * Provides a BLE service that acts as a UART port, enabling the reception and transmission
+  * of an arbitrary number of bytes.
+  */
 class MicroBitUARTService
 {
     uint8_t* rxBuffer;
@@ -63,7 +68,7 @@ class MicroBitUARTService
      * @param rxBufferSize the size of the rxBuffer
      * @param txBufferSize the size of the txBuffer
      *
-     * @note defaults to 20
+     * @note The default size is MICROBIT_UART_S_DEFAULT_BUF_SIZE (20 bytes).
      */
     MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize = MICROBIT_UART_S_DEFAULT_BUF_SIZE, uint8_t txBufferSize = MICROBIT_UART_S_DEFAULT_BUF_SIZE);
 

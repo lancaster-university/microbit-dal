@@ -37,10 +37,10 @@ extern "C" {
 
 
 /**
- * Constructor.
- * Initialise the Device Firmware Update service.
- * @param BLE Areference to the BLE stack to advertise this service under.
- */
+  * Constructor.
+  * Initialise the Device Firmware Update service.
+  * @param _ble The instance of a BLE device that we're running on.
+  */
 MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     ble(_ble)
 {
@@ -65,8 +65,8 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
 }
 
 /**
- * Callback. Invoked when any of our attributes are written via BLE.
- */
+  * Callback. Invoked when any of our attributes are written via BLE.
+  */
 void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
 {
     if (params->handle == microBitDFUServiceControlCharacteristicHandle)
@@ -101,9 +101,8 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
 
 
 /**
- * UUID definitions for BLE Services and Characteristics.
- */
-
+  * UUID definitions for BLE Services and Characteristics.
+  */
 const uint8_t              MicroBitDFUServiceUUID[] = {
     0xe9,0x5d,0x93,0xb0,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };

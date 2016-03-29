@@ -22,7 +22,7 @@ struct EventServiceEvent
 
 /**
   * Class definition for a MicroBit BLE Event Service.
-  * Provides a _ble gateway onto the MicroBit Message Bus.
+  * Provides a BLE gateway onto an Event Model.
   */
 class MicroBitEventService : public MicroBitComponent
 {
@@ -31,7 +31,8 @@ class MicroBitEventService : public MicroBitComponent
     /**
       * Constructor.
       * Create a representation of the EventService
-      * @param BLE The instance of a BLE device that we're running on.
+      * @param _ble The instance of a BLE device that we're running on.
+      * @param _messageBus An instance of an EventModel which events will be mirrored from.
       */
     MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus);
 
@@ -52,9 +53,10 @@ class MicroBitEventService : public MicroBitComponent
     void onMicroBitEvent(MicroBitEvent evt);
 
     /**
-     * read callback on microBitRequirements characteristic.
-     * Used to iterate through the events that the code on this micro:bit is interested in.
-     */
+      * Read callback on microBitRequirements characteristic.
+      *
+      * Used to iterate through the events that the code on this micro:bit is interested in.
+      */
     void onRequirementsRead(GattReadAuthCallbackParams *params);
 
     private:

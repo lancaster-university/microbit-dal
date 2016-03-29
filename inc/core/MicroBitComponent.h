@@ -2,13 +2,6 @@
 #define MICROBIT_COMPONENT_H
 
 #include "MicroBitConfig.h"
-/**
-  * Class definition for MicroBitComponent
-  * All components should inherit from this class.
-  * @note if a component needs to be called regularly, then you should add the component to the systemTick and idleTick queues.
-  * If it's in the systemTick queue, you should override systemTick and implement the required functionality.
-  * Similarly if the component is in the idleTick queue, the idleTick member function should be overridden.
-  */
 
 // Enumeration of core components.
 #define MICROBIT_ID_BUTTON_A            1
@@ -54,10 +47,26 @@
 #define MICROBIT_ID_NOTIFY_ONE                      1022          // Notfication channel, for general purpose synchronisation
 #define MICROBIT_ID_NOTIFY                          1023          // Notfication channel, for general purpose synchronisation
 
-
 // Universal flags used as part of the status field
 #define MICROBIT_COMPONENT_RUNNING		0x01
 
+
+/**
+  * Class definition for MicroBitComponent.
+  *
+  * All components should inherit from this class.
+  *
+  * If a component requires regular updates, then you should add the component
+  * to the systemTick and idleTick queues.
+  *
+  * The system timer will call systemTick() once the component has been added to
+  * the array of system components using system_timer_add_component. This callback
+  * will be in interrupt context.
+  *
+  * The idle thread will call idleTick() once the component has been added to the array
+  * of idle components using fiber_add_idle_component. Updates are determined by
+  * the isIdleCallbackNeeded() member function.
+  */
 class MicroBitComponent
 {
     protected:
@@ -77,16 +86,18 @@ class MicroBitComponent
     }
 
     /**
-      * Once added to the systemTickComponents array, this member function will be
-      * called in interrupt context on every system tick.
+      * The system timer will call this member function once the component has been added to
+      * the array of system components using system_timer_add_component. This callback
+      * will be in interrupt context.
       */
     virtual void systemTick(){
 
     }
 
     /**
-      * Once added to the idleThreadComponents array, this member function will be
-      * called in idle thread context indiscriminately.
+      * The idle thread will call this member function once the component has been added to the array
+      * of idle components using fiber_add_idle_component. Updates are determined by
+      * the isIdleCallbackNeeded() member function.
       */
     virtual void idleTick()
     {
@@ -96,16 +107,20 @@ class MicroBitComponent
     /**
       * When added to the idleThreadComponents array, this function will be called to determine
       * if and when data is ready.
-      * @note override this if you want to request to be scheduled imminently
+      *
+      * @note override this if you want to request to be scheduled as soon as possible.
       */
     virtual int isIdleCallbackNeeded()
     {
         return 0;
     }
 
+    /**
+      * If you have added your component to the idle or system tick component arrays,
+      * you must remember to remove your component from them if your component is destructed.
+      */
     virtual ~MicroBitComponent()
     {
-
     }
 };
 

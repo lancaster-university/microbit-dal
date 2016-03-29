@@ -1,18 +1,24 @@
 /**
-  * Class definition for a MicroBitListener.
-  *
-  * MicroBitListener holds all the information related to a single event handler required
-  * to match and fire event handlers to incoming events.
+  *	This structure defines a MicroBitListener used to invoke functions, or member
+  * functions if an instance of EventModel receives an event whose id and value
+  * match this MicroBitListener's id and value.
   */
 #include "MicroBitConfig.h"
 #include "MicroBitListener.h"
 
 /**
   * Constructor.
+  *
   * Create a new Message Bus Listener.
+  *
   * @param id The ID of the component you want to listen to.
-  * @param value The event ID you would like to listen to from that component
+  *
+  * @param value The event value you would like to listen to from that component
+  *
   * @param handler A function pointer to call when the event is detected.
+  *
+  * @param flags User specified, implementation specific flags, that allow behaviour of this events listener
+  * to be tuned.
   */
 MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent), uint16_t flags)
 {
@@ -27,11 +33,20 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(
 
 /**
   * Constructor.
-  * Create a new parameterised Message Bus Listener.
+  *
+  * Create a new Message Bus Listener, this constructor accepts an additional
+  * parameter "arg", which is passed to the handler.
+  *
   * @param id The ID of the component you want to listen to.
-  * @param value The event ID you would like to listen to from that component.
+  *
+  * @param value The event value you would like to listen to from that component
+  *
   * @param handler A function pointer to call when the event is detected.
-  * @param arg An additional argument to pass to the event handler function.
+  *
+  * @param arg A pointer to some data that will be given to the handler.
+  *
+  * @param flags User specified, implementation specific flags, that allow behaviour of this events listener
+  * to be tuned.
   */
 MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(MicroBitEvent, void *), void* arg, uint16_t flags)
 {
@@ -45,8 +60,8 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, void (*handler)(
 }
 
 /**
- * Destructor. Ensures all resources used by this listener are freed.
- */
+  * Destructor. Ensures all resources used by this listener are freed.
+  */
 MicroBitListener::~MicroBitListener()
 {
     if(this->flags & MESSAGE_BUS_LISTENER_METHOD)
@@ -55,6 +70,7 @@ MicroBitListener::~MicroBitListener()
 
 /**
   * Queues and event up to be processed.
+  *
   * @param e The event to queue
   */
 void MicroBitListener::queue(MicroBitEvent e)

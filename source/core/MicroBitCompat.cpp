@@ -1,5 +1,6 @@
 /**
-  * Compatibility / portability funcitons and constants for the MicroBit DAL.
+  * This file contains functions used to maintain compatability and portability.
+  * It also contains constants that are used elsewhere in the DAL.
   */
 #include "MicroBitConfig.h"
 #include "MicroBitCompat.h"
@@ -7,8 +8,10 @@
 
 
 /**
-  * Performs an in buffer reverse of a given char array
-  * @param s the char* to reverse.
+  * Performs an in buffer reverse of a given char array.
+  *
+  * @param s the string to reverse.
+  *
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 int string_reverse(char *s)
@@ -33,10 +36,12 @@ int string_reverse(char *s)
 }
 
 /**
-  * Converts a given integer into a base 10 ASCII equivalent.
+  * Converts a given integer into a string representation.
   *
   * @param n The number to convert.
-  * @param s Pointer to a buffer in which to store the resulting string.
+  *
+  * @param s A pointer to the buffer where the resulting string will be stored.
+  *
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 int itoa(int n, char *s)

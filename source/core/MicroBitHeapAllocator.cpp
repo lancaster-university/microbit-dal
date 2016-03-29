@@ -1,32 +1,33 @@
-#include "MicroBitConfig.h"
-#include "MicroBitHeapAllocator.h"
-#include "MicroBitDevice.h"
-#include "ErrorNo.h"
-
 /**
   * A simple 32 bit block based memory allocator. This allows one or more memory segments to
   * be designated as heap storage, and is designed to run in a static memory area or inside the standard C
   * heap for use by the micro:bit runtime. This is required for several reasons:
   *
   * 1) It reduces memory fragmentation due to the high churn sometime placed on the heap
-  * by ManagedTypes, fibers and user code. Underlying heap implentations often have very simplistic
-  * allocation policies and suffer from fragmentation in prolonged use - which can cause programs to
+  * by ManagedTypes, fibers and user code. Underlying heap implentations are often have very simplistic
+  * allocation pilicies and suffer from fragmentation in prolonged use - which can cause programs to
   * stop working after a period of time. The algorithm implemented here is simple, but highly tolerant to
   * large amounts of churn.
   *
-  * 2) It allows us to reuse up to 8K of SRAM set aside for SoftDevice as additional heap storage
-  * when BLE is not in use... which is etremely useful given the memory constraints on the device.
+  * 2) It allows us to reuse the 8K of SRAM set aside for SoftDevice as additional heap storage
+  * when BLE is not in use.
   *
   * 3) It gives a simple example of how memory allocation works! :-)
   *
-  * N.B. The need for this should be reviewed in the future, should a different memory allocator be
-  * made availiable in the mbed platform.
+  * P.S. This is a very simple allocator, therefore not without its weaknesses. Why don't you consider
+  * what these are, and consider the tradeoffs against simplicity...
   *
-  * P.S. This is a very simple allocator, therefore not without its weaknesses. Consider
-  * what these weaknesses might be. :-)
+  * @note The need for this should be reviewed in the future, if a different memory allocator is
+  * made availiable in the mbed platform.
   *
   * TODO: Consider caching recently freed blocks to improve allocation time.
   */
+
+#include "MicroBitConfig.h"
+#include "MicroBitHeapAllocator.h"
+#include "MicroBitDevice.h"
+#include "ErrorNo.h"
+
 struct HeapDefinition
 {
     uint32_t *heap_start;		// Physical address of the start of this heap.
@@ -110,20 +111,20 @@ void microbit_initialise_heap(HeapDefinition &heap)
 /**
   * Create and initialise a given memory region as for heap storage.
   * After this is called, any future calls to malloc, new, free or delete may use the new heap.
-  * The heap allocaor will give attempt to allocate memory from heaps in the order that they are created.
+  * The heap allocator will attempt to allocate memory from heaps in the order that they are created.
   * i.e. memory will be allocated from first heap created until it is full, then the second heap, and so on.
   *
-  * n.b. only code that #includes MicroBitHeapAllocator.h will use this heap. This includes all micro:bit runtime
-  * code, and user code targetting the runtime. External code can choose to include this file, or
-  * simply use the standard heap.
-  *
   * @param start The start address of memory to use as a heap region.
+  *
   * @param end The end address of memory to use as a heap region.
   *
   * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocated.
+  *
+  * @note Only code that #includes MicroBitHeapAllocator.h will use this heap. This includes all micro:bit runtime
+  * code, and user code targetting the runtime. External code can choose to include this file, or
+  * simply use the standard heap.
   */
-int
-microbit_create_heap(uint32_t start, uint32_t end)
+int microbit_create_heap(uint32_t start, uint32_t end)
 {
     // Ensure we don't exceed the maximum number of heap segments.
     if (heap_count == MICROBIT_MAXIMUM_HEAPS)
@@ -140,7 +141,7 @@ microbit_create_heap(uint32_t start, uint32_t end)
     heap[heap_count].heap_start = (uint32_t *)start;
     heap[heap_count].heap_end = (uint32_t *)end;
 
-    // Initialise the heap as being completely empty and available for use. 
+    // Initialise the heap as being completely empty and available for use.
     microbit_initialise_heap(heap[heap_count]);
     heap_count++;
 
@@ -155,16 +156,13 @@ microbit_create_heap(uint32_t start, uint32_t end)
 }
 
 /**
-  * Create and initialise a heap region within the current underlying heap region. 
+  * Create and initialise a heap region within the current the heap region specified
+  * by the linker script.
   *
-  * If the requested amount is not available, then the amount requested will be reduced 
-  * automatically to fir the space available. 
+  * If the requested amount is not available, then the amount requested will be reduced
+  * automatically to fit the space available.
   *
-  * n.b. only code that #includes MicroBitHeapAllocator.h will use this heap. This includes all micro:bit runtime
-  * code, and user code targetting the runtime. External code can choose to include this file, or
-  * simply use the standard heap.
-  *
-  * @param ratio The proportion of the underlying heap to allocate, in the range 0.0 - 1.0
+  * @param ratio The proportion of the underlying heap to allocate.
   *
   * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocated.
   */
@@ -207,9 +205,10 @@ int microbit_create_nested_heap(float ratio)
 }
 
 /**
-  * Attempt to allocate a given amount of memory from the given heap.
+  * Attempt to allocate a given amount of memory from any of our configured heap areas.
+  *
   * @param size The amount of memory, in bytes, to allocate.
-  * @param heap The heap the memory is to be allocated from.
+  *
   * @return A pointer to the allocated memory, or NULL if insufficient memory is available.
   */
 void *microbit_malloc(size_t size, HeapDefinition &heap)
@@ -296,9 +295,9 @@ void *microbit_malloc(size_t size, HeapDefinition &heap)
 }
 
 /**
-  * Attempt to allocate a given amount of memory from any of our configured heap areas.
-  * @param size The amount of memory, in bytes, to allocate.
-  * @return A pointer to the allocated memory, or NULL if insufficient memory is available.
+  * Release a given area of memory from the heap.
+  *
+  * @param mem The memory area to release.
   */
 void *microbit_malloc(size_t size)
 {
@@ -347,6 +346,7 @@ void *microbit_malloc(size_t size)
 
 /**
   * Release a given area of memory from the heap.
+  *
   * @param mem The memory area to release.
   */
 void microbit_free(void *mem)
@@ -378,4 +378,3 @@ void microbit_free(void *mem)
     // Forward it to the native heap allocator, and let nature take its course...
     native_free(mem);
 }
-

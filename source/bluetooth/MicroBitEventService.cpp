@@ -1,6 +1,6 @@
 /**
   * Class definition for a MicroBit BLE Event Service.
-  * Provides a BLE gateway onto the MicroBit Message Bus.
+  * Provides a BLE gateway onto an Event Model.
   */
 
 #include "MicroBitConfig.h"
@@ -13,6 +13,7 @@
   * Constructor.
   * Create a representation of the EventService
   * @param _ble The instance of a BLE device that we're running on.
+  * @param _messageBus An instance of an EventModel which events will be mirrored from.
   */
 MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus) :
         ble(_ble),messageBus(_messageBus)
@@ -106,9 +107,9 @@ void MicroBitEventService::onMicroBitEvent(MicroBitEvent evt)
 }
 
 /**
- * Periodic callback from MicroBit scheduler.
- * If we're no longer connected, remove any registered Message Bus listeners.
- */
+  * Periodic callback from MicroBit scheduler.
+  * If we're no longer connected, remove any registered Message Bus listeners.
+  */
 void MicroBitEventService::idleTick()
 {
     if (!ble.getGapState().connected && messageBusListenerOffset >0) {
@@ -118,9 +119,10 @@ void MicroBitEventService::idleTick()
 }
 
 /**
- * read callback on data characteristic.
- * reads all the pins marked as inputs, and updates the data stored in the BLE stack.
- */
+  * Read callback on microBitRequirements characteristic.
+  *
+  * Used to iterate through the events that the code on this micro:bit is interested in.
+  */
 void MicroBitEventService::onRequirementsRead(GattReadAuthCallbackParams *params)
 {
     if (params->handle == microBitRequirementsCharacteristic->getValueHandle())

@@ -16,7 +16,7 @@ extern const uint8_t  MicroBitIOPinServiceDataUUID[];
 extern MicroBitPin * const MicroBitIOPins[];
 
 /**
-  * Name value pair definition, as used to read abd write pin values over BLE.
+  * Name value pair definition, as used to read and write pin values over BLE.
   */
 struct IOData
 {
@@ -25,8 +25,8 @@ struct IOData
 };
 
 /**
-  * Class definition for a MicroBit BLE IOPin Service.
-  * Provides access to live ioPin data via BLE, and provides basic configuration options.
+  * Class definition for the custom MicroBit IOPin Service.
+  * Provides a BLE service to remotely read the state of the I/O Pin, and configure its behaviour.
   */
 class MicroBitIOPinService : public MicroBitComponent
 {
@@ -36,12 +36,16 @@ class MicroBitIOPinService : public MicroBitComponent
       * Constructor.
       * Create a representation of the IOPinService
       * @param _ble The instance of a BLE device that we're running on.
+      * @param _io An instance of MicroBitIO that this service will use to perform
+      *            I/O operations.
       */
     MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io);
 
     /**
-     * periodic callback from MicroBit scheduler.
-     * Check if any of the pins we're watching need updating. Apply a BLE NOTIFY if so...
+     * Periodic callback from MicroBit scheduler.
+     *
+     * Check if any of the pins we're watching need updating. Notify any connected
+     * device with any changes.
      */
     virtual void idleTick();
 
@@ -54,30 +58,31 @@ class MicroBitIOPinService : public MicroBitComponent
 
     /**
      * Callback. invoked when the BLE data characteristic is read.
-     * reads all the pins marked as inputs, and updates the data stored in the BLE stack.
+     *
+     * Reads all the pins marked as inputs, and updates the data stored in the characteristic.
      */
     void onDataRead(GattReadAuthCallbackParams *params);
 
     /**
       * Determines if the given pin was configured as a digital pin by the BLE ADPinConfigurationCharacterisitic.
       *
-      * @param pin the enumeration of the pin to test
-      * @return 1 if this pin is configured as a digital value, 0 otherwise
+      * @param i the enumeration of the pin to test
+      * @return 1 if this pin is configured as digital, 0 otherwise
       */
     int isDigital(int i);
 
     /**
       * Determines if the given pin was configured as an analog pin by the BLE ADPinConfigurationCharacterisitic.
       *
-      * @param pin the enumeration of the pin to test
-      * @return 1 if this pin is configured as a analog value, 0 otherwise
+      * @param i the enumeration of the pin to test
+      * @return 1 if this pin is configured as analog, 0 otherwise
       */
     int isAnalog(int i);
 
     /**
       * Determines if the given pin was configured as an input by the BLE IOPinConfigurationCharacterisitic.
       *
-      * @param pin the enumeration of the pin to test
+      * @param i the enumeration of the pin to test
       * @return 1 if this pin is configured as an input, 0 otherwise
       */
     int isInput(int i);
@@ -85,7 +90,7 @@ class MicroBitIOPinService : public MicroBitComponent
     /**
       * Determines if the given pin was configured as output by the BLE IOPinConfigurationCharacterisitic.
       *
-      * @param pin the enumeration of the pin to test
+      * @param i the enumeration of the pin to test
       * @return 1 if this pin is configured as an output, 0 otherwise
       */
     int isOutput(int i);

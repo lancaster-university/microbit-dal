@@ -17,8 +17,8 @@ extern const uint8_t  MicroBitLEDServiceScrollingSpeedUUID[];
 
 
 /**
-  * Class definition for a MicroBit BLE Event Service.
-  * Provides a _ble gateway onto the MicroBit Message Bus.
+  * Class definition for the custom MicroBit LED Service.
+  * Provides a BLE service to remotely read and write the state of the LED display.
   */
 class MicroBitLEDService
 {
@@ -27,8 +27,8 @@ class MicroBitLEDService
     /**
       * Constructor.
       * Create a representation of the LEDService
-      * @param BLE The instance of a BLE device that we're running on.
-      * @param display The instance of a MicroBitDisplay to interface with.
+      * @param _ble The instance of a BLE device that we're running on.
+      * @param _display An instance of MicroBitDisplay to interface with.
       */
     MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display);
 

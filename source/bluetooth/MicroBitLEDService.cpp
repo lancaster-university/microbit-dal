@@ -11,6 +11,7 @@
   * Constructor.
   * Create a representation of the LEDService
   * @param _ble The instance of a BLE device that we're running on.
+  * @param _display An instance of MicroBitDisplay to interface with.
   */
 MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display) :
         ble(_ble), display(_display),

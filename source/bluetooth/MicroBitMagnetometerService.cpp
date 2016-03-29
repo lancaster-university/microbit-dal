@@ -1,6 +1,6 @@
 /**
-  * Class definition for the custom MicroBit Magnetometer Service.
-  * Provides a BLE service to remotely read the state of the magnetometer, and configure its behaviour.
+  * Class definition for the MicroBit BLE Magnetometer Service.
+  * Provides access to live magnetometer data via BLE, and provides basic configuration options.
   */
 #include "MicroBitConfig.h"
 #include "ble/UUID.h"
@@ -9,8 +9,9 @@
 
 /**
   * Constructor.
-  * Create a representation of the MagnetometerService
+  * Create a representation of the MagnetometerService.
   * @param _ble The instance of a BLE device that we're running on.
+  * @param _compass An instance of MicroBitCompass to use as our Magnetometer source.
   */
 MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass) :
         ble(_ble), compass(_compass)

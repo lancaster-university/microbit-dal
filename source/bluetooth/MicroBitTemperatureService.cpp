@@ -1,6 +1,6 @@
 /**
   * Class definition for the custom MicroBit Temperature Service.
-  * Provides a BLE service to remotely read the state of the temperature, and configure its behaviour.
+  * Provides a BLE service to remotely read the silicon temperature of the nRF51822.
   */
 #include "MicroBitConfig.h"
 #include "ble/UUID.h"
@@ -11,6 +11,7 @@
   * Constructor.
   * Create a representation of the TemperatureService
   * @param _ble The instance of a BLE device that we're running on.
+  * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
   */
 MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer) :
         ble(_ble), thermometer(_thermometer)

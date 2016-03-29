@@ -14,7 +14,7 @@ extern const uint8_t  MicroBitMagnetometerServicePeriodUUID[];
 
 
 /**
-  * Class definition for a MicroBit BLE Magnetometer Service.
+  * Class definition for the MicroBit BLE Magnetometer Service.
   * Provides access to live magnetometer data via BLE, and provides basic configuration options.
   */
 class MicroBitMagnetometerService
@@ -23,8 +23,9 @@ class MicroBitMagnetometerService
 
     /**
       * Constructor.
-      * Create a representation of the MagnetometerService
+      * Create a representation of the MagnetometerService.
       * @param _ble The instance of a BLE device that we're running on.
+      * @param _compass An instance of MicroBitCompass to use as our Magnetometer source.
       */
     MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass);
 

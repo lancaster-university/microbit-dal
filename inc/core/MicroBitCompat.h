@@ -1,5 +1,6 @@
 /**
-  * Compatibility / portability funcitons and constants for the MicroBit DAL.
+  * This file contains functions used to maintain compatability and portability.
+  * It also contains constants that are used elsewhere in the DAL.
   */
 
 #ifndef MICROBIT_COMPAT_H
@@ -12,9 +13,12 @@
 
 /**
   * Determines the smallest of the two numbers
+  *
   * @param a the first number
+  *
   * @param b the second number
-  * @return The value of a or b that is the smallest
+  *
+  * @return The smallest of the two given values.
   */
 inline int min(int a, int b)
 {
@@ -23,9 +27,12 @@ inline int min(int a, int b)
 
 /**
   * Determines the largest of the two numbers
+  *
   * @param a the first number
+  *
   * @param b the second number
-  * @return The value of a or b that is the largest
+  *
+  * @return The larger of the two given values.
   */
 inline int max(int a, int b)
 {
@@ -36,6 +43,7 @@ inline int max(int a, int b)
   * Sets a given area of memory to zero.
   *
   * @param a the pointer to the beginning of the memory to clear
+  *
   * @param b the number of bytes to clear.
   */
 inline void *memclr(void *a, size_t b)
@@ -45,7 +53,9 @@ inline void *memclr(void *a, size_t b)
 
 /**
   * Determines if the given character is a printable ASCII/UTF8 decimal digit (0..9).
+  *
   * @param c the character to check
+  *
   * @return true if the character is a digit, false otherwise.
   */
 inline bool isdigit(char c)
@@ -54,16 +64,21 @@ inline bool isdigit(char c)
 }
 
 /**
-  * Performs an in buffer reverse of a given char array
+  * Performs an in buffer reverse of a given char array.
+  *
   * @param s the string to reverse.
+  *
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 int string_reverse(char *s);
 
 /**
   * Converts a given integer into a string representation.
+  *
   * @param n The number to convert.
-  * @param s A pointer to the buffer in which to store the resulting string.
+  *
+  * @param s A pointer to the buffer where the resulting string will be stored.
+  *
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
   */
 int itoa(int n, char *s);

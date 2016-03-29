@@ -1,3 +1,9 @@
+/**
+  * Class definition for the custom MicroBit UART Service.
+  * Provides a BLE service that acts as a UART port, enabling the reception and transmission
+  * of an arbitrary number of bytes.
+  */
+
 #include "ble/UUID.h"
 
 #include "ExternalEvents.h"

@@ -13,8 +13,8 @@ extern const uint8_t  MicroBitTemperatureServicePeriodUUID[];
 
 
 /**
-  * Class definition for a MicroBit BLE Temperture Service.
-  * Provides access to live temperature data via BLE.
+  * Class definition for the custom MicroBit Temperature Service.
+  * Provides a BLE service to remotely read the silicon temperature of the nRF51822.
   */
 class MicroBitTemperatureService
 {
@@ -22,8 +22,9 @@ class MicroBitTemperatureService
 
     /**
       * Constructor.
-      * Create a representation of the TempertureService
+      * Create a representation of the TemperatureService
       * @param _ble The instance of a BLE device that we're running on.
+      * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
       */
     MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer);
 

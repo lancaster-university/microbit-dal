@@ -11,6 +11,7 @@
   * Constructor.
   * Create a representation of the AccelerometerService
   * @param _ble The instance of a BLE device that we're running on.
+  * @param _accelerometer An instance of MicroBitAccelerometer.
   */
 MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer) :
         ble(_ble), accelerometer(_accelerometer)

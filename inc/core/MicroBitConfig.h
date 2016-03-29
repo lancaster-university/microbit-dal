@@ -47,7 +47,7 @@
 #endif
 
 // Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
-// reserved for SoftDevice is possible, and out of memory condition wil lno longer be trapped...
+// reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
 // i.e. panic() will no longer be triggered on memory full conditions.
 #ifndef MICROBIT_HEAP_ALLOCATOR
 #define MICROBIT_HEAP_ALLOCATOR                 1
@@ -109,6 +109,7 @@
 #ifndef MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH
 #define MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH    10
 #endif
+
 //
 // Core micro:bit services
 //
@@ -182,8 +183,8 @@
 #define MICROBIT_BLE_SECURITY_LEVEL             SECURITY_MODE_ENCRYPTION_WITH_MITM
 #endif
 
-// Enable/Disbale the use of BLE whitelisting.
-// If enabled, the micro:bit will only respond to conneciton requests from
+// Enable/Disable the use of BLE whitelisting.
+// If enabled, the micro:bit will only respond to connection requests from
 // known, bonded devices.
 #ifndef MICROBIT_BLE_WHITELIST
 #define MICROBIT_BLE_WHITELIST                  1
