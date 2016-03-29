@@ -6,58 +6,51 @@
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
-#define DEBUG 0
-#if DEBUG
-#define PRINTF(...) uBit.serial.printf(__VA_ARGS__)
-#else
-#define PRINTF(...)
-#endif
-
 /**
-  * @brief Find an MBR entry by name.
+  * @brief Find an FT entry by name.
   *
   * @param filename name of file to search for. Must be null-terminated.
-  * @return pointer to the MBR struct if found, NULL otherwise or on error.
+  * @return pointer to the FT struct if found, NULL otherwise or on error.
   */
-mbr* MicroBitFile::mbr_by_name(char const * const filename) {
-   
-    for(int i=0;i<this->mbr_entries;++i) {
-        if(strcmp(filename, this->mbr_loc[i].name) == 0) {
-            return &this->mbr_loc[i];
+FileTableEntry* MicroBitFile::ft_by_name(char const * filename) 
+{
+    for(int i=0;i<this->ft_entries;++i) {
+        if(strcmp(filename, this->ft_loc[i].name) == 0) {
+            return &this->ft_loc[i];
         }
     }
     return NULL;
 }
 
 /**
-  * @brief Get a pointer to the lowest numbered available MBR entry.
+  * @brief Get a pointer to the lowest numbered available FT entry.
   *
-  * @return pointer to the MBR if successful,
-  *         NULL if there are none available.
+  * @return pointer to the FT if successful,
+  *     NULL if there are none available.
   */
-mbr* MicroBitFile::mbr_get_free() {
-   
-    for(int i=0;i<this->mbr_entries;++i) {
-        if(MBR_IS_FREE(this->mbr_loc[i])) return &this->mbr_loc[i];
+FileTableEntry* MicroBitFile::ft_get_free() 
+{
+    for(int i=0;i<this->ft_entries;++i) {
+        if(FT_IS_FREE(this->ft_loc[i])) return &this->ft_loc[i];
     }
     return NULL;
 }
 
 /**
-  * @brief initialize the mbr struct to a new file.
+  * @brief initialize the FileTableEntry struct to a new file.
   *
-  * Initialize the mbr struct with the given, null-terminated filename.
-  * Ths is used to add a new file to the MBR.
+  * Initialize the FileTableEntry struct with the null-terminated filename.
+  * Ths is used to add a new file to the FT.
   * This function also sets the file size to zero,
-  * and marks the MBR as busy.
+  * and marks the FT as busy.
   *
-  * @param m the mbr struct to use fill.
+  * @param m the FileTableEntry struct to use fill.
   * @param filename the null terminated filename to use.
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::mbr_add(mbr* m, char const * const filename) {
-   
-    uint32_t t = MBR_BUSY;
+int MicroBitFile::ft_add(FileTableEntry* m, char const * filename) 
+{
+    uint32_t t = FT_BUSY;
     
     // Write the Filename.
     if(!this->flash.flash_write((uint8_t*)m->name,
@@ -71,29 +64,29 @@ int MicroBitFile::mbr_add(mbr* m, char const * const filename) {
         return 0;
     }
          
-    PRINTF("Set mbr entry, filename: %s\n", filename);
     return 1;
 }
 
 /**
-  * @brief add a new block to an MBR entry
+  * @brief add a new block to an FT entry
   *
-  * Add the numbered block to the list of blocks in an  MBR entry.
+  * Add the numbered block to the list of blocks in an  FT entry.
   * This function is used to expand the storage capacity for a file.
   *
-  * @param m the mbr entry/struct to add too.
+  * @param m the FileTableEntry entry/struct to add too.
   * @param blockNo the numbered block to append to the block list of a
-                    files' MBR.
+  *        files' FT.
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::mbr_add_block(mbr* m, uint8_t blockNo) {
+int MicroBitFile::ft_add_block(FileTableEntry* m, uint8_t blockNo) 
+{
    
     // Find the lowest unused block entry.
     int b = 0;
     for(b=0;b<DATA_BLOCK_COUNT;b++) {
  
-        // The mbr_t.blocks list is terminated by 0xFF, this is the first 
-        // unallocated block.
+        // The FileTableEntry_t.blocks list is terminated by 0xFF, 
+        // this is the first unallocated block.
         if(m->blocks[b] == 0xFF) break;
 
     }
@@ -102,21 +95,21 @@ int MicroBitFile::mbr_add_block(mbr* m, uint8_t blockNo) {
     return this->flash.flash_write(&(m->blocks[b]), &blockNo, 1);
 }
 
-
 /**
-  * @brief reset an MBR entry - remove a file from the MBR table.
+  * @brief reset an FT entry - remove a file from the FT table.
   *
-  * Reset an MBR entry, thereby removing a file from the system.
+  * Reset an FT entry, thereby removing a file from the system.
   * This function also frees all of the blocks allocated to m,
   * back to the list of free blocks.
   *
-  * @param m the mbr entry/struct to remove.
+  * @param m the FileTableEntry entry/struct to remove.
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::mbr_remove(mbr* m) {
+int MicroBitFile::ft_remove(FileTableEntry* m) 
+{
 
     // ----------------------------------------------
-    // Return block numbers in the mbr entry to the mbr_free_loc->blocks list.
+    // Return block numbers in the FileTableEntry entry to the FileTableEntry_free_loc->blocks list.
     // Add to the beginning of the list.
     //
     // So if we have before:
@@ -126,7 +119,7 @@ int MicroBitFile::mbr_remove(mbr* m) {
     // [ ][ ][1][4][5][6]
     // ----------------------------------------------
   
-    // used = no. used blocks in mbr. 
+    // used = no. used blocks in FileTableEntry. 
     int used=0;    
     for(used=0;used<DATA_BLOCK_COUNT;used++) {
         if( m->blocks[used] == 0xFF) break;
@@ -135,7 +128,7 @@ int MicroBitFile::mbr_remove(mbr* m) {
     // Where to insert into free list.
     int b = 0;     
     for(b=0;b<DATA_BLOCK_COUNT;++b) {
-        if(this->mbr_free_loc->blocks[b] != 0x00) break;
+        if(this->ft_free_loc->blocks[b] != 0x00) break;
     }
    
     //not enough room. (this shouldn't happen)
@@ -144,25 +137,23 @@ int MicroBitFile::mbr_remove(mbr* m) {
     }
     int p = b-used;
    
-    PRINTF("mbr removed. Name: %s, blocks: %d\n", m->filename, used);
-  
     // Reset the free block list entries to 0xFF.
-    if(!this->flash.flash_erase_mem((uint8_t*)&this->mbr_free_loc->blocks[p],
+    if(!this->flash.flash_erase_mem((uint8_t*)&this->ft_free_loc->blocks[p],
         used)) {
         return 0;
     }
 
     // Write each of the block numbers.   
     for(int j=0;j<used;j++) {
-        uint8_t bl = m->blocks[j] | MBR_FREE_BLOCK_MARKER;
+        uint8_t bl = m->blocks[j] | FT_FREE_BLOCK_MARKER;
 
-        if(!this->flash.flash_write(&this->mbr_free_loc->blocks[p+j],&bl,1)) {
+        if(!this->flash.flash_write(&this->ft_free_loc->blocks[p+j],&bl,1)) {
             return 0;
         }
     }
 
-    // Erase the MBR (can then be resused.
-    if(!this->flash.flash_erase_mem((uint8_t*)m, sizeof(mbr))) {
+    // Erase the FT (can then be resused.
+    if(!this->flash.flash_erase_mem((uint8_t*)m, sizeof(FileTableEntry))) {
         return 0;
     }
 
@@ -172,16 +163,17 @@ int MicroBitFile::mbr_remove(mbr* m) {
 /**
   * @brief obtains and marks as busy, an unused block.
   *
-  * The first MBR entry is reserved, and stores the list of unused blocks.
-  * Thiis function implements a stack, to pop a free block, mark as busy
+  * The first FT entry is reserved, and stores the list of unused blocks.
+  * This function implements a stack, to pop a free block, mark as busy
   * (subsequent calls will not find the same block), and return its number.
   *
   * @return block number on success, -1 on error (out of space).
   */
-int MicroBitFile::mbr_pop_free_block() {
+int MicroBitFile::ft_pop_free_block() 
+{
   
     // ----------------------------------------------
-    // Find a free block in mbr_free_loc->blocks.
+    // Find a free block in FileTableEntry_free_loc->blocks.
     // Pop from the front of the list.
     //
     // So if we have beforehand:
@@ -194,97 +186,91 @@ int MicroBitFile::mbr_pop_free_block() {
     //find the lowest free block.
     int b = 0;
     for(b=0;b<DATA_BLOCK_COUNT;b++) {
-         if(this->mbr_free_loc->blocks[b] != 0x00 &&
-            this->mbr_free_loc->blocks[b] != 0xFF) break;
+         if(this->ft_free_loc->blocks[b] != 0x00 &&
+            this->ft_free_loc->blocks[b] != 0xFF) break;
     }
     if(b==DATA_BLOCK_COUNT) {
-        PRINTF("No free blocks available\n");
         return -1;
     }
   
     //mark as unavailable in the free block list.
     uint8_t write_empty = 0x00;
-    uint8_t blockNumber = mbr_get_block(this->mbr_free_loc, b);
-    blockNumber &= ~(MBR_FREE_BLOCK_MARKER);
+    uint8_t blockNumber = ft_get_block(this->ft_free_loc, b);
+    blockNumber &= ~(FT_FREE_BLOCK_MARKER);
 
-    if(!this->flash.flash_write(&this->mbr_free_loc->blocks[b], 
+    if(!this->flash.flash_write(&this->ft_free_loc->blocks[b], 
                                 &write_empty, 1)) return -1;
   
-    PRINTF("Free block %d from location in list %d\n", blockNumber, b);
     return blockNumber;
 }
 
 /**
-  * @brief initialize the MBR API.
+  * @brief initialize the FT API.
   *
   * This function initializes the API for subsequent calls,
   * particularly storing the flash location, and number of entries.
   * This function must be called before any other.
   *
-  * @param mbr_location Location in flash of where to store the MBR.
-  * @param mbr_entries The number of entries in the MBR
-  *                    (hence determining the max no. files).
+  * @param ft_location Location in flash of where to store the FT.
+  * @param ft_entries The number of entries in the FT
+  *                   (hence determining the max no. files).
   * @return non-zero on success, zero on error.
  */
-int MicroBitFile::mbr_init(void* mbr_location, int mbr_no) {
-
-    PRINTF("initializing mbr\n");
-
-    this->mbr_free_loc = (mbr*)mbr_location;
-    this->mbr_loc = (mbr*)mbr_location + 1;
-    this->mbr_entries = mbr_no-1;
+int MicroBitFile::ft_init(void* ft_location, int no) 
+{
+    this->ft_free_loc = (FileTableEntry*)ft_location;
+    this->ft_loc = (FileTableEntry*)ft_location + 1;
+    this->ft_entries = no-1;
 
     return 1;
 }
 
 /**
-  * @brief set the filesize of an mbr
+  * @brief set the filesize of an FileTableEntry
   *
-  * Set, in the MBR, the filesize of the entry, m.
+  * Set, in the FT, the filesize of the entry, m.
   *
-  * @param m the MBR entry/file to modify
+  * @param m the FT entry/file to modify
   * @param filesize the new filesize.
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::mbr_set_filesize(mbr* m, uint32_t fz) {
-  
-    PRINTF("set filesize: %s to %d bytes\n", m->name, fz);
+int MicroBitFile::ft_set_filesize(FileTableEntry* m, uint32_t fz) 
+{
     return this->flash.flash_write((uint8_t*)&m->flags, (uint8_t*)&fz, 4);
 }
 
 /**
-  * @brief reset the MBR.
+  * @brief reset the FT.
   *
-  * The MBR must be in an initial state for it to work.
-  * Namely, all of the mbr entries must be set to empty (0xFF).
+  * The FT must be in an initial state for it to work.
+  * Namely, all of the FileTableEntry entries must be set to empty (0xFF).
   * and the stack of unused blocks must be populated.
   *
   * This function also sets the MAGIC_WORD as the first word in
-  * the MBR block, used to determine if the MBR has already been
+  * the FT block, used to determine if the FT has already been
   * configured.
   *
   * This function should be called from the init() function.
   *
   * @return non-zero on success, zero otherwise.
   */
-int MicroBitFile::mbr_build() {
+int MicroBitFile::ft_build() 
+{
   
-    // Only build the MBR table if not already initialized.
-    if(*((uint32_t*)this->mbr_free_loc) == MAGIC_WORD) {
-        PRINTF("Magic word detected, file system already built\n");
+    // Only build the FT table if not already initialized.
+    if(*((uint32_t*)this->ft_free_loc) == MAGIC_WORD) {
         return 1;
     }
-    PRINTF("Magic word not detected, building file system\n");
   
     uint32_t magic = MAGIC_WORD;
   
-    // Erase MBR Page.
-    if(!this->flash.flash_erase_mem((uint8_t*)this->mbr_free_loc, PAGE_SIZE)) {
+    // Erase FT Page.
+    if(!this->flash.flash_erase_mem((uint8_t*)this->ft_free_loc, PAGE_SIZE)) {
         return 0;
     }
   
     // Write Magic.
-    if(!this->flash.flash_write((uint8_t*)this->mbr_free_loc->name,
+    if(!this->flash.flash_write((uint8_t*)this->ft_free_loc->name,
                                 (uint8_t*)&magic, sizeof(magic))) {
         return 0;
     }
@@ -292,43 +278,43 @@ int MicroBitFile::mbr_build() {
     // Populate the free block list.
     uint8_t bl[DATA_BLOCK_COUNT-1];
     for(int i=0;i<(DATA_BLOCK_COUNT-1);++i) {
-        bl[i] = i | MBR_FREE_BLOCK_MARKER;
+        bl[i] = i | FT_FREE_BLOCK_MARKER;
     }
   
-    return this->flash.flash_write((uint8_t*)&this->mbr_free_loc->blocks, 
+    return this->flash.flash_write((uint8_t*)&this->ft_free_loc->blocks, 
                                     bl, DATA_BLOCK_COUNT-1);
 }
+
 
 /**
   * Constructor. Calls the necessary init() functions.
   */
-MicroBitFile::MicroBitFile() {
-    int initialized = this->init();
-    PRINTF("initializing.. %d\n", initialized);
-    memset(this->fd_table, 0x00, sizeof(tinyfs_fd) * MAX_FD);
+MicroBitFile::MicroBitFile() 
+{
+    this->init();
+    memset(this->fd_table, 0x00, sizeof(mb_fd) * MAX_FD);
 }
 
 /**
   * @brief Initialize the flash storage system
   *
   * This method:
-  * - calls mbr_init().
+  * - calls ft_init().
   * - stores the location of the flash memory.
-  * - calls mbr_build()
+  * - calls ft_build()
   *
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::init() {
+int MicroBitFile::init() 
+{
     if(FS_INITIALIZED()) return 0;
 
-    // MBR-specific init/build.   
-    if(!this->mbr_init((uint8_t*)FLASH_START, NO_MBR_ENTRIES)) return 0;
-    if(!this->mbr_build()) return 0;
+    // FT-specific init/build.   
+    if(!this->ft_init((uint8_t*)FLASH_START, NO_FT_ENTRIES)) return 0;
+    if(!this->ft_build()) return 0;
    
-    PRINTF("initialized\n");
-     
     this->flash_start = (uint8_t*)FLASH_START + PAGE_SIZE;
-    this->flash_pages = NO_MBR_ENTRIES-1;
+    this->flash_pages = NO_FT_ENTRIES-1;
 
     return 1;
 }
@@ -358,41 +344,40 @@ int MicroBitFile::init() {
   *    print("file open error");
   * @endcode
   */
-int MicroBitFile::open(char const * const filename, uint8_t flags) {
+int MicroBitFile::open(char const * filename, uint8_t flags) 
+{
     if(!FS_INITIALIZED() || strlen(filename) > MAX_FILENAME_LEN) return -1;
    
-    mbr* m;
+    FileTableEntry* m;
     int fd;
    
     //find the file, if it already exists.
-    if((m = this->mbr_by_name(filename)) == NULL) {
+    if((m = this->ft_by_name(filename)) == NULL) {
 
         // File doesn't exist, try to create it.
-        if((flags & MB_CREAT) != MB_CREAT || 
-           (m = this->mbr_get_free()) == NULL || 
-           !this->mbr_add(m, filename)) {
+        if(!(flags & MB_CREAT) || 
+           (m = this->ft_get_free()) == NULL || 
+           !this->ft_add(m, filename)) {
 
-            // Couldn't set the MBR entry.
+            // Couldn't set the FT entry.
             return -1;
         }
    
-        PRINTF("open: file created %s\n", filename);
     }
    
     //find a free FD.
     for(fd=0;fd<MAX_FD;fd++) {
-        if((this->fd_table[fd].flags & MB_FD_BUSY) != MB_FD_BUSY) break;
+        if(!(this->fd_table[fd].flags & MB_FD_BUSY)) break;
     }
     if(fd == MAX_FD) {
         return -1;
-        PRINTF("No free FDs\n");
     }
    
     //populate the fd.
     this->fd_table[fd].flags = (flags & ~(MB_CREAT)) | MB_FD_BUSY;
-    this->fd_table[fd].mbr_entry = m;
+    this->fd_table[fd].ft_entry = m;
     this->fd_table[fd].seek = 0;
-    this->fd_table[fd].filesize = mbr_get_filesize(m);
+    this->fd_table[fd].filesize = ft_get_filesize(m);
     return fd;
 }
 
@@ -400,10 +385,10 @@ int MicroBitFile::open(char const * const filename, uint8_t flags) {
   * Close the specified file handle.
   * File handle resources are then made available for future open() calls.
   *
-  * tfs_close() must be called at some point to ensure the filesize in the
-  * MBR is synced with the cached value in the FD.
+  * close() must be called at some point to ensure the filesize in the
+  * FT is synced with the cached value in the FD.
   *
-  * @warning if tfs_close() is not called, the MBR may not be correct, l
+  * @warning if close() is not called, the FT may not be correct,
   * leading to data loss.
   *
   * @param fd file descriptor - obtained with open().
@@ -417,11 +402,12 @@ int MicroBitFile::open(char const * const filename, uint8_t flags) {
   *    print("error closing file.");
   * @endcode
   */
-int MicroBitFile::close(int fd) {
+int MicroBitFile::close(int fd) 
+{
     if(!FS_INITIALIZED() ||
-      (this->fd_table[fd].flags & MB_FD_BUSY) != MB_FD_BUSY) return 0;
+      !(this->fd_table[fd].flags & MB_FD_BUSY)) return 0;
 
-    this->mbr_set_filesize(this->fd_table[fd].mbr_entry,
+    this->ft_set_filesize(this->fd_table[fd].ft_entry,
                            this->fd_table[fd].filesize);
 
     this->fd_table[fd].flags = 0x00;
@@ -450,9 +436,10 @@ int MicroBitFile::close(int fd) {
   * f.seek(fd, -100, MB_SEEK_END); //100 bytes before end of file.
   * @endcode
   */
-int MicroBitFile::seek(int fd, int offset, uint8_t flags) {
+int MicroBitFile::seek(int fd, int offset, uint8_t flags) 
+{
     if(!FS_INITIALIZED() ||
-      (this->fd_table[fd].flags & MB_FD_BUSY) != MB_FD_BUSY) return -1;
+      !(this->fd_table[fd].flags & MB_FD_BUSY)) return -1;
     
     int32_t new_pos = 0;
     int max_size = this->fd_table[fd].filesize;
@@ -468,8 +455,6 @@ int MicroBitFile::seek(int fd, int offset, uint8_t flags) {
         new_pos = this->fd_table[fd].seek + offset;
     }
     else {
-        PRINTF("seek range error, offset %d, flag %d, fd %dn", 
-               offset, flags, fd);
         return -1;
     }  
    
@@ -480,9 +465,9 @@ int MicroBitFile::seek(int fd, int offset, uint8_t flags) {
 /**
   * Read data from the file.
   *
-  * Read len bytes from the current seek position in the file, into the buffer.
-  * On each invocation to read, the seek position of the file handle
-  * is incremented atomically, by the number of bytes returned.
+  * Read len bytes from the current seek position in the file, into the
+  * buffer. On each invocation to read, the seek position of the file
+  * handle is incremented atomically, by the number of bytes returned.
   *
   * @param fd File handle, obtained with open()
   * @param buffer to store data
@@ -497,10 +482,11 @@ int MicroBitFile::seek(int fd, int offset, uint8_t flags) {
   *    print("read error");
   * @endcode
   */
-int MicroBitFile::read(int fd, uint8_t* buffer, int size) {
+int MicroBitFile::read(int fd, uint8_t* buffer, int size) 
+{
     if(!FS_INITIALIZED() ||
-      (this->fd_table[fd].flags & MB_FD_BUSY) != MB_FD_BUSY ||
-      (this->fd_table[fd].flags & MB_READ) != MB_READ) return -1;
+      !(this->fd_table[fd].flags & MB_FD_BUSY) ||
+      !(this->fd_table[fd].flags & MB_READ)) return -1;
    
     // Basic algorithm:
     // Find the starting block number & offset,
@@ -533,7 +519,7 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size) {
     for(int sz = size;sz > 0 && this->fd_table[fd].seek<filesize;) {
 
         // b = block number.
-        int b = mbr_get_block(this->fd_table[fd].mbr_entry, bInd);
+        int b = ft_get_block(this->fd_table[fd].ft_entry, bInd);
 
         // s  no. bytes to read from this page.
         int s = MIN(PAGE_SIZE-ofs,sz);
@@ -542,8 +528,6 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size) {
         if((this->fd_table[fd].seek+s) > filesize) {
             s = filesize - this->fd_table[fd].seek;
         }
-
-        PRINTF("Read %d bytes from block %d (%d) offset: %d\n",s,bInd,b,ofs);
 
         memcpy( buffer, flash_start + (PAGE_SIZE * b) + ofs, s);
 
@@ -558,7 +542,6 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size) {
     return bytesRead;
 }
 
-
 /**
   * Write data to the file.
   *
@@ -567,8 +550,8 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size) {
   * is incremented atomically, by the number of bytes returned.
   *
   * The cached filesize in the FD is updated on this call. Also, the
-  * MBR file size is updated only if a new page(s) has been written too,
-  * to reduce the number of MBR writes.
+  * FT file size is updated only if a new page(s) has been written too,
+  * to reduce the number of FT writes.
   *
   * @param fd File handle
   * @param buffer the buffer from which to write data
@@ -580,13 +563,14 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size) {
   * MicroBitFile f();
   * int fd = f.open("test.txt", MB_WRITE);
   * if(f.write(fd, "hello!", 7) != 7)
-       print("error writing");
+  *    print("error writing");
   * @endcode
   */
-int MicroBitFile::write(int fd, uint8_t* buffer, int size) {
+int MicroBitFile::write(int fd, uint8_t* buffer, int size) 
+{
     if(!FS_INITIALIZED() ||
-      (this->fd_table[fd].flags & MB_FD_BUSY) != MB_FD_BUSY ||
-      (this->fd_table[fd].flags & MB_WRITE) != MB_WRITE) return -1;
+      !(this->fd_table[fd].flags & MB_FD_BUSY) ||
+      !(this->fd_table[fd].flags & MB_WRITE)) return -1;
    
     // Basic algorithm for writing:
     //
@@ -601,7 +585,7 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size) {
     //   b = pop_free_block()
     //   newPages=1
     //  else
-    //   b = get absolute block No. from MBR
+    //   b = get absolute block No. from FT
     //  end
     //
     //  flash_write(flash_start + b + ofs, buffer, wr)
@@ -611,7 +595,7 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size) {
     // end
     //
     // if [newPages]
-    //  write file size to MBR
+    //  write file size to FT
     // end
     //
     // return bytesWritten
@@ -633,24 +617,20 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size) {
         if(bInd >= allocated_blocks) { 
 
            // File must increase in size, append with new block.
-            if( (b = mbr_pop_free_block()) < 0) {
+            if( (b = ft_pop_free_block()) < 0) {
                 break;
             }
-            if(!mbr_add_block(this->fd_table[fd].mbr_entry, b)) {
+            if(!ft_add_block(this->fd_table[fd].ft_entry, b)) {
                 break;
             }
 
             allocated_blocks++;
             newPages=1;
-            PRINTF("New block allocated: %d\n", b);
         }
         else {
            // Write position requires no new block allocation.
-            b = mbr_get_block(this->fd_table[fd].mbr_entry, bInd);
+            b = ft_get_block(this->fd_table[fd].ft_entry, bInd);
         }
-
-        PRINTF("Write %s block index %d, number %d, offset %d, length %d\n",
-               (writeData?"data":"0x00"), bInd, b, ofs, wr);
 
         if(!this->flash.flash_write(this->flash_start+(PAGE_SIZE*b)+ofs,
                                     buffer,wr)) {
@@ -670,7 +650,7 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size) {
 
     //change the file size if we used new pages.
     if(newPages) {
-        if(!this->mbr_set_filesize(this->fd_table[fd].mbr_entry, 
+        if(!this->ft_set_filesize(this->fd_table[fd].ft_entry, 
                                    this->fd_table[fd].filesize)) {
             return -1;
         }
@@ -690,19 +670,19 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size) {
   * Example:
   * @code
   * MicroBitFile f;
-  * if(!f.unlink("file.txt"))
-  *     print("file could not be deleted")
+  * if(!f.remove("file.txt"))
+  *     print("file could not be removed")
   * @endcode
   */
-int MicroBitFile::unlink(char const * const filename) {
+int MicroBitFile::remove(char const * filename) 
+{
     if(!FS_INITIALIZED()) return 0;
    
-    // Get the mbr to remove.
-    mbr* m = this->mbr_by_name(filename);
+    // Get the FileTableEntry to remove.
+    FileTableEntry* m = this->ft_by_name(filename);
     if(m == NULL) {
-        PRINTF("cannot unlink %s, not found\n", filename);
         return 0;
     }
     
-    return this->mbr_remove(m);
+    return this->ft_remove(m);
 }

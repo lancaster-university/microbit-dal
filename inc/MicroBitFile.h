@@ -13,40 +13,40 @@
   *
   * -- Basic overview of how the file system works:
   * All file meta data is stored in the first page. Each file has a record
-  * entry (struct mbr_t), which stores:
+  * entry (struct FileTableEntry_t), which stores:
   *  - Filename
   *  - File size
   *  - An ordered list of pages/blocks that store the file data itself.
   * 
-  * The table housing these records is referred to as the Master Block
-  * Record (MBR), and looks something like this:
+  * The table housing these records is referred to as the File Table (FT)
+  * and looks something like this:
   *  {"file1.txt",   5000,   {1,2,3,6}}  // 5000-byte file, in blocks 1,2,3,6
   *  {"file02.txt",   200,   {5}}        // 200 byte file in a single block
   * 
-  * The first MBR entry is reserved, and is used only to store a list of 
+  * The first FT entry is reserved, and is used only to store a list of 
   * currently available blocks for writing.
   * Thus to expand a file size, a block must be removed from this list, and 
-  * added to that files mbr_t blocklist.
+  * added to that files blocklist.
   * 
-  * Since there can only be one MBR, the number of entries is restricted
+  * Since there can only be one FT, the number of entries is restricted
   * to how many can fit in a single flash page. Hence, this is the 
   * maximum number of files that can be stored.
   * 
-  * The filesize is stored in the MBR, but cached in the tinyfs_fd struct.
-  * Writes to the MBR filesize are made sparingly in write() and close(), to
+  * The filesize is stored in the FT, but cached in the mb_fd struct.
+  * Writes to the FT filesize are made sparingly in write() and close(), to
   * reduce erasures.
-  * @warning close() *must* be called to ensure the MBR is synched, before 
+  * @warning close() *must* be called to ensure the FT is synched, before 
   * the microbit is finished.
   * 
   * -- API overview.
   * Source code is divided logically into two parts:
-  * mbr_*() functions - to access and modify the mbr entries.
-  *                     E.g., to create a new file, change a files size,
-  *                     or append new blocks to the file.
-  *  			        These are private methods internal to the class.
+  * ft_*() functions - to access and modify the FT entries.
+  *                    E.g., to create a new file, change a files size,
+  *                    or append new blocks to the file.
+  *                    These are private methods internal to the class.
   * 
-  * read/write/seek/unlink - POSIX-style file access functions.
-  *                          These are the functions used to interact with the
+  * read/write/seek/remove - POSIX-style file access functions.
+  *                          These are the methods used to interact with the
   *                          file system.
   * 
   * Example:
@@ -70,33 +70,33 @@
   * @todo implement MB_APPEND flag in open()
   */
 
-// mbr_t.flags field to indicate if an MBR is free/busy.
-#define MBR_FREE 0x80000000
-#define MBR_BUSY 0x00000000
+// FileTableEntry_t.flags field to indicate if an FT is free/busy.
+#define FT_FREE 0x80000000
+#define FT_BUSY 0x00000000
 
-// mbr_t.flags field mask to get the file length.
-#define MBR_SIZE_MASK 0x7FFFFFFF
+// FileTableEntry_t.flags field mask to get the file length.
+#define FT_SIZE_MASK 0x7FFFFFFF
 
-// Used in mbr_t.blocks to indicate if a block is free.
-#define MBR_FREE_BLOCK_MARKER 0x80
+// Used in FileTableEntry_t.blocks to indicate if a block is free.
+#define FT_FREE_BLOCK_MARKER 0x80
 
-// Check if a given MBR is free.
-#define MBR_IS_FREE(mbr) ( (mbr).flags & MBR_FREE)
+// Check if a given FileTableEntry is free.
+#define FT_IS_FREE(m) ( (m).flags & FT_FREE)
 
 // mb_fd.flag to mark if FD is in use.
 #define MB_FD_BUSY 0x10
 
-// Macro to read the file size from an mbr_t pointer.
-#define mbr_get_filesize(m)  (m->flags & MBR_SIZE_MASK)
+// Macro to read the file size from an FileTableEntry_t pointer.
+#define ft_get_filesize(m)  (m->flags & FT_SIZE_MASK)
 
-// return the indexed block number from the mbr_t block list.
-#define mbr_get_block(m,b) (m->blocks[b])
+// return the indexed block number from the FileTableEntry_t block list.
+#define ft_get_block(m,b) (m->blocks[b])
 
-// Obtain pointer to the indexed mbr entry.
-#define mbr_by_id(index) (&mbr_loc[index])
+// Obtain pointer to the indexed FileTableEntry entry.
+#define ft_by_id(index) (&ft_loc[index])
 
-// Check if a mbr pointer is within table.
-#define MBR_PTR_VALID(p) ( (p >= this->mbr_loc) && (p-this->mbr_loc)<=(this->mbr_entries-1) )
+// Check if a FileTableEntry pointer is within table.
+#define FT_PTR_VALID(p) ( (p >= this->ft_loc) && (p-this->ft_loc)<=(this->ft_entries-1) )
 
 // open() flags.
 #define MB_READ 0x01
@@ -108,53 +108,55 @@
 #define MB_SEEK_END 0x02
 #define MB_SEEK_CUR 0x04
 
-// Test if init()/mbr_init have been called.
+// Test if init()/ft_init have been called.
 #define FS_INITIALIZED() (this->flash_start != NULL)
-#define MBR_INITIALIZED() (this->mbr_loc != NULL)
+#define FT_INITIALIZED() (this->ft_loc != NULL)
 
 /**
-  * @brief MBR entry struct, for each file.
+  * @brief FT entry struct, for each file.
   * 
-  * The MBR struct is the central source of metadata for each file. It stores:
+  * The FT struct is the central source of metadata for each file. It stores:
   *  - Filename
   *  - File size
   *  - List of blocks that constitute the file.
   *  
-  * The first mbr_t entry is reserved, and stores instead the list of currently
-  * available data blocks (the free block list).
+  * The first FileTableEntry_t entry is reserved, and stores instead 
+  * the list of currently available data blocks (the free block list).
   * 
-  * Modifications to these structs should be done through mbr_*() methods.
+  * Modifications to these structs should be done through ft_*() methods.
   */
-typedef struct mbr_t {
+typedef struct FileTableEntry_t 
+{
    
     // Filename, must be null-terminated.
     char name[FILENAME_LEN];	
    
     // Flags/length field.
-    // [31] marks the MBR as free/busy (busy=0)
+    // [31] marks the FT entry as free/busy (busy=0)
     // [0-30] stores the file size.
     uint32_t flags;	
    
     // Ordered list of blocks in the file. Each uint8_t element corresponds to 
     // a data block:
-    // [7] 	Only used in free block list to mark block as busy/free
-    //		(1 = free, 0 = busy).
+    // [7] 	    Only used in free block list to mark block as busy/free
+    //		    (1 = free, 0 = busy).
     // [0-6]	Block number.
     uint8_t blocks[(DATA_BLOCK_COUNT)]; 	
    				
-} mbr;
+} FileTableEntry;
 
 /**
   * @brief struct for each file descriptor
   *
   * - read/write/create flags.
   * - current seek position.
-  * - pointer to the files' mbr struct.
-  * The file size is stored in the MBR, but cached here.
-  * Writes to the MBR are made sparingly in tfs_write, and tfs_close(),
+  * - pointer to the files' FileTableEntry struct.
+  * The file size is stored in the FT, but cached here.
+  * Writes to the FT are made sparingly in mb_write() and mb_close()
   * to reduce erasures.
   */
-typedef struct tinyfs_fd_t {
+typedef struct mb_fd_t 
+{
     
     // read/write/creat flags.
     uint8_t flags;
@@ -163,13 +165,14 @@ typedef struct tinyfs_fd_t {
     int32_t seek; 
   
     // the cached file size.
-    uint32_t filesize;
+    int32_t filesize;
    
-    // pointer to the files' mbr struct.
-    // A tinyfs_fd_t struct cannot be in use without a valid mbr_entry pointer.
-    mbr* mbr_entry; 
+    // pointer to the files' FileTableEntry struct.
+    // A mb_fd_t struct cannot be in use without a FileTabeEntry 
+    // ft_entry pointer.
+    FileTableEntry* ft_entry; 
    
-} tinyfs_fd;
+} mb_fd;
 
 /**
   * @brief Class definition for the MicroBit File system
@@ -180,7 +183,7 @@ typedef struct tinyfs_fd_t {
   * - read()
   * - write()
   * - seek()
-  * - unlink()
+  * - remove()
   *
   * Only a single instance shoud exist at any given time.
   */
@@ -193,150 +196,149 @@ class MicroBitFile
     MicroBitFlash flash; 
   
   
-    // ** MBR-specific members **//
+    // ** FT-specific members **//
   
-    // Pointer to the MBR struct listing unused blocks.
-    mbr* mbr_free_loc = NULL; 
+    // Pointer to the FT struct listing unused blocks.
+    FileTableEntry* ft_free_loc = NULL; 
   
-    // Pointer to the MBR table, storing the file mbr entries.
-    mbr* mbr_loc = NULL;
+    // Pointer to the FT table, storing the file FileTableEntry entries.
+    FileTableEntry* ft_loc = NULL;
   
-    // Total number of MBR entries for file data 
-    // (excludes the mbr_fre_loc entry)
-    uint8_t mbr_entries = 0;
+    // Total number of FT entries for file data 
+    // (excludes the ft_free_loc entry)
+    uint8_t ft_entries = 0;
   
   
-    // ** MicroBitFlash API members (above the MBR). **//
+    // ** MicroBitFlash API members (above the FT). **//
   
     // Location of the start of the flash data blocks used for file data.
-    // *Excluding* the flash page reserved for MBR entries.
+    // *Excluding* the flash page reserved for FT entries.
     uint8_t* flash_start = NULL; 
   
     // Number of flash pages for file data.
-    // *Excluding* the MBR page.
+    // *Excluding* the FT page.
     int flash_pages = 0; 
   
-    // The tinyfs_fd table, for open files.
-    tinyfs_fd fd_table[MAX_FD];
+    // The mb_fd table, for open files.
+    mb_fd fd_table[MAX_FD];
 
-    // ** MBR-specific methods **/
+    // ** FT-specific methods **/
 
     /**
-      * @brief Find an MBR entry by name.
+      * @brief Find an FT entry by name.
       *
       * @param filename name of file to search for. Must be null-terminated.
-      * @return pointer to the MBR struct if found, NULL otherwise or on error.
+      * @return pointer to the FT struct if found, NULL otherwise or on error.
       */
-    mbr* mbr_by_name(char const * const filename);
+    FileTableEntry* ft_by_name(char const * filename);
   
     /**
-      * @brief Get a pointer to the lowest numbered available MBR entry.
+      * @brief Get a pointer to the lowest numbered available FT entry.
       *
-      * @return pointer to the MBR if successful, 
+      * @return pointer to the FT if successful, 
       * 	NULL if there are none available.
       */
-    mbr* mbr_get_free();
+    FileTableEntry* ft_get_free();
  
     /**
-      * @brief initialize the mbr struct to a new file.
+      * @brief initialize the FileTableEntry struct to a new file.
       *
-      * Initialize the mbr struct with the given, null-terminated filename.
-      * Ths is used to add a new file to the MBR.
+      * Initialize the FileTableEntry struct with the null-terminated filename.
+      * Ths is used to add a new file to the FT.
       * This function also sets the file size to zero, 
-      * and marks the MBR as busy.
+      * and marks the FT as busy.
       *
-      * @param m the mbr struct to use fill.
+      * @param m the FileTableEntry struct to use fill.
       * @param filename the null terminated filename to use.
       * @return non-zero on success, zero on error.
       */
-    int mbr_add(mbr* m, char const * const filename);
+    int ft_add(FileTableEntry* m, char const * filename);
   
     /**
-      * @brief add a new block to an MBR entry
+      * @brief add a new block to an FT entry
       *
-      * Add the numbered block to the list of blocks in an  MBR entry.
+      * Add the numbered block to the list of blocks in an  FT entry.
       * This function is used to expand the storage capacity for a file.
       * 
-      * @param m the mbr entry/struct to add too.
+      * @param m the FileTableEntry entry/struct to add too.
       * @param blockNo the numbered block to append to the block list of a
-			files' MBR.
+      *        files' FT.
       * @return non-zero on success, zero on error.
       */
-    int mbr_add_block(mbr* m, uint8_t blockNo);
+    int ft_add_block(FileTableEntry* m, uint8_t blockNo);
 
     /**
-      * @brief reset an MBR entry - remove a file from the MBR table.
+      * @brief reset an FT entry - remove a file from the FT table.
       *
-      * Reset an MBR entry, thereby removing a file from the system.
+      * Reset an FT entry, thereby removing a file from the system.
       * This function also frees all of the blocks allocated to m,
       * back to the list of free blocks.
       *
-      * @param m the mbr entry/struct to remove.
+      * @param m the FileTableEntry entry/struct to remove.
       * @return non-zero on success, zero on error.
       */
-    int mbr_remove(mbr* m);
+    int ft_remove(FileTableEntry* m);
   
-
     /**
       * @brief obtains and marks as busy, an unused block.
       *
-      * The first MBR entry is reserved, and stores the list of unused blocks.
-      * Thiis function implements a stack, to pop a free block, mark as busy
+      * The first FT entry is reserved, and stores the list of unused blocks.
+      * This function implements a stack, to pop a free block, mark as busy
       * (subsequent calls will not find the same block), and return its number.
       *
       * @return block number on success, -1 on error (out of space).
       */
-    int mbr_pop_free_block();
+    int ft_pop_free_block();
   
     /**
-      * @brief set the filesize of an mbr
+      * @brief set the filesize of an FileTableEntry
       *
-      * Set, in the MBR, the filesize of the entry, m.
+      * Set, in the FT, the filesize of the entry, m.
       * 
-      * @param m the MBR entry/file to modify
+      * @param m the FT entry/file to modify
       * @param filesize the new filesize.
       * @return non-zero on success, zero on error.
       */
-    int mbr_set_filesize(mbr* m, uint32_t filesize);
+    int ft_set_filesize(FileTableEntry* m, uint32_t filesize);
 
      /**
-       * @brief initialize the MBR API.
+       * @brief initialize the FT API.
        *
        * This function initializes the API for subsequent calls,
        * particularly storing the flash location, and number of entries.
        * This function must be called before any other.
        * 
-       * @param mbr_location Location in flash of where to store the MBR.
-       * @param mbr_entries The number of entries in the MBR
-       *                    (hence determining the max no. files).
+       * @param ft_location Location in flash of where to store the FT.
+       * @param ft_entries The number of entries in the FT
+       *                   (hence determining the max no. files).
        * @return non-zero on success, zero on error.
-      */
-    int mbr_init(void* mbr_location, int mbr_entries);
+       */
+    int ft_init(void* ft_location, int ft_entries);
  
     /**
-      * @brief reset the MBR.
+      * @brief reset the FT.
       *
-      * The MBR must be in an initial state for it to work.
-      * Namely, all of the mbr entries must be set to empty (0xFF).
+      * The FT must be in an initial state for it to work.
+      * Namely, all of the FileTableEntry entries must be set to empty (0xFF).
       * and the stack of unused blocks must be populated.
       *
       * This function also sets the MAGIC_WORD as the first word in 
-      * the MBR block, used to determine if the MBR has already been 
+      * the FT block, used to determine if the FT has already been 
       * configured.
       *
       * This function should be called from the init() function.
       * 
       * @return non-zero on success, zero otherwise.
       */
-    int mbr_build();
+    int ft_build();
 
     /**
       * @brief Initialize the flash storage system
       *
       * This method:
-      * - calls mbr_init().
+      * - calls ft_init().
       * - stores the location of the flash memory.
-      * - calls mbr_build()
+      * - calls ft_build()
       *
       * @return non-zero on success, zero on error.
       */
@@ -375,16 +377,16 @@ class MicroBitFile
       *    print("file open error");
       * @endcode
       */
-    int open(char const * const filename, uint8_t flags);
+    int open(char const * filename, uint8_t flags);
   
     /**
       * Close the specified file handle.
       * File handle resources are then made available for future open() calls.
       * 
       * close() must be called at some point to ensure the filesize in the
-      * MBR is synced with the cached value in the FD.
+      * FT is synced with the cached value in the FD.
       *
-      * @warning if close() is not called, the MBR may not be correct,
+      * @warning if close() is not called, the FT may not be correct,
       * leading to data loss.
       *
       * @param fd file descriptor - obtained with open().
@@ -432,8 +434,8 @@ class MicroBitFile
       * is incremented atomically, by the number of bytes returned.
       *
       * The cached filesize in the FD is updated on this call. Also, the
-      * MBR file size is updated only if a new page(s) has been written too,
-      * to reduce the number of MBR writes.
+      * FT file size is updated only if a new page(s) has been written too,
+      * to reduce the number of FT writes.
       *
       * @param fd File handle
       * @param buffer the buffer from which to write data
@@ -445,7 +447,7 @@ class MicroBitFile
       * MicroBitFile f();
       * int fd = f.open("test.txt", MB_WRITE);
       * if(f.write(fd, "hello!", 7) != 7)
-           print("error writing");
+      *    print("error writing");
       * @endcode
       */
     int write(int fd, uint8_t* buffer, int len);
@@ -453,9 +455,9 @@ class MicroBitFile
     /**
       * Read data from the file.
       *
-      * Read len bytes from the current seek position in the file, into the buffer.
-      * On each invocation to read, the seek position of the file handle
-      * is incremented atomically, by the number of bytes returned.
+      * Read len bytes from the current seek position in the file, into the 
+      * buffer. On each invocation to read, the seek position of the file
+      * handle is incremented atomically, by the number of bytes returned.
       *
       * @param fd File handle, obtained with open()
       * @param buffer to store data
@@ -484,11 +486,11 @@ class MicroBitFile
       * Example:
       * @code
       * MicroBitFile f;
-      * if(!f.unlink("file.txt"))
-      *     print("file could not be deleted")
+      * if(!f.remove("file.txt"))
+      *     print("file could not be removed")
       * @endcode
       */
-    int unlink(char const * const filename);
+    int remove(char const * filename);
 };
 
 #endif

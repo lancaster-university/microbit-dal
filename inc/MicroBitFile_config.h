@@ -27,31 +27,31 @@
 
 #define MAX_FILENAME_LEN FILENAME_LEN-1
 
-// MAGIC word at the beginning of the flash region/MBR table. Not really necessary to configure/change.
+// MAGIC word at the beginning of the flash region/FT table. Not really necessary to configure/change.
 #define MAGIC_WORD 0xA3E8F1C7
 
 // The number of flash pages available to the file system.
-// The total number available for flash storage is 1 less: used for the MBR table.
+// The total number available for flash storage is 1 less: used for the FT table.
 // This can be no greater than (2^7-1 = 127), as block numbers are stored in uint8_t's.
 #define DATA_BLOCK_COUNT 40
 
-// Number of MBR entries in the MBR table. Since this is a flat file system, without directories, this determines the maximum number of files the system can hold.
-// The number of MBR entries includes the free mbr list. 
-// Therefore, the maximum number of files will actually be NO_MBR_ENTRIES-1.
-// The MBR must fit in a single page.
-#define NO_MBR_ENTRIES 10
+// Number of FT entries in the FT table. Since this is a flat file system, without directories, this determines the maximum number of files the system can hold.
+// The number of FT entries includes the free mbr list. 
+// Therefore, the maximum number of files will actually be NO_FT_ENTRIES-1.
+// The FT must fit in a single page.
+#define NO_FT_ENTRIES 10
 
 /** --  Pre-compiler validation checks -- **/
 #if ( ((FLASH_START % PAGE_SIZE) != 0) && !TESTING )
 #error FLASH_START must be on a page boundary.
 #endif
 
-#if NO_MBR_ENTRIES < 2
-#error NO_MBR_ENTRIES must be at least 2.
+#if NO_FT_ENTRIES < 2
+#error NO_FT_ENTRIES must be at least 2.
 #endif
 
-#if ( (FILENAME_LEN + DATA_BLOCK_COUNT + 4 ) * NO_MBR_ENTRIES ) > PAGE_SIZE
-#error NO_MBR_ENTRIES is too large, cannot fit in a single page.
+#if ( (FILENAME_LEN + DATA_BLOCK_COUNT + 4 ) * NO_FT_ENTRIES ) > PAGE_SIZE
+#error NO_FT_ENTRIES is too large, cannot fit in a single page.
 #endif
 
 #if DATA_BLOCK_COUNT > 127

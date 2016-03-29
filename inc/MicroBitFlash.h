@@ -5,7 +5,8 @@
 #define SCRATCH_PAGE_ADDR 0x2EC00
 #define PAGE_SIZE 1024
 
-typedef enum flash_mode_t {
+typedef enum flash_mode_t 
+{
     WR_WRITE,
     WR_MEMSET
 } flash_mode;
@@ -13,8 +14,6 @@ typedef enum flash_mode_t {
 class MicroBitFlash
 {
     private:
-    // Address of the first word in flash memory we can write to.
-    uint32_t* flash_start; 
 
     /**
       * Erase an entire page.
