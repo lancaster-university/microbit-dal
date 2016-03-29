@@ -29,7 +29,8 @@ int MicroBitFlash::need_erase(uint8_t* source, uint8_t* flash_addr, int len)
     // O & ~N != 0
     // Where O = original, and N = new byte.
 
-    for(;len>0;len--) {
+    for(;len>0;len--) 
+    {
         if((~*(flash_addr++) & *(source++)) != 0x00) return 1;
     }
     return 0;
@@ -52,7 +53,7 @@ void MicroBitFlash::erase_page(uint32_t* pg_addr)
 
     // Turn off flash erase enable and wait until the NVMC is ready:
     NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
 }
  
 /**
@@ -71,7 +72,8 @@ void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size)
     NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos);
     while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
  
-    for(int i=0;i<size;i++) {
+    for(int i=0;i<size;i++) 
+    {
         *(addr+i) = *(buffer+i);
         while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
     }
@@ -119,7 +121,8 @@ int MicroBitFlash::flash_write_mem(uint8_t* address, uint8_t* from_buffer,
     int start = WORD_ADDR(offset);
     int end = WORD_ADDR((offset+length+4));
 
-    if(need_erase(from_buffer, address, length)) {
+    if(need_erase(from_buffer, address, length)) 
+    {
         this->erase_page((uint32_t*)SCRATCH_PAGE_ADDR);
         this->flash_burn((uint32_t*)SCRATCH_PAGE_ADDR, pgAddr, PAGE_SIZE/4);
         this->erase_page(pgAddr);
@@ -130,24 +133,30 @@ int MicroBitFlash::flash_write_mem(uint8_t* address, uint8_t* from_buffer,
 
     uint32_t writeWord = 0;
 
-    for(int i=start;i<end;i++) {
+    for(int i=start;i<end;i++) 
+    {
         int byteOffset = i%4;
 
-        if(i >= offset && i < (offset + length)) {
-            if(m == WR_WRITE) {
+        if(i >= offset && i < (offset + length)) 
+        {
+            if(m == WR_WRITE) 
+            {
                 // Write from buffer.
                 writeWord |= (from_buffer[i-offset] << ((byteOffset)*8));
             }
-            else if(m == WR_MEMSET) {
+            else if(m == WR_MEMSET) 
+            {
                 // Write constant.
                 writeWord |= ((uint32_t)write_byte << (byteOffset*8));
             }
         }
-        else {
+        else 
+        {
             writeWord |= (writeFrom[i] << ((byteOffset)*8));
         }
 
-        if( ((i+1)%4) == 0) {
+        if( ((i+1)%4) == 0) 
+        {
             this->flash_burn(pgAddr + (i/4), &writeWord, 1);
             writeWord = 0;
         }
