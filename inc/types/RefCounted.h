@@ -12,6 +12,7 @@
 struct RefCounted
 {
 public:
+    
     /**
       * The high 15 bits hold the number of outstanding references. The lowest bit is always 1
       * to make sure it doesn't look like vtable.
@@ -20,16 +21,26 @@ public:
       */
     uint16_t refCount;
 
-    /** Increment reference count. */
+    /**
+      * Increment reference count.
+      */
     void incr();
 
-    /** Decrement reference count. */
+    /**
+      * Decrement reference count.
+      */
     void decr();
 
-    /** Initializes for one outstanding reference. */
+    /**
+      * Initializes for one outstanding reference.
+      */
     void init();
 
-    /** Checks if the object sits in flash memory. */
+    /**
+      * Checks if the object resides in flash memory.
+      *
+      * @return true if the object resides in flash memory, false otherwise.
+      */
     bool isReadOnly();
 };
 

@@ -1,3 +1,10 @@
+/**
+  * Class definition for DynamicPwm.
+  *
+  * This class addresses a few issues found in the underlying libraries.
+  * This provides the ability for a neat, clean swap between PWM channels.
+  */
+
 #include "MicroBitConfig.h"
 #include "DynamicPwm.h"
 #include "MicroBitPin.h"
@@ -10,12 +17,15 @@ uint8_t DynamicPwm::lastUsed = NO_PWMS+1; //set it to out of range i.e. 4 so we 
 uint16_t DynamicPwm::sharedPeriod = 0; //set the shared period to an unknown state
 
 /**
-  * Reassigns an already operational PWM channel to the given pin
-  * #HACK #BODGE # YUCK #MBED_SHOULD_DO_THIS
+  * Reassigns an already operational PWM channel to the given pin.
   *
-  * @param pin The pin to start running PWM on
-  * @param oldPin The pin to stop running PWM on
+  * @param pin The desired pin to begin a PWM wave.
+  *
+  * @param oldPin The pin to stop running a PWM wave.
+  *
   * @param channel_number The GPIOTE channel being used to drive this PWM channel
+  *
+  * TODO: Merge into mbed, at a later date.
   */
 void gpiote_reinit(PinName pin, PinName oldPin, uint8_t channel_number)
 {
@@ -47,11 +57,12 @@ void gpiote_reinit(PinName pin, PinName oldPin, uint8_t channel_number)
 }
 
 /**
-  * An internal constructor used when allocating a new DynamicPwm representation
+  * An internal constructor used when allocating a new DynamicPwm instance.
+  *
   * @param pin the name of the pin for the pwm to target
+  *
   * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
-  * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
-  * @param period the frequency of the pwm channel in us.
+  *                    or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
   */
 DynamicPwm::DynamicPwm(PinName pin, PwmPersistence persistence) : PwmOut(pin)
 {
@@ -60,12 +71,12 @@ DynamicPwm::DynamicPwm(PinName pin, PwmPersistence persistence) : PwmOut(pin)
 
 /**
   * Redirects the pwm channel to point at a different pin.
-  * @param pin the new pin to direct PWM at.
   *
-  * Example:
+  * @param pin the desired pin to output a PWM wave.
+  *
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-  * pwm->redirect(PinName n2); // pwm is now produced on n2
+  * pwm->redirect(p0); // pwm is now produced on p0
   * @endcode
   */
 void DynamicPwm::redirect(PinName pin)
@@ -75,12 +86,17 @@ void DynamicPwm::redirect(PinName pin)
 }
 
 /**
-  * Retrieves a pointer to the first available free pwm channel - or the first one that can be reallocated.
-  * @param pin the name of the pin for the pwm to target
-  * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
-  * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
+  * Creates a new DynamicPwm instance, or reuses an existing instance that
+  * has a persistence level of PWM_PERSISTENCE_TRANSIENT.
   *
-  * Example:
+  * @param pin the name of the pin for the pwm to target
+  *
+  * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
+  *                    or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
+  *
+  * @return a pointer to the first available free pwm channel - or the first one that can be reallocated. If
+  *         no channels are available, NULL is returned.
+  *
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
   * @endcode
@@ -127,9 +143,8 @@ DynamicPwm* DynamicPwm::allocate(PinName pin, PwmPersistence persistence)
 }
 
 /**
-  * Frees this DynamicPwm instance if the pointer is valid.
+  * Frees this DynamicPwm instance for reuse.
   *
-  * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate();
   * pwm->release();
@@ -158,7 +173,6 @@ void DynamicPwm::release()
   *
   * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
   *
-  * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate();
   * pwm->write(0.5);
@@ -176,13 +190,17 @@ int DynamicPwm::write(float value){
 }
 
 /**
-  * Retreives the pin name associated with this DynamicPwm instance.
+  * Retreives the PinName associated with this DynamicPwm instance.
   *
-  * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-  * pwm->getPinName(); // equal to n
+  *
+  * // returns the PinName n.
+  * pwm->getPinName();
   * @endcode
+  *
+  * @note This should be used to check that the DynamicPwm instance has not
+  *       been reallocated for use in another part of a program.
   */
 PinName DynamicPwm::getPinName()
 {
@@ -191,11 +209,13 @@ PinName DynamicPwm::getPinName()
 
 /**
   * Retreives the last value that has been written to this DynamicPwm instance.
-  * The value is in the range 0-1024
+  * in the range 0 - 1023 inclusive.
   *
-  * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
+  * pwm->write(0.5);
+  *
+  * // will return 512.
   * pwm->getValue();
   * @endcode
   */
@@ -205,7 +225,7 @@ int DynamicPwm::getValue()
 }
 
 /**
-  * Retreives the current period in use by the entire PWM module
+  * Retreives the current period in use by the entire PWM module in microseconds.
   *
   * Example:
   * @code
@@ -219,11 +239,14 @@ int DynamicPwm::getPeriodUs()
 }
 
 /**
-  * Retreives the current period in use by the entire PWM module
+  * Retreives the current period in use by the entire PWM module in milliseconds.
   *
   * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
+  * pwm->setPeriodUs(20000);
+  *
+  * // will return 20000
   * pwm->getPeriod();
   * @endcode
   */
@@ -233,17 +256,21 @@ int DynamicPwm::getPeriod()
 }
 
 /**
-  * Sets the period used by the WHOLE PWM module. Any changes to the period will AFFECT ALL CHANNELS.
+  * Sets the period used by the WHOLE PWM module.
   *
   * @param period the desired period in microseconds.
   *
-  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if period is out of range
   *
   * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-  * pwm->setPeriodUs(1000); // period now is 1ms
+  *
+  * // period now is 20ms
+  * pwm->setPeriodUs(20000);
   * @endcode
+  *
+  * @note Any changes to the period will AFFECT ALL CHANNELS.
   */
 int DynamicPwm::setPeriodUs(int period)
 {
@@ -261,14 +288,16 @@ int DynamicPwm::setPeriodUs(int period)
 /**
   * Sets the period used by the WHOLE PWM module. Any changes to the period will AFFECT ALL CHANNELS.
   *
-  * @param period the desired period in microseconds.
+  * @param period the desired period in milliseconds.
   *
-  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if period is out of range
   *
   * Example:
   * @code
   * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-  * pwm->setPeriod(1); // period now is 1ms
+  *
+  * // period now is 20ms
+  * pwm->setPeriod(20);
   * @endcode
   */
 int DynamicPwm::setPeriod(int period)

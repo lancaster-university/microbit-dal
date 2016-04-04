@@ -8,7 +8,7 @@
   *
   * Represents a reference counted object.
   *
-  * @info When the destructor is called delete is called on the object - implicitly calling the given objects destructor.
+  * @note When the destructor is called, delete is called on the object - implicitly calling the given objects destructor.
   */
 template <class T>
 class ManagedType
@@ -22,88 +22,85 @@ public:
     T *object;
 
     /**
-    * Constructor for the managed type, given a class space T.
-    * @param object the object that you would like to be ref counted - of class T
-    *
-    * Example:
-    * @code
-    * T object = new T();
-    * ManagedType<T> mt(t);
-    * @endcode
-    */
+      * Constructor for the managed type, given a class space T.
+      *
+      * @param object the object that you would like to be ref counted - of class T
+      *
+      * @code
+      * T object = new T();
+      * ManagedType<T> mt(t);
+      * @endcode
+      */
     ManagedType(T* object);
 
-  /**
-    * Default constructor for the managed type, given a class space T.
-    */
+    /**
+      * Default constructor for the managed type, given a class space T.
+      */
     ManagedType();
 
-  /**
-    * Copy constructor for the managed type, given a class space T.
-    * @param t another managed type instance of class type T.
-    *
-    * Example:
-    * @code
-    * T* object = new T();
-    * ManagedType<T> mt(t);
-    * ManagedType<T> mt1(mt);
-    * @endcode
-    */
+    /**
+      * Copy constructor for the managed type, given a class space T.
+      *
+      * @param t another managed type instance of class type T.
+      *
+      * @code
+      * T* object = new T();
+      * ManagedType<T> mt(t);
+      * ManagedType<T> mt1(mt);
+      * @endcode
+      */
     ManagedType(const ManagedType<T> &t);
 
-  /**
-    * Destructor for the managed type, given a class space T.
-    */
+    /**
+      * Destructor for the managed type, given a class space T.
+      */
     ~ManagedType();
 
-  /**
-    * Copy-assign member function for the managed type, given a class space.
-    *
-    * Example:
-    * @code
-    * T* object = new T();
-    * ManagedType<T> mt(t);
-    * ManagedType<T> mt1 = mt;
-    * @endcode
-    */
+    /**
+      * Copy-assign member function for the managed type, given a class space.
+      *
+      * @code
+      * T* object = new T();
+      * ManagedType<T> mt(t);
+      * ManagedType<T> mt1 = mt;
+      * @endcode
+      */
     ManagedType<T>& operator = (const ManagedType<T>&i);
 
-  /**
-    * Returns the references to this ManagedType
-    *
-    * Example:
-    * @code
-    * T* object = new T();
-    * ManagedType<T> mt(t);
-    * ManagedType<T> mt1(mt);
-    *
-    * mt.getReferences // this will be 2!
-    * @endcode
-    */
+    /**
+      * Returns the references to this ManagedType.
+      *
+      * @code
+      * T* object = new T();
+      * ManagedType<T> mt(t);
+      * ManagedType<T> mt1(mt);
+      *
+      * mt.getReferences // this will be 2!
+      * @endcode
+      */
     int getReferences();
 
     /**
-     * De-reference operator overload. This makes modifying ref-counted POD
-     * easier.
-     *
-     * Example:
-     * @code
-     * ManagedType<int> x = 0;
-     * *x = 1; // mutates the ref-counted integer
-     */
+      * De-reference operator overload. This makes modifying ref-counted POD
+      * easier.
+      *
+      * @code
+      * ManagedType<int> x = 0;
+      * *x = 1; // mutates the ref-counted integer
+      * @endcode
+      */
     T& operator*() {
         return *object;
     }
 
     /**
-     * Method call operator overload. This forwards the call to the underlying
-     * object.
-     *
-     * Example:
-     * @code
-     * ManagedType<T> x = new T();
-     * x->m(); // resolves to T::m
-     */
+      * Method call operator overload. This forwards the call to the underlying
+      * object.
+      *
+      * @code
+      * ManagedType<T> x = new T();
+      * x->m(); // resolves to T::m
+      */
     T* operator->() {
         if (object == NULL)
             microbit_panic(MICROBIT_NULL_DEREFERENCE);
@@ -111,24 +108,37 @@ public:
     }
 
     /**
-     * x.get() is shorthand for x.operator->()
-     */
+      * Shorthand for `x.operator->()`
+      */
     T* get() {
         return object;
     }
 
+    /**
+      * A simple inequality overload to compare two ManagedType instances.
+      */
     bool operator!=(const ManagedType<T>& x) {
         return !(this == x);
     }
 
+    /**
+      * A simple equality overload to compare two ManagedType instances.
+      */
     bool operator==(const ManagedType<T>& x) {
         return this->object == x.object;
     }
 };
 
 /**
-* Constructor for the managed type, given a class space.
-*/
+  * Constructor for the managed type, given a class space T.
+  *
+  * @param object the object that you would like to be ref counted - of class T
+  *
+  * @code
+  * T object = new T();
+  * ManagedType<T> mt(t);
+  * @endcode
+  */
 template<typename T>
 ManagedType<T>::ManagedType(T* object)
 {
@@ -138,8 +148,8 @@ ManagedType<T>::ManagedType(T* object)
 }
 
 /**
-* Default constructor for the managed type, given a class space.
-*/
+  * Default constructor for the managed type, given a class space T.
+  */
 template<typename T>
 ManagedType<T>::ManagedType()
 {
@@ -149,8 +159,16 @@ ManagedType<T>::ManagedType()
 }
 
 /**
-* Copy constructor for the managed type, given a class space.
-*/
+  * Copy constructor for the managed type, given a class space T.
+  *
+  * @param t another managed type instance of class type T.
+  *
+  * @code
+  * T* object = new T();
+  * ManagedType<T> mt(t);
+  * ManagedType<T> mt1(mt);
+  * @endcode
+  */
 template<typename T>
 ManagedType<T>::ManagedType(const ManagedType<T> &t)
 {
@@ -160,8 +178,8 @@ ManagedType<T>::ManagedType(const ManagedType<T> &t)
 }
 
 /**
-* Destructor for the managed type, given a class space.
-*/
+  * Destructor for the managed type, given a class space T.
+  */
 template<typename T>
 ManagedType<T>::~ManagedType()
 {
@@ -182,8 +200,14 @@ ManagedType<T>::~ManagedType()
 }
 
 /**
-* Copy-assign member function for the managed type, given a class space.
-*/
+  * Copy-assign member function for the managed type, given a class space.
+  *
+  * @code
+  * T* object = new T();
+  * ManagedType<T> mt(t);
+  * ManagedType<T> mt1 = mt;
+  * @endcode
+  */
 template<typename T>
 ManagedType<T>& ManagedType<T>::operator = (const ManagedType<T>&t)
 {
@@ -212,8 +236,16 @@ ManagedType<T>& ManagedType<T>::operator = (const ManagedType<T>&t)
 }
 
 /**
-* Returns the references to this ManagedType
-*/
+  * Returns the references to this ManagedType.
+  *
+  * @code
+  * T* object = new T();
+  * ManagedType<T> mt(t);
+  * ManagedType<T> mt1(mt);
+  *
+  * mt.getReferences // this will be 2!
+  * @endcode
+  */
 template<typename T>
 int ManagedType<T>::getReferences()
 {

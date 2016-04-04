@@ -17,7 +17,7 @@
 /**
   * Class definition for MicroBitLightSensor.
   *
-  * This is an object that interleaves light sensing with uBit.display.
+  * This is an object that interleaves light sensing with MicroBitDisplay.
   */
 class MicroBitLightSensor
 {
@@ -60,7 +60,11 @@ class MicroBitLightSensor
 
     /**
       * Constructor.
-      * Create a representation of the light sensor
+      *
+      * Create a representation of the light sensor.
+      *
+      * @param map The mapping information that relates pin inputs/outputs to physical screen coordinates.
+      *            Defaults to microbitMatrixMap, defined in MicroBitMatrixMaps.h.
       */
     MicroBitLightSensor(const MatrixMap &map);
 
@@ -84,22 +88,23 @@ class MicroBitLightSensor
       *
       * @return returns a value in the range 0 - 255 where 0 is dark, and 255
       * is very bright
-      *
-      * @note currently returns a value in the range 0 - 255 where 0 is dark, and 255
-      * is very bright perhaps we should normalise the returned values into an SI unit!
-      * TODO.
       */
     int read();
 
     /**
       * The method that is invoked by sending MICROBIT_DISPLAY_EVT_LIGHT_SENSE
       * using the id MICROBIT_ID_DISPLAY.
+      *
+      * @note this can be manually driven by calling this member function, with
+      *       a MicroBitEvent using the CREATE_ONLY option of the MicroBitEvent
+      *       constructor.
       */
     void startSensing(MicroBitEvent);
 
     /**
-      * The destructor restores the default Display Mode and tick speed, and also
-      * removes the listener from the default EventModel.
+      * A destructor for MicroBitLightSensor.
+      *
+      * The destructor removes the listener, used by MicroBitLightSensor from the default EventModel.
       */
     ~MicroBitLightSensor();
 };

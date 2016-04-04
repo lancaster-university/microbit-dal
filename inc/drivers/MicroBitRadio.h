@@ -80,111 +80,122 @@ class MicroBitRadio : MicroBitComponent
     static MicroBitRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.
 
     /**
-     * Constructor.
-     *
-     * Initialise the MicroBitRadio. Note that this class is demand activated, so most resources are only
-     * committed if send/recv or event registrations calls are made.
-     */
+      * Constructor.
+      *
+      * Initialise the MicroBitRadio.
+      *
+      * @note This class is demand activated, as a result most resources are only
+      *       committed if send/recv or event registrations calls are made.
+      */
     MicroBitRadio(uint16_t id = MICROBIT_ID_RADIO);
 
     /**
-     * Change the output power level of the transmitter to the given value.
-     *
-     * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest.
-     * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
-     *
-     */
+      * Change the output power level of the transmitter to the given value.
+      *
+      * @param power a value in the range 0..7, where 0 is the lowest power and 7 is the highest.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
+      */
     int setTransmitPower(int power);
 
     /**
-     * Change the transmission and reception band of the radio to the given channel
-     *
-     * @param band a frequency band in the range 0 - 100. Each step is 1MHz wide, based at 2400MHz.
-     * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range,
-     * or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
-     *
-     */
+      * Change the transmission and reception band of the radio to the given channel
+      *
+      * @param band a frequency band in the range 0 - 100. Each step is 1MHz wide, based at 2400MHz.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range,
+      *         or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
+      */
     int setFrequencyBand(int band);
 
     /**
-     * Retrieve a pointer to the currently allocated recieve buffer. This is the area of memory
-     * actively being used by the radio hardware to store incoming data.
-     *
-     * @return a pointer to the current receive buffer
-     */
+      * Retrieve a pointer to the currently allocated receive buffer. This is the area of memory
+      * actively being used by the radio hardware to store incoming data.
+      *
+      * @return a pointer to the current receive buffer.
+      */
     FrameBuffer * getRxBuf();
 
     /**
-     * Attempt to queue a buffer received by the radio hardware, if sufficient space is available.
-     *
-     * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if a replacement receiver buffer
-     * could not be allocated (either by policy or memory exhaustion).
-     */
+      * Attempt to queue a buffer received by the radio hardware, if sufficient space is available.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if a replacement receiver buffer
+      *         could not be allocated (either by policy or memory exhaustion).
+      */
     int queueRxBuf();
 
     /**
-     * Sets the RSSI for the most recent packet.
-     *
-     * @param rssi the new rssi value
-     */
+      * Sets the RSSI for the most recent packet.
+      *
+      * @param rssi the new rssi value.
+      *
+      * @note should only be called from RADIO_IRQHandler...
+      */
     int setRSSI(uint8_t rssi);
 
     /**
-     * Retrieves the current RSSI for the most recent packet.
-     */
+      * Retrieves the current RSSI for the most recent packet.
+      *
+      * @return the most recent RSSI value or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
+      */
     int getRSSI();
 
     /**
-     * Initialises the radio for use as a multipoint sender/receiver
-     * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if SoftDevice is enabled.
-     */
+      * Initialises the radio for use as a multipoint sender/receiver
+      *
+      * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the BLE stack is running.
+      */
     int enable();
 
     /**
-     * Disables the radio for use as a multipoint sender/receiver.
-     * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if SoftDevice is enabled.
-     */
+      * Disables the radio for use as a multipoint sender/receiver.
+      *
+      * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the BLE stack is running.
+      */
     int disable();
 
     /**
-     * Sets the radio to listen to packets sent with the given group id.
-     *
-     * @param group The group to join. A micro:bit can only listen to one group ID at any time.
-     * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
-     */
+      * Sets the radio to listen to packets sent with the given group id.
+      *
+      * @param group The group to join. A micro:bit can only listen to one group ID at any time.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
+      */
     int setGroup(uint8_t group);
 
     /**
-     * A background, low priority callback that is triggered whenever the processor is idle.
-     * Here, we empty our queue of received packets, and pass them onto higher level protocol handlers.
-     */
+      * A background, low priority callback that is triggered whenever the processor is idle.
+      * Here, we empty our queue of received packets, and pass them onto higher level protocol handlers.
+      */
     virtual void idleTick();
 
     /**
-     * Determines the number of packets ready to be processed.
-     * @return The number of packets in the receive buffer.
-     */
+      * Determines the number of packets ready to be processed.
+      *
+      * @return The number of packets in the receive buffer.
+      */
     int dataReady();
 
     /**
-     * Retrieves the next packet from the receive buffer.
-     * If a data packet is available, then it will be returned immediately to
-     * the caller. This call will also dequeue the buffer.
-     *
-     * NOTE: Once recv() has been called, it is the callers resposibility to
-     * delete the buffer when appropriate.
-     *
-     * @return The buffer containing the the packet. If no data is available, NULL is returned.
-     */
+      * Retrieves the next packet from the receive buffer.
+      * If a data packet is available, then it will be returned immediately to
+      * the caller. This call will also dequeue the buffer.
+      *
+      * @return The buffer containing the the packet. If no data is available, NULL is returned.
+      *
+      * @note Once recv() has been called, it is the callers resposibility to
+      *       delete the buffer when appropriate.
+      */
     FrameBuffer* recv();
 
     /**
-     * Transmits the given buffer onto the broadcast radio.
-     * The call will wait until the transmission of the packet has completed before returning.
-     *
-     * @param data The packet contents to transmit.
-     * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
-     */
+      * Transmits the given buffer onto the broadcast radio.
+      * The call will wait until the transmission of the packet has completed before returning.
+      *
+      * @param data The packet contents to transmit.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
+      */
     int send(FrameBuffer *buffer);
 };
 

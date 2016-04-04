@@ -9,7 +9,7 @@
 /**
   * Class definition for MicroBit IO.
   *
-  * This is an object that contains the pins on the edge connector as properties.
+  * Represents a collection of all I/O pins on the edge connector.
   */
 class MicroBitIO
 {
@@ -38,7 +38,11 @@ class MicroBitIO
 
     /**
       * Constructor.
+      *
       * Create a representation of all given I/O pins on the edge connector
+      *
+      * Accepts a sequence of unique ID's used to distinguish events raised
+      * by MicroBitPin instances on the default EventModel.
       */
     MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
                int ID_P3, int ID_P4, int ID_P5,
@@ -50,4 +54,3 @@ class MicroBitIO
 };
 
 #endif
-

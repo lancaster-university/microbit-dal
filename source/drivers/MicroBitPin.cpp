@@ -1,3 +1,8 @@
+/**
+  * Class definition for MicroBitPin.
+  *
+  * Commonly represents an I/O pin on the edge connector.
+  */
 #include "MicroBitConfig.h"
 #include "MicroBitPin.h"
 #include "MicroBitButton.h"
@@ -6,14 +11,17 @@
 
 /**
   * Constructor.
-  * Create a Button representation with the given ID.
-  * @param id the ID of the new Pin object.
-  * @param name the pin name for this MicroBitPin instance to represent
-  * @param capability the capability of this pin, can it only be digital? can it only be analog? can it be both?
+  * Create a MicroBitPin instance, generally used to represent a pin on the edge connector.
   *
-  * Example:
+  * @param id the unique EventModel id of this component.
+  *
+  * @param name the mbed PinName for this MicroBitPin instance.
+  *
+  * @param capability the capabilities this MicroBitPin instance should have.
+  *                   (PIN_CAPABILITY_DIGITAL, PIN_CAPABILITY_ANALOG, PIN_CAPABILITY_TOUCH, PIN_CAPABILITY_AD, PIN_CAPABILITY_ALL)
+  *
   * @code
-  * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
+  * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_ALL);
   * @endcode
   */
 MicroBitPin::MicroBitPin(int id, PinName name, PinCapability capability)
@@ -31,7 +39,8 @@ MicroBitPin::MicroBitPin(int id, PinName name, PinCapability capability)
 }
 
 /**
-  * Disconnect any attached mbed IO from this pin.
+  * Disconnect any attached mBed IO from this pin.
+  *
   * Used only when pin changes mode (i.e. Input/Output/Analog/Digital)
   */
 void MicroBitPin::disconnect()
@@ -64,14 +73,15 @@ void MicroBitPin::disconnect()
 
 /**
   * Configures this IO pin as a digital output (if necessary) and sets the pin to 'value'.
+  *
   * @param value 0 (LO) or 1 (HI)
   *
-  * Example:
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
+  *         if the given pin does not have digital capability.
+  *
   * @code
   * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
   * P0.setDigitalValue(1); // P0 is now HI
-  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
-  * if the given pin does not have digital capability.
   * @endcode
   */
 int MicroBitPin::setDigitalValue(int value)
@@ -99,9 +109,10 @@ int MicroBitPin::setDigitalValue(int value)
 
 /**
   * Configures this IO pin as a digital input (if necessary) and tests its current value.
-  * @return 1 if this input is high, 0 if input is LO, or MICROBIT_NOT_SUPPORTED if the given pin does not have analog capability.
   *
-  * Example:
+  * @return 1 if this input is high, 0 if input is LO, or MICROBIT_NOT_SUPPORTED
+  *         if the given pin does not have analog capability.
+  *
   * @code
   * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
   * P0.getDigitalValue(); // P0 is either 0 or 1;
@@ -136,11 +147,13 @@ int MicroBitPin::obtainAnalogChannel()
 }
 
 /**
- * Configures this IO pin as an analog/pwm output, and change the output value to the given level.
- * @param value the level to set on the output pin, in the range 0 - 1023
- * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
- * if the given pin does not have analog capability.
- */
+  * Configures this IO pin as an analog/pwm output, and change the output value to the given level.
+  *
+  * @param value the level to set on the output pin, in the range 0 - 1024
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
+  *         if the given pin does not have analog capability.
+  */
 int MicroBitPin::setAnalogValue(int value)
 {
     //check if this pin has an analogue mode...
@@ -161,19 +174,22 @@ int MicroBitPin::setAnalogValue(int value)
 }
 
 /**
- * Configures this IO pin as an analog/pwm output if it isn't already, configures the period to be 20ms,
- * and sets the duty cycle between 500 us and 2500 us.
- *
- * A value of 180 sets the duty cycle to be 2500us, and a value of 0 sets the duty cycle to be 500us by default.
- *
- * This range can be modified to fine tune, and also tolerate different servos.
- *
- * @param value the level to set on the output pin, in the range 0 - 180
- * @param range which gives the span of possible values the i.e. lower and upper bounds center +/- range/2 (Defaults to: MICROBIT_PIN_DEFAULT_SERVO_RANGE)
- * @param center the center point from which to calculate the lower and upper bounds  (Defaults to: MICROBIT_PIN_DEFAULT_SERVO_CENTER)
- * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
- * if the given pin does not have analog capability.
- */
+  * Configures this IO pin as an analog/pwm output (if necessary) and configures the period to be 20ms,
+  * with a duty cycle between 500 us and 2500 us.
+  *
+  * A value of 180 sets the duty cycle to be 2500us, and a value of 0 sets the duty cycle to be 500us by default.
+  *
+  * This range can be modified to fine tune, and also tolerate different servos.
+  *
+  * @param value the level to set on the output pin, in the range 0 - 180.
+  *
+  * @param range which gives the span of possible values the i.e. the lower and upper bounds (center +/- range/2). Defaults to MICROBIT_PIN_DEFAULT_SERVO_RANGE.
+  *
+  * @param center the center point from which to calculate the lower and upper bounds. Defaults to MICROBIT_PIN_DEFAULT_SERVO_CENTER
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
+  *         if the given pin does not have analog capability.
+  */
 int MicroBitPin::setServoValue(int value, int range, int center)
 {
     //check if this pin has an analogue mode...
@@ -200,15 +216,16 @@ int MicroBitPin::setServoValue(int value, int range, int center)
 }
 
 /**
- * Configures this IO pin as an analogue input (if necessary and possible).
- * @return the current analogue level on the pin, in the range 0 - 1024, or MICROBIT_NOT_SUPPORTED if the given pin does not have analog capability.
- *
- * Example:
- * @code
- * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
- * P0.getAnalogValue(); // P0 is a value in the range of 0 - 1024
- * @endcode
- */
+  * Configures this IO pin as an analogue input (if necessary), and samples the Pin for its analog value.
+  *
+  * @return the current analogue level on the pin, in the range 0 - 1024, or
+  *         MICROBIT_NOT_SUPPORTED if the given pin does not have analog capability.
+  *
+  * @code
+  * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
+  * P0.getAnalogValue(); // P0 is a value in the range of 0 - 1024
+  * @endcode
+  */
 int MicroBitPin::getAnalogValue()
 {
     //check if this pin has an analogue mode...
@@ -228,6 +245,7 @@ int MicroBitPin::getAnalogValue()
 
 /**
   * Determines if this IO pin is currently configured as an input.
+  *
   * @return 1 if pin is an analog or digital input, 0 otherwise.
   */
 int MicroBitPin::isInput()
@@ -237,6 +255,7 @@ int MicroBitPin::isInput()
 
 /**
   * Determines if this IO pin is currently configured as an output.
+  *
   * @return 1 if pin is an analog or digital output, 0 otherwise.
   */
 int MicroBitPin::isOutput()
@@ -246,6 +265,7 @@ int MicroBitPin::isOutput()
 
 /**
   * Determines if this IO pin is currently configured for digital use.
+  *
   * @return 1 if pin is digital, 0 otherwise.
   */
 int MicroBitPin::isDigital()
@@ -255,6 +275,7 @@ int MicroBitPin::isDigital()
 
 /**
   * Determines if this IO pin is currently configured for analog use.
+  *
   * @return 1 if pin is analog, 0 otherwise.
   */
 int MicroBitPin::isAnalog()
@@ -263,16 +284,24 @@ int MicroBitPin::isAnalog()
 }
 
 /**
-  * Configures this IO pin as a makey makey style touch sensor (if necessary) and tests its current debounced state.
+  * Configures this IO pin as a "makey makey" style touch sensor (if necessary)
+  * and tests its current debounced state.
+  *
+  * Users can also subscribe to MicroBitButton events generated from this pin.
+  *
   * @return 1 if pin is touched, 0 if not, or MICROBIT_NOT_SUPPORTED if this pin does not support touch capability.
   *
-  * Example:
   * @code
+  * MicroBitMessageBus bus;
+  *
   * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_ALL);
   * if(P0.isTouched())
   * {
-  *   uBit.display.clear();
+  *     //do something!
   * }
+  *
+  * // subscribe to events generated by this pin!
+  * bus.listen(MICROBIT_ID_IO_P0, MICROBIT_BUTTON_EVT_CLICK, someFunction);
   * @endcode
   */
 int MicroBitPin::isTouched()
@@ -292,13 +321,14 @@ int MicroBitPin::isTouched()
 }
 
 /**
- * Configures this IO pin as an analog/pwm output if it isn't already, configures the period to be 20ms,
- * and sets the pulse width, based on the value it is given
- *
- * @param pulseWidth the desired pulse width in microseconds.
- * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
- * if the given pin does not have analog capability.
- */
+  * Configures this IO pin as an analog/pwm output if it isn't already, configures the period to be 20ms,
+  * and sets the pulse width, based on the value it is given.
+  *
+  * @param pulseWidth the desired pulse width in microseconds.
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range, or MICROBIT_NOT_SUPPORTED
+  *         if the given pin does not have analog capability.
+  */
 int MicroBitPin::setServoPulseUs(int pulseWidth)
 {
     //check if this pin has an analogue mode...
@@ -326,8 +356,9 @@ int MicroBitPin::setServoPulseUs(int pulseWidth)
   * Configures the PWM period of the analog output to the given value.
   *
   * @param period The new period for the analog output in microseconds.
+  *
   * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the
-  * given pin is not configured as an analog output.
+  *         given pin is not configured as an analog output.
   */
 int MicroBitPin::setAnalogPeriodUs(int period)
 {
@@ -338,22 +369,23 @@ int MicroBitPin::setAnalogPeriodUs(int period)
 }
 
 /**
- * Configures the PWM period of the analog output to the given value.
- *
- * @param period The new period for the analog output in microseconds.
- * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the
- * given pin is not configured as an analog output.
- */
+  * Configures the PWM period of the analog output to the given value.
+  *
+  * @param period The new period for the analog output in milliseconds.
+  *
+  * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the
+  *         given pin is not configured as an analog output.
+  */
 int MicroBitPin::setAnalogPeriod(int period)
 {
     return setAnalogPeriodUs(period*1000);
 }
 
 /**
-  * Retrieves the PWM period of the analog output.
+  * Obtains the PWM period of the analog output in microseconds.
   *
   * @return the period on success, or MICROBIT_NOT_SUPPORTED if the
-  * given pin is not configured as an analog output.
+  *         given pin is not configured as an analog output.
   */
 int MicroBitPin::getAnalogPeriodUs()
 {
@@ -364,10 +396,10 @@ int MicroBitPin::getAnalogPeriodUs()
 }
 
 /**
-  * Retrieves the PWM period of the analog output.
+  * Obtains the PWM period of the analog output in milliseconds.
   *
   * @return the period on success, or MICROBIT_NOT_SUPPORTED if the
-  * given pin is not configured as an analog output.
+  *         given pin is not configured as an analog output.
   */
 int MicroBitPin::getAnalogPeriod()
 {

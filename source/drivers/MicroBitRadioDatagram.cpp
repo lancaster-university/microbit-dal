@@ -8,31 +8,36 @@
   * It is envisaged that this would provide the basis for children to experiment with building their own, simple,
   * custom protocols.
   *
-  * NOTE: This API does not contain any form of encryption, authentication or authorisation. Its purpose is solely for use as a
+  * @note This API does not contain any form of encryption, authentication or authorisation. Its purpose is solely for use as a
   * teaching aid to demonstrate how simple communications operates, and to provide a sandpit through which learning can take place.
   * For serious applications, BLE should be considered a substantially more secure alternative.
   */
 
 /**
-  * Constructor.
-  *
-  * @param radio The underlying radio module used to send and receive data.
-  */
+* Constructor.
+*
+* Creates an instance of a MicroBitRadioDatagram which offers the ability
+* to broadcast simple text or binary messages to other micro:bits in the vicinity
+*
+* @param r The underlying radio module used to send and receive data.
+*/
 MicroBitRadioDatagram::MicroBitRadioDatagram(MicroBitRadio &r) : radio(r)
 {
     this->rxQueue = NULL;
 }
 
 /**
- * Retreives packet payload data into the given buffer.
- * If a data packet is already available, then it will be returned immediately to the caller.
- * If no data is available the EmptyString is returned, then MICROBIT_INVALID_PARAMETER is returned.
- *
- * @param buf A pointer to a valid memory location where the received data is to be stored.
- * @param len The maximum amount of data that can safely be stored in 'buf'
- *
- * @return The length of the data stored, or MICROBIT_INVALID_PARAMETER if no data is available, or the memory regions provided are invalid.
- */
+  * Retrieves packet payload data into the given buffer.
+  *
+  * If a data packet is already available, then it will be returned immediately to the caller.
+  * If no data is available then MICROBIT_INVALID_PARAMETER is returned.
+  *
+  * @param buf A pointer to a valid memory location where the received data is to be stored
+  *
+  * @param len The maximum amount of data that can safely be stored in 'buf'
+  *
+  * @return The length of the data stored, or MICROBIT_INVALID_PARAMETER if no data is available, or the memory regions provided are invalid.
+  */
 int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
 {
     if (buf == NULL || rxQueue == NULL || len < 0)
@@ -52,12 +57,13 @@ int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
 }
 
 /**
- * Retreives packet payload data into the given buffer.
- * If a data packet is already available, then it will be returned immediately to the caller,
- * in the form of a string. If no data is available the EmptyString is returned.
- *
- * @return the data received, or the EmptyString if no data is available.
- */
+  * Retreives packet payload data into the given buffer.
+  *
+  * If a data packet is already available, then it will be returned immediately to the caller
+  * in the form of a PacketBuffer.
+  *
+  * @return the data received, or an empty PacketBuffer if no data is available.
+  */
 PacketBuffer MicroBitRadioDatagram::recv()
 {
     if (rxQueue == NULL)
@@ -73,13 +79,18 @@ PacketBuffer MicroBitRadioDatagram::recv()
 }
 
 /**
- * Transmits the given buffer onto the broadcast radio.
- * The call will wait until the transmission of the packet has completed before returning.
- *
- * @param buffer The packet contents to transmit.
- * @param len The number of bytes to transmit.
- * @return MICROBIT_OK on success.
- */
+  * Transmits the given buffer onto the broadcast radio.
+  *
+  * This is a synchronous call that will wait until the transmission of the packet
+  * has completed before returning.
+  *
+  * @param buffer The packet contents to transmit.
+  *
+  * @param len The number of bytes to transmit.
+  *
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
+  *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
+  */
 int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
 {
     if (buffer == NULL || len < 0 || len > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
@@ -97,33 +108,42 @@ int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
 }
 
 /**
- * Transmits the given buffer onto the broadcast radio.
- * The call will wait until the transmission of the packet has completed before returning.
- *
- * @param data The packet contents to transmit.
- * @return MICROBIT_OK on success.
- */
+  * Transmits the given string onto the broadcast radio.
+  *
+  * This is a synchronous call that will wait until the transmission of the packet
+  * has completed before returning.
+  *
+  * @param data The packet contents to transmit.
+  *
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
+  *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
+  */
 int MicroBitRadioDatagram::send(PacketBuffer data)
 {
     return send((uint8_t *)data.getBytes(), data.length());
 }
 
 /**
- * Transmits the given string onto the broadcast radio.
- * The call will wait until the transmission of the packet has completed before returning.
- *
- * @param data The packet contents to transmit.
- * @return MICROBIT_OK on success.
- */
+  * Transmits the given string onto the broadcast radio.
+  *
+  * This is a synchronous call that will wait until the transmission of the packet
+  * has completed before returning.
+  *
+  * @param data The packet contents to transmit.
+  *
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
+  *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
+  */
 int MicroBitRadioDatagram::send(ManagedString data)
 {
     return send((uint8_t *)data.toCharArray(), data.length());
 }
 
 /**
- * Protocol handler callback. This is called when the radio receives a packet marked as a datagram.
- * This function process this packet, and queues it for user reception.
- */
+  * Protocol handler callback. This is called when the radio receives a packet marked as a datagram.
+  *
+  * This function process this packet, and queues it for user reception.
+  */
 void MicroBitRadioDatagram::packetReceived()
 {
     FrameBuffer *packet = radio.recv();
@@ -156,4 +176,3 @@ void MicroBitRadioDatagram::packetReceived()
 
     MicroBitEvent(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM);
 }
-

@@ -14,16 +14,17 @@
 */
 
 /**
- * Constructor.
- * Create a matrix of the given size.
- * @param rows the number of rows in the matrix to be created.
- * @param cols the number of columns in the matrix to be created.
- *
- * Example:
- * @code
- * Matrix4(10, 4);        // Creates a Matrix with 10 rows and 4 columns.
- * @endcode
- */
+  * Constructor.
+  * Create a matrix of the given size.
+  *
+  * @param rows the number of rows in the matrix to be created.
+  *
+  * @param cols the number of columns in the matrix to be created.
+  *
+  * @code
+  * Matrix4(10, 4);        // Creates a Matrix with 10 rows and 4 columns.
+  * @endcode
+  */
 Matrix4::Matrix4(int rows, int cols)
 {
 	this->rows = rows;
@@ -38,16 +39,15 @@ Matrix4::Matrix4(int rows, int cols)
 }
 
 /**
-* Constructor.
-* Create a matrix that is an identicval copy of the given matrix.
-* @param matrix The matrix to copy.
-*
-* Example:
-* @code
-*
-* Matrix newMatrix(matrix);        .
-* @endcode
-*/
+  * Constructor.
+  * Create a matrix that is an identical copy of the given matrix.
+  *
+  * @param matrix The matrix to copy.
+  *
+  * @code
+  * Matrix newMatrix(matrix);        .
+  * @endcode
+  */
 Matrix4::Matrix4(const Matrix4 &matrix)
 {
 	this->rows = matrix.rows;
@@ -69,47 +69,46 @@ Matrix4::Matrix4(const Matrix4 &matrix)
 }
 
 /**
-* Determines the number of columns in this matrix.
-*
-* @return The number of columns in the matrix.
-*
-* Example:
-* @code
-* int c = matrix.width();
-* @endcode
-*/
+  * Determines the number of columns in this matrix.
+  *
+  * @return The number of columns in the matrix.
+  *
+  * @code
+  * int c = matrix.width();
+  * @endcode
+  */
 int Matrix4::width()
 {
 	return cols;
 }
 
 /**
-* Determines the number of rows in this matrix.
-*
-* @return The number of rows in the matrix.
-*
-* Example:
-* @code
-* int r = matrix.height();
-* @endcode
-*/
+  * Determines the number of rows in this matrix.
+  *
+  * @return The number of rows in the matrix.
+  *
+  * @code
+  * int r = matrix.height();
+  * @endcode
+  */
 int Matrix4::height()
 {
 	return rows;
 }
 
 /**
-* Reads the matrix element at the given position.
-*
-* @param row The row of the element to read
-* @param col The column of the element to read
-* @return The value of the matrix element at the given position. NAN is returned if the given index is out of range.
-*
-* Example:
-* @code
-* float v = matrix.get(1,2);
-* @endcode
-*/
+  * Reads the matrix element at the given position.
+  *
+  * @param row The row of the element to read.
+  *
+  * @param col The column of the element to read.
+  *
+  * @return The value of the matrix element at the given position. 0 is returned if the given index is out of range.
+  *
+  * @code
+  * float v = matrix.get(1,2);
+  * @endcode
+  */
 float Matrix4::get(int row, int col)
 {
 	if (row < 0 || col < 0 || row >= rows || col >= cols)
@@ -119,17 +118,18 @@ float Matrix4::get(int row, int col)
 }
 
 /**
-* Writes the matrix element at the given position.
-*
-* @param row The row of the element to write
-* @param col The column of the element to write
-* @param v The new value of the element
-*
-* Example:
-* @code
-* matrix.set(1,2,42.0);
-* @endcode
-*/
+  * Writes the matrix element at the given position.
+  *
+  * @param row The row of the element to write.
+  *
+  * @param col The column of the element to write.
+  *
+  * @param v The new value of the element.
+  *
+  * @code
+  * matrix.set(1,2,42.0);
+  * @endcode
+  */
 void Matrix4::set(int row, int col, float v)
 {
 	if (row < 0 || col < 0 || row >= rows || col >= cols)
@@ -139,14 +139,14 @@ void Matrix4::set(int row, int col, float v)
 }
 
 /**
-* Transposes this matrix.
-* @return the resultant matrix.
-*
-* Example:
-* @code
-* matrix.transpose();
-* @endcode
-*/
+  * Transposes this matrix.
+  *
+  * @return the resultant matrix.
+  *
+  * @code
+  * matrix.transpose();
+  * @endcode
+  */
 Matrix4 Matrix4::transpose()
 {
 	Matrix4 result = Matrix4(cols, rows);
@@ -159,14 +159,18 @@ Matrix4 Matrix4::transpose()
 }
 
 /**
-* Multiplies this matrix with the given matrix (if possible).
-* @return the resultant matrix. An empty matrix is returned if the operation canot be completed.
-*
-* Example:
-* @code
-* Matrix result = matrixA.multiply(matrixB);
-* @endcode
-*/
+  * Multiplies this matrix with the given matrix (if possible).
+  *
+  * @param matrix the matrix to multiply this matrix's values against.
+  *
+  * @param transpose Transpose the matrices before multiplication. Defaults to false.
+  *
+  * @return the resultant matrix. An empty matrix is returned if the operation canot be completed.
+  *
+  * @code
+  * Matrix result = matrixA.multiply(matrixB);
+  * @endcode
+  */
 Matrix4 Matrix4::multiply(Matrix4 &matrix, bool transpose)
 {
     int w = transpose ? height() : width();
@@ -194,16 +198,15 @@ Matrix4 Matrix4::multiply(Matrix4 &matrix, bool transpose)
 }
 
 /**
-* Performs an optimised inversion of a 4x4 matrix.
-* Only 4x4 matrices are supported by this operation.
-*
-* @return the resultant matrix. An empty matrix is returned if the operation canot be completed.
-*
-* Example:
-* @code
-* Matrix result = matrixA.invert();
-* @endcode
-*/
+  * Performs an optimised inversion of a 4x4 matrix.
+  * Only 4x4 matrices are supported by this operation.
+  *
+  * @return the resultant matrix. An empty matrix is returned if the operation canot be completed.
+  *
+  * @code
+  * Matrix result = matrixA.invert();
+  * @endcode
+  */
 Matrix4 Matrix4::invert()
 {
 	// We only support square matrices of size 4...
@@ -243,8 +246,10 @@ Matrix4 Matrix4::invert()
 }
 
 /**
-* Destructor.
-*/
+  * Destructor.
+  *
+  * Frees any memory consumed by this Matrix4 instance.
+  */
 Matrix4::~Matrix4()
 {
 	if (data != NULL)

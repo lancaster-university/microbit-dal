@@ -1,7 +1,7 @@
 /**
   * Class definition for MicroBit IO.
   *
-  * Represents a single IO pin on the edge connector.
+  * Represents a collection of all I/O pins on the edge connector.
   */
 
 #include "MicroBitConfig.h"
@@ -9,7 +9,11 @@
 
 /**
   * Constructor.
+  *
   * Create a representation of all given I/O pins on the edge connector
+  *
+  * Accepts a sequence of unique ID's used to distinguish events raised
+  * by MicroBitPin instances on the default EventModel.
   */
 MicroBitIO::MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
                        int ID_P3, int ID_P4, int ID_P5,

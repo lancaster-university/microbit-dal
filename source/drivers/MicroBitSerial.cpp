@@ -14,17 +14,19 @@ int MicroBitSerial::baudrate = 0;
   * Create an instance of MicroBitSerial
   *
   * @param tx the Pin to be used for transmission
+  *
   * @param rx the Pin to be used for receiving data
+  *
   * @param rxBufferSize the size of the buffer to be used for receiving bytes
+  *
   * @param txBufferSize the size of the buffer to be used for transmitting bytes
   *
-  * Example:
   * @code
   * MicroBitSerial serial(USBTX, USBRX);
   * @endcode
   * @note the default baud rate is 115200. More API details can be found:
   *       -https://github.com/mbedmicro/mbed/blob/master/libraries/mbed/api/SerialBase.h
-  *       -https://github.com/mbedmicro/mbed/blob/master/libraries/mbed/api/Serial.h
+  *       -https://github.com/mbedmicro/mbed/blob/master/libraries/mbed/api/RawSerial.h
   *
   *       Buffers aren't allocated until the first send or receive respectively.
   */
@@ -132,7 +134,8 @@ void MicroBitSerial::dataWritten()
   * An internal method to configure an interrupt on tx buffer and also
   * a best effort copy operation to move bytes from a user buffer to our txBuff
   *
-  * @param string a pointer to the first character of the users' buffer
+  * @param string a pointer to the first character of the users' buffer.
+  *
   * @param len the length of the string, and ultimately the maximum number of bytes
   *        that will be copied dependent on the state of txBuff
   *
@@ -282,7 +285,8 @@ void MicroBitSerial::send(MicroBitSerialMode mode)
   *
   *         Defaults to SYNC_SLEEP.
   *
-  * @return the a character from the circular buffer, or MICROBIT_NO_DATA is there a no characters in the buffer.
+  * @return a character from the circular buffer, or MICROBIT_NO_DATA is there
+  *         are no characters in the buffer.
   */
 int MicroBitSerial::getChar(MicroBitSerialMode mode)
 {
@@ -312,9 +316,13 @@ int MicroBitSerial::getChar(MicroBitSerialMode mode)
   * An internal method that copies values from a circular buffer to a linear buffer.
   *
   * @param circularBuff a pointer to the source circular buffer
+  *
   * @param circularBuffSize the size of the circular buffer
+  *
   * @param linearBuff a pointer to the destination linear buffer
+  *
   * @param tailPosition the tail position in the circular buffer you want to copy from
+  *
   * @param headPosition the head position in the circular buffer you want to copy to
   *
   * @note this method assumes that the linear buffer has the appropriate amount of
@@ -333,9 +341,10 @@ void MicroBitSerial::circularCopy(uint8_t *circularBuff, uint8_t circularBuffSiz
 }
 
 /**
-  * Sends a single character via Serial
+  * Sends a single character over the serial line.
   *
   * @param c the character to send
+  *
   * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
   *        gives a different behaviour:
   *
@@ -382,9 +391,10 @@ int MicroBitSerial::sendChar(char c, MicroBitSerialMode mode)
 }
 
 /**
-  * Sends a ManagedString via Serial
+  * Sends a ManagedString over the serial line.
   *
   * @param s the string to send
+  *
   * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
   *        gives a different behaviour:
   *
@@ -409,10 +419,12 @@ int MicroBitSerial::send(ManagedString s, MicroBitSerialMode mode)
 }
 
 /**
-  * Sends a buffer of known length via serial
+  * Sends a buffer of known length over the serial line.
   *
   * @param buffer a pointer to the first character of the buffer
+  *
   * @param len the number of bytes that are safely available to read.
+  *
   * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
   *        gives a different behaviour:
   *
@@ -506,6 +518,7 @@ int MicroBitSerial::read(MicroBitSerialMode mode)
   * Reads multiple characters from the rxBuff and returns them as a ManagedString
   *
   * @param size the number of characters to read.
+  *
   * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
   *        gives a different behaviour:
   *
@@ -523,8 +536,7 @@ int MicroBitSerial::read(MicroBitSerialMode mode)
   *
   *         Defaults to SYNC_SLEEP.
   *
-  * @return A ManagedString with the length > 0, or an empty ManagedString if
-  *         an error was encountered during the read.
+  * @return A ManagedString, or an empty ManagedString if an error was encountered during the read.
   */
 ManagedString MicroBitSerial::read(int size, MicroBitSerialMode mode)
 {
@@ -541,8 +553,10 @@ ManagedString MicroBitSerial::read(int size, MicroBitSerialMode mode)
 /**
   * Reads multiple characters from the rxBuff and fills a user buffer.
   *
-  * @param buffer a pointer to a user allocated buffer
+  * @param buffer a pointer to a user allocated buffer.
+  *
   * @param bufferLen the amount of data that can be safely stored
+  *
   * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
   *        gives a different behaviour:
   *
@@ -623,6 +637,7 @@ int MicroBitSerial::read(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode
   * Reads until one of the delimeters matches a character in the rxBuff
   *
   * @param delimeters a ManagedString containing a sequence of delimeter characters e.g. ManagedString("\r\n")
+  *
   * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
   *        gives a different behaviour:
   *
@@ -736,6 +751,7 @@ ManagedString MicroBitSerial::readUntil(ManagedString delimeters, MicroBitSerial
 /**
   * A wrapper around the inherited method "baud" so we can trap the baud rate
   * as it changes and restore it if redirect() is called.
+  *
   * @param baudrate the new baudrate. See:
   *         - https://github.com/mbedmicro/mbed/blob/master/libraries/mbed/targets/hal/TARGET_NORDIC/TARGET_MCU_NRF51822/serial_api.c
   *        for permitted baud rates.
@@ -758,6 +774,7 @@ void MicroBitSerial::baud(int baudrate)
   * A way of dynamically configuring the serial instance to use pins other than USBTX and USBRX.
   *
   * @param tx the new transmission pin.
+  *
   * @param rx the new reception pin.
   *
   * @return MICROBIT_SERIAL_IN_USE if another fiber is currently transmitting or receiving, otherwise MICROBIT_OK.
@@ -794,7 +811,8 @@ int MicroBitSerial::redirect(PinName tx, PinName rx)
 /**
   * Configures an event to be fired after "len" characters.
   *
-  * @param len the number of characters to wait before triggering the event
+  * @param len the number of characters to wait before triggering the event.
+  *
   * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
   *        gives a different behaviour:
   *
@@ -826,6 +844,7 @@ int MicroBitSerial::eventAfter(int len, MicroBitSerialMode mode)
   * Configures an event to be fired on a match with one of the delimeters.
   *
   * @param delimeters the characters to match received characters against e.g. ManagedString("\r\n")
+  *
   * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
   *        gives a different behaviour:
   *
@@ -856,12 +875,12 @@ int MicroBitSerial::eventOn(ManagedString delimeters, MicroBitSerialMode mode)
 }
 
 /**
-  * Determines if we have space in our rxBuff.
+  * Determines whether there is any data waiting in our Rx buffer.
   *
   * @return 1 if we have space, 0 if we do not.
   *
-  * @note the reason we do not wrap the super's readable() method is so that we
-  *       don't interfere with communities that use manual calls to uBit.serial.readable()
+  * @note We do not wrap the super's readable() method as we don't want to
+  *       interfere with communities that use manual calls to serial.readable().
   */
 int MicroBitSerial::isReadable()
 {
@@ -873,8 +892,8 @@ int MicroBitSerial::isReadable()
   *
   * @return 1 if we have space, 0 if we do not.
   *
-  * @note the reason we do not wrap the super's write() method is so that we
-  *       don't interfere with communities that use manual calls to uBit.serial.writeable()
+  * @note We do not wrap the super's writeable() method as we don't want to
+  *       interfere with communities that use manual calls to serial.writeable().
   */
 int MicroBitSerial::isWriteable()
 {
@@ -882,12 +901,12 @@ int MicroBitSerial::isWriteable()
 }
 
 /**
-  * reconfigures the size of our rxBuff
+  * Reconfigures the size of our rxBuff
   *
   * @param size the new size for our rxBuff
   *
   * @return MICROBIT_SERIAL_IN_USE if another fiber is currently using this instance
-  *         for reception, otherwise MICROBIT_OK or MICROBIT_NO_RESOURCES if malloc of the buffer fails.
+  *         for reception, otherwise MICROBIT_OK.
   */
 int MicroBitSerial::setRxBufferSize(uint8_t size)
 {
@@ -906,12 +925,12 @@ int MicroBitSerial::setRxBufferSize(uint8_t size)
 }
 
 /**
-  * reconfigures the size of our txBuff
+  * Reconfigures the size of our txBuff
   *
   * @param size the new size for our txBuff
   *
   * @return MICROBIT_SERIAL_IN_USE if another fiber is currently using this instance
-  *         for transmission, otherwise MICROBIT_OK or MICROBIT_NO_RESOURCES if malloc of the buffer fails.
+  *         for transmission, otherwise MICROBIT_OK.
   */
 int MicroBitSerial::setTxBufferSize(uint8_t size)
 {
@@ -930,7 +949,9 @@ int MicroBitSerial::setTxBufferSize(uint8_t size)
 }
 
 /**
-  * @return the current size of our rxBuff in bytes
+  * The size of our rx buffer in bytes.
+  *
+  * @return the current size of rxBuff in bytes
   */
 int MicroBitSerial::getRxBufferSize()
 {
@@ -938,7 +959,9 @@ int MicroBitSerial::getRxBufferSize()
 }
 
 /**
-  * @return the current size of our txBuff in bytes
+  * The size of our tx buffer in bytes.
+  *
+  * @return the current size of txBuff in bytes
   */
 int MicroBitSerial::getTxBufferSize()
 {
@@ -946,7 +969,8 @@ int MicroBitSerial::getTxBufferSize()
 }
 
 /**
-  * Sets the tail to match the head of our circular buffer for reception
+  * Sets the tail to match the head of our circular buffer for reception,
+  * effectively clearing the reception buffer.
   *
   * @return MICROBIT_SERIAL_IN_USE if another fiber is currently using this instance
   *         for reception, otherwise MICROBIT_OK.
@@ -966,7 +990,8 @@ int MicroBitSerial::clearRxBuffer()
 }
 
 /**
-  * Sets the tail to match the head of our circular buffer for transmission
+  * Sets the tail to match the head of our circular buffer for transmission,
+  * effectively clearing the transmission buffer.
   *
   * @return MICROBIT_SERIAL_IN_USE if another fiber is currently using this instance
   *         for transmission, otherwise MICROBIT_OK.
@@ -986,6 +1011,9 @@ int MicroBitSerial::clearTxBuffer()
 }
 
 /**
+  * The number of bytes currently stored in our rx buffer waiting to be digested,
+  * by the user.
+  *
   * @return The currently buffered number of bytes in our rxBuff.
   */
 int MicroBitSerial::rxBufferedSize()
@@ -997,6 +1025,9 @@ int MicroBitSerial::rxBufferedSize()
 }
 
 /**
+  * The number of bytes currently stored in our tx buffer waiting to be transmitted
+  * by the hardware.
+  *
   * @return The currently buffered number of bytes in our txBuff.
   */
 int MicroBitSerial::txBufferedSize()
@@ -1008,9 +1039,11 @@ int MicroBitSerial::txBufferedSize()
 }
 
 /**
+  * Determines if the serial bus is currently in use by another fiber for reception.
+  *
   * @return The state of our mutex lock for reception.
   *
-  * @note only one fiber can call read at a time
+  * @note Only one fiber can call read at a time
   */
 int MicroBitSerial::rxInUse()
 {
@@ -1018,9 +1051,11 @@ int MicroBitSerial::rxInUse()
 }
 
 /**
+  * Determines if the serial bus is currently in use by another fiber for transmission.
+  *
   * @return The state of our mutex lock for transmition.
   *
-  * @note only one fiber can call send at a time
+  * @note Only one fiber can call send at a time
   */
 int MicroBitSerial::txInUse()
 {
@@ -1031,9 +1066,6 @@ int MicroBitSerial::txInUse()
   * Detaches a previously configured interrupt
   *
   * @param interruptType one of Serial::RxIrq or Serial::TxIrq
-  *
-  * @note #HACK, this should really be further up in the mbed libs, after
-  *       attaching, you would expect to be able to detach...
   */
 void MicroBitSerial::detach(Serial::IrqType interruptType)
 {

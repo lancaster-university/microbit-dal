@@ -1,7 +1,7 @@
 /**
-  * Class definition for a MicroBitDisplay.
+  * Class definition for MicroBitDisplay.
   *
-  * A MicroBitDisplay represents the LED matrix array on the MicroBit device.
+  * A MicroBitDisplay represents the LED matrix array on the micro:bit.
   */
 #include "MicroBitConfig.h"
 #include "MicroBitDisplay.h"
@@ -14,15 +14,17 @@ const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 1
 
 /**
   * Constructor.
-  * Create a representation of a display of a given size.
+  *
+  * Create a software representation the micro:bit's 5x5 LED matrix.
   * The display is initially blank.
   *
-  * @param id The ID display should use when sending events on the MessageBus.
-  * @param map The mapping information that relates pin inputs/outputs to physical screen coordinates.
+  * @param id The id the display should use when sending events on the MessageBus. Defaults to MICROBIT_ID_DISPLAY.
   *
-  * Example:
+  * @param map The mapping information that relates pin inputs/outputs to physical screen coordinates.
+  *            Defaults to microbitMatrixMap, defined in MicroBitMatrixMaps.h.
+  *
   * @code
-  * MicroBitDisplay display(MICROBIT_ID_DISPLAY, 5, 5),
+  * MicroBitDisplay display;
   * @endcode
   */
 MicroBitDisplay::MicroBitDisplay(uint16_t id, const MatrixMap &map) :
@@ -311,7 +313,7 @@ void MicroBitDisplay::updateScrollText()
 
 /**
   * Internal printText update method.
-  * Paste in the next char in the string.
+  * Paste the next character in the string.
   */
 void MicroBitDisplay::updatePrintText()
 {
@@ -401,9 +403,8 @@ void MicroBitDisplay::stopAnimation()
 }
 
 /**
-  * Blocks the current fiber until the display is available (i.e. not effect is being displayed).
+  * Blocks the current fiber until the display is available (i.e. does not effect is being displayed).
   * Animations are queued until their time to display.
-  *
   */
 void MicroBitDisplay::waitForFreeDisplay()
 {
@@ -427,13 +428,15 @@ void MicroBitDisplay::fiberWait()
   * Prints the given character to the display, if it is not in use.
   *
   * @param c The character to display.
-  * @param delay Optional parameter - the time for which to show the character. Zero displays the character forever.
+  *
+  * @param delay Optional parameter - the time for which to show the character. Zero displays the character forever,
+  *              or until the Displays next use.
+  *
   * @return MICROBIT_OK, MICROBIT_BUSY is the screen is in use, or MICROBIT_INVALID_PARAMETER.
   *
-  * Example:
   * @code
-  * uBit.display.printAsync('p');
-  * uBit.display.printAsync('p',100);
+  * display.printAsync('p');
+  * display.printAsync('p',100);
   * @endcode
   */
 int MicroBitDisplay::printCharAsync(char c, int delay)
@@ -463,16 +466,18 @@ int MicroBitDisplay::printCharAsync(char c, int delay)
 }
 
 /**
-  * Prints the given string to the display, one character at a time, if the display is not in use.
+  * Prints the given ManagedString to the display, one character at a time.
   * Returns immediately, and executes the animation asynchronously.
   *
   * @param s The string to display.
-  * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
   *
-  * Example:
+  * @param delay The time to delay between characters, in milliseconds. Must be > 0.
+  *              Defaults to: MICROBIT_DEFAULT_PRINT_SPEED.
+  *
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  *
   * @code
-  * uBit.display.printAsync("abc123",400);
+  * display.printAsync("abc123",400);
   * @endcode
   */
 int MicroBitDisplay::printAsync(ManagedString s, int delay)
@@ -506,15 +511,18 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
   * Returns immediately, and executes the animation asynchronously.
   *
   * @param i The image to display.
-  * @param x The horizontal position on the screen to display the image (default 0)
-  * @param y The vertical position on the screen to display the image (default 0)
-  * @param alpha Treats the brightness level '0' as transparent (default 0)
-  * @param delay The time to delay between characters, in milliseconds. set to 0 to display forever. (default 0).
   *
-  * Example:
+  * @param x The horizontal position on the screen to display the image. Defaults to 0.
+  *
+  * @param y The vertical position on the screen to display the image. Defaults to 0.
+  *
+  * @param alpha Treats the brightness level '0' as transparent. Defaults to 0.
+  *
+  * @param delay The time to delay between characters, in milliseconds. Defaults to 0.
+  *
   * @code
   * MicrobitImage i("1,1,1,1,1\n1,1,1,1,1\n");
-  * uBit.display.print(i,400);
+  * display.print(i,400);
   * @endcode
   */
 int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int delay)
@@ -542,16 +550,18 @@ int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int de
 }
 
 /**
-  * Prints the given character to the display, and wait for it to complete.
+  * Prints the given character to the display.
   *
   * @param c The character to display.
-  * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, MICROBIT_CANCELLED, MICROBIT_INVALID_PARAMETER or MICROBIT_NOT_SUPPORTED if the scheduler is not running
   *
-  * Example:
+  * @param delay Optional parameter - the time for which to show the character. Zero displays the character forever,
+  *              or until the Displays next use.
+  *
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+  *
   * @code
-  * uBit.display.print('p');
-  * uBit.display.print('p',100);
+  * display.printAsync('p');
+  * display.printAsync('p',100);
   * @endcode
   */
 int MicroBitDisplay::printChar(char c, int delay)
@@ -581,16 +591,18 @@ int MicroBitDisplay::printChar(char c, int delay)
 
 /**
   * Prints the given string to the display, one character at a time.
-  * Uses the given delay between characters.
+  *
   * Blocks the calling thread until all the text has been displayed.
   *
   * @param s The string to display.
-  * @param delay The time to delay between characters, in milliseconds. Must be > 0.
+  *
+  * @param delay The time to delay between characters, in milliseconds. Defaults
+  *              to: MICROBIT_DEFAULT_PRINT_SPEED.
+  *
   * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
   *
-  * Example:
   * @code
-  * uBit.display.print("abc123",400);
+  * display.print("abc123",400);
   * @endcode
   */
 int MicroBitDisplay::print(ManagedString s, int delay)
@@ -626,16 +638,23 @@ int MicroBitDisplay::print(ManagedString s, int delay)
 
 /**
   * Prints the given image to the display.
-  * Blocks the calling thread until all the text has been displayed.
+  * Blocks the calling thread until all the image has been displayed.
   *
   * @param i The image to display.
-  * @param delay The time to display the image for, or zero to show the image forever. Must be >= 0.
-  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
   *
-  * Example:
+  * @param x The horizontal position on the screen to display the image. Defaults to 0.
+  *
+  * @param y The vertical position on the screen to display the image. Defaults to 0.
+  *
+  * @param alpha Treats the brightness level '0' as transparent. Defaults to 0.
+  *
+  * @param delay The time to display the image for, or zero to show the image forever. Defaults to 0.
+  *
+  * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
+  *
   * @code
   * MicrobitImage i("1,1,1,1,1\n1,1,1,1,1\n");
-  * uBit.display.print(i,400);
+  * display.print(i,400);
   * @endcode
   */
 int MicroBitDisplay::print(MicroBitImage i, int x, int y, int alpha, int delay)
@@ -665,16 +684,17 @@ int MicroBitDisplay::print(MicroBitImage i, int x, int y, int alpha, int delay)
 
 /**
   * Scrolls the given string to the display, from right to left.
-  * Uses the given delay between characters.
   * Returns immediately, and executes the animation asynchronously.
   *
   * @param s The string to display.
-  * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
+  *
+  * @param delay The time to delay between characters, in milliseconds. Defaults
+  *              to: MICROBIT_DEFAULT_SCROLL_SPEED.
+  *
   * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
   *
-  * Example:
   * @code
-  * uBit.display.scrollAsync("abc123",100);
+  * display.scrollAsync("abc123",100);
   * @endcode
   */
 int MicroBitDisplay::scrollAsync(ManagedString s, int delay)
@@ -707,14 +727,17 @@ int MicroBitDisplay::scrollAsync(ManagedString s, int delay)
   * Returns immediately, and executes the animation asynchronously.
   *
   * @param image The image to display.
-  * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-  * @param stride The number of pixels to move in each update. Default value is the screen width.
+  *
+  * @param delay The time between updates, in milliseconds. Defaults
+  *              to: MICROBIT_DEFAULT_SCROLL_SPEED.
+  *
+  * @param stride The number of pixels to shift by in each update. Defaults to MICROBIT_DEFAULT_SCROLL_STRIDE.
+  *
   * @return MICROBIT_OK, MICROBIT_BUSY if the display is already in use, or MICROBIT_INVALID_PARAMETER.
   *
-  * Example:
   * @code
   * MicrobitImage i("1,1,1,1,1\n1,1,1,1,1\n");
-  * uBit.display.scrollAsync(i,100,1);
+  * display.scrollAsync(i,100,1);
   * @endcode
   */
 int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
@@ -744,17 +767,18 @@ int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
 }
 
 /**
-  * Scrolls the given string to the display, from right to left.
-  * Uses the given delay between characters.
-  * Blocks the calling thread until all the text has been displayed.
+  * Scrolls the given string across the display, from right to left.
+  * Blocks the calling thread until all text has been displayed.
   *
   * @param s The string to display.
-  * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-  * @return MICROBIT_OK, MICROBIT_CANCELLED, MICROBIT_INVALID_PARAMETER or MICROBIT_NOT_SUPPORTED if the scheduler is not running.
   *
-  * Example:
+  * @param delay The time to delay between characters, in milliseconds. Defaults
+  *              to: MICROBIT_DEFAULT_SCROLL_SPEED.
+  *
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+  *
   * @code
-  * uBit.display.scrollString("abc123",100);
+  * display.scroll("abc123",100);
   * @endcode
   */
 int MicroBitDisplay::scroll(ManagedString s, int delay)
@@ -789,14 +813,17 @@ int MicroBitDisplay::scroll(ManagedString s, int delay)
   * Blocks the calling thread until all the text has been displayed.
   *
   * @param image The image to display.
-  * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-  * @param stride The number of pixels to move in each update. Default value is the screen width.
-  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER
   *
-  * Example:
+  * @param delay The time between updates, in milliseconds. Defaults
+  *              to: MICROBIT_DEFAULT_SCROLL_SPEED.
+  *
+  * @param stride The number of pixels to shift by in each update. Defaults to MICROBIT_DEFAULT_SCROLL_STRIDE.
+  *
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+  *
   * @code
   * MicrobitImage i("1,1,1,1,1\n1,1,1,1,1\n");
-  * uBit.display.scroll(i,100,1);
+  * display.scroll(i,100,1);
   * @endcode
   */
 int MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
@@ -831,18 +858,23 @@ int MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
   * Returns immediately.
   *
   * @param image The image to display.
-  * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-  * @param stride The number of pixels to move in each update. Default value is the screen width.
+  *
+  * @param delay The time to delay between each update of the display, in milliseconds.
+  *
+  * @param stride The number of pixels to shift by in each update.
+  *
+  * @param startingPosition the starting position on the display for the animation
+  *                         to begin at. Defaults to MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS.
+  *
   * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, or MICROBIT_INVALID_PARAMETER.
   *
-  * Example:
   * @code
   * const int heart_w = 10;
   * const int heart_h = 5;
   * const uint8_t heart[] = { 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, };
   *
   * MicroBitImage i(heart_w,heart_h,heart);
-  * uBit.display.animateAsync(i,100,5);
+  * display.animateAsync(i,100,5);
   * @endcode
   */
 int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, int startingPosition)
@@ -879,20 +911,23 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
   * "Animates" the current image across the display with a given stride, finishing on the last frame of the animation.
   * Blocks the calling thread until the animation is complete.
   *
-  * @param image The image to display.
-  * @param delay The time to delay between each update to the display, in milliseconds. Must be > 0.
-  * @param stride The number of pixels to move in each update. Default value is the screen width.
-  * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, MICROBIT_INVALID_PARAMETER or
-  * MICROBIT_NOT_SUPPORTED if the scheduler is not running
   *
-  * Example:
+  * @param delay The time to delay between each update of the display, in milliseconds.
+  *
+  * @param stride The number of pixels to shift by in each update.
+  *
+  * @param startingPosition the starting position on the display for the animation
+  *                         to begin at. Defaults to MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS.
+  *
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+  *
   * @code
   * const int heart_w = 10;
   * const int heart_h = 5;
   * const uint8_t heart[] = { 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, };
   *
   * MicroBitImage i(heart_w,heart_h,heart);
-  * uBit.display.animate(i,100,5);
+  * display.animate(i,100,5);
   * @endcode
   */
 int MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int startingPosition)
@@ -926,13 +961,14 @@ int MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int sta
 
 
 /**
-  * Sets the display brightness to the specified level.
-  * @param b The brightness to set the brightness to, in the range 0..255.
+  * Configures the brightness of the display.
+  *
+  * @param b The brightness to set the brightness to, in the range 0 - 255.
+  *
   * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER
   *
-  * Example:
   * @code
-  * uBit.display.setBrightness(255); //max brightness
+  * display.setBrightness(255); //max brightness
   * @endcode
   */
 int MicroBitDisplay::setBrightness(int b)
@@ -947,12 +983,13 @@ int MicroBitDisplay::setBrightness(int b)
 }
 
 /**
-  * Sets the mode of the display.
-  * @param mode The mode to swap the display into. (can be either DISPLAY_MODE_GREYSCALE, DISPLAY_MODE_BLACK_AND_WHITE, DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+  * Configures the mode of the display.
   *
-  * Example:
+  * @param mode The mode to swap the display into. One of: DISPLAY_MODE_GREYSCALE,
+  *             DISPLAY_MODE_BLACK_AND_WHITE, DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE
+  *
   * @code
-  * uBit.display.setDisplayMode(DISPLAY_MODE_GREYSCALE); //per pixel brightness
+  * display.setDisplayMode(DISPLAY_MODE_GREYSCALE); //per pixel brightness
   * @endcode
   */
 void MicroBitDisplay::setDisplayMode(DisplayMode mode)
@@ -975,7 +1012,8 @@ void MicroBitDisplay::setDisplayMode(DisplayMode mode)
 }
 
 /**
-  * Gets the mode of the display.
+  * Retrieves the mode of the display.
+  *
   * @return the current mode of the display
   */
 int MicroBitDisplay::getDisplayMode()
@@ -985,11 +1023,11 @@ int MicroBitDisplay::getDisplayMode()
 
 /**
   * Fetches the current brightness of this display.
+  *
   * @return the brightness of this display, in the range 0..255.
   *
-  * Example:
   * @code
-  * uBit.display.getBrightness(); //the current brightness
+  * display.getBrightness(); //the current brightness
   * @endcode
   */
 int MicroBitDisplay::getBrightness()
@@ -999,11 +1037,11 @@ int MicroBitDisplay::getBrightness()
 
 /**
   * Rotates the display to the given position.
+  *
   * Axis aligned values only.
   *
-  * Example:
   * @code
-  * uBit.display.rotateTo(MICROBIT_DISPLAY_ROTATION_180); //rotates 180 degrees from original orientation
+  * display.rotateTo(MICROBIT_DISPLAY_ROTATION_180); //rotates 180 degrees from original orientation
   * @endcode
   */
 void MicroBitDisplay::rotateTo(DisplayRotation rotation)
@@ -1047,10 +1085,11 @@ void MicroBitDisplay::setEnable(bool enableDisplay)
 /**
   * Enables the display, should only be called if the display is disabled.
   *
-  * Example:
   * @code
-  * uBit.display.enable(); //reenables the display mechanics
+  * display.enable(); //Enables the display mechanics
   * @endcode
+  *
+  * @note Only enables the display if the display is currently disabled.
   */
 void MicroBitDisplay::enable()
 {
@@ -1058,13 +1097,14 @@ void MicroBitDisplay::enable()
 }
 
 /**
-  * Disables the display, should only be called if the display is enabled.
-  * Display must be disabled to avoid MUXing of edge connector pins.
+  * Disables the display, which releases control of the GPIO pins used by the display,
+  * which are exposed on the edge connector.
   *
-  * Example:
   * @code
-  * uBit.display.disable(); //disables the display
+  * display.disable(); //disables the display
   * @endcode
+  *
+  * @note Only disables the display if the display is currently enabled.
   */
 void MicroBitDisplay::disable()
 {
@@ -1072,12 +1112,12 @@ void MicroBitDisplay::disable()
 }
 
 /**
-  * Clears the current image on the display.
-  * Simplifies the process, you can also use uBit.display.image.clear
+  * Clears the display of any remaining pixels.
   *
-  * Example:
+  * `display.image.clear()` can also be used!
+  *
   * @code
-  * uBit.display.clear(); //clears the display
+  * display.clear(); //clears the display
   * @endcode
   */
 void MicroBitDisplay::clear()
@@ -1086,8 +1126,11 @@ void MicroBitDisplay::clear()
 }
 
 /**
-  * Updates the font property of this object with the new font.
-  * @param font the new font that will be used to render characters..
+  * Updates the font that will be used for display operations.
+  *
+  * @param font the new font that will be used to render characters.
+  *
+  * @note DEPRECATED! Please use MicroBitFont::setSystemFont() instead.
   */
 void MicroBitDisplay::setFont(MicroBitFont font)
 {
@@ -1095,7 +1138,9 @@ void MicroBitDisplay::setFont(MicroBitFont font)
 }
 
 /**
-  * Retreives the font object used for rendering characters on the display.
+  * Retrieves the font object used for rendering characters on the display.
+  *
+  * @note DEPRECATED! Please use MicroBitFont::getSystemFont() instead.
   */
 MicroBitFont MicroBitDisplay::getFont()
 {
@@ -1104,6 +1149,8 @@ MicroBitFont MicroBitDisplay::getFont()
 
 /**
   * Captures the bitmap currently being rendered on the display.
+  *
+  * @return a MicroBitImage containing the captured data.
   */
 MicroBitImage MicroBitDisplay::screenShot()
 {
@@ -1111,11 +1158,16 @@ MicroBitImage MicroBitDisplay::screenShot()
 }
 
 /**
-  * Constructs an instance of a MicroBitLightSensor if not already configured
+  * Gives a representative figure of the light level in the current environment
+  * where are micro:bit is situated.
+  *
+  * Internally, it constructs an instance of a MicroBitLightSensor if not already configured
   * and sets the display mode to DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE.
   *
   * This also changes the tickPeriod to MICROBIT_LIGHT_SENSOR_TICK_SPEED so
   * that the display does not suffer from artifacts.
+  *
+  * @return an indicative light level in the range 0 - 255.
   *
   * @note this will return 0 on the first call to this method, a light reading
   * will be available after the display has activated the light sensor for the
@@ -1133,7 +1185,7 @@ int MicroBitDisplay::readLightLevel()
 }
 
 /**
-  * Destructor for MicroBitDisplay, so that we deregister ourselves as a systemComponent
+  * Destructor for MicroBitDisplay, where we deregister this instance from the array of system components.
   */
 MicroBitDisplay::~MicroBitDisplay()
 {

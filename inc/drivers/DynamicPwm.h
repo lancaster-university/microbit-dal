@@ -31,10 +31,12 @@ class DynamicPwm : public PwmOut
 
 
     /**
-      * An internal constructor used when allocating a new DynamicPwm representation
+      * An internal constructor used when allocating a new DynamicPwm instance.
+      *
       * @param pin the name of the pin for the pwm to target
+      *
       * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
-      * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
+      *                    or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
       */
     DynamicPwm(PinName pin, PwmPersistence persistence = PWM_PERSISTENCE_TRANSIENT);
 
@@ -42,25 +44,29 @@ class DynamicPwm : public PwmOut
 
     /**
       * Redirects the pwm channel to point at a different pin.
-      * @param pin the new pin to direct PWM at.
       *
-      * Example:
+      * @param pin the desired pin to output a PWM wave.
+      *
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-      * pwm->redirect(PinName n2); // pwm is now produced on n2
+      * pwm->redirect(p0); // pwm is now produced on p0
       * @endcode
       */
     void redirect(PinName pin);
 
 
     /**
-      * Retrieves a pointer to the first available free pwm channel - or the first one that can be reallocated.
-      * @param pin the name of the pin for the pwm to target
-      * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
-      * or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
-      * @param period the frequency of the pwm channel in us.
+      * Creates a new DynamicPwm instance, or reuses an existing instance that
+      * has a persistence level of PWM_PERSISTENCE_TRANSIENT.
       *
-      * Example:
+      * @param pin the name of the pin for the pwm to target
+      *
+      * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
+      *                    or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
+      *
+      * @return a pointer to the first available free pwm channel - or the first one that can be reallocated. If
+      *         no channels are available, NULL is returned.
+      *
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
       * @endcode
@@ -68,9 +74,8 @@ class DynamicPwm : public PwmOut
     static DynamicPwm* allocate(PinName pin, PwmPersistence persistence = PWM_PERSISTENCE_TRANSIENT);
 
     /**
-      * Frees this DynamicPwm instance if the pointer is valid.
+      * Frees this DynamicPwm instance for reuse.
       *
-      * Example:
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate();
       * pwm->release();
@@ -85,7 +90,6 @@ class DynamicPwm : public PwmOut
       *
       * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
       *
-      * Example:
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate();
       * pwm->write(0.5);
@@ -94,23 +98,30 @@ class DynamicPwm : public PwmOut
     int write(float value);
 
     /**
-      * Retreives the pin name associated with this DynamicPwm instance.
+      * Retreives the PinName associated with this DynamicPwm instance.
       *
-      * Example:
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
+      *
+      * // returns the PinName n.
       * pwm->getPinName();
       * @endcode
+      *
+      * @note This should be used to check that the DynamicPwm instance has not
+      *       been reallocated for use in another part of a program.
       */
     PinName getPinName();
 
     /**
-      * Retreives the last value that has been written to this pwm channel.
+      * Retreives the last value that has been written to this DynamicPwm instance.
+      * in the range 0 - 1023 inclusive.
       *
-      * Example:
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-      * pwm->getPeriod();
+      * pwm->write(0.5);
+      *
+      * // will return 512.
+      * pwm->getValue();
       * @endcode
       */
     int getValue();
@@ -132,23 +143,30 @@ class DynamicPwm : public PwmOut
       * Example:
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
+      * pwm->setPeriodUs(20000);
+      *
+      * // will return 20000
       * pwm->getPeriod();
       * @endcode
       */
     int getPeriod();
 
     /**
-      * Sets the period used by the WHOLE PWM module. Any changes to the period will AFFECT ALL CHANNELS.
+      * Sets the period used by the WHOLE PWM module.
       *
       * @param period the desired period in microseconds.
       *
-      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if period is out of range
       *
       * Example:
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-      * pwm->setPeriodUs(1000); // period now is 1ms
+      *
+      * // period now is 20ms
+      * pwm->setPeriodUs(20000);
       * @endcode
+      *
+      * @note Any changes to the period will AFFECT ALL CHANNELS.
       */
     int setPeriodUs(int period);
 
@@ -157,12 +175,14 @@ class DynamicPwm : public PwmOut
       *
       * @param period the desired period in milliseconds.
       *
-      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if value is out of range
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if period is out of range
       *
       * Example:
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-      * pwm->setPeriod(1); // period now is 1ms
+      *
+      * // period now is 20ms
+      * pwm->setPeriod(20);
       * @endcode
       */
       int setPeriod(int period);

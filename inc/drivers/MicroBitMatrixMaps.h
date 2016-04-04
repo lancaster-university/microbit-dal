@@ -24,9 +24,9 @@ struct MatrixPoint
     uint8_t y;
 };
 
-/*
-    This struct presumes rows and columns are arranged contiguously...
-*/
+/**
+  * This struct presumes rows and columns are arranged contiguously...
+  */
 struct MatrixMap
 {
     int         width;                      // The physical width of the LED matrix, in pixels.
@@ -120,7 +120,7 @@ struct MatrixMap
 //https://github.com/mbedmicro/mbed/blob/master/libraries/mbed/targets/hal/TARGET_NORDIC/TARGET_MCU_NRF51822/TARGET_NRF51_MICROBIT/PinNames.h
 const MatrixMap microbitMatrixMap =
 {
-    MICROBIT_DISPLAY_WIDTH, 
+    MICROBIT_DISPLAY_WIDTH,
     MICROBIT_DISPLAY_HEIGHT,
     MICROBIT_DISPLAY_ROW_COUNT,
     MICROBIT_DISPLAY_COLUMN_COUNT,
