@@ -250,7 +250,6 @@ void microbit_panic(int statusCode)
   *
   * @return A random, natural number between 0 and the max-1. Or MICROBIT_INVALID_VALUE if max is <= 0.
   *
-  * Example:
   * @code
   * microbit_random(200); //a number between 0 and 199
   * @endcode

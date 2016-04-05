@@ -61,13 +61,18 @@ void system_timer_tick();
 
 /**
   * Add a component to the array of system components. This component will then receive
-  * periodic callbacks, once every tick period.
+  * periodic callbacks, once every tick period in interrupt context.
   *
   * @param component The component to add.
   *
-  * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned if the component array is full.
+  * @return MICROBIT_OK on success or MICROBIT_NO_RESOURCES if the component array is full.
   *
-  * @note The callback will be in interrupt context.
+  * @code
+  * // heap allocated - otherwise it will be paged out!
+  * MicroBitDisplay* display = new MicroBitDisplay();
+  *
+  * system_timer_add_component(display);
+  * @endcode
   */
 int system_timer_add_component(MicroBitComponent *component);
 
@@ -77,7 +82,16 @@ int system_timer_add_component(MicroBitComponent *component);
   *
   * @param component The component to remove.
   *
-  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previously added.
+  * @return MICROBIT_OK on success or MICROBIT_INVALID_PARAMETER is returned if the given component has not been previously added.
+  *
+  * @code
+  * // heap allocated - otherwise it will be paged out!
+  * MicroBitDisplay* display = new MicroBitDisplay();
+  *
+  * system_timer_add_component(display);
+  *
+  * system_timer_remove_component(display);
+  * @endcode
   */
 int system_timer_remove_component(MicroBitComponent *component);
 

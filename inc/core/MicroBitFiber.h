@@ -313,44 +313,45 @@ void idle();
 void idle_task();
 
 /**
- * Adds a component to the array of idle thread components, which are processed
- * when the run queue is empty.
- *
- * The system timer will poll isIdleCallbackNeeded on each component to determine
- * if the scheduler should schedule the idle_task imminently.
- *
- * @param component The component to add to the array.
- *
- * @return MICROBIT_OK on success. MICROBIT_NO_RESOURCES is returned the array is full.
- *
- * @code
- * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
- *
- * // heap allocated - otherwise it will be paged out!
- * MicroBitAccelerometer accelerometer = new MicroBitAccelerometer(i2c);
- *
- * fiber_add_idle_component(accelerometer);
- * @endcode
- */
+  * Adds a component to the array of idle thread components, which are processed
+  * when the run queue is empty.
+  *
+  * The system timer will poll isIdleCallbackNeeded on each component to determine
+  * if the scheduler should schedule the idle_task imminently.
+  *
+  * @param component The component to add to the array.
+  *
+  * @return MICROBIT_OK on success or MICROBIT_NO_RESOURCES if the fiber components array is full.
+  *
+  * @code
+  * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
+  *
+  * // heap allocated - otherwise it will be paged out!
+  * MicroBitAccelerometer* accelerometer = new MicroBitAccelerometer(i2c);
+  *
+  * fiber_add_idle_component(accelerometer);
+  * @endcode
+  */
 int fiber_add_idle_component(MicroBitComponent *component);
 
 /**
- * Remove a component from the array of idle thread components
- *
- * @param component The component to remove from the idle component array.*
- *
- * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previously added.
- * @code
- * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
- *
- * // heap allocated - otherwise it will be paged out!
- * MicroBitAccelerometer accelerometer = new MicroBitAccelerometer(i2c);
- *
- * fiber_add_idle_component(accelerometer);
- *
- * fiber_remove_idle_component(accelerometer);
- * @endcode
- */
+  * Remove a component from the array of idle thread components
+  *
+  * @param component The component to remove from the idle component array.
+  *
+  * @return MICROBIT_OK on success. MICROBIT_INVALID_PARAMETER is returned if the given component has not been previously added.
+  *
+  * @code
+  * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
+  *
+  * // heap allocated - otherwise it will be paged out!
+  * MicroBitAccelerometer* accelerometer = new MicroBitAccelerometer(i2c);
+  *
+  * fiber_add_idle_component(accelerometer);
+  *
+  * fiber_remove_idle_component(accelerometer);
+  * @endcode
+  */
 int fiber_remove_idle_component(MicroBitComponent *component);
 
 /**
