@@ -1,59 +1,39 @@
 # microbit-dal
 
-## Building a project for the micro:bit using Yotta 
+The core set of drivers, mechanisms and types that make up the micro:bit runtime.
 
-Instead of using the online IDE, Yotta can be used to provide an equivalent offline experience. The current compilers that are available are:
+## Overview
 
-* GCC
-* ARMCC
+The micro:bit runtime provides an easy to use environment for programming the BBC micro:bit in the C/C++ language, written by Lancaster University. It contains device drivers for all the hardware capabilities of the micro:bit, and also a suite of runtime mechanisms to make programming the micro:bit easier and more flexible. These range from control of the LED matrix display to peer-to-peer radio communication and secure Bluetooth Low Energy services. The micro:bit runtime is proudly built on the ARM mbed and Nordic nrf51 platforms.
 
-## Getting Started
+In addition to supporting development in C/C++, the runtime is also designed specifically to support higher level languages provided by our partners that target the micro:bit. It is currently used as a support library for all the languages on the BBC www.microbit.co.uk website, including Microsoft Block, Microsoft TouchDevelop, Code Kingdoms JavaScript and Micropython languages.
 
-### 1. Install Yotta 
-The first step is to get Yotta onto your machine, to do this follow the install guide [here](http://docs.yottabuild.org/#installing)
+## Links
 
-**Note: if you are on windows, dependencies will be missed as of 8/8/15, please use the helper script located [here](https://github.com/ARMmbed/yotta/blob/master/get_yotta.py).**
+[micro:bit runtime docs](http://lancaster-university.github.io/microbit-docs/) | [uBit](https://github.com/lancaster-university/microbit) |  [samples](https://github.com/lancaster-university/microbit-samples)
 
-### 2. Fetch the example project
+## Build Environments
 
-If your install has gone correctly, and you have all dependencies installed, the next step is to fetch the example project using the runtime from GitHub.
+| Build Environment | Documentation |
+| ------------- |-------------|
+| ARM mbed online | http://lancaster-university.github.io/microbit-docs/online-toolchains/#mbed |
+| yotta  | http://lancaster-university.github.io/microbit-docs/offline-toolchains/#yotta |
 
-```
-git clone https://github.com/lancaster-university/microbit
-```
 
-**Note: To successfully build this project you will need access to the microbit-dal private repository, if you need access please email me at j.devine@lancaster.ac.uk.**
 
-### 3. Try to build
-Building rarely works first time due to dependencies currently not being installed by Yotta, so the next step is to **try** to build.
+## Bello World
 
-The default yotta target you will receive when you pull the aforementioned repo is bbc-microbit-classic-armcc, you can use the following command to print your current target in Yotta:
+```cpp
+#include "MicroBitDisplay.h"
 
-```
-yt target
+MicroBitDisplay display;
 
-bbc-microbit-classic-armcc 0.0.5
-mbed-armcc 0.0.8
+int main()
+{
+    display.scroll("Bello!");
+}
 ```
 
-If you do not have armcc installed (or don't have a license for Keil), then you will need to use GCC. To swap to the GCC target run:
+## BBC Community Guidelines
 
-```
-yt target bbc-microbit-classic-gcc
-```
-
-Then you should **try** to build using the following command:
-
-```
-yt build
-```
-
-**NOTE:
-To build the final hex files for the micro:bit, you will need to install the srec which can be installed via brew (`brew install srecord`), or you can install it manually from [here](http://srecord.sourceforge.net/).**
-
-### 4. Flash your micro:bit
-The final step is to check your hex works. 
-
-The yotta build command will place files in `/build/<TARGET_NAME>/source`. The file you will need to flash will be microbit-combined.hex. Simply drag and drop the hex.
-
-The expected result will be that the micro:bit will scroll `BELLO! :)` on its display.
+[BBC Community Guidelines](https://www.microbit.co.uk/help#sect_cg)
