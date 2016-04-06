@@ -21,7 +21,7 @@ In addition to supporting development in C/C++, the runtime is also designed spe
 
 
 
-## Bello World
+## Hello World!
 
 ```cpp
 #include "MicroBitDisplay.h"
@@ -30,7 +30,7 @@ MicroBitDisplay display;
 
 int main()
 {
-    display.scroll("Bello!");
+    display.scroll("Hello world!");
 }
 ```
 
