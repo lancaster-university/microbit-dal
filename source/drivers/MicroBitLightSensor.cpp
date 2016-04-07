@@ -87,6 +87,9 @@ MicroBitLightSensor::MicroBitLightSensor(const MatrixMap &map) :
 {
     this->chan = 0;
 
+    for(int i = 0; i < MICROBIT_LIGHT_SENSOR_CHAN_NUM; i++)
+        results[i] = 0;
+
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_LIGHT_SENSE, this, &MicroBitLightSensor::startSensing, MESSAGE_BUS_LISTENER_IMMEDIATE);
 

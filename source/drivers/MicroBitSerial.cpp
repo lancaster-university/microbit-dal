@@ -567,6 +567,8 @@ ManagedString MicroBitSerial::read(int size, MicroBitSerialMode mode)
 {
     uint8_t buff[size + 1];
 
+    memclr(&buff, size + 1);
+
     int returnedSize = read((uint8_t *)buff, size, mode);
 
     if(returnedSize <= 0)
@@ -757,6 +759,8 @@ ManagedString MicroBitSerial::readUntil(ManagedString delimeters, MicroBitSerial
         int localBuffSize = (preservedTail > foundIndex) ? (rxBuffSize - preservedTail) + foundIndex : foundIndex - preservedTail;
 
         uint8_t localBuff[localBuffSize + 1];
+
+        memclr(&localBuff, localBuffSize + 1);
 
         circularCopy(rxBuff, rxBuffSize, localBuff, preservedTail, foundIndex);
 

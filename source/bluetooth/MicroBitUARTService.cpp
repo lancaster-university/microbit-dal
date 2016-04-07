@@ -256,6 +256,8 @@ int MicroBitUARTService::send(const uint8_t *buf, int length)
 
         uint8_t temp[size];
 
+        memclr(&temp, size);
+
         circularCopy(txBuffer, txBufferSize, temp, txBufferTail, txBufferHead);
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
@@ -361,6 +363,8 @@ ManagedString MicroBitUARTService::read(int len, MicroBitSerialMode mode)
 {
     uint8_t buf[len + 1];
 
+    memclr(&buf, len + 1);
+
     int ret = read(buf, len, mode);
 
     if(ret < 1)
@@ -427,6 +431,8 @@ ManagedString MicroBitUARTService::readUntil(ManagedString delimeters, MicroBitS
         int localBuffSize = (preservedTail > foundIndex) ? (rxBufferSize - preservedTail) + foundIndex : foundIndex - preservedTail;
 
         uint8_t localBuff[localBuffSize + 1];
+
+        memclr(&localBuff, localBuffSize + 1);
 
         circularCopy(rxBuffer, rxBufferSize, localBuff, preservedTail, foundIndex);
 
