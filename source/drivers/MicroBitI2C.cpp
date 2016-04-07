@@ -44,11 +44,11 @@ DEALINGS IN THE SOFTWARE.
   *
   * @note This class presents a wrapped mbed call to capture failed I2C operations caused by a known silicon bug in the nrf51822.
   * Attempts to automatically reset and restart the I2C hardware if this case is detected.
-  *
+  * \par
   * For reference see PAN56 in:
-  *
+  * \par
   * https://www.nordicsemi.com/eng/nordic/Products/nRF51822/PAN-nRF51822/24634
-  *
+  * \par
   * v2.0 through to v2.4
   */
 MicroBitI2C::MicroBitI2C(PinName sda, PinName scl) : I2C(sda,scl)
