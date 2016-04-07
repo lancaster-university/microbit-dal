@@ -162,6 +162,7 @@ MicroBitListener::MicroBitListener(uint16_t id, uint16_t value, T* object, void 
     this->cb_method = new MemberFunctionCallback(object, method);
 	this->cb_arg = NULL;
     this->flags = flags | MESSAGE_BUS_LISTENER_METHOD;
+    this->evt_queue = NULL;
 	this->next = NULL;
 }
 
