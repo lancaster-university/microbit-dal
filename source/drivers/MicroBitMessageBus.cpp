@@ -358,7 +358,14 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
     {
 	    if((l->id == evt.source || l->id == MICROBIT_ID_ANY) && (l->value == evt.value || l->value == MICROBIT_EVT_ANY))
         {
-            listenerUrgent = (l->flags & MESSAGE_BUS_LISTENER_IMMEDIATE) == MESSAGE_BUS_LISTENER_IMMEDIATE;
+            // If we're running under the fiber scheduler, then derive the THREADING_MODE for the callback based on the
+            // metadata in the listener itself.
+            if (fiber_scheduler_running())
+                listenerUrgent = (l->flags & MESSAGE_BUS_LISTENER_IMMEDIATE) == MESSAGE_BUS_LISTENER_IMMEDIATE;
+            else
+                listenerUrgent = true;
+
+            // If we should process this event hander in this pass, then activate the listener.
             if(listenerUrgent == urgent && !(l->flags & MESSAGE_BUS_LISTENER_DELETING))
             {
                 l->evt = evt;
