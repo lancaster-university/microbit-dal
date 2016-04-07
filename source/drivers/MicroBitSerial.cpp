@@ -148,7 +148,7 @@ void MicroBitSerial::dataWritten()
     if(nextTail == txBuffHead)
     {
         MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_SERIAL_EVT_TX_EMPTY);
-        detach(IrqType::TxIrq);
+        detach(Serial::TxIrq);
     }
 
     //update our tail!
@@ -185,7 +185,7 @@ int MicroBitSerial::setTxInterrupt(uint8_t *string, int len)
     fiber_wake_on_event(MICROBIT_ID_NOTIFY, MICROBIT_SERIAL_EVT_TX_EMPTY);
 
     //set the TX interrupt
-    attach(this, &MicroBitSerial::dataWritten, IrqType::TxIrq);
+    attach(this, &MicroBitSerial::dataWritten, Serial::TxIrq);
 
     return copiedBytes;
 }
@@ -231,7 +231,7 @@ int MicroBitSerial::initialiseRx()
     if((status & MICROBIT_SERIAL_RX_BUFF_INIT))
     {
         //ensure that we receive no interrupts after freeing our buffer
-        detach(IrqType::RxIrq);
+        detach(Serial::RxIrq);
         free(this->rxBuff);
     }
 
@@ -245,7 +245,7 @@ int MicroBitSerial::initialiseRx()
 
     //set the receive interrupt
     status |= MICROBIT_SERIAL_RX_BUFF_INIT;
-    attach(this, &MicroBitSerial::dataReceived, IrqType::RxIrq);
+    attach(this, &MicroBitSerial::dataReceived, Serial::RxIrq);
 
     return MICROBIT_OK;
 }
@@ -259,7 +259,7 @@ int MicroBitSerial::initialiseTx()
     if((status & MICROBIT_SERIAL_TX_BUFF_INIT))
     {
         //ensure that we receive no interrupts after freeing our buffer
-        detach(IrqType::TxIrq);
+        detach(Serial::TxIrq);
         free(this->txBuff);
     }
 
@@ -813,17 +813,17 @@ int MicroBitSerial::redirect(PinName tx, PinName rx)
     lockRx();
 
     if(txBufferedSize() > 0)
-        detach(IrqType::TxIrq);
+        detach(Serial::TxIrq);
 
-    detach(IrqType::RxIrq);
+    detach(Serial::RxIrq);
 
     serial_free(&_serial);
     serial_init(&_serial, tx, rx);
 
-    attach(this, &MicroBitSerial::dataReceived, IrqType::RxIrq);
+    attach(this, &MicroBitSerial::dataReceived, Serial::RxIrq);
 
     if(txBufferedSize() > 0)
-        attach(this, &MicroBitSerial::dataWritten, IrqType::TxIrq);
+        attach(this, &MicroBitSerial::dataWritten, Serial::TxIrq);
 
     this->baud(this->baudrate);
 

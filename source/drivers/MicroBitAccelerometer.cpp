@@ -641,7 +641,8 @@ void MicroBitAccelerometer::recalculatePitchRoll()
     float y = (float) getY(NORTH_EAST_DOWN);
     float z = (float) getZ(NORTH_EAST_DOWN);
 
-    roll = atan2(getY(NORTH_EAST_DOWN), getZ(NORTH_EAST_DOWN));
+    roll = atan2((double)getY(NORTH_EAST_DOWN), (double)getZ(NORTH_EAST_DOWN));
+
     pitch = atan(-x / (y*sin(roll) + z*cos(roll)));
     status |= MICROBIT_ACCEL_PITCH_ROLL_VALID;
 }
