@@ -75,7 +75,7 @@ extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
 struct BLESysAttribute
 {
-    uint8_t         sys_attr[8] = { 0 };
+    uint8_t         sys_attr[8];
 };
 
 struct BLESysAttributeStore

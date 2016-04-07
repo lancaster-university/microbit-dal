@@ -148,7 +148,7 @@ void MicroBitSerial::dataWritten()
     if(nextTail == txBuffHead)
     {
         MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_SERIAL_EVT_TX_EMPTY);
-        detach(Serial::IrqType::TxIrq);
+        detach(IrqType::TxIrq);
     }
 
     //update our tail!
@@ -185,7 +185,7 @@ int MicroBitSerial::setTxInterrupt(uint8_t *string, int len)
     fiber_wake_on_event(MICROBIT_ID_NOTIFY, MICROBIT_SERIAL_EVT_TX_EMPTY);
 
     //set the TX interrupt
-    attach(this, &MicroBitSerial::dataWritten, Serial::IrqType::TxIrq);
+    attach(this, &MicroBitSerial::dataWritten, IrqType::TxIrq);
 
     return copiedBytes;
 }
@@ -231,7 +231,7 @@ int MicroBitSerial::initialiseRx()
     if((status & MICROBIT_SERIAL_RX_BUFF_INIT))
     {
         //ensure that we receive no interrupts after freeing our buffer
-        detach(Serial::IrqType::RxIrq);
+        detach(IrqType::RxIrq);
         free(this->rxBuff);
     }
 
@@ -245,7 +245,7 @@ int MicroBitSerial::initialiseRx()
 
     //set the receive interrupt
     status |= MICROBIT_SERIAL_RX_BUFF_INIT;
-    attach(this, &MicroBitSerial::dataReceived, Serial::IrqType::RxIrq);
+    attach(this, &MicroBitSerial::dataReceived, IrqType::RxIrq);
 
     return MICROBIT_OK;
 }
@@ -259,7 +259,7 @@ int MicroBitSerial::initialiseTx()
     if((status & MICROBIT_SERIAL_TX_BUFF_INIT))
     {
         //ensure that we receive no interrupts after freeing our buffer
-        detach(Serial::IrqType::TxIrq);
+        detach(IrqType::TxIrq);
         free(this->txBuff);
     }
 
@@ -565,7 +565,7 @@ int MicroBitSerial::read(MicroBitSerialMode mode)
   */
 ManagedString MicroBitSerial::read(int size, MicroBitSerialMode mode)
 {
-    uint8_t buff[size + 1] = { 0 };
+    uint8_t buff[size + 1];
 
     int returnedSize = read((uint8_t *)buff, size, mode);
 
@@ -756,7 +756,7 @@ ManagedString MicroBitSerial::readUntil(ManagedString delimeters, MicroBitSerial
         //calculate our local buffer size
         int localBuffSize = (preservedTail > foundIndex) ? (rxBuffSize - preservedTail) + foundIndex : foundIndex - preservedTail;
 
-        uint8_t localBuff[localBuffSize + 1] = { 0 };
+        uint8_t localBuff[localBuffSize + 1];
 
         circularCopy(rxBuff, rxBuffSize, localBuff, preservedTail, foundIndex);
 
@@ -813,17 +813,17 @@ int MicroBitSerial::redirect(PinName tx, PinName rx)
     lockRx();
 
     if(txBufferedSize() > 0)
-        detach(Serial::IrqType::TxIrq);
+        detach(IrqType::TxIrq);
 
-    detach(Serial::IrqType::RxIrq);
+    detach(IrqType::RxIrq);
 
     serial_free(&_serial);
     serial_init(&_serial, tx, rx);
 
-    attach(this, &MicroBitSerial::dataReceived, Serial::IrqType::RxIrq);
+    attach(this, &MicroBitSerial::dataReceived, IrqType::RxIrq);
 
     if(txBufferedSize() > 0)
-        attach(this, &MicroBitSerial::dataWritten, Serial::IrqType::TxIrq);
+        attach(this, &MicroBitSerial::dataWritten, IrqType::TxIrq);
 
     this->baud(this->baudrate);
 

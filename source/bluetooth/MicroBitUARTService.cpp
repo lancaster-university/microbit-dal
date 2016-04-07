@@ -254,7 +254,7 @@ int MicroBitUARTService::send(const uint8_t *buf, int length)
         SERIAL_DEBUG->printf("tx size: %d", size);
 #endif
 
-        uint8_t temp[size] = { 0 };
+        uint8_t temp[size];
 
         circularCopy(txBuffer, txBufferSize, temp, txBufferTail, txBufferHead);
 
@@ -359,7 +359,7 @@ int MicroBitUARTService::read(uint8_t *buf, int len, MicroBitSerialMode mode)
   */
 ManagedString MicroBitUARTService::read(int len, MicroBitSerialMode mode)
 {
-    uint8_t buf[len + 1] = { 0 };
+    uint8_t buf[len + 1];
 
     int ret = read(buf, len, mode);
 
@@ -426,7 +426,7 @@ ManagedString MicroBitUARTService::readUntil(ManagedString delimeters, MicroBitS
         //calculate our local buffer size
         int localBuffSize = (preservedTail > foundIndex) ? (rxBufferSize - preservedTail) + foundIndex : foundIndex - preservedTail;
 
-        uint8_t localBuff[localBuffSize + 1] = { 0 };
+        uint8_t localBuff[localBuffSize + 1];
 
         circularCopy(rxBuffer, rxBufferSize, localBuff, preservedTail, foundIndex);
 

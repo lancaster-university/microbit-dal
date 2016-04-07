@@ -35,7 +35,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitPin.h"
 #include "ErrorNo.h"
 
-DynamicPwm* DynamicPwm::pwms[NO_PWMS] = { NULL };
+DynamicPwm* DynamicPwm::pwms[NO_PWMS] = { NULL, NULL, NULL };
 
 uint8_t DynamicPwm::lastUsed = NO_PWMS+1; //set it to out of range i.e. 4 so we know it hasn't been used yet.
 

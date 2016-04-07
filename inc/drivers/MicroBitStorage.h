@@ -42,8 +42,8 @@ DEALINGS IN THE SOFTWARE.
 
 struct KeyValuePair
 {
-    uint8_t key[MICROBIT_STORAGE_KEY_SIZE] = { 0 };
-    uint8_t value[MICROBIT_STORAGE_VALUE_SIZE] = { 0 };
+    uint8_t key[MICROBIT_STORAGE_KEY_SIZE];
+    uint8_t value[MICROBIT_STORAGE_VALUE_SIZE];
 };
 
 struct KeyValueStore

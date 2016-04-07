@@ -48,7 +48,7 @@ class MicroBitLightSensor
 {
 
     //contains the results from each section of the display
-    int results[MICROBIT_LIGHT_SENSOR_CHAN_NUM] = { 0 };
+    int results[MICROBIT_LIGHT_SENSOR_CHAN_NUM];
 
     //holds the current channel (also used to index the results array)
     uint8_t chan;
