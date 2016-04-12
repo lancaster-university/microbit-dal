@@ -47,10 +47,13 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "bluetooth/MicroBitDFUService.cpp"
     "bluetooth/MicroBitEventService.cpp"
     "bluetooth/MicroBitIOPinService.cpp"
+    "bluetooth/MicroBitKeyboardService.cpp"
     "bluetooth/MicroBitLEDService.cpp"
     "bluetooth/MicroBitMagnetometerService.cpp"
     "bluetooth/MicroBitTemperatureService.cpp"
     "bluetooth/MicroBitUARTService.cpp"
+
+    "bluetooth/hid/HIDServiceBase.cpp"
 )
 
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)

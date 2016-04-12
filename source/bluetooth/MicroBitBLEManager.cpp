@@ -28,6 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
 
+#include "KeyboardService.h"
 
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
@@ -72,6 +73,11 @@ const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 static MicroBitBLEManager *manager = NULL;                      // Singleton reference to the BLE manager. many mbed BLE API callbacks still do not support member funcions yet. :-(
 static uint8_t deviceID = 255;                                  // Unique ID for the peer that has connected to us.
 static Gap::Handle_t pairingHandle = 0;                         // The connection handle used during a pairing process. Used to ensure that connections are dropped elegantly.
+
+// TODO: use sensible values for this
+static PnPID_t pnpID = {
+    0x2, 0x0d28, 0x204, 0x0100
+};
 
 static void storeSystemAttributes(Gap::Handle_t handle)
 {
@@ -318,9 +324,8 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     // Bring up core BLE services.
     new MicroBitDFUService(*ble);
-    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    HIDDeviceInformationService deviceInfo(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION, &pnpID);
     new MicroBitEventService(*ble, messageBus);
-
 
     // Configure for high speed mode where possible.
     Gap::ConnectionParams_t fast;
@@ -338,6 +343,10 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 #endif
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
+
+    // This is required to enable Windows 10 support
+    ble->gap().setDeviceName((uint8_t *)BLEName.toCharArray());
+
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
 
