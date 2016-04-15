@@ -99,7 +99,7 @@ MicroBitRadio::MicroBitRadio(uint16_t id) : datagram(*this), event (*this)
 {
     this->id = id;
     this->status = 0;
-	this->group = 0;
+	this->group = MICROBIT_RADIO_DEFAULT_GROUP;
 	this->queueDepth = 0;
     this->rssi = 0;
     this->rxQueue = NULL;
@@ -279,7 +279,7 @@ int MicroBitRadio::enable()
     NRF_RADIO->BASE0 = MICROBIT_RADIO_BASE_ADDRESS;
 
     // Join the default group. This will configure the remaining byte in the RADIO hardware module.
-    setGroup(MICROBIT_RADIO_DEFAULT_GROUP);
+    setGroup(this->group);
 
     // The RADIO hardware module supports the use of multiple addresses, but as we're running anonymously, we only need one.
     // Configure the RADIO module to use the default address (address 0) for both send and receive operations.
