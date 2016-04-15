@@ -394,7 +394,6 @@ MicroBitFile::MicroBitFile()
   */
 int MicroBitFile::init() 
 {
-    PRINTF("init called\n");
     if(FS_INITIALIZED()) return 0;
 
     MicroBitStorage kv;
@@ -412,62 +411,32 @@ int MicroBitFile::init()
     int flash_pages=(MBFS_LAST_PAGE_ADDR-(uint32_t)flash_start)/PAGE_SIZE + 1;
     flash_pages = MIN(MAX_FILESYSTEM_PAGES, flash_pages);
 
-    // If the stored location equals flash_start, an existing file system
-    // is already present. Otherwise, build one.
-    struct KeyValuePair * flash_start_kv = kv.get("MBFS_START");
-    uint32_t* savedLocation = NULL;
-    if(flash_start_kv) 
-    {
-        memcpy(&savedLocation, flash_start_kv->value, sizeof(uint32_t*));
-    }
-
-    PRINTF("Flash location: 0x%x\n"
-           "Flash pages: %d\n"
-           "Already built: %s\n",
-           (uint32_t)flash_start,
-           flash_pages,
-           (savedLocation == flash_start)?"Y":"N");
-
     // The no. pages reserved for file data is (flash_pages-1)
     this->ft_init((uint8_t*)flash_start, (flash_pages-1));
 
-    if(savedLocation != flash_start) 
+    if(!this->ft_build())
     {
-
-        // Filesystem design assumes by that all pages are initially
-        // empty (filled with 0xFF). Check this now.
-    
-        uint32_t* p = flash_start;
-        unsigned int j;
-
-        // Make sure all of the pages are initially 0xFF.
-        for(int i=0; i<flash_pages; i++, p+=(PAGE_SIZE/sizeof(uint32_t))) 
-        {
-            for(j=0;j<PAGE_SIZE/sizeof(uint32_t);j++) 
-            {
-                if( p[j] != 0xFFFFFFFF ) break;
-            }
-
-            if(j != PAGE_SIZE/sizeof(uint32_t)) 
-            {
-                // This page is not clean, erase it.
-                kv.flashPageErase(p);
-            }
-        }
-        
-        if(!this->ft_build())
-        {
             return 0;
-        }
-        
-        // Save flash_start and flash_pages to key value store.
-        uint32_t save[2];
-        save[0] = (uint32_t)flash_start;
-        save[1] = (uint32_t)flash_pages;
-        kv.put("MBFS_START", (uint8_t*)&save);
     }
 
     this->flash_start = (uint8_t*)flash_start + PAGE_SIZE; 
+
+    // Make sure that the key-value pair entry for the file system start
+    // and size is present and correct.
+    struct KeyValuePair * flash_kv = kv.get("MBFS_START");
+    uint32_t* savedLocation = NULL;
+    if(flash_kv) 
+    {
+        memcpy(&savedLocation, flash_kv->value, sizeof(uint32_t*));
+
+        if(savedLocation != flash_start)
+        {
+            uint32_t save[2];
+            save[0] = (uint32_t)flash_start;
+            save[1] = (uint32_t)flash_pages;
+            kv.put("MBFS_START", (uint8_t*)&save);
+        }
+    }
 
     return 1;
 }
