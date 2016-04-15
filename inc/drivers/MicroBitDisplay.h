@@ -44,7 +44,7 @@ DEALINGS IN THE SOFTWARE.
 //
 // Internal constants
 //
-
+#define MICROBIT_DISPLAY_DEFAULT_AUTOCLEAR      1
 #define MICROBIT_DISPLAY_SPACING                1
 #define MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH    8
 #define MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS    -255
@@ -56,6 +56,7 @@ enum AnimationMode {
     ANIMATION_MODE_PRINT_TEXT,
     ANIMATION_MODE_SCROLL_IMAGE,
     ANIMATION_MODE_ANIMATE_IMAGE,
+    ANIMATION_MODE_ANIMATE_IMAGE_WITH_CLEAR,
     ANIMATION_MODE_PRINT_CHARACTER
 };
 
@@ -463,6 +464,8 @@ public:
       * @param startingPosition the starting position on the display for the animation
       *                         to begin at. Defaults to MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS.
       *
+      * @param autoClear defines whether or not the display is automatically cleared once the animation is complete. By default, the display is cleared. Set this parameter to zero to disable the autoClear operation.
+      *
       * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, or MICROBIT_INVALID_PARAMETER.
       *
       * @code
@@ -474,7 +477,7 @@ public:
       * display.animateAsync(i,100,5);
       * @endcode
       */
-    int animateAsync(MicroBitImage image, int delay, int stride, int startingPosition = MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS);
+    int animateAsync(MicroBitImage image, int delay, int stride, int startingPosition = MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS, int autoClear = MICROBIT_DISPLAY_DEFAULT_AUTOCLEAR);
 
     /**
       * "Animates" the current image across the display with a given stride, finishing on the last frame of the animation.
@@ -488,6 +491,8 @@ public:
       * @param startingPosition the starting position on the display for the animation
       *                         to begin at. Defaults to MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS.
       *
+      * @param autoClear defines whether or not the display is automatically cleared once the animation is complete. By default, the display is cleared. Set this parameter to zero to disable the autoClear operation.
+      *
       * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
       *
       * @code
@@ -499,7 +504,7 @@ public:
       * display.animate(i,100,5);
       * @endcode
       */
-    int animate(MicroBitImage image, int delay, int stride, int startingPosition = MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS);
+    int animate(MicroBitImage image, int delay, int stride, int startingPosition = MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS, int autoClear = MICROBIT_DISPLAY_DEFAULT_AUTOCLEAR);
 
     /**
       * Configures the brightness of the display.
