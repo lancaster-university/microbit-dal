@@ -287,7 +287,7 @@ MicroBitDisplay::animationUpdate()
         if (animationMode == ANIMATION_MODE_SCROLL_IMAGE)
             this->updateScrollImage();
 
-        if (animationMode == ANIMATION_MODE_ANIMATE_IMAGE)
+        if (animationMode == ANIMATION_MODE_ANIMATE_IMAGE || animationMode == ANIMATION_MODE_ANIMATE_IMAGE_WITH_CLEAR)
             this->updateAnimateImage();
 
         if(animationMode == ANIMATION_MODE_PRINT_CHARACTER)
@@ -384,8 +384,11 @@ void MicroBitDisplay::updateAnimateImage()
     //wait until we have rendered the last position to give a continuous animation.
     if (scrollingImagePosition <= -scrollingImage.getWidth() + (MICROBIT_DISPLAY_WIDTH + scrollingImageStride) && scrollingImageRendered)
     {
+        if (animationMode == ANIMATION_MODE_ANIMATE_IMAGE_WITH_CLEAR)
+            this->clear();
+
         animationMode = ANIMATION_MODE_NONE;
-        this->clear();
+
         this->sendAnimationCompleteEvent();
         return;
     }
@@ -891,6 +894,8 @@ int MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
   * @param startingPosition the starting position on the display for the animation
   *                         to begin at. Defaults to MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS.
   *
+  * @param autoClear defines whether or not the display is automatically cleared once the animation is complete. By default, the display is cleared. Set this parameter to zero to disable the autoClear operation.
+  *
   * @return MICROBIT_OK, MICROBIT_BUSY if the screen is in use, or MICROBIT_INVALID_PARAMETER.
   *
   * @code
@@ -902,7 +907,7 @@ int MicroBitDisplay::scroll(MicroBitImage image, int delay, int stride)
   * display.animateAsync(i,100,5);
   * @endcode
   */
-int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, int startingPosition)
+int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, int startingPosition, int autoClear)
 {
     //sanitise the delay value
     if(delay <= 0)
@@ -922,7 +927,7 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
 
         animationDelay = stride == 0 ? 0 : delay;
         animationTick = delay-1;
-        animationMode = ANIMATION_MODE_ANIMATE_IMAGE;
+        animationMode = autoClear ? ANIMATION_MODE_ANIMATE_IMAGE_WITH_CLEAR : ANIMATION_MODE_ANIMATE_IMAGE;
     }
     else
     {
@@ -944,6 +949,8 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
   * @param startingPosition the starting position on the display for the animation
   *                         to begin at. Defaults to MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS.
   *
+  * @param autoClear defines whether or not the display is automatically cleared once the animation is complete. By default, the display is cleared. Set this parameter to zero to disable the autoClear operation.
+  *
   * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
   *
   * @code
@@ -955,7 +962,7 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
   * display.animate(i,100,5);
   * @endcode
   */
-int MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int startingPosition)
+int MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int startingPosition, int autoClear)
 {
     //sanitise the delay value
     if(delay <= 0)
@@ -969,7 +976,7 @@ int MicroBitDisplay::animate(MicroBitImage image, int delay, int stride, int sta
     if (animationMode == ANIMATION_MODE_NONE)
     {
         // Start the effect.
-        this->animateAsync(image, delay, stride, startingPosition);
+        this->animateAsync(image, delay, stride, startingPosition, autoClear);
 
         // Wait for completion.
         //TODO: Put this in when we merge tight-validation

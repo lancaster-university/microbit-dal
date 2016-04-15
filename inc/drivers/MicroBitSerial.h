@@ -105,9 +105,13 @@ class MicroBitSerial : public RawSerial
       * @param len the length of the string, and ultimately the maximum number of bytes
       *        that will be copied dependent on the state of txBuff
       *
+      * @param mode determines whether to configure the current fiber context or not. If
+      *             The mode is SYNC_SPINWAIT, the context will not be configured, otherwise
+      *             no context will be configured.
+      *
       * @return the number of bytes copied into the buffer.
       */
-    int setTxInterrupt(uint8_t *string, int len);
+    int setTxInterrupt(uint8_t *string, int len, MicroBitSerialMode mode);
 
     /**
       * Locks the mutex so that others can't use this serial instance for reception

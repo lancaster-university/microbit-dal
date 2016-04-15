@@ -31,7 +31,10 @@ DEALINGS IN THE SOFTWARE.
   */
 
 #define MICROBIT_ID_BLE             1000
-#define MICROBIT_ID_BLE_UART        1001
+#define MICROBIT_ID_BLE_UART        1200
+
+#define MICROBIT_BLE_EVT_CONNECTED      1
+#define MICROBIT_BLE_EVT_DISCONNECTED   2
 
 #include "MESEvents.h"
 
