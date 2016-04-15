@@ -164,9 +164,13 @@ void MicroBitSerial::dataWritten()
   * @param len the length of the string, and ultimately the maximum number of bytes
   *        that will be copied dependent on the state of txBuff
   *
+  * @param mode determines whether to configure the current fiber context or not. If
+  *             The mode is SYNC_SPINWAIT, the context will not be configured, otherwise
+  *             no context will be configured.
+  *
   * @return the number of bytes copied into the buffer.
   */
-int MicroBitSerial::setTxInterrupt(uint8_t *string, int len)
+int MicroBitSerial::setTxInterrupt(uint8_t *string, int len, MicroBitSerialMode mode)
 {
     int copiedBytes = 0;
 
@@ -182,7 +186,8 @@ int MicroBitSerial::setTxInterrupt(uint8_t *string, int len)
             break;
     }
 
-    fiber_wake_on_event(MICROBIT_ID_NOTIFY, MICROBIT_SERIAL_EVT_TX_EMPTY);
+    if(mode != SYNC_SPINWAIT)
+        fiber_wake_on_event(MICROBIT_ID_NOTIFY, MICROBIT_SERIAL_EVT_TX_EMPTY);
 
     //set the TX interrupt
     attach(this, &MicroBitSerial::dataWritten, Serial::TxIrq);
@@ -406,7 +411,7 @@ int MicroBitSerial::sendChar(char c, MicroBitSerialMode mode)
 
     uint8_t toTransmit[2] =  { c, '\0'};
 
-    int bytesWritten = setTxInterrupt(toTransmit, 1);
+    int bytesWritten = setTxInterrupt(toTransmit, 1, mode);
 
     send(mode);
 
@@ -484,7 +489,7 @@ int MicroBitSerial::send(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode
             return result;
     }
 
-    int bytesWritten = setTxInterrupt(buffer, bufferLen);
+    int bytesWritten = setTxInterrupt(buffer, bufferLen, mode);
 
     send(mode);
 

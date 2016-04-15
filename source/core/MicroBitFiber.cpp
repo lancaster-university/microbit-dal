@@ -417,7 +417,7 @@ int fiber_wake_on_event(uint16_t id, uint16_t value)
 	if (messageBus == NULL || !fiber_scheduler_running())
 		return MICROBIT_NOT_SUPPORTED;
 
-    // Sleep is a blocking call, so if we'r ein a fork on block context,
+    // Sleep is a blocking call, so if we're in a fork on block context,
     // it's time to spawn a new fiber...
     if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
     {
@@ -428,20 +428,25 @@ int fiber_wake_on_event(uint16_t id, uint16_t value)
         // If we're out of memory, there's nothing we can do.
         // keep running in the context of the current thread as a best effort.
         if (forkedFiber != NULL)
-                f = forkedFiber;
+        {
+            f = forkedFiber;
+            dequeue_fiber(f);
+            queue_fiber(f, &runQueue);
+            schedule();
+        }
     }
 
     // Encode the event data in the context field. It's handy having a 32 bit core. :-)
     f->context = value << 16 | id;
 
-    // Remove ourselve from the run queue
+    // Remove ourselves from the run queue
     dequeue_fiber(f);
 
     // Add ourselves to the sleep queue. We maintain strict ordering here to reduce lookup times.
     queue_fiber(f, &waitQueue);
 
     // Register to receive this event, so we can wake up the fiber when it happens.
-    // Special case for teh notify channel, as we always stay registered for that.
+    // Special case for the notify channel, as we always stay registered for that.
     if (id != MICROBIT_ID_NOTIFY && id != MICROBIT_ID_NOTIFY_ONE)
         messageBus->listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
