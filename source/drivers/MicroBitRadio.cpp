@@ -356,6 +356,9 @@ int MicroBitRadio::disable()
     // deregister ourselves from the callback event used to empty the receive queue.
     fiber_remove_idle_component(this);
 
+    // record that the radio is now disabled
+    status &= ~MICROBIT_RADIO_STATUS_INITIALISED;
+
     return MICROBIT_OK;
 }
 
