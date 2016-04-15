@@ -109,7 +109,7 @@ static void storeSystemAttributes(Gap::Handle_t handle)
   */
 static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
-    MicroBitEvent(MICROBIT_ID_BLE,MICROBIT_BLE_DISCONNECTED);
+    MicroBitEvent(MICROBIT_ID_BLE,MICROBIT_BLE_EVT_DISCONNECTED);
     
     storeSystemAttributes(reason->handle);
 
@@ -122,7 +122,7 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
   */
 static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *params)
 {
-    MicroBitEvent(MICROBIT_ID_BLE,MICROBIT_BLE_CONNECTED);
+    MicroBitEvent(MICROBIT_ID_BLE,MICROBIT_BLE_EVT_CONNECTED);
 }
 
 /**
