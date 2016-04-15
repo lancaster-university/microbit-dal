@@ -48,7 +48,7 @@ DEALINGS IN THE SOFTWARE.
 #pragma GCC diagnostic pop
 #endif
 
-#include "ble/services/DeviceInformationService.h"
+#include "HIDDeviceInformationService.h"
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
 #include "MicroBitLEDService.h"

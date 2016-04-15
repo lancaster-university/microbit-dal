@@ -93,14 +93,14 @@ DEALINGS IN THE SOFTWARE.
 // The amount of memory reused depends upon whether or not BLE is enabled using MICROBIT_BLE_ENABLED.
 // Set '1' to enable.
 #ifndef MICROBIT_HEAP_REUSE_SD
-#define MICROBIT_HEAP_REUSE_SD                  1
+#define MICROBIT_HEAP_REUSE_SD                  0
 #endif
 
 // The amount of memory allocated to Soft Device to hold its BLE GATT table.
 // For standard S110 builds, this should be word aligned and in the range 0x300 - 0x700.
 // Any unused memory will be automatically reclaimed as HEAP memory if both MICROBIT_HEAP_REUSE_SD and MICROBIT_HEAP_ALLOCATOR are enabled.
 #ifndef MICROBIT_SD_GATT_TABLE_SIZE
-#define MICROBIT_SD_GATT_TABLE_SIZE             0x300
+#define MICROBIT_SD_GATT_TABLE_SIZE             0x700
 #endif
 
 //
@@ -186,7 +186,7 @@ DEALINGS IN THE SOFTWARE.
 // Open BLE links are not secure, but commonly used during the development of BLE services
 // Set '1' to disable all secuity
 #ifndef MICROBIT_BLE_OPEN
-#define MICROBIT_BLE_OPEN                       0
+#define MICROBIT_BLE_OPEN                       1
 #endif
 
 // Configure for open BLE operation if so configured
@@ -336,14 +336,14 @@ DEALINGS IN THE SOFTWARE.
 // n.b. This also disables the user serial port 'uBit.serial'.
 // Set '1' to enable.
 #ifndef MICROBIT_DBG
-#define MICROBIT_DBG                            0
+#define MICROBIT_DBG                            1
 #endif
 
 // Enable this to receive diagnostic messages from the heap allocator via the USB serial interface.
 // n.b. This requires MICROBIT_DBG to be defined.
 // Set '1' to enable.
 #ifndef MICROBIT_HEAP_DBG
-#define MICROBIT_HEAP_DBG                       0
+#define MICROBIT_HEAP_DBG                       1
 #endif
 
 // Versioning options.
