@@ -278,7 +278,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->gap().onDisconnection(bleDisconnectionCallback);
     ble->gattServer().onSysAttrMissing(bleSysAttrMissingCallback);
     
-    // generate an event when a Bluetooth connection is lost
+    // generate an event when a Bluetooth connection is established
     ble->gap().onConnection(bleConnectionCallback);
 
     // Configure the stack to hold onto the CPU during critical timing events.
