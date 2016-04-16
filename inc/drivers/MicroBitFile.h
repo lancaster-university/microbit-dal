@@ -79,7 +79,7 @@
 
 #define MBFS_LAST_PAGE_ADDR 0x3AC00 // Address of last writable page in flash.
 
-#define MAX_FILESYSTEM_PAGES 40 // Max. number of pages available.
+#define MAX_FILESYSTEM_PAGES 60 // Max. number of pages available.
 
 #define NO_FT_ENTRIES  10  // Number of entries in the File table  
                             // (determines total no. files on the system)

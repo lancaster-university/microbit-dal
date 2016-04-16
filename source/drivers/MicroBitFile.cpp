@@ -1,16 +1,20 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdint.h>
+#include "MicroBitConfig.h"         // SERIAL_DEBUG
 #include "MicroBitHeapAllocator.h"  // microbit_malloc()
 #include "MicroBitFile.h"
 #include "MicroBitFlash.h"
 #include "MicroBitDevice.h"         // microbit_random()
-#include "MicroBitConfig.h"         // SERIAL_DEBUG
 #include "MicroBitStorage.h"        // put()/get() KV pairs
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
+#if CONFIG_ENABLED(MICROBIT_DBG)
 #define PRINTF(...) (SERIAL_DEBUG && SERIAL_DEBUG->printf(__VA_ARGS__))
+#else
+#define PRINTF(...)
+#endif
 
 #define FD_VALID(fd) (fd>=0 && fd < MAX_FD && this->fd_table[fd])
 
@@ -426,16 +430,14 @@ int MicroBitFile::init()
     struct KeyValuePair * flash_kv = kv.get("MBFS_START");
     uint32_t* savedLocation = NULL;
     if(flash_kv) 
-    {
         memcpy(&savedLocation, flash_kv->value, sizeof(uint32_t*));
 
-        if(savedLocation != flash_start)
-        {
-            uint32_t save[2];
-            save[0] = (uint32_t)flash_start;
-            save[1] = (uint32_t)flash_pages;
-            kv.put("MBFS_START", (uint8_t*)&save);
-        }
+    if(savedLocation != flash_start)
+    {
+        uint32_t save[2];
+        save[0] = (uint32_t)flash_start;
+        save[1] = (uint32_t)flash_pages;
+        kv.put("MBFS_START", (uint8_t*)&save);
     }
 
     return 1;
