@@ -110,7 +110,7 @@ static void storeSystemAttributes(Gap::Handle_t handle)
 static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
     MicroBitEvent(MICROBIT_ID_BLE,MICROBIT_BLE_EVT_DISCONNECTED);
-    
+
     storeSystemAttributes(reason->handle);
 
     if (manager)
@@ -120,7 +120,7 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 /**
   * Callback when a BLE connection is established.
   */
-static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *params)
+static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t*)
 {
     MicroBitEvent(MICROBIT_ID_BLE,MICROBIT_BLE_EVT_CONNECTED);
 }
@@ -277,7 +277,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // automatically restart advertising after a device disconnects.
     ble->gap().onDisconnection(bleDisconnectionCallback);
     ble->gattServer().onSysAttrMissing(bleSysAttrMissingCallback);
-    
+
     // generate an event when a Bluetooth connection is established
     ble->gap().onConnection(bleConnectionCallback);
 
