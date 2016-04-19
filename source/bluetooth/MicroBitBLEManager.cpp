@@ -330,9 +330,19 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER);
 
     // Bring up core BLE services.
+#if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
     DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
     new MicroBitEventService(*ble, messageBus);
+#else
+    (void)messageBus;
+#endif
 
 
     // Configure for high speed mode where possible.

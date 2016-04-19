@@ -67,6 +67,8 @@ void on_confirmation_received_callback(uint16_t handle)
  */
 MicroBitUARTService::MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize) : ble(_ble)
 {
+    rxBufferSize += 1;
+    txBufferSize += 1;
 
     txBuffer = (uint8_t *)malloc(txBufferSize);
     rxBuffer = (uint8_t *)malloc(rxBufferSize);
