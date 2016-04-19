@@ -31,6 +31,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_CONFIG_H
 
 #include "mbed.h"
+#include "yotta_cfg_mappings.h"
 
 //
 // Memory configuration

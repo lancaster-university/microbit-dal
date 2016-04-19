@@ -23,6 +23,7 @@
     "inc/core",
     "inc/types",
     "inc/drivers",
-    "inc/bluetooth"
+    "inc/bluetooth",
+    "inc/platform"
   ]
 }
