@@ -162,9 +162,13 @@ class MicroBitStorage
       *
       * @param data a pointer to the beginning of the data to be persisted.
       *
-      * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the storage page is full
+      * @param dataSize the size of the data to be persisted
+      *
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if the key or size is too large,
+      *         MICROBIT_NO_RESOURCES if the storage page is full
       */
-    int put(const char* key, uint8_t* data);
+    int put(const char* key, uint8_t* data, int dataSize);
+
 
     /**
       * Places a given key, and it's corresponding value into flash at the earliest
@@ -174,9 +178,12 @@ class MicroBitStorage
       *
       * @param data a pointer to the beginning of the data to be persisted.
       *
-      * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the storage page is full
+      * @param dataSize the size of the data to be persisted
+      *
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if the key or size is too large,
+      *         MICROBIT_NO_RESOURCES if the storage page is full
       */
-    int put(ManagedString key, uint8_t* data);
+    int put(ManagedString key, uint8_t* data, int dataSize);
 
     /**
       * Retreives a KeyValuePair identified by a given key.

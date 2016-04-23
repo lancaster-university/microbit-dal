@@ -703,7 +703,7 @@ int MicroBitCompass::calibrate()
 void MicroBitCompass::setCalibration(CompassSample calibration)
 {
     if(this->storage != NULL)
-        this->storage->put(ManagedString("compassCal"), (uint8_t *)&calibration);
+        this->storage->put(ManagedString("compassCal"), (uint8_t *)&calibration, sizeof(CompassSample));
 
     average = calibration;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;

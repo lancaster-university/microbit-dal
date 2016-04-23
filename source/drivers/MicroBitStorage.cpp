@@ -209,14 +209,22 @@ void MicroBitStorage::scratchKeyValuePair(KeyValuePair pair, uint32_t* flashPoin
   *
   * @param data a pointer to the beginning of the data to be persisted.
   *
-  * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the storage page is full
+  * @param dataSize the size of the data to be persisted
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if the key or size is too large,
+  *         MICROBIT_NO_RESOURCES if the storage page is full
   */
-int MicroBitStorage::put(const char *key, uint8_t *data)
+int MicroBitStorage::put(const char *key, uint8_t *data, int dataSize)
 {
     KeyValuePair pair = KeyValuePair();
 
-    memcpy(pair.key, key, min(sizeof(pair.key), strlen(key)));
-    memcpy(pair.value, data, sizeof(pair.value));
+    int keySize = strlen(key) + 1;
+
+    if(keySize > (int)sizeof(pair.key) || dataSize > (int)sizeof(pair.value) || dataSize < 0)
+        return MICROBIT_INVALID_PARAMETER;
+
+    memcpy(pair.key, key, keySize);
+    memcpy(pair.value, data, dataSize);
 
     //calculate our various offsets.
     uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
@@ -290,11 +298,14 @@ int MicroBitStorage::put(const char *key, uint8_t *data)
   *
   * @param data a pointer to the beginning of the data to be persisted.
   *
-  * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the storage page is full
+  * @param dataSize the size of the data to be persisted
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if the key or size is too large,
+  *         MICROBIT_NO_RESOURCES if the storage page is full
   */
-int MicroBitStorage::put(ManagedString key, uint8_t* data)
+int MicroBitStorage::put(ManagedString key, uint8_t* data, int dataSize)
 {
-    return put((char *)key.toCharArray(), data);
+    return put((char *)key.toCharArray(), data, dataSize);
 }
 
 /**

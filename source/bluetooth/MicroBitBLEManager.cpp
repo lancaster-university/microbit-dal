@@ -99,7 +99,7 @@ static void storeSystemAttributes(Gap::Handle_t handle)
         if(memcmp(attribStore.sys_attrs[deviceID].sys_attr, attrib.sys_attr, len) != 0)
         {
             attribStore.sys_attrs[deviceID] = attrib;
-            manager->storage->put(key, (uint8_t *)&attribStore);
+            manager->storage->put(key, (uint8_t *)&attribStore, sizeof(attribStore));
         }
     }
 }

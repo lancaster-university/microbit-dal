@@ -245,7 +245,7 @@ int MicroBitThermometer::getPeriod()
 int MicroBitThermometer::setOffset(int offset)
 {
     if(this->storage != NULL)
-        this->storage->put(ManagedString("tempCal"), (uint8_t *)&offset);
+        this->storage->put(ManagedString("tempCal"), (uint8_t *)&offset, sizeof(int));
 
     this->offset = offset;
 
