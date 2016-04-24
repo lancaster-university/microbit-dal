@@ -45,8 +45,8 @@ MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble) :
     GattCharacteristic  buttonADataCharacteristic(MicroBitButtonAServiceDataUUID, (uint8_t *)&buttonADataCharacteristicBuffer, 0,
     sizeof(buttonADataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
-    GattCharacteristic  buttonBDataCharacteristic(MicroBitButtonBServiceDataUUID, (uint8_t *)&buttonADataCharacteristicBuffer, 0,
-    sizeof(buttonADataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
+    GattCharacteristic  buttonBDataCharacteristic(MicroBitButtonBServiceDataUUID, (uint8_t *)&buttonBDataCharacteristicBuffer, 0,
+    sizeof(buttonBDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
 
     // Initialise our characteristic values.
