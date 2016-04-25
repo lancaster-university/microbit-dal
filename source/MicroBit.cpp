@@ -128,7 +128,7 @@ void MicroBit::onABListenerRegisteredEvent(MicroBitEvent evt)
   * @endcode
   */
 MicroBit::MicroBit() :
-    flags(0x00),
+    flags(0),
     i2c(MICROBIT_PIN_SDA, MICROBIT_PIN_SCL),
     serial(USBTX, USBRX),
     MessageBus(),
@@ -146,6 +146,7 @@ MicroBit::MicroBit() :
        MICROBIT_ID_IO_P12,MICROBIT_ID_IO_P13,MICROBIT_ID_IO_P14,
        MICROBIT_ID_IO_P15,MICROBIT_ID_IO_P16,MICROBIT_ID_IO_P19,
        MICROBIT_ID_IO_P20),
+    accessibility(MICROBIT_ID_ACCESSIBLITY),
     bleManager(),
     radio(MICROBIT_ID_RADIO),
     ble(NULL)

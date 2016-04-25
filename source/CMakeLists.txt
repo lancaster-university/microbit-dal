@@ -53,6 +53,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "MicroBitHeapAllocator.cpp"
     "MicroBitListener.cpp"
     "MicroBitLightSensor.cpp"
+    "MicroBitAccessibility.cpp"
     "RefCounted.cpp"
     "MemberFunctionCallback.cpp"
     "MicroBitStorage.cpp"
