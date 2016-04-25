@@ -442,6 +442,31 @@ int MicroBitPin::getAnalogPeriod()
 }
 
 /**
+  * Configures the pull of this pin.
+  *
+  * @param pull one of the mbed pull configurations: PullUp, PullDown, PullNone, OpenDrain
+  *
+  * @return MICROBIT_NOT_SUPPORTED if the current pin configuration is anything other
+  *         than a digital input, otherwise MICROBIT_OK.
+  */
+int MicroBitPin::setPull(PinMode pull)
+{
+    if ((status & IO_STATUS_DIGITAL_IN))
+    {
+        ((DigitalIn *)pin)->mode(pull);
+        return MICROBIT_OK;
+    }
+
+    if((status & IO_STATUS_EVENT_ON_EDGE) || (status & IO_STATUS_EVENT_PULSE_ON_EDGE))
+    {
+        ((TimedInterruptIn *)pin)->mode(pull);
+        return MICROBIT_OK;
+    }
+
+    return MICROBIT_NOT_SUPPORTED;
+}
+
+/**
   * This member function manages the calculation of the timestamp of a pulse detected
   * on a pin whilst in IO_STATUS_EVENT_PULSE_ON_EDGE or IO_STATUS_EVENT_ON_EDGE modes.
   *
