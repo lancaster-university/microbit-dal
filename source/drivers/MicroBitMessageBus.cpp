@@ -237,7 +237,7 @@ int MicroBitMessageBus::deleteMarkedListeners()
     // Walk this list of event handlers. Delete any that match the given listener.
     while (l != NULL)
     {
-        if (l->flags & MESSAGE_BUS_LISTENER_DELETING && !l->flags & MESSAGE_BUS_LISTENER_BUSY)
+        if ((l->flags & MESSAGE_BUS_LISTENER_DELETING) && !(l->flags & MESSAGE_BUS_LISTENER_BUSY))
         {
             if (p == NULL)
                 listeners = l->next;
