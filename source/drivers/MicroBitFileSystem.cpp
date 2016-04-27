@@ -372,9 +372,9 @@ uint8_t* MicroBitFileSystem::getRandomScratch()
 /**
   * Constructor. Calls the necessary init() functions.
   */
-MicroBitFileSystem::MicroBitFileSystem()
+MicroBitFileSystem::MicroBitFileSystem(uint32_t flash_start, int flash_pages)
 {
-    this->init();
+    init(flash_start, flash_pages);
     memset(this->fd_table, 0x00, sizeof(mb_fd*) * MAX_FD);
 }
 
@@ -396,23 +396,25 @@ MicroBitFileSystem::MicroBitFileSystem()
   *
   * @return non-zero on success, zero on error.
   */
-int MicroBitFileSystem::init()
+int MicroBitFileSystem::init(uint32_t flash_start, int flash_pages)
 {
     if(FS_INITIALIZED()) return 0;
 
     MicroBitStorage kv;
 
-    // Flash start is on the first page after the programmed ROM contents.
-    // This is: __etext (program code) + static data.
-    // Size of static data is calculated from __data_end__ and __data_start__
-    // (See the linker script)
-    uint32_t* flash_start = (uint32_t*)((uint32_t)&__etext +
-                            ((uint32_t)&__data_end__ -
-                            (uint32_t)&__data_start__));
-    flash_start = (uint32_t*)( ((uint32_t)flash_start & ~0x3FF) + PAGE_SIZE );
+    if(flash_start == (uint32_t)(MBFS_USE_DEFAULT))
+        // Flash start is on the first page after the programmed ROM contents.
+        // This is: __etext (program code) + static data.
+        // Size of static data is calculated from __data_end__ and __data_start__
+        // (See the linker script)
+        flash_start = (uint32_t)&__etext + ((uint32_t)&__data_end__ - (uint32_t)&__data_start__);
+
+    flash_start = ((uint32_t)flash_start & ~0x3FF) + PAGE_SIZE;
+
+    if(flash_pages == (int)(MBFS_USE_DEFAULT) || flash_pages < 0)
+        flash_pages = (MBFS_LAST_PAGE_ADDR - flash_start)/PAGE_SIZE + 1;
 
     // Number of flash pages available for the file system.
-    int flash_pages=(MBFS_LAST_PAGE_ADDR-(uint32_t)flash_start)/PAGE_SIZE + 1;
     flash_pages = MIN(MAX_FILESYSTEM_PAGES, flash_pages);
 
     // The no. pages reserved for file data is (flash_pages-1)
@@ -420,7 +422,7 @@ int MicroBitFileSystem::init()
 
     if(!this->ft_build())
     {
-            return 0;
+        return 0;
     }
 
     this->flash_start = (uint8_t*)flash_start + PAGE_SIZE;
@@ -432,7 +434,7 @@ int MicroBitFileSystem::init()
     if(flash_kv)
         memcpy(&savedLocation, flash_kv->value, sizeof(uint32_t*));
 
-    if(savedLocation != flash_start)
+    if(savedLocation != (uint32_t *)flash_start)
     {
         uint32_t save[2];
         save[0] = (uint32_t)flash_start;

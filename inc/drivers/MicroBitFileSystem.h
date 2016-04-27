@@ -1,5 +1,6 @@
 #ifndef MICROBIT_FILE_H_
 #define MICROBIT_FILE_H_
+#include "MicroBitConfig.h"
 #include "MicroBitFlash.h"
 #include <stdint.h>
 
@@ -77,12 +78,12 @@
 
 #define FILENAME_LEN 16 // Filename length, including \0
 
-#define MBFS_LAST_PAGE_ADDR 0x3AC00 // Address of last writable page in flash.
-
 #define MAX_FILESYSTEM_PAGES 60 // Max. number of pages available.
 
 #define NO_FT_ENTRIES  10  // Number of entries in the File table
                             // (determines total no. files on the system)
+
+#define MBFS_USE_DEFAULT 0xFFFFFFFF
 
 #if ( (FILENAME_LEN + MAX_FILESYSTEM_PAGES + 4 ) * NO_FT_ENTRIES ) > PAGE_SIZE
 #error NO_FT_ENTRIES is too large, file table must fit in a single page.
@@ -369,7 +370,7 @@ class MicroBitFileSystem
       *
       * @return non-zero on success, zero on error.
       */
-    int init();
+    int init(uint32_t flash_start, int flash_pages);
 
     /**
       * @brief Pick a random block from the ft_free_loc free blocks list.
@@ -387,7 +388,7 @@ class MicroBitFileSystem
     /**
       * Constructor. Calls the necessary init() functions.
       */
-    MicroBitFileSystem();
+    MicroBitFileSystem(uint32_t flash_start = MBFS_USE_DEFAULT, int flash_pages = MBFS_USE_DEFAULT);
 
     /**
       * Open a new file, and obtain a new file handle (int) to
