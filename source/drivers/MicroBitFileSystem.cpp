@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "MicroBitConfig.h"         // SERIAL_DEBUG
 #include "MicroBitHeapAllocator.h"  // microbit_malloc()
-#include "MicroBitFile.h"
+#include "MicroBitFileSystem.h"
 #include "MicroBitFlash.h"
 #include "MicroBitDevice.h"         // microbit_random()
 #include "MicroBitStorage.h"        // put()/get() KV pairs
@@ -29,11 +29,11 @@ extern uint32_t __etext;
   * @param filename name of file to search for. Must be null-terminated.
   * @return pointer to the FT struct if found, NULL otherwise or on error.
   */
-FileTableEntry* MicroBitFile::ft_by_name(char const * filename) 
+FileTableEntry* MicroBitFileSystem::ft_by_name(char const * filename)
 {
-    for(int i=0;i<NO_FT_ENTRIES;++i) 
+    for(int i=0;i<NO_FT_ENTRIES;++i)
     {
-        if(strcmp(filename, this->ft_loc[i].name) == 0) 
+        if(strcmp(filename, this->ft_loc[i].name) == 0)
         {
             return &this->ft_loc[i];
         }
@@ -47,9 +47,9 @@ FileTableEntry* MicroBitFile::ft_by_name(char const * filename)
   * @return pointer to the FT if successful,
   *     NULL if there are none available.
   */
-FileTableEntry* MicroBitFile::ft_get_free() 
+FileTableEntry* MicroBitFileSystem::ft_get_free()
 {
-    for(int i=0;i<NO_FT_ENTRIES;++i) 
+    for(int i=0;i<NO_FT_ENTRIES;++i)
     {
         if(FT_IS_FREE(this->ft_loc[i])) return &this->ft_loc[i];
     }
@@ -68,10 +68,10 @@ FileTableEntry* MicroBitFile::ft_get_free()
   * @param filename the null terminated filename to use.
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::ft_add(FileTableEntry* m, char const * filename) 
+int MicroBitFileSystem::ft_add(FileTableEntry* m, char const * filename)
 {
     uint32_t t = FT_BUSY;
-    
+
     // Write the Filename.
     if(!this->flash.flash_write((uint8_t*)m->name,
                                 (uint8_t*)filename, strlen(filename)+1,
@@ -87,7 +87,7 @@ int MicroBitFile::ft_add(FileTableEntry* m, char const * filename)
     {
         return 0;
     }
-         
+
     return 1;
 }
 
@@ -102,21 +102,21 @@ int MicroBitFile::ft_add(FileTableEntry* m, char const * filename)
   *        files' FT.
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::ft_add_block(FileTableEntry* m, uint8_t blockNo) 
+int MicroBitFileSystem::ft_add_block(FileTableEntry* m, uint8_t blockNo)
 {
-   
+
     // Find the lowest unused block entry.
     int b = 0;
-    for(b=0;b<this->flash_data_pages;b++) 
+    for(b=0;b<this->flash_data_pages;b++)
     {
- 
-        // The FileTableEntry_t.blocks list is terminated by 0xFF, 
+
+        // The FileTableEntry_t.blocks list is terminated by 0xFF,
         // this is the first unallocated block.
         if(m->blocks[b] == 0xFF) break;
 
     }
     if(b==this->flash_data_pages) return 0;
-   
+
     return this->flash.flash_write(&(m->blocks[b]), &blockNo, 1,
                                    getRandomScratch());
 }
@@ -131,11 +131,11 @@ int MicroBitFile::ft_add_block(FileTableEntry* m, uint8_t blockNo)
   * @param m the FileTableEntry entry/struct to remove.
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::ft_remove(FileTableEntry* m) 
+int MicroBitFileSystem::ft_remove(FileTableEntry* m)
 {
 
     // ----------------------------------------------
-    // Return block numbers in the FileTableEntry entry to the 
+    // Return block numbers in the FileTableEntry entry to the
     //  FileTableEntry_free_loc->blocks list.
     // Add to the beginning of the list.
     //
@@ -147,28 +147,28 @@ int MicroBitFile::ft_remove(FileTableEntry* m)
     // ----------------------------------------------
 
     MicroBitStorage mbs;
-  
-    // used = no. used blocks in FileTableEntry. 
-    int used=0;    
-    for(used=0;used<this->flash_data_pages;used++) 
+
+    // used = no. used blocks in FileTableEntry.
+    int used=0;
+    for(used=0;used<this->flash_data_pages;used++)
     {
         if( m->blocks[used] == 0xFF) break;
     }
-   
+
     // Where to insert into free list.
-    int b = 0;     
-    for(b=0;b<this->flash_data_pages;++b) 
+    int b = 0;
+    for(b=0;b<this->flash_data_pages;++b)
     {
         if(this->ft_free_loc->blocks[b] != 0x00) break;
     }
-   
+
     //not enough room. (this shouldn't happen)
-    if(used > b) 
-    { 
+    if(used > b)
+    {
         return 0;
     }
     int p = b-used;
-   
+
     // Reset the free block list entries to 0xFF.
     if(!this->flash.flash_erase_mem((uint8_t*)&this->ft_free_loc->blocks[p],
                                     used, getRandomScratch()))
@@ -176,11 +176,11 @@ int MicroBitFile::ft_remove(FileTableEntry* m)
         return 0;
     }
 
-    // Write each of the block numbers.   
-    for(int j=0;j<used;j++) 
+    // Write each of the block numbers.
+    for(int j=0;j<used;j++)
     {
         uint8_t bl = m->blocks[j];
-    
+
         mbs.flashPageErase((uint32_t*)&this->flash_start[(PAGE_SIZE * bl)]);
 
         bl |= FT_FREE_BLOCK_MARKER;
@@ -211,9 +211,9 @@ int MicroBitFile::ft_remove(FileTableEntry* m)
   *
   * @return block number on success, -1 on error (out of space).
   */
-int MicroBitFile::ft_pop_free_block() 
+int MicroBitFileSystem::ft_pop_free_block()
 {
-  
+
     // ----------------------------------------------
     // Find a free block in FileTableEntry_free_loc->blocks.
     // Pop from the front of the list.
@@ -224,28 +224,28 @@ int MicroBitFile::ft_pop_free_block()
     // Will become:
     // [ ][2][3][4][5][6]
     // ----------------------------------------------
-  
+
     //find the lowest free block.
     int b = 0;
-    for(b=0;b<this->flash_data_pages;b++) 
+    for(b=0;b<this->flash_data_pages;b++)
     {
          if(this->ft_free_loc->blocks[b] != 0x00 &&
             this->ft_free_loc->blocks[b] != 0xFF) break;
     }
 
-    if(b==this->flash_data_pages) 
+    if(b==this->flash_data_pages)
     {
         return -1;
     }
-  
+
     //mark as unavailable in the free block list.
     uint8_t write_empty = 0x00;
     uint8_t blockNumber = ft_get_block(this->ft_free_loc, b);
     blockNumber &= ~(FT_FREE_BLOCK_MARKER);
 
-    if(!this->flash.flash_write(&this->ft_free_loc->blocks[b], 
+    if(!this->flash.flash_write(&this->ft_free_loc->blocks[b],
                                 &write_empty,1,getRandomScratch())) return -1;
-  
+
     return blockNumber;
 }
 
@@ -260,7 +260,7 @@ int MicroBitFile::ft_pop_free_block()
   * @param flash_data_blocks the number of data blocks/pages reserved
   *        for file data.
   */
-void MicroBitFile::ft_init(void* ft_location, int flash_data_pages)
+void MicroBitFileSystem::ft_init(void* ft_location, int flash_data_pages)
 {
     this->ft_free_loc = (FileTableEntry*)ft_location;
     this->ft_loc = (FileTableEntry*)ft_location + 1;
@@ -276,7 +276,7 @@ void MicroBitFile::ft_init(void* ft_location, int flash_data_pages)
   * @param filesize the new filesize.
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::ft_set_filesize(FileTableEntry* m, uint32_t fz) 
+int MicroBitFileSystem::ft_set_filesize(FileTableEntry* m, uint32_t fz)
 {
     return this->flash.flash_write((uint8_t*)&m->flags, (uint8_t*)&fz, 4,
                                    getRandomScratch());
@@ -297,39 +297,39 @@ int MicroBitFile::ft_set_filesize(FileTableEntry* m, uint32_t fz)
   *
   * @return non-zero on success, zero otherwise.
   */
-int MicroBitFile::ft_build()
+int MicroBitFileSystem::ft_build()
 {
-  
+
     // Only build the FT table if not already initialized.
-    if(*((uint32_t*)this->ft_free_loc) == MAGIC_WORD) 
+    if(*((uint32_t*)this->ft_free_loc) == MAGIC_WORD)
     {
         return 1;
     }
-  
+
     uint32_t magic = MAGIC_WORD;
-  
+
     // Erase FT Page.
     if(!this->flash.flash_erase_mem((uint8_t*)this->ft_free_loc, PAGE_SIZE,
                                     NULL))
     {
         return 0;
     }
-  
+
     // Write Magic.
     if(!this->flash.flash_write((uint8_t*)this->ft_free_loc->name,
                                 (uint8_t*)&magic, sizeof(magic), NULL))
     {
         return 0;
     }
-  
+
     // Populate the free block list.
     uint8_t bl[this->flash_data_pages];
-    for(int i=0;i<(this->flash_data_pages);++i) 
+    for(int i=0;i<(this->flash_data_pages);++i)
     {
         bl[i] = i | FT_FREE_BLOCK_MARKER;
     }
-  
-    return this->flash.flash_write((uint8_t*)&this->ft_free_loc->blocks, 
+
+    return this->flash.flash_write((uint8_t*)&this->ft_free_loc->blocks,
                                    bl, this->flash_data_pages, NULL);
 }
 
@@ -341,11 +341,11 @@ int MicroBitFile::ft_build()
   *
   * @return < 0 on error, scratch page address on success
   */
-uint8_t* MicroBitFile::getRandomScratch() 
+uint8_t* MicroBitFileSystem::getRandomScratch()
 {
     int n;
 
-    for(n=0;n<this->flash_data_pages;++n) 
+    for(n=0;n<this->flash_data_pages;++n)
     {
         if(this->ft_free_loc->blocks[n] != 0x00 &&
            this->ft_free_loc->blocks[n] != 0xFF) break;
@@ -357,12 +357,12 @@ uint8_t* MicroBitFile::getRandomScratch()
     }
 
     int scratch_index = microbit_random(this->flash_data_pages - n);
-    
-    int scratch_page = this->ft_free_loc->blocks[n + scratch_index] & 
+
+    int scratch_page = this->ft_free_loc->blocks[n + scratch_index] &
                        ~FT_FREE_BLOCK_MARKER;
 
     PRINTF("getRandomScratch(): n=%d, max=%d, random=%d, loc=0x%x\n",
-           n, this->flash_data_pages, scratch_page, 
+           n, this->flash_data_pages, scratch_page,
            (uint32_t)(this->flash_start + (scratch_page * PAGE_SIZE)));
 
     return (this->flash_start + (scratch_page * PAGE_SIZE));
@@ -372,7 +372,7 @@ uint8_t* MicroBitFile::getRandomScratch()
 /**
   * Constructor. Calls the necessary init() functions.
   */
-MicroBitFile::MicroBitFile() 
+MicroBitFileSystem::MicroBitFileSystem()
 {
     this->init();
     memset(this->fd_table, 0x00, sizeof(mb_fd*) * MAX_FD);
@@ -383,7 +383,7 @@ MicroBitFile::MicroBitFile()
   *
   * The file system is located dynamically, based on where the program code
   * and code data finishes. This avoids having to allocate a fixed flash
-  * region for builds even without MicroBitFile. The location is saved in
+  * region for builds even without MicroBitFileSystem. The location is saved in
   * the key value store, so that this can be easily determined by the DAPLink.
   *
   * The file system size expands to fill the remaining space, but is capped
@@ -396,7 +396,7 @@ MicroBitFile::MicroBitFile()
   *
   * @return non-zero on success, zero on error.
   */
-int MicroBitFile::init() 
+int MicroBitFileSystem::init()
 {
     if(FS_INITIALIZED()) return 0;
 
@@ -406,8 +406,8 @@ int MicroBitFile::init()
     // This is: __etext (program code) + static data.
     // Size of static data is calculated from __data_end__ and __data_start__
     // (See the linker script)
-    uint32_t* flash_start = (uint32_t*)((uint32_t)&__etext + 
-                            ((uint32_t)&__data_end__ - 
+    uint32_t* flash_start = (uint32_t*)((uint32_t)&__etext +
+                            ((uint32_t)&__data_end__ -
                             (uint32_t)&__data_start__));
     flash_start = (uint32_t*)( ((uint32_t)flash_start & ~0x3FF) + PAGE_SIZE );
 
@@ -423,13 +423,13 @@ int MicroBitFile::init()
             return 0;
     }
 
-    this->flash_start = (uint8_t*)flash_start + PAGE_SIZE; 
+    this->flash_start = (uint8_t*)flash_start + PAGE_SIZE;
 
     // Make sure that the key-value pair entry for the file system start
     // and size is present and correct.
     struct KeyValuePair * flash_kv = kv.get("MBFS_START");
     uint32_t* savedLocation = NULL;
-    if(flash_kv) 
+    if(flash_kv)
         memcpy(&savedLocation, flash_kv->value, sizeof(uint32_t*));
 
     if(savedLocation != flash_start)
@@ -462,64 +462,64 @@ int MicroBitFile::init()
   *
   * Example:
   * @code
-  * MicroBitFile f();
+  * MicroBitFileSystem f();
   * int fd = f.open("test.txt", MB_WRITE|MB_CREAT);
   * if(fd<0)
   *    print("file open error");
   * @endcode
   */
-int MicroBitFile::open(char const * filename, uint8_t flags) 
+int MicroBitFileSystem::open(char const * filename, uint8_t flags)
 {
     if(!FS_INITIALIZED() || strlen(filename) > MAX_FILENAME_LEN) return -1;
-   
+
     FileTableEntry* m;
     int fd;
-   
+
     //find the file, if it already exists.
-    if((m = this->ft_by_name(filename)) == NULL) 
+    if((m = this->ft_by_name(filename)) == NULL)
     {
         // File doesn't exist, try to create it.
-        if(!(flags & MB_CREAT) || 
-           (m = this->ft_get_free()) == NULL || 
-           !this->ft_add(m, filename)) 
+        if(!(flags & MB_CREAT) ||
+           (m = this->ft_get_free()) == NULL ||
+           !this->ft_add(m, filename))
         {
             // Couldn't set the FT entry.
             return -1;
         }
-   
+
     }
-   
+
     //find a free FD.
-    for(fd=0;fd<MAX_FD;fd++) 
+    for(fd=0;fd<MAX_FD;fd++)
     {
         if(this->fd_table[fd] == NULL) break;
     }
-    if(fd == MAX_FD) 
+    if(fd == MAX_FD)
     {
         return -1;
     }
 
     // Allocate a new mb_fd struct from the heap, or error.
     this->fd_table[fd] = (mb_fd *)malloc(sizeof(mb_fd));
-    if(!this->fd_table[fd]) 
+    if(!this->fd_table[fd])
     {
         return -1;
     }
-   
+
     //populate the fd.
     this->fd_table[fd]->flags = (flags & ~(MB_CREAT));
     this->fd_table[fd]->ft_entry = m;
     this->fd_table[fd]->filesize = ft_get_filesize(m);
 
-    if(flags & MB_APPEND) 
+    if(flags & MB_APPEND)
     {
         this->fd_table[fd]->seek = this->fd_table[fd]->filesize;
     }
-    else 
+    else
     {
         this->fd_table[fd]->seek = 0;
     }
-        
+
     return fd;
 }
 
@@ -538,13 +538,13 @@ int MicroBitFile::open(char const * filename, uint8_t flags)
   *
   * Example:
   * @code
-  * MicroBitFile f();
+  * MicroBitFileSystem f();
   * int fd = f.open("test.txt", MB_READ);
   * if(!f.close(fd))
   *    print("error closing file.");
   * @endcode
   */
-int MicroBitFile::close(int fd) 
+int MicroBitFileSystem::close(int fd)
 {
     if(!FS_INITIALIZED() || !FD_VALID(fd)) return 0;
 
@@ -573,36 +573,36 @@ int MicroBitFile::close(int fd)
   *
   * Example:
   * @code
-  * MicroBitFile f;
+  * MicroBitFileSystem f;
   * int fd = f.open("test.txt", MB_READ);
   * f.seek(fd, -100, MB_SEEK_END); //100 bytes before end of file.
   * @endcode
   */
-int MicroBitFile::seek(int fd, int offset, uint8_t flags) 
+int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
 {
     if(!FS_INITIALIZED() || !FD_VALID(fd)) return -1;
-    
+
     int32_t new_pos = 0;
     int max_size = this->fd_table[fd]->filesize;
-   
-    if(flags == MB_SEEK_SET && offset <= max_size) 
+
+    if(flags == MB_SEEK_SET && offset <= max_size)
     {
         new_pos = offset;
     }
-    else if(flags == MB_SEEK_END && offset <= max_size) 
+    else if(flags == MB_SEEK_END && offset <= max_size)
     {
         new_pos = max_size+offset;
     }
-    else if(flags == MB_SEEK_CUR && 
-           (this->fd_table[fd]->seek+offset) <= max_size) 
+    else if(flags == MB_SEEK_CUR &&
+           (this->fd_table[fd]->seek+offset) <= max_size)
     {
         new_pos = this->fd_table[fd]->seek + offset;
     }
-    else 
+    else
     {
         return -1;
-    }  
-   
+    }
+
     this->fd_table[fd]->seek = new_pos;
     return new_pos;
 }
@@ -621,18 +621,18 @@ int MicroBitFile::seek(int fd, int offset, uint8_t flags)
   *
   * Example:
   * @code
-  * MicroBitFile f;
+  * MicroBitFileSystem f;
   * int fd = f.open("read.txt", MB_READ);
   * if(f.read(fd, buffer, 100) != 100)
   *    print("read error");
   * @endcode
   */
-int MicroBitFile::read(int fd, uint8_t* buffer, int size) 
+int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
 {
     if(!FS_INITIALIZED() ||
        !FD_VALID(fd) ||
        !(this->fd_table[fd]->flags & MB_READ)) return -1;
-   
+
     // Basic algorithm:
     // Find the starting block number & offset,
     //
@@ -658,10 +658,10 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size)
 
     int bInd = this->fd_table[fd]->seek / PAGE_SIZE;
     int ofs = this->fd_table[fd]->seek % PAGE_SIZE;
-    int32_t filesize = this->fd_table[fd]->filesize; 
+    int32_t filesize = this->fd_table[fd]->filesize;
     int bytesRead = 0;
 
-    for(int sz = size;sz > 0 && this->fd_table[fd]->seek<filesize;) 
+    for(int sz = size;sz > 0 && this->fd_table[fd]->seek<filesize;)
     {
         // b = block number.
         int b = ft_get_block(this->fd_table[fd]->ft_entry, bInd);
@@ -670,7 +670,7 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size)
         int s = MIN(PAGE_SIZE-ofs,sz);
 
         //Can't read beyond the end of the file.
-        if((this->fd_table[fd]->seek+s) > filesize) 
+        if((this->fd_table[fd]->seek+s) > filesize)
         {
             s = filesize - this->fd_table[fd]->seek;
         }
@@ -706,18 +706,18 @@ int MicroBitFile::read(int fd, uint8_t* buffer, int size)
   *
   * Example:
   * @code
-  * MicroBitFile f();
+  * MicroBitFileSystem f();
   * int fd = f.open("test.txt", MB_WRITE);
   * if(f.write(fd, "hello!", 7) != 7)
   *    print("error writing");
   * @endcode
   */
-int MicroBitFile::write(int fd, uint8_t* buffer, int size) 
+int MicroBitFileSystem::write(int fd, uint8_t* buffer, int size)
 {
     if(!FS_INITIALIZED() ||
        !FD_VALID(fd) ||
        !(this->fd_table[fd]->flags & MB_WRITE)) return -1;
-   
+
     // Basic algorithm for writing:
     //
     // bytesWritten = 0
@@ -753,7 +753,7 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size)
     int allocated_blocks = filesize / PAGE_SIZE; //current no. blocks assigned.
     if( (filesize % PAGE_SIZE) != 0) allocated_blocks++;
 
-    for(int sz = size;sz > 0;) 
+    for(int sz = size;sz > 0;)
     {
 
         int bInd = this->fd_table[fd]->seek / PAGE_SIZE; // Block index.
@@ -761,15 +761,15 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size)
         int wr = MIN(PAGE_SIZE-ofs,sz);  // No. bytes to write.
         int b = 0;                       //absolute block number.
 
-        if(bInd >= allocated_blocks) 
-        { 
+        if(bInd >= allocated_blocks)
+        {
 
            // File must increase in size, append with new block.
-            if( (b = ft_pop_free_block()) < 0) 
+            if( (b = ft_pop_free_block()) < 0)
             {
                 break;
             }
-            if(!ft_add_block(this->fd_table[fd]->ft_entry, b)) 
+            if(!ft_add_block(this->fd_table[fd]->ft_entry, b))
             {
                 break;
             }
@@ -777,7 +777,7 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size)
             allocated_blocks++;
             newPages=1;
         }
-        else 
+        else
         {
            // Write position requires no new block allocation.
             b = ft_get_block(this->fd_table[fd]->ft_entry, bInd);
@@ -789,8 +789,8 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size)
             break;
         }
 
-        //set the new file length, if changed. 
-        if((this->fd_table[fd]->seek + wr) > this->fd_table[fd]->filesize) 
+        //set the new file length, if changed.
+        if((this->fd_table[fd]->seek + wr) > this->fd_table[fd]->filesize)
         {
             this->fd_table[fd]->filesize = this->fd_table[fd]->seek + wr;
         }
@@ -802,10 +802,10 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size)
     }
 
     //change the file size if we used new pages.
-    if(newPages) 
+    if(newPages)
     {
-        if(!this->ft_set_filesize(this->fd_table[fd]->ft_entry, 
-                                   this->fd_table[fd]->filesize)) 
+        if(!this->ft_set_filesize(this->fd_table[fd]->ft_entry,
+                                   this->fd_table[fd]->filesize))
         {
             return -1;
         }
@@ -824,21 +824,21 @@ int MicroBitFile::write(int fd, uint8_t* buffer, int size)
   *
   * Example:
   * @code
-  * MicroBitFile f;
+  * MicroBitFileSystem f;
   * if(!f.remove("file.txt"))
   *     print("file could not be removed")
   * @endcode
   */
-int MicroBitFile::remove(char const * filename) 
+int MicroBitFileSystem::remove(char const * filename)
 {
     if(!FS_INITIALIZED()) return 0;
-   
+
     // Get the FileTableEntry to remove.
     FileTableEntry* m = this->ft_by_name(filename);
-    if(m == NULL) 
+    if(m == NULL)
     {
         return 0;
     }
-    
+
     return this->ft_remove(m);
 }

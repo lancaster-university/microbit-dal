@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /**
-  * @file MicroBitFile.h
+  * @file MicroBitFileSystem.h
   * @author Alex King
   * @date 6 Mar 2016
   *
@@ -16,41 +16,41 @@
   *  - Filename
   *  - File size
   *  - An ordered list of pages/blocks that store the file data itself.
-  * 
+  *
   * The table housing these records is referred to as the File Table (FT)
   * and looks something like this:
   *  {"file1.txt",   5000,   {1,2,3,6}}  // 5000-byte file, in blocks 1,2,3,6
   *  {"file02.txt",   200,   {5}}        // 200 byte file in a single block
-  * 
-  * The first FT entry is reserved, and is used only to store a list of 
+  *
+  * The first FT entry is reserved, and is used only to store a list of
   * currently available blocks for writing.
-  * Thus to expand a file size, a block must be removed from this list, and 
+  * Thus to expand a file size, a block must be removed from this list, and
   * added to that files blocklist.
-  * 
+  *
   * Since there can only be one FT, the number of entries is restricted
-  * to how many can fit in a single flash page. Hence, this is the 
+  * to how many can fit in a single flash page. Hence, this is the
   * maximum number of files that can be stored.
-  * 
+  *
   * The filesize is stored in the FT, but cached in the mb_fd struct.
   * Writes to the FT filesize are made sparingly in write() and close(), to
   * reduce erasures.
-  * @warning close() *must* be called to ensure the FT is synched, before 
+  * @warning close() *must* be called to ensure the FT is synched, before
   * the microbit is finished.
-  * 
+  *
   * -- API overview.
   * Source code is divided logically into two parts:
   * ft_*() functions - to access and modify the FT entries.
   *                    E.g., to create a new file, change a files size,
   *                    or append new blocks to the file.
   *                    These are private methods internal to the class.
-  * 
+  *
   * read/write/seek/remove - POSIX-style file access functions.
   *                          These are the methods used to interact with the
   *                          file system.
-  * 
+  *
   * Example:
   * @code
-  * MicroBitFile f;
+  * MicroBitFileSystem f;
   * int fd = f.open("myFile.txt", MB_WRITE|MB_CREAT);
   * if(fd < 0) {
   *   print("couldn't open a new file");
@@ -62,7 +62,7 @@
   * }
   * f.close(fd);
   * @endcode
-  * 
+  *
   * -- Notes
   * - There should exist only one instance of this class.
   * @todo implement simple wear levelling for file data writes.
@@ -81,7 +81,7 @@
 
 #define MAX_FILESYSTEM_PAGES 60 // Max. number of pages available.
 
-#define NO_FT_ENTRIES  10  // Number of entries in the File table  
+#define NO_FT_ENTRIES  10  // Number of entries in the File table
                             // (determines total no. files on the system)
 
 #if ( (FILENAME_LEN + MAX_FILESYSTEM_PAGES + 4 ) * NO_FT_ENTRIES ) > PAGE_SIZE
@@ -90,7 +90,7 @@
 
 #if MAX_FILESYSTEM_PAGES > 127
 #error MAX_FILESYSTEM_PAGES cannot be greater than 127.
-#endif 
+#endif
 
 #define MAX_FILENAME_LEN FILENAME_LEN-1
 
@@ -139,35 +139,35 @@
 
 /**
   * @brief FT entry struct, for each file.
-  * 
+  *
   * The FT struct is the central source of metadata for each file. It stores:
   *  - Filename
   *  - File size
   *  - List of blocks that constitute the file.
-  *  
-  * The first FileTableEntry_t entry is reserved, and stores instead 
+  *
+  * The first FileTableEntry_t entry is reserved, and stores instead
   * the list of currently available data blocks (the free block list).
-  * 
+  *
   * Modifications to these structs should be done through ft_*() methods.
   */
-typedef struct FileTableEntry_t 
+typedef struct FileTableEntry_t
 {
-   
+
     // Filename, must be null-terminated.
-    char name[FILENAME_LEN];	
-   
+    char name[FILENAME_LEN];
+
     // Flags/length field.
     // [31] marks the FT entry as free/busy (busy=0)
     // [0-30] stores the file size.
-    uint32_t flags;	
-   
-    // Ordered list of blocks in the file. Each uint8_t element corresponds to 
+    uint32_t flags;
+
+    // Ordered list of blocks in the file. Each uint8_t element corresponds to
     // a data block:
     // [7] 	    Only used in free block list to mark block as busy/free
     //		    (1 = free, 0 = busy).
     // [0-6]	Block number.
-    uint8_t blocks[(MAX_FILESYSTEM_PAGES)]; 	
-   				
+    uint8_t blocks[(MAX_FILESYSTEM_PAGES)];
+
 } FileTableEntry;
 
 /**
@@ -180,23 +180,23 @@ typedef struct FileTableEntry_t
   * Writes to the FT are made sparingly in mb_write() and mb_close()
   * to reduce erasures.
   */
-typedef struct mb_fd_t 
+typedef struct mb_fd_t
 {
-    
+
     // read/write/creat flags.
     uint8_t flags;
-   
+
     // current seek position.
-    int32_t seek; 
-  
+    int32_t seek;
+
     // the cached file size.
     int32_t filesize;
-   
+
     // pointer to the files' FileTableEntry struct.
-    // A mb_fd_t struct cannot be in use without a FileTabeEntry 
+    // A mb_fd_t struct cannot be in use without a FileTabeEntry
     // ft_entry pointer.
-    FileTableEntry* ft_entry; 
-   
+    FileTableEntry* ft_entry;
+
 } mb_fd;
 
 /**
@@ -212,33 +212,33 @@ typedef struct mb_fd_t
   *
   * Only a single instance shoud exist at any given time.
   */
-class MicroBitFile
+class MicroBitFileSystem
 {
     private:
-  
-    // The instance of MicroBitFlash - the interface used for all 
-    // flash writes/erasures 
-    MicroBitFlash flash; 
-  
-  
+
+    // The instance of MicroBitFlash - the interface used for all
+    // flash writes/erasures
+    MicroBitFlash flash;
+
+
     // ** FT-specific members **//
-  
+
     // Pointer to the FT struct listing unused blocks.
-    FileTableEntry* ft_free_loc = NULL; 
-  
+    FileTableEntry* ft_free_loc = NULL;
+
     // Pointer to the FT table, storing the file FileTableEntry entries.
     FileTableEntry* ft_loc = NULL;
-  
+
     // Number of pages available for file data (excludes file table page)
     int flash_data_pages;
-  
-  
+
+
     // ** MicroBitFlash API members (above the FT). **//
-  
+
     // Location of the start of the flash data blocks used for file data.
     // *Excluding* the flash page reserved for FT entries.
-    uint8_t* flash_start = NULL; 
-  
+    uint8_t* flash_start = NULL;
+
     // The mb_fd pointer table, for open files.
     mb_fd * fd_table[MAX_FD];
 
@@ -251,21 +251,21 @@ class MicroBitFile
       * @return pointer to the FT struct if found, NULL otherwise or on error.
       */
     FileTableEntry* ft_by_name(char const * filename);
-  
+
     /**
       * @brief Get a pointer to the lowest numbered available FT entry.
       *
-      * @return pointer to the FT if successful, 
+      * @return pointer to the FT if successful,
       * 	NULL if there are none available.
       */
     FileTableEntry* ft_get_free();
- 
+
     /**
       * @brief initialize the FileTableEntry struct to a new file.
       *
       * Initialize the FileTableEntry struct with the null-terminated filename.
       * Ths is used to add a new file to the FT.
-      * This function also sets the file size to zero, 
+      * This function also sets the file size to zero,
       * and marks the FT as busy.
       *
       * @param m the FileTableEntry struct to use fill.
@@ -273,13 +273,13 @@ class MicroBitFile
       * @return non-zero on success, zero on error.
       */
     int ft_add(FileTableEntry* m, char const * filename);
-  
+
     /**
       * @brief add a new block to an FT entry
       *
       * Add the numbered block to the list of blocks in an  FT entry.
       * This function is used to expand the storage capacity for a file.
-      * 
+      *
       * @param m the FileTableEntry entry/struct to add too.
       * @param blockNo the numbered block to append to the block list of a
       *        files' FT.
@@ -298,7 +298,7 @@ class MicroBitFile
       * @return non-zero on success, zero on error.
       */
     int ft_remove(FileTableEntry* m);
-  
+
     /**
       * @brief obtains and marks as busy, an unused block.
       *
@@ -309,12 +309,12 @@ class MicroBitFile
       * @return block number on success, -1 on error (out of space).
       */
     int ft_pop_free_block();
-  
+
     /**
       * @brief set the filesize of an FileTableEntry
       *
       * Set, in the FT, the filesize of the entry, m.
-      * 
+      *
       * @param m the FT entry/file to modify
       * @param filesize the new filesize.
       * @return non-zero on success, zero on error.
@@ -327,13 +327,13 @@ class MicroBitFile
        * This function initializes the API for subsequent calls,
        * particularly storing the flash location, and number data pages.
        * This function must be called before any other (including ft_build).
-       * 
+       *
        * @param ft_location Location in flash of where to store the FT.
        * @param flash_data_blocks the number of data blocks/pages reserved
        *        for file data.
        */
     void ft_init(void* ft_location, int flash_data_blocks);
- 
+
     /**
       * @brief reset the FT.
       *
@@ -341,40 +341,40 @@ class MicroBitFile
       * Namely, all of the FileTableEntry entries must be set to empty (0xFF).
       * and the stack of unused blocks must be populated.
       *
-      * This function also sets the MAGIC_WORD as the first word in 
-      * the FT block, used to determine if the FT has already been 
+      * This function also sets the MAGIC_WORD as the first word in
+      * the FT block, used to determine if the FT has already been
       * configured.
       *
       * This function should be called from the init() function.
-      * 
+      *
       * @return non-zero on success, zero otherwise.
       */
     int ft_build();
 
     /**
       * @brief Initialize the flash storage system
-      * 
+      *
       * The file system is located dynamically, based on where the program code
-      * and code data finishes. This avoids having to allocate a fixed flash 
-      * region for builds even without MicroBitFile. The location is saved in 
+      * and code data finishes. This avoids having to allocate a fixed flash
+      * region for builds even without MicroBitFileSystem. The location is saved in
       * the key value store, so that this can be easily determined by the DAPLink.
-      * 
-      * The file system size expands to fill the remaining space, but is capped 
+      *
+      * The file system size expands to fill the remaining space, but is capped
       * at MAX_FILESYSTEM_PAGES.
-      * 
+      *
       * This method:
       *  - calls ft_init()
       *  - checks if the file system already exists, if not calls ft_build.
       *  - saves location to MicroBitStorage key value store.
-      * 
+      *
       * @return non-zero on success, zero on error.
       */
     int init();
 
     /**
       * @brief Pick a random block from the ft_free_loc free blocks list.
-      * 
-      * To be used in calls to flash_write/memset/erase, to specify a random 
+      *
+      * To be used in calls to flash_write/memset/erase, to specify a random
       * scratch page.
       *
       * @return NULL on error, scratch page address on success
@@ -386,11 +386,11 @@ class MicroBitFile
 
     /**
       * Constructor. Calls the necessary init() functions.
-      */ 
-    MicroBitFile();
+      */
+    MicroBitFileSystem();
 
     /**
-      * Open a new file, and obtain a new file handle (int) to 
+      * Open a new file, and obtain a new file handle (int) to
       * read/write/seek the file. The flags are:
       *  - MB_READ : read from the file.
       *  - MB_WRITE : write to the file.
@@ -405,21 +405,21 @@ class MicroBitFile
       * @param filename name of the file to open, must be null terminated.
       * @param flags
       * @return return the file handle, >= 0, or < 0 on error.
-      * 
+      *
       * Example:
       * @code
-      * MicroBitFile f();
+      * MicroBitFileSystem f();
       * int fd = f.open("test.txt", MB_WRITE|MB_CREAT);
-      * if(fd<0) 
+      * if(fd<0)
       *    print("file open error");
       * @endcode
       */
     int open(char const * filename, uint8_t flags);
-  
+
     /**
       * Close the specified file handle.
       * File handle resources are then made available for future open() calls.
-      * 
+      *
       * close() must be called at some point to ensure the filesize in the
       * FT is synced with the cached value in the FD.
       *
@@ -431,14 +431,14 @@ class MicroBitFile
       *
       * Example:
       * @code
-      * MicroBitFile f();
+      * MicroBitFileSystem f();
       * int fd = f.open("test.txt", MB_READ);
       * if(!f.close(fd))
       *    print("error closing file.");
       * @endcode
       */
     int close(int fd);
-  
+
     /**
       * Move the current position of a file handle, to be used for
       * subsequent read/write calls.
@@ -453,16 +453,16 @@ class MicroBitFile
       * @param offset new offset, can be positive/negative.
       * @param flags
       * @return new offset position on success, < 0 on error.
-      * 
+      *
       * Example:
       * @code
-      * MicroBitFile f;
+      * MicroBitFileSystem f;
       * int fd = f.open("test.txt", MB_READ);
       * f.seek(fd, -100, MB_SEEK_END); //100 bytes before end of file.
       * @endcode
       */
     int seek(int fd, int offset, uint8_t flags);
-  
+
     /**
       * Write data to the file.
       *
@@ -481,18 +481,18 @@ class MicroBitFile
       *
       * Example:
       * @code
-      * MicroBitFile f();
+      * MicroBitFileSystem f();
       * int fd = f.open("test.txt", MB_WRITE);
       * if(f.write(fd, "hello!", 7) != 7)
       *    print("error writing");
       * @endcode
       */
     int write(int fd, uint8_t* buffer, int len);
-  
+
     /**
       * Read data from the file.
       *
-      * Read len bytes from the current seek position in the file, into the 
+      * Read len bytes from the current seek position in the file, into the
       * buffer. On each invocation to read, the seek position of the file
       * handle is incremented atomically, by the number of bytes returned.
       *
@@ -503,14 +503,14 @@ class MicroBitFile
       *
       * Example:
       * @code
-      * MicroBitFile f;
+      * MicroBitFileSystem f;
       * int fd = f.open("read.txt", MB_READ);
-      * if(f.read(fd, buffer, 100) != 100) 
+      * if(f.read(fd, buffer, 100) != 100)
       *    print("read error");
       * @endcode
       */
     int read(int fd, uint8_t* buffer, int len);
-  
+
     /**
       * Remove a file from the system, and free allocated assets
       * (including assigned blocks which are returned for use by other files).
@@ -522,7 +522,7 @@ class MicroBitFile
       *
       * Example:
       * @code
-      * MicroBitFile f;
+      * MicroBitFileSystem f;
       * if(!f.remove("file.txt"))
       *     print("file could not be removed")
       * @endcode
