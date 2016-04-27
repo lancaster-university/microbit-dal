@@ -385,8 +385,10 @@ class MicroBitFileSystem
 
     public:
 
+    static MicroBitFileSystem *defaultFileSystem;
+
     /**
-      * Constructor. Calls the necessary init() functions.
+      * Constructor. Creates an instance of a MicroBitFileSystem.
       */
     MicroBitFileSystem(uint32_t flash_start = MBFS_USE_DEFAULT, int flash_pages = MBFS_USE_DEFAULT);
 
@@ -405,9 +407,10 @@ class MicroBitFileSystem
       *
       * @param filename name of the file to open, must be null terminated.
       * @param flags
-      * @return return the file handle, >= 0, or < 0 on error.
+      * @return return the file handle,MICROBIT_NOT_SUPPORTED if the file system has
+      *         not been initialised MICROBIT_INVALID_PARAMETER if the filename is
+      *         too large, MICROBIT_NO_RESOURCES if the file system is full.
       *
-      * Example:
       * @code
       * MicroBitFileSystem f();
       * int fd = f.open("test.txt", MB_WRITE|MB_CREAT);
@@ -428,9 +431,10 @@ class MicroBitFileSystem
       * leading to data loss.
       *
       * @param fd file descriptor - obtained with open().
-      * @return non-zero on success, zero on error.
+      * @return non-zero on success, MICROBIT_NOT_SUPPORTED if the file system has not
+      *         been initialised, MICROBIT_INVALID_PARAMETER if the given file handle
+      *         is invalid.
       *
-      * Example:
       * @code
       * MicroBitFileSystem f();
       * int fd = f.open("test.txt", MB_READ);
@@ -453,9 +457,10 @@ class MicroBitFileSystem
       * @param fd file handle, obtained with open()
       * @param offset new offset, can be positive/negative.
       * @param flags
-      * @return new offset position on success, < 0 on error.
+      * @return new offset position on success, MICROBIT_NOT_SUPPORTED if the file system
+      *         is not intiialised, MICROBIT_INVALID_PARAMETER if the flag given is invalid
+      *         or the file handle is invalid.
       *
-      * Example:
       * @code
       * MicroBitFileSystem f;
       * int fd = f.open("test.txt", MB_READ);
@@ -478,9 +483,11 @@ class MicroBitFileSystem
       * @param fd File handle
       * @param buffer the buffer from which to write data
       * @param len number of bytes to write
-      * @return number of bytes written on success, < 0 on error.
+      * @return number of bytes written on success, MICROBIT_NO_RESOURCES if data did
+      *         not get written to flash or the file system has not been initialised,
+      *         or this file was not opened with the MB_READ flag set, MICROBIT_INVALID_PARAMETER
+      *         if the given file handle is invalid.
       *
-      * Example:
       * @code
       * MicroBitFileSystem f();
       * int fd = f.open("test.txt", MB_WRITE);
@@ -500,9 +507,11 @@ class MicroBitFileSystem
       * @param fd File handle, obtained with open()
       * @param buffer to store data
       * @param len number of bytes to read
-      * @return number of bytes read on success, < 0 on error.
+      * @return number of bytes read on success, MICROBIT_NOT_SUPPORTED if the file
+      *         system is not initialised, or this file was not opened with the
+      *         MB_READ flag set, MICROBIT_INVALID_PARAMETER if the given file handle
+      *         is invalid.
       *
-      * Example:
       * @code
       * MicroBitFileSystem f;
       * int fd = f.open("read.txt", MB_READ);
@@ -519,9 +528,8 @@ class MicroBitFileSystem
       * @todo the file must not already have an open file handle.
       *
       * @param filename null-terminated name of the file to remove.
-      * @return non-zero on success, zero on error
+      * @return non-zero on success, MICROBIT_NOT_SUPPORTED if the file system is not initialised.
       *
-      * Example:
       * @code
       * MicroBitFileSystem f;
       * if(!f.remove("file.txt"))
