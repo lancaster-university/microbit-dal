@@ -370,12 +370,15 @@ uint8_t* MicroBitFileSystem::getRandomScratch()
 
 
 /**
-  * Constructor. Calls the necessary init() functions.
+  * Constructor. Creates an instance of a MicroBitFileSystem.
   */
 MicroBitFileSystem::MicroBitFileSystem(uint32_t flash_start, int flash_pages)
 {
     init(flash_start, flash_pages);
     memset(this->fd_table, 0x00, sizeof(mb_fd*) * MAX_FD);
+
+    if(MicroBitFileSystem::defaultFileSystem == NULL)
+        MicroBitFileSystem::defaultFileSystem = this;
 }
 
 /**
@@ -460,9 +463,10 @@ int MicroBitFileSystem::init(uint32_t flash_start, int flash_pages)
   *
   * @param filename name of the file to open, must be null terminated.
   * @param flags
-  * @return return the file handle, >= 0, or < 0 on error.
+  * @return return the file handle,MICROBIT_NOT_SUPPORTED if the file system has
+  *         not been initialised MICROBIT_INVALID_PARAMETER if the filename is
+  *         too large, MICROBIT_NO_RESOURCES if the file system is full.
   *
-  * Example:
   * @code
   * MicroBitFileSystem f();
   * int fd = f.open("test.txt", MB_WRITE|MB_CREAT);
@@ -472,7 +476,11 @@ int MicroBitFileSystem::init(uint32_t flash_start, int flash_pages)
   */
 int MicroBitFileSystem::open(char const * filename, uint8_t flags)
 {
-    if(!FS_INITIALIZED() || strlen(filename) > MAX_FILENAME_LEN) return -1;
+    if(!FS_INITIALIZED())
+        return MICROBIT_NOT_SUPPORTED
+
+    if(strlen(filename) > MAX_FILENAME_LEN)
+        return MICROBIT_INVALID_PARAMETER;
 
     FileTableEntry* m;
     int fd;
@@ -486,7 +494,7 @@ int MicroBitFileSystem::open(char const * filename, uint8_t flags)
            !this->ft_add(m, filename))
         {
             // Couldn't set the FT entry.
-            return -1;
+            return MICROBIT_NO_RESOURCES;
         }
 
     }
@@ -498,14 +506,14 @@ int MicroBitFileSystem::open(char const * filename, uint8_t flags)
     }
     if(fd == MAX_FD)
     {
-        return -1;
+        return MICROBIT_NO_RESOURCES;
     }
 
     // Allocate a new mb_fd struct from the heap, or error.
     this->fd_table[fd] = (mb_fd *)malloc(sizeof(mb_fd));
     if(!this->fd_table[fd])
     {
-        return -1;
+        return MICROBIT_NO_RESOURCES;
     }
 
     //populate the fd.
@@ -536,9 +544,10 @@ int MicroBitFileSystem::open(char const * filename, uint8_t flags)
   * leading to data loss.
   *
   * @param fd file descriptor - obtained with open().
-  * @return non-zero on success, zero on error.
+  * @return non-zero on success, MICROBIT_NOT_SUPPORTED if the file system has not
+  *         been initialised, MICROBIT_INVALID_PARAMETER if the given file handle
+  *         is invalid.
   *
-  * Example:
   * @code
   * MicroBitFileSystem f();
   * int fd = f.open("test.txt", MB_READ);
@@ -548,7 +557,11 @@ int MicroBitFileSystem::open(char const * filename, uint8_t flags)
   */
 int MicroBitFileSystem::close(int fd)
 {
-    if(!FS_INITIALIZED() || !FD_VALID(fd)) return 0;
+    if(!FS_INITIALIZED())
+        return MICROBIT_NOT_SUPPORTED;
+
+    if(!FD_VALID(fd))
+        return MICROBIT_INVALID_PARAMETER;
 
     this->ft_set_filesize(this->fd_table[fd]->ft_entry,
                           this->fd_table[fd]->filesize);
@@ -571,9 +584,10 @@ int MicroBitFileSystem::close(int fd)
   * @param fd file handle, obtained with open()
   * @param offset new offset, can be positive/negative.
   * @param flags
-  * @return new offset position on success, < 0 on error.
+  * @return new offset position on success, MICROBIT_NOT_SUPPORTED if the file system
+  *         is not intiialised, MICROBIT_INVALID_PARAMETER if the flag given is invalid
+  *         or the file handle is invalid.
   *
-  * Example:
   * @code
   * MicroBitFileSystem f;
   * int fd = f.open("test.txt", MB_READ);
@@ -582,7 +596,12 @@ int MicroBitFileSystem::close(int fd)
   */
 int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
 {
-    if(!FS_INITIALIZED() || !FD_VALID(fd)) return -1;
+    if(!FS_INITIALIZED())
+        return MICROBIT_NOT_SUPPORTED;
+
+    if(!FD_VALID(fd))
+        return MICROBIT_INVALID_PARAMETER;
+
 
     int32_t new_pos = 0;
     int max_size = this->fd_table[fd]->filesize;
@@ -602,7 +621,7 @@ int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
     }
     else
     {
-        return -1;
+        return MICROBIT_INVALID_PARAMETER;
     }
 
     this->fd_table[fd]->seek = new_pos;
@@ -619,9 +638,11 @@ int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
   * @param fd File handle, obtained with open()
   * @param buffer to store data
   * @param len number of bytes to read
-  * @return number of bytes read on success, < 0 on error.
+  * @return number of bytes read on success, MICROBIT_NOT_SUPPORTED if the file
+  *         system is not initialised, or this file was not opened with the
+  *         MB_READ flag set, MICROBIT_INVALID_PARAMETER if the given file handle
+  *         is invalid.
   *
-  * Example:
   * @code
   * MicroBitFileSystem f;
   * int fd = f.open("read.txt", MB_READ);
@@ -631,9 +652,11 @@ int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
   */
 int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
 {
-    if(!FS_INITIALIZED() ||
-       !FD_VALID(fd) ||
-       !(this->fd_table[fd]->flags & MB_READ)) return -1;
+    if(!FS_INITIALIZED() || !(this->fd_table[fd]->flags & MB_READ))
+        return MICROBIT_NOT_SUPPORTED;
+
+    if(!FD_VALID(fd))
+        return MICROBIT_INVALID_PARAMETER;
 
     // Basic algorithm:
     // Find the starting block number & offset,
@@ -704,9 +727,11 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
   * @param fd File handle
   * @param buffer the buffer from which to write data
   * @param len number of bytes to write
-  * @return number of bytes written on success, < 0 on error.
+  * @return number of bytes written on success, MICROBIT_NO_RESOURCES if data did
+  *         not get written to flash or the file system has not been initialised,
+  *         or this file was not opened with the MB_READ flag set, MICROBIT_INVALID_PARAMETER
+  *         if the given file handle is invalid.
   *
-  * Example:
   * @code
   * MicroBitFileSystem f();
   * int fd = f.open("test.txt", MB_WRITE);
@@ -716,9 +741,11 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
   */
 int MicroBitFileSystem::write(int fd, uint8_t* buffer, int size)
 {
-    if(!FS_INITIALIZED() ||
-       !FD_VALID(fd) ||
-       !(this->fd_table[fd]->flags & MB_WRITE)) return -1;
+    if(!FS_INITIALIZED() || !(this->fd_table[fd]->flags & MB_WRITE))
+        return MICROBIT_NOT_SUPPORTED;
+
+    if(!FD_VALID(fd))
+        return MICROBIT_INVALID_PARAMETER;
 
     // Basic algorithm for writing:
     //
@@ -809,7 +836,7 @@ int MicroBitFileSystem::write(int fd, uint8_t* buffer, int size)
         if(!this->ft_set_filesize(this->fd_table[fd]->ft_entry,
                                    this->fd_table[fd]->filesize))
         {
-            return -1;
+            return MICROBIT_NO_RESOURCES;
         }
     }
     return bytesWritten;
@@ -822,9 +849,8 @@ int MicroBitFileSystem::write(int fd, uint8_t* buffer, int size)
   * @todo the file must not already have an open file handle.
   *
   * @param filename null-terminated name of the file to remove.
-  * @return non-zero on success, zero on error
+  * @return non-zero on success, MICROBIT_NOT_SUPPORTED if the file system is not initialised.
   *
-  * Example:
   * @code
   * MicroBitFileSystem f;
   * if(!f.remove("file.txt"))
@@ -833,7 +859,8 @@ int MicroBitFileSystem::write(int fd, uint8_t* buffer, int size)
   */
 int MicroBitFileSystem::remove(char const * filename)
 {
-    if(!FS_INITIALIZED()) return 0;
+    if(!FS_INITIALIZED())
+        return MICROBIT_NOT_SUPPORTED;
 
     // Get the FileTableEntry to remove.
     FileTableEntry* m = this->ft_by_name(filename);
