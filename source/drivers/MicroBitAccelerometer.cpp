@@ -189,6 +189,7 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
 
     // Initialise gesture history
     this->sigma = 0;
+    this->impulseSigma = 0;
     this->lastGesture = GESTURE_NONE;
     this->currentGesture = GESTURE_NONE;
     this->shake.x = 0;
@@ -196,6 +197,10 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
     this->shake.z = 0;
     this->shake.count = 0;
     this->shake.timer = 0;
+    this->shake.tap = 1;
+    this->shake.impulse_3 = 1;
+    this->shake.impulse_6 = 1;
+    this->shake.impulse_8 = 1;
 
     // Configure and enable the accelerometer.
     if (this->configure() == MICROBIT_OK)
@@ -318,8 +323,8 @@ int MicroBitAccelerometer::instantaneousAccelerationSquared()
  */
 BasicGesture MicroBitAccelerometer::instantaneousPosture()
 {
-    int force = instantaneousAccelerationSquared();
     bool shakeDetected = false;
+
 
     // Test for shake events.
     // We detect a shake by measuring zero crossings in each axis. In other words, if we see a strong acceleration to the left followed by
@@ -358,20 +363,10 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
         }
     }
 
+    // Shake events take the highest priority, as under high levels of change, other events
+    // are likely to be transient.
     if (shake.shaken)
         return GESTURE_SHAKE;
-
-    if (force < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD)
-        return GESTURE_FREEFALL;
-
-    if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD)
-        return GESTURE_3G;
-
-    if (force > MICROBIT_ACCELEROMETER_6G_THRESHOLD)
-        return GESTURE_6G;
-
-    if (force > MICROBIT_ACCELEROMETER_8G_THRESHOLD)
-        return GESTURE_8G;
 
     // Determine our posture.
     if (getX() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
@@ -401,6 +396,39 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
   */
 void MicroBitAccelerometer::updateGesture()
 {
+    // Check for High/Low G force events - typically impulses, impacts etc.
+    // Again, during such spikes, these event take priority of the posture of the device.
+    // For these events, we don't perform any low pass filtering.
+    int force = instantaneousAccelerationSquared();
+
+    if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD)
+    {
+        if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD && !shake.impulse_3)
+        {
+            MicroBitEvent e(MICROBIT_ID_GESTURE, GESTURE_3G);
+            shake.impulse_3 = 1;
+        }
+        if (force > MICROBIT_ACCELEROMETER_6G_THRESHOLD && !shake.impulse_6)
+        {
+            MicroBitEvent e(MICROBIT_ID_GESTURE, GESTURE_6G);
+            shake.impulse_6 = 1;
+        }
+        if (force > MICROBIT_ACCELEROMETER_8G_THRESHOLD && !shake.impulse_8)
+        {
+            MicroBitEvent e(MICROBIT_ID_GESTURE, GESTURE_8G);
+            shake.impulse_8 = 1;
+        }
+
+        impulseSigma = 0;
+    }
+
+    // Reset the impulse event onve the acceleration has subsided.
+    if (impulseSigma < MICROBIT_ACCELEROMETER_GESTURE_DAMPING)
+        impulseSigma++;
+    else
+        shake.impulse_3 = shake.impulse_6 = shake.impulse_8 = 0;
+
+
     // Determine what it looks like we're doing based on the latest sample...
     BasicGesture g = instantaneousPosture();
 

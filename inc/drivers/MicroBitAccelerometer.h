@@ -155,8 +155,12 @@ struct ShakeHistory
                 x:1,
                 y:1,
                 z:1,
+                unused,
+                impulse_3,
+                impulse_6,
+                impulse_8,
                 count:4,
-                timer:8;
+                timer:4;
 };
 
 /**
@@ -176,6 +180,7 @@ class MicroBitAccelerometer : public MicroBitComponent
     MicroBitI2C&    i2c;                // The I2C interface to use.
     float           roll;               // Roll of the device, in radians.
     uint8_t         sigma;              // the number of ticks that the instantaneous gesture has been stable.
+    uint8_t         impulseSigma;       // the number of ticks since an impulse event has been generated.
     BasicGesture    lastGesture;        // the last, stable gesture recorded.
     BasicGesture    currentGesture;     // the instantaneous, unfiltered gesture detected.
     ShakeHistory    shake;              // State information needed to detect shake events.
