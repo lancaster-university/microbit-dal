@@ -312,7 +312,7 @@ int MicroBitAccelerometer::instantaneousAccelerationSquared()
  * Service function.
  * Determines a 'best guess' posture of the device based on instantaneous data.
  *
- * This makes no use of historic data, and forms this input to the filter implemented in updateGesture().
+ * This makes no use of historic data, and forms the input to the filter implemented in updateGesture().
  *
  * @return A 'best guess' of the current posture of the device, based on instanataneous data.
  */
@@ -323,7 +323,7 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
 
     // Test for shake events.
     // We detect a shake by measuring zero crossings in each axis. In other words, if we see a strong acceleration to the left followed by
-    // a string acceleration to the right, then we can infer a shake. Similarly, we can do this for each acxis (left/right, up/down, in/out).
+    // a strong acceleration to the right, then we can infer a shake. Similarly, we can do this for each axis (left/right, up/down, in/out).
     //
     // If we see enough zero crossings in succession (MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD), then we decide that the device
     // has been shaken.
