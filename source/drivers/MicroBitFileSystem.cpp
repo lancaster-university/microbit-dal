@@ -23,6 +23,8 @@ extern uint32_t __data_end__;
 extern uint32_t __data_start__;
 extern uint32_t __etext;
 
+MicroBitFileSystem* MicroBitFileSystem::defaultFileSystem = NULL;
+
 /**
   * @brief Find an FT entry by name.
   *
@@ -165,7 +167,7 @@ int MicroBitFileSystem::ft_remove(FileTableEntry* m)
     //not enough room. (this shouldn't happen)
     if(used > b)
     {
-        return 0;
+        return MICROBIT_CANCELLED;
     }
     int p = b-used;
 
@@ -173,7 +175,7 @@ int MicroBitFileSystem::ft_remove(FileTableEntry* m)
     if(!this->flash.flash_erase_mem((uint8_t*)&this->ft_free_loc->blocks[p],
                                     used, getRandomScratch()))
     {
-        return 0;
+        return MICROBIT_CANCELLED;
     }
 
     // Write each of the block numbers.
@@ -188,7 +190,7 @@ int MicroBitFileSystem::ft_remove(FileTableEntry* m)
         if(!this->flash.flash_write(&this->ft_free_loc->blocks[p+j],&bl,1,
                                     getRandomScratch()))
         {
-            return 0;
+            return MICROBIT_CANCELLED;
         }
     }
 
@@ -196,10 +198,10 @@ int MicroBitFileSystem::ft_remove(FileTableEntry* m)
     if(!this->flash.flash_erase_mem((uint8_t*)m, sizeof(FileTableEntry),
                                     getRandomScratch()))
     {
-        return 0;
+        return MICROBIT_CANCELLED;
     }
 
-    return 1;
+    return MICROBIT_OK;
 }
 
 /**
@@ -374,11 +376,12 @@ uint8_t* MicroBitFileSystem::getRandomScratch()
   */
 MicroBitFileSystem::MicroBitFileSystem(uint32_t flash_start, int flash_pages)
 {
-    init(flash_start, flash_pages);
-    memset(this->fd_table, 0x00, sizeof(mb_fd*) * MAX_FD);
+        init(flash_start, flash_pages);
 
-    if(MicroBitFileSystem::defaultFileSystem == NULL)
-        MicroBitFileSystem::defaultFileSystem = this;
+        memset(this->fd_table, 0x00, sizeof(mb_fd*) * MAX_FD);
+
+        if(MicroBitFileSystem::defaultFileSystem == NULL)
+            MicroBitFileSystem::defaultFileSystem = this;
 }
 
 /**
@@ -477,7 +480,7 @@ int MicroBitFileSystem::init(uint32_t flash_start, int flash_pages)
 int MicroBitFileSystem::open(char const * filename, uint8_t flags)
 {
     if(!FS_INITIALIZED())
-        return MICROBIT_NOT_SUPPORTED
+        return MICROBIT_NOT_SUPPORTED;
 
     if(strlen(filename) > MAX_FILENAME_LEN)
         return MICROBIT_INVALID_PARAMETER;
@@ -544,7 +547,7 @@ int MicroBitFileSystem::open(char const * filename, uint8_t flags)
   * leading to data loss.
   *
   * @param fd file descriptor - obtained with open().
-  * @return non-zero on success, MICROBIT_NOT_SUPPORTED if the file system has not
+  * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file system has not
   *         been initialised, MICROBIT_INVALID_PARAMETER if the given file handle
   *         is invalid.
   *
@@ -568,7 +571,7 @@ int MicroBitFileSystem::close(int fd)
 
     microbit_free(this->fd_table[fd]);
     this->fd_table[fd] = NULL;
-    return 1;
+    return MICROBIT_OK;
 }
 
 /**
@@ -601,7 +604,6 @@ int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
 
     if(!FD_VALID(fd))
         return MICROBIT_INVALID_PARAMETER;
-
 
     int32_t new_pos = 0;
     int max_size = this->fd_table[fd]->filesize;
@@ -729,7 +731,7 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
   * @param len number of bytes to write
   * @return number of bytes written on success, MICROBIT_NO_RESOURCES if data did
   *         not get written to flash or the file system has not been initialised,
-  *         or this file was not opened with the MB_READ flag set, MICROBIT_INVALID_PARAMETER
+  *         or this file was not opened with the MB_WRITE flag set, MICROBIT_INVALID_PARAMETER
   *         if the given file handle is invalid.
   *
   * @code
@@ -849,7 +851,8 @@ int MicroBitFileSystem::write(int fd, uint8_t* buffer, int size)
   * @todo the file must not already have an open file handle.
   *
   * @param filename null-terminated name of the file to remove.
-  * @return non-zero on success, MICROBIT_NOT_SUPPORTED if the file system is not initialised.
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if the given filename
+  *         does not exist, MICROBIT_CANCELLED if something went wrong.
   *
   * @code
   * MicroBitFileSystem f;
@@ -866,7 +869,7 @@ int MicroBitFileSystem::remove(char const * filename)
     FileTableEntry* m = this->ft_by_name(filename);
     if(m == NULL)
     {
-        return 0;
+        return MICROBIT_INVALID_PARAMETER;
     }
 
     return this->ft_remove(m);

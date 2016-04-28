@@ -1,5 +1,5 @@
-#ifndef MICROBIT_FILE_H_
-#define MICROBIT_FILE_H_
+#ifndef MICROBIT_FILE_SYSTEM_H
+#define MICROBIT_FILE_SYSTEM_H
 #include "MicroBitConfig.h"
 #include "MicroBitFlash.h"
 #include <stdint.h>
@@ -485,7 +485,7 @@ class MicroBitFileSystem
       * @param len number of bytes to write
       * @return number of bytes written on success, MICROBIT_NO_RESOURCES if data did
       *         not get written to flash or the file system has not been initialised,
-      *         or this file was not opened with the MB_READ flag set, MICROBIT_INVALID_PARAMETER
+      *         or this file was not opened with the MB_WRITE flag set, MICROBIT_INVALID_PARAMETER
       *         if the given file handle is invalid.
       *
       * @code
@@ -528,7 +528,8 @@ class MicroBitFileSystem
       * @todo the file must not already have an open file handle.
       *
       * @param filename null-terminated name of the file to remove.
-      * @return non-zero on success, MICROBIT_NOT_SUPPORTED if the file system is not initialised.
+      * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER if the given filename
+      *         does not exist, MICROBIT_CANCELLED if something went wrong
       *
       * @code
       * MicroBitFileSystem f;
