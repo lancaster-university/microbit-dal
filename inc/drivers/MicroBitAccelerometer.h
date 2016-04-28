@@ -78,6 +78,7 @@ DEALINGS IN THE SOFTWARE.
 /**
   * Gesture events
   */
+#define MICROBIT_ACCELEROMETER_EVT_NONE                     0
 #define MICROBIT_ACCELEROMETER_EVT_TILT_UP                  1
 #define MICROBIT_ACCELEROMETER_EVT_TILT_DOWN                2
 #define MICROBIT_ACCELEROMETER_EVT_TILT_LEFT                3
@@ -133,22 +134,6 @@ struct MMA8653SampleRangeConfig
 extern const MMA8653SampleRangeConfig MMA8653SampleRange[];
 extern const MMA8653SampleRateConfig MMA8653SampleRate[];
 
-enum BasicGesture
-{
-    GESTURE_NONE,
-    GESTURE_UP,
-    GESTURE_DOWN,
-    GESTURE_LEFT,
-    GESTURE_RIGHT,
-    GESTURE_FACE_UP,
-    GESTURE_FACE_DOWN,
-    GESTURE_FREEFALL,
-    GESTURE_3G,
-    GESTURE_6G,
-    GESTURE_8G,
-    GESTURE_SHAKE
-};
-
 struct ShakeHistory
 {
     uint16_t    shaken:1,
@@ -181,8 +166,8 @@ class MicroBitAccelerometer : public MicroBitComponent
     float           roll;               // Roll of the device, in radians.
     uint8_t         sigma;              // the number of ticks that the instantaneous gesture has been stable.
     uint8_t         impulseSigma;       // the number of ticks since an impulse event has been generated.
-    BasicGesture    lastGesture;        // the last, stable gesture recorded.
-    BasicGesture    currentGesture;     // the instantaneous, unfiltered gesture detected.
+    uint16_t        lastGesture;        // the last, stable gesture recorded.
+    uint16_t        currentGesture;     // the instantaneous, unfiltered gesture detected.
     ShakeHistory    shake;              // State information needed to detect shake events.
 
     public:
@@ -382,7 +367,7 @@ class MicroBitAccelerometer : public MicroBitComponent
       *     display.scroll("SHAKE!");
       * @endcode
       */
-    BasicGesture getGesture();
+    uint16_t getGesture();
 
     /**
       * A periodic callback invoked by the fiber scheduler idle thread.
@@ -466,7 +451,7 @@ class MicroBitAccelerometer : public MicroBitComponent
      *
      * @return A 'best guess' of the current posture of the device, based on instanataneous data.
      */
-    BasicGesture instantaneousPosture();
+    uint16_t instantaneousPosture();
 };
 
 #endif

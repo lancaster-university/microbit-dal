@@ -190,14 +190,13 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
     // Initialise gesture history
     this->sigma = 0;
     this->impulseSigma = 0;
-    this->lastGesture = GESTURE_NONE;
-    this->currentGesture = GESTURE_NONE;
+    this->lastGesture = MICROBIT_ACCELEROMETER_EVT_NONE;
+    this->currentGesture = MICROBIT_ACCELEROMETER_EVT_NONE;
     this->shake.x = 0;
     this->shake.y = 0;
     this->shake.z = 0;
     this->shake.count = 0;
     this->shake.timer = 0;
-    this->shake.tap = 1;
     this->shake.impulse_3 = 1;
     this->shake.impulse_6 = 1;
     this->shake.impulse_8 = 1;
@@ -321,7 +320,7 @@ int MicroBitAccelerometer::instantaneousAccelerationSquared()
  *
  * @return A 'best guess' of the current posture of the device, based on instanataneous data.
  */
-BasicGesture MicroBitAccelerometer::instantaneousPosture()
+uint16_t MicroBitAccelerometer::instantaneousPosture()
 {
     bool shakeDetected = false;
 
@@ -366,28 +365,28 @@ BasicGesture MicroBitAccelerometer::instantaneousPosture()
     // Shake events take the highest priority, as under high levels of change, other events
     // are likely to be transient.
     if (shake.shaken)
-        return GESTURE_SHAKE;
+        return MICROBIT_ACCELEROMETER_EVT_SHAKE;
 
     // Determine our posture.
     if (getX() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return GESTURE_LEFT;
+        return MICROBIT_ACCELEROMETER_EVT_TILT_LEFT;
 
     if (getX() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return GESTURE_RIGHT;
+        return MICROBIT_ACCELEROMETER_EVT_TILT_RIGHT;
 
     if (getY() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return GESTURE_DOWN;
+        return MICROBIT_ACCELEROMETER_EVT_TILT_DOWN;
 
     if (getY() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return GESTURE_UP;
+        return MICROBIT_ACCELEROMETER_EVT_TILT_UP;
 
     if (getZ() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return GESTURE_FACE_UP;
+        return MICROBIT_ACCELEROMETER_EVT_FACE_UP;
 
     if (getZ() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return GESTURE_FACE_DOWN;
+        return MICROBIT_ACCELEROMETER_EVT_FACE_DOWN;
 
-    return GESTURE_NONE;
+    return MICROBIT_ACCELEROMETER_EVT_NONE;
 }
 
 /**
@@ -405,17 +404,17 @@ void MicroBitAccelerometer::updateGesture()
     {
         if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD && !shake.impulse_3)
         {
-            MicroBitEvent e(MICROBIT_ID_GESTURE, GESTURE_3G);
+            MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_3G);
             shake.impulse_3 = 1;
         }
         if (force > MICROBIT_ACCELEROMETER_6G_THRESHOLD && !shake.impulse_6)
         {
-            MicroBitEvent e(MICROBIT_ID_GESTURE, GESTURE_6G);
+            MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_6G);
             shake.impulse_6 = 1;
         }
         if (force > MICROBIT_ACCELEROMETER_8G_THRESHOLD && !shake.impulse_8)
         {
-            MicroBitEvent e(MICROBIT_ID_GESTURE, GESTURE_8G);
+            MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_8G);
             shake.impulse_8 = 1;
         }
 
@@ -430,7 +429,7 @@ void MicroBitAccelerometer::updateGesture()
 
 
     // Determine what it looks like we're doing based on the latest sample...
-    BasicGesture g = instantaneousPosture();
+    uint16_t g = instantaneousPosture();
 
     // Perform some low pass filtering to reduce jitter from any detected effects
     if (g == currentGesture)
@@ -688,7 +687,7 @@ void MicroBitAccelerometer::recalculatePitchRoll()
   *     display.scroll("SHAKE!");
   * @endcode
   */
-BasicGesture MicroBitAccelerometer::getGesture()
+uint16_t MicroBitAccelerometer::getGesture()
 {
     return lastGesture;
 }
