@@ -666,13 +666,13 @@ float MicroBitAccelerometer::getRollRadians()
   */
 void MicroBitAccelerometer::recalculatePitchRoll()
 {
-    float x = (float) getX(NORTH_EAST_DOWN);
-    float y = (float) getY(NORTH_EAST_DOWN);
-    float z = (float) getZ(NORTH_EAST_DOWN);
+    double x = (double) getX(NORTH_EAST_DOWN);
+    double y = (double) getY(NORTH_EAST_DOWN);
+    double z = (double) getZ(NORTH_EAST_DOWN);
 
-    roll = atan2((double)getY(NORTH_EAST_DOWN), (double)getZ(NORTH_EAST_DOWN));
-
+    roll = atan2(y, z);
     pitch = atan(-x / (y*sin(roll) + z*cos(roll)));
+
     status |= MICROBIT_ACCEL_PITCH_ROLL_VALID;
 }
 
