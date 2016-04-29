@@ -6,11 +6,6 @@
 #include "MicroBitFileSystem.h"
 #include "ManagedString.h"
 
-#define READ                            MB_READ
-#define WRITE                           MB_WRITE
-#define READ_AND_WRITE                  READ | WRITE
-#define CREATE                          MB_CREAT
-
 class MicroBitFile
 {
 
@@ -24,9 +19,9 @@ class MicroBitFile
       *
       * @param fileName the name of the file to create/open.
       *
-      * @param mode One of: READ, WRITE, READ_AND_WRITE. Defaults to READ_AND_WRITE.
+      * @param mode One of: MB_READ, MB_WRITE. Defaults to MB_READ | MB_WRITE.
       */
-    MicroBitFile(ManagedString fileName, int mode = READ_AND_WRITE);
+    MicroBitFile(ManagedString fileName, int mode = MB_READ | MB_WRITE);
 
     /**
       * Seeks to a position in this MicroBitFile instance from the beginning of the file.
@@ -164,7 +159,7 @@ class MicroBitFile
     /**
       * Opens this MicroBitFile instance if the file has previously been closed.
       *
-      * @param mode One of: READ, WRITE, READ_AND_WRITE. Defaults to READ_AND_WRITE.
+      * @param mode One of: MB_READ, MB_WRITE. Defaults to MB_READ | MB_WRITE.
       *
       * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file is already open,
       *         MICROBIT_INVALID_PARAMETER if the filename is too large, MICROBIT_NO_RESOURCES
@@ -173,7 +168,7 @@ class MicroBitFile
       * @note MicroBitFiles are opened at construction and are implicitly closed at
       *       destruction. They can be closed explicitly using the close() member function.
       */
-    int open(int mode = READ_AND_WRITE);
+    int open(int mode = MB_READ | MB_WRITE);
 
     /**
       * Closes this MicroBitFile instance
@@ -185,6 +180,14 @@ class MicroBitFile
       *       destruction. They can be closed explicitly using this member function.
       */
     int close();
+    
+    /**
+      * The length of the file in bytes
+      *
+      * @return the length on success, MICROBIT_NOT_SUPPORTED if the file handle
+      *         is invalid.
+      */
+    int length();
 
     /**
       * Destructor for MicroBitFile. Implicitly closes the current file.

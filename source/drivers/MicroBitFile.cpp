@@ -6,20 +6,16 @@
   *
   * @param fileName the name of the file to create/open.
   *
-  * @param mode One of: READ, WRITE, READ_AND_WRITE. Defaults to READ_AND_WRITE.
+  * @param mode One of: MB_READ, MB_WRITE, READ_AND_WRITE. Defaults to MB_READ | MB_WRITE.
   */
 MicroBitFile::MicroBitFile(ManagedString fileName, int mode)
 {
     this->fileName = fileName;
 
-    MicroBitFileSystem* fs;
+    if(!MicroBitFileSystem::defaultFileSystem)
+        new MicroBitFileSystem();
 
-    if(MicroBitFileSystem::defaultFileSystem == NULL)
-        fs = new MicroBitFileSystem();
-    else
-        fs = MicroBitFileSystem::defaultFileSystem;
-
-    fileHandle = fs->open(fileName.toCharArray(), mode | CREATE);
+    fileHandle = MicroBitFileSystem::defaultFileSystem->open(fileName.toCharArray(), mode | MB_CREAT);
 }
 
 /**
@@ -139,14 +135,12 @@ int MicroBitFile::read(char *buffer, int size)
   */
 ManagedString MicroBitFile::read(int size)
 {
+    if(size <= 0 || fileHandle < 0)
+        return ManagedString::EmptyString;
+    
     char buff[size + 1];
 
-    buff[size] = 0;
-
     int ret = read(buff, size);
-
-    if(ret < 0)
-        return ManagedString();
 
     return ManagedString(buff,ret);
 }
@@ -164,10 +158,8 @@ int MicroBitFile::remove()
 
     int ret = MicroBitFileSystem::defaultFileSystem->remove(fileName.toCharArray());
 
-    if(ret < 0)
-        return ret;
-
-    fileHandle = MICROBIT_NOT_SUPPORTED;
+    if(ret >= 0)
+        fileHandle = MICROBIT_NOT_SUPPORTED;
 
     return ret;
 }
@@ -215,11 +207,7 @@ int MicroBitFile::append(ManagedString s)
   */
 void MicroBitFile::operator+=(const char c)
 {
-    char s[1];
-
-    s[0] = c;
-
-    append(s, 1);
+    append(&c, 1);
 }
 
 /**
@@ -230,8 +218,7 @@ void MicroBitFile::operator+=(const char c)
   */
 void MicroBitFile::operator+=(const char* s)
 {
-    int len = strlen(s);
-    append(s, len);
+    append(s, strlen(s));
 }
 
 /**
@@ -260,7 +247,7 @@ int MicroBitFile::getHandle()
 /**
   * Opens this MicroBitFile instance if the file has previously been closed.
   *
-  * @param mode One of: READ, WRITE, READ_AND_WRITE. Defaults to READ_AND_WRITE.
+  * @param mode One of: MB_READ, MB_WRITE, READ_AND_WRITE. Defaults to MB_READ | MB_WRITE.
   *
   * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file is already open,
   *         MICROBIT_INVALID_PARAMETER if the filename is too large, MICROBIT_NO_RESOURCES
@@ -274,7 +261,7 @@ int MicroBitFile::open(int mode)
     if(fileHandle >= 0)
         return MICROBIT_NOT_SUPPORTED;
 
-    int ret = MicroBitFileSystem::defaultFileSystem->open(fileName.toCharArray(), mode | CREATE);
+    int ret = MicroBitFileSystem::defaultFileSystem->open(fileName.toCharArray(), mode | MB_CREAT);
 
     if(ret < 0)
         return ret;
@@ -303,7 +290,23 @@ int MicroBitFile::close()
     if(ret < 0)
         return ret;
 
-    fileHandle = MICROBIT_NO_RESOURCES;
+    fileHandle = MICROBIT_NOT_SUPPORTED;
+
+    return ret;
+}
+
+/**
+  * The length of the file in bytes
+  *
+  * @return the length on success, MICROBIT_NOT_SUPPORTED if the file handle
+  *         is invalid.
+  */
+int MicroBitFile::length()
+{
+    if(fileHandle < 0)
+        return MICROBIT_NOT_SUPPORTED;
+
+    int ret = MicroBitFileSystem::defaultFileSystem->length(fileHandle);
 
     return ret;
 }
