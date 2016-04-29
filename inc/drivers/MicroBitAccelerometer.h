@@ -140,7 +140,7 @@ struct ShakeHistory
                 x:1,
                 y:1,
                 z:1,
-                freefall,
+                unused,
                 impulse_3,
                 impulse_6,
                 impulse_8,

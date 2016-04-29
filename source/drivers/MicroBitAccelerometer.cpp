@@ -197,7 +197,6 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
     this->shake.z = 0;
     this->shake.count = 0;
     this->shake.timer = 0;
-    this->shake.freefall = 1;
     this->shake.impulse_3 = 1;
     this->shake.impulse_6 = 1;
     this->shake.impulse_8 = 1;
@@ -325,7 +324,6 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
 {
     bool shakeDetected = false;
 
-
     // Test for shake events.
     // We detect a shake by measuring zero crossings in each axis. In other words, if we see a strong acceleration to the left followed by
     // a strong acceleration to the right, then we can infer a shake. Similarly, we can do this for each axis (left/right, up/down, in/out).
@@ -367,6 +365,9 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
     // are likely to be transient.
     if (shake.shaken)
         return MICROBIT_ACCELEROMETER_EVT_SHAKE;
+
+    if (instantaneousAccelerationSquared() < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD)
+        return MICROBIT_ACCELEROMETER_EVT_FREEFALL;
 
     // Determine our posture.
     if (getX() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
@@ -422,18 +423,11 @@ void MicroBitAccelerometer::updateGesture()
         impulseSigma = 0;
     }
 
-    if (force < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD && !shake.freefall)
-    {
-        MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_FREEFALL);
-        shake.freefall = 1;
-        impulseSigma = 0;
-    }
-
     // Reset the impulse event onve the acceleration has subsided.
     if (impulseSigma < MICROBIT_ACCELEROMETER_GESTURE_DAMPING)
         impulseSigma++;
     else
-        shake.impulse_3 = shake.impulse_6 = shake.impulse_8 = shake.freefall = 0;
+        shake.impulse_3 = shake.impulse_6 = shake.impulse_8 = 0;
 
 
     // Determine what it looks like we're doing based on the latest sample...
