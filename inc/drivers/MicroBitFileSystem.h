@@ -83,7 +83,7 @@
 #define NO_FT_ENTRIES  10  // Number of entries in the File table
                             // (determines total no. files on the system)
 
-#define MBFS_USE_DEFAULT 0xFFFFFFFF
+#define MBFS_USE_DEFAULT 0
 
 #if ( (FILENAME_LEN + MAX_FILESYSTEM_PAGES + 4 ) * NO_FT_ENTRIES ) > PAGE_SIZE
 #error NO_FT_ENTRIES is too large, file table must fit in a single page.
@@ -108,21 +108,6 @@
 // Used in FileTableEntry_t.blocks to indicate if a block is free.
 #define FT_FREE_BLOCK_MARKER 0x80
 
-// Check if a given FileTableEntry is free.
-#define FT_IS_FREE(m) ( (m).flags & FT_FREE)
-
-// Macro to read the file size from an FileTableEntry_t pointer.
-#define ft_get_filesize(m)  (m->flags & FT_SIZE_MASK)
-
-// return the indexed block number from the FileTableEntry_t block list.
-#define ft_get_block(m,b) (m->blocks[b])
-
-// Obtain pointer to the indexed FileTableEntry entry.
-#define ft_by_id(index) (&ft_loc[index])
-
-// Check if a FileTableEntry pointer is within table.
-#define FT_PTR_VALID(p) ( (p >= this->ft_loc) && (p-this->ft_loc)<=(this->ft_entries-1) )
-
 // open() flags.
 #define MB_READ 0x01
 #define MB_WRITE 0x02
@@ -134,9 +119,6 @@
 #define MB_SEEK_END 0x02
 #define MB_SEEK_CUR 0x04
 
-// Test if init()/ft_init have been called.
-#define FS_INITIALIZED() (this->flash_start != NULL)
-#define FT_INITIALIZED() (this->ft_loc != NULL)
 
 /**
   * @brief FT entry struct, for each file.
@@ -381,6 +363,36 @@ class MicroBitFileSystem
       * @return NULL on error, scratch page address on success
       */
     uint8_t* getRandomScratch();
+    
+    /**
+      * Determines whether the file system has been initialised.
+      */
+    inline int fs_initialised();
+    
+    /**
+      * Determines whether the file table has been initialised.
+      */
+    inline int ft_initialised();
+
+    /**
+      * Check if a given FileTableEntry is free.
+      */
+    inline int ft_is_free(FileTableEntry &m);
+
+    /**
+      * Read the file size from an FileTableEntry_t pointer.
+      */
+    inline int ft_get_filesize(FileTableEntry* m);
+
+    /**
+      * Retrieves the indexed block number from the FileTableEntry_t block list.
+      */
+    inline int ft_get_block(FileTableEntry* m, int b);
+
+    /**
+      * Determines if the given file descriptor is valid.
+      */
+    inline int fd_valid(int fd);
 
 
     public:
@@ -443,6 +455,22 @@ class MicroBitFileSystem
       * @endcode
       */
     int close(int fd);
+    
+    /**
+      * The length of the file linked to the given filehandle.
+      *
+      * @param fd file descriptor - obtained with open().
+      * @return the length on success, MICROBIT_NOT_SUPPORTED if the file system has not
+      *         been initialised, MICROBIT_INVALID_PARAMETER if the given file handle
+      *         is invalid.
+      *
+      * @code
+      * MicroBitFileSystem f();
+      * int fd = f.open("test.txt", MB_READ);
+      * int length = f.length(fd)
+      * @endcode
+      */
+    int length(int fd);
 
     /**
       * Move the current position of a file handle, to be used for
