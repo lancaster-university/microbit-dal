@@ -176,13 +176,6 @@ class MicroBitMessageBus : public EventModel, public MicroBitComponent
       * We then continue processing events until something appears on the runqueue.
       */
     virtual void idleTick();
-
-    /**
-      * Indicates whether or not we have any background work to do.
-      *
-      * @return 1 if there are any events waitingto be processed, 0 otherwise.
-      */
-    virtual int isIdleCallbackNeeded();
 };
 
 #endif

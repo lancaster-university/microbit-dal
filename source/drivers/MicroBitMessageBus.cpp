@@ -295,16 +295,6 @@ void MicroBitMessageBus::idleTick()
 }
 
 /**
-  * Indicates whether or not we have any background work to do.
-  *
-  * @return 1 if there are any events waitingto be processed, 0 otherwise.
-  */
-int MicroBitMessageBus::isIdleCallbackNeeded()
-{
-    return !(evt_queue_head == NULL);
-}
-
-/**
   * Queues the given event to be sent to all registered recipients.
   *
   * @param evt The event to send.

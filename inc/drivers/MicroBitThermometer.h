@@ -160,13 +160,6 @@ class MicroBitThermometer : public MicroBitComponent
       */
     virtual void idleTick();
 
-    /**
-      * Indicates if we'd like some processor time to sense the temperature.
-      *
-      * @returns 1 if we'd like some processor time, 0 otherwise.
-      */
-    virtual int isIdleCallbackNeeded();
-
     private:
 
     /**

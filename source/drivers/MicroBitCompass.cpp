@@ -746,16 +746,6 @@ void MicroBitCompass::clearCalibration()
 }
 
 /**
-  * Returns 0 or 1. 1 indicates data is waiting to be read, zero means data is not ready to be read.
-  */
-int MicroBitCompass::isIdleCallbackNeeded()
-{
-    // The MAG3110 raises an interrupt line when data is ready, which we sample here.
-    // The interrupt line is active HI, so simply return the state of the pin.
-    return int1;
-}
-
-/**
   * Destructor for MicroBitCompass, where we deregister this instance from the array of fiber components.
   */
 MicroBitCompass::~MicroBitCompass()

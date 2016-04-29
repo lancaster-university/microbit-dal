@@ -81,23 +81,30 @@ DEALINGS IN THE SOFTWARE.
   *
   * All components should inherit from this class.
   *
-  * If a component requires regular updates, then you should add the component
-  * to the systemTick and idleTick queues.
+  * If a component requires regular updates, then that component can be added to the 
+  * to the systemTick and/or idleTick queues. This provides a simple, extensible mechanism
+  * for code that requires periodic/occasional background processing but does not warrant
+  * the complexity of maintaining its own thread. 
   *
-  * The system timer will call systemTick() once the component has been added to
-  * the array of system components using system_timer_add_component. This callback
-  * will be in interrupt context.
+  * Two levels of support are available. 
   *
-  * The idle thread will call idleTick() once the component has been added to the array
-  * of idle components using fiber_add_idle_component. Updates are determined by
-  * the isIdleCallbackNeeded() member function.
+  * systemTick() provides a periodic callback during the
+  * micro:bit's system timer interrupt. This provides a guaranteed periodic callback, but in interrupt context
+  * and is suitable for code with lightweight processing requirements, but strict time constraints.
+  * 
+  * idleTick() provides a periodic callback whenever the scheduler is idle. This provides occasional, callbacks
+  * in the main thread context, but with no guarantees of frequency. This is suitable for non-urgent background tasks.
+  *
+  * Components wishing to use these facilities should override the systemTick and/or idleTick functions defined here, and
+  * register their components using system_timer_add_component() fiber_add_idle_component() respectively.
+  *
   */
 class MicroBitComponent
 {
     protected:
 
-    uint16_t id;                    // Event Bus ID
-    uint8_t status;                 // keeps track of various component state, and also indicates if data is ready.
+    uint16_t id;                    // Event Bus ID of this component
+    uint8_t status;                 // Component defined state.
 
     public:
 
@@ -115,29 +122,16 @@ class MicroBitComponent
       * the array of system components using system_timer_add_component. This callback
       * will be in interrupt context.
       */
-    virtual void systemTick(){
-
+    virtual void systemTick()
+    {
     }
 
     /**
       * The idle thread will call this member function once the component has been added to the array
-      * of idle components using fiber_add_idle_component. Updates are determined by
-      * the isIdleCallbackNeeded() member function.
+      * of idle components using fiber_add_idle_component. 
       */
     virtual void idleTick()
     {
-
-    }
-
-    /**
-      * When added to the idleThreadComponents array, this function will be called to determine
-      * if and when data is ready.
-      *
-      * @note override this if you want to request to be scheduled as soon as possible.
-      */
-    virtual int isIdleCallbackNeeded()
-    {
-        return 0;
     }
 
     /**

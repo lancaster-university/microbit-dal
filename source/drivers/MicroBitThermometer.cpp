@@ -182,16 +182,6 @@ int MicroBitThermometer::updateSample()
 };
 
 /**
-  * Indicates if we'd like some processor time to sense the temperature.
-  *
-  * @returns 1 if we'd like some processor time, 0 otherwise.
-  */
-int MicroBitThermometer::isIdleCallbackNeeded()
-{
-    return isSampleNeeded();
-}
-
-/**
   * Periodic callback from MicroBit idle thread.
   */
 void MicroBitThermometer::idleTick()

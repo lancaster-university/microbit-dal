@@ -434,11 +434,6 @@ class MicroBitCompass : public MicroBitComponent
     void clearCalibration();
 
     /**
-      * Returns 0 or 1. 1 indicates data is waiting to be read, zero means data is not ready to be read.
-      */
-    virtual int isIdleCallbackNeeded();
-
-    /**
       * Destructor for MicroBitCompass, where we deregister this instance from the array of fiber components.
       */
     ~MicroBitCompass();

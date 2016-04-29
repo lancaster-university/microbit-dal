@@ -377,13 +377,6 @@ class MicroBitAccelerometer : public MicroBitComponent
     virtual void idleTick();
 
     /**
-      * Returns 0 or 1. 1 indicates data is waiting to be read, zero means data is not ready to be read.
-      *
-      * We check if any data is ready for reading by checking the interrupt flag on the accelerometer.
-      */
-    virtual int isIdleCallbackNeeded();
-
-    /**
       * Destructor for MicroBitButton, where we deregister this instance from the array of fiber components.
       */
     ~MicroBitAccelerometer();

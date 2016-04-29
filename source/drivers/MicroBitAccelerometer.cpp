@@ -711,16 +711,6 @@ void MicroBitAccelerometer::idleTick()
 }
 
 /**
-  * Returns 0 or 1. 1 indicates data is waiting to be read, zero means data is not ready to be read.
-  *
-  * We check if any data is ready for reading by checking the interrupt flag on the accelerometer.
-  */
-int MicroBitAccelerometer::isIdleCallbackNeeded()
-{
-    return !int1;
-}
-
-/**
   * Destructor for MicroBitAccelerometer, where we deregister from the array of fiber components.
   */
 MicroBitAccelerometer::~MicroBitAccelerometer()
