@@ -55,7 +55,7 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
 
     if(this->storage != NULL)
     {
-        KeyValuePair *calibrationData =  storage->get(ManagedString("compassCal"));
+        KeyValuePair *calibrationData =  storage->get("compassCal");
 
         if(calibrationData != NULL)
         {
