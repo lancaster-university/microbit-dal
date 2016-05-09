@@ -43,7 +43,7 @@ DEALINGS IN THE SOFTWARE.
   * @param name the mbed PinName for this MicroBitPin instance.
   *
   * @param capability the capabilities this MicroBitPin instance should have.
-  *                   (PIN_CAPABILITY_DIGITAL, PIN_CAPABILITY_ANALOG, PIN_CAPABILITY_TOUCH, PIN_CAPABILITY_AD, PIN_CAPABILITY_ALL)
+  *                   (PIN_CAPABILITY_DIGITAL, PIN_CAPABILITY_ANALOG, PIN_CAPABILITY_AD, PIN_CAPABILITY_ALL)
   *
   * @code
   * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_ALL);
@@ -332,7 +332,7 @@ int MicroBitPin::isAnalog()
 int MicroBitPin::isTouched()
 {
     //check if this pin has a touch mode...
-    if(!(PIN_CAPABILITY_TOUCH & capability))
+    if(!(PIN_CAPABILITY_DIGITAL & capability))
         return MICROBIT_NOT_SUPPORTED;
 
     // Move into a touch input state if necessary.
