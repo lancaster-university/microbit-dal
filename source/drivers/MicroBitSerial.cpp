@@ -489,9 +489,17 @@ int MicroBitSerial::send(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode
             return result;
     }
 
-    int bytesWritten = setTxInterrupt(buffer, bufferLen, mode);
+    bool complete = false;
+    int bytesWritten = 0;
 
-    send(mode);
+    while(!complete)
+    {
+        bytesWritten += setTxInterrupt(buffer + bytesWritten, bufferLen - bytesWritten, mode);
+        send(mode);
+
+        if(mode == ASYNC || bytesWritten >= bufferLen)
+            complete = true;
+    }
 
     unlockTx();
 
