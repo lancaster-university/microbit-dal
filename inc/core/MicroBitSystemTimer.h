@@ -43,7 +43,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitComponent.h"
 
 /**
-  * Initialises the system wide timer.
+  * Initialises a system wide timer, used to drive the various components used in the runtime.
   *
   * This must be called before any components register to receive periodic periodic callbacks.
   *
@@ -70,11 +70,26 @@ int system_timer_set_period(int period);
 int system_timer_get_period();
 
 /**
+  * Updates the current time in microseconds, since power on.
+  *
+  * If the mbed Timer hasn't been initialised, it will be initialised
+  * on the first call to this function.
+  */
+inline void update_time();
+
+/**
   * Determines the time since the device was powered on.
   *
   * @return the current time since power on in milliseconds
   */
-unsigned long system_timer_current_time();
+uint64_t system_timer_current_time();
+
+/**
+  * Determines the time since the device was powered on.
+  *
+  * @return the current time since power on in microseconds
+  */
+uint64_t system_timer_current_time_us();
 
 /**
   * Timer callback. Called from interrupt context, once per period.

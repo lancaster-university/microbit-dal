@@ -42,18 +42,21 @@ DEALINGS IN THE SOFTWARE.
  * Time since power on. Measured in milliseconds.
  * When stored as an unsigned long, this gives us approx 50 days between rollover, which is ample. :-)
  */
-static unsigned long ticks = 0;
+static uint64_t time_us = 0;
 static unsigned int tick_period = 0;
 
 // Array of components which are iterated during a system tick
 static MicroBitComponent* systemTickComponents[MICROBIT_SYSTEM_COMPONENTS];
 
 // Periodic callback interrupt
-static Ticker *timer = NULL;
+static Ticker *ticker = NULL;
+
+// System timer.
+static Timer *timer = NULL;
 
 
 /**
-  * Initialises the system wide timer.
+  * Initialises a system wide timer, used to drive the various components used in the runtime.
   *
   * This must be called before any components register to receive periodic periodic callbacks.
   *
@@ -63,8 +66,14 @@ static Ticker *timer = NULL;
   */
 int system_timer_init(int period)
 {
+    if (ticker == NULL)
+        ticker = new Ticker();
+
     if (timer == NULL)
-        timer = new Ticker();
+    {
+        timer = new Timer();
+        timer->start();
+    }
 
     return system_timer_set_period(period);
 }
@@ -83,11 +92,11 @@ int system_timer_set_period(int period)
 
     // If a timer is already running, ensure it is disabled before reconfiguring.
     if (tick_period)
-        timer->detach();
+        ticker->detach();
 
 	// register a period callback to drive the scheduler and any other registered components.
     tick_period = period;
-    timer->attach_us(system_timer_tick, period * 1000);
+    ticker->attach_us(system_timer_tick, period * 1000);
 
     return MICROBIT_OK;
 }
@@ -103,13 +112,40 @@ int system_timer_get_period()
 }
 
 /**
+  * Updates the current time in microseconds, since power on.
+  *
+  * If the mbed Timer hasn't been initialised, it will be initialised
+  * on the first call to this function.
+  */
+void update_time()
+{
+    // If we haven't been initialized, bring up the timer with the default period.
+    if (timer == NULL || ticker == NULL)
+        system_timer_init(SYSTEM_TICK_PERIOD_MS);
+
+    time_us += timer->read_us();
+    timer->reset();
+}
+
+/**
   * Determines the time since the device was powered on.
   *
   * @return the current time since power on in milliseconds
   */
-unsigned long system_timer_current_time()
+uint64_t system_timer_current_time()
 {
-    return ticks;
+    return system_timer_current_time_us() / 1000;
+}
+
+/**
+  * Determines the time since the device was powered on.
+  *
+  * @return the current time since power on in microseconds
+  */
+uint64_t system_timer_current_time_us()
+{
+    update_time();
+    return time_us;
 }
 
 /**
@@ -120,8 +156,7 @@ unsigned long system_timer_current_time()
   */
 void system_timer_tick()
 {
-    // increment our real-time counter.
-    ticks += system_timer_get_period();
+    update_time();
 
     // Update any components registered for a callback
     for(int i = 0; i < MICROBIT_SYSTEM_COMPONENTS; i++)
@@ -144,7 +179,7 @@ int system_timer_add_component(MicroBitComponent *component)
     int i = 0;
 
     // If we haven't been initialized, bring up the timer with the default period.
-    if (timer == NULL)
+    if (timer == NULL || ticker == NULL)
         system_timer_init(SYSTEM_TICK_PERIOD_MS);
 
     while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)
