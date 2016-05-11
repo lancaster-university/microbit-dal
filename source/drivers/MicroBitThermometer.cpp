@@ -71,7 +71,7 @@ MicroBitThermometer::MicroBitThermometer(MicroBitStorage& _storage, uint16_t id)
     this->sampleTime = 0;
     this->offset = 0;
 
-    KeyValuePair *tempCalibration =  storage->get(ManagedString("tempCal"));
+    KeyValuePair *tempCalibration =  storage->get("tempCal");
 
     if(tempCalibration != NULL)
     {

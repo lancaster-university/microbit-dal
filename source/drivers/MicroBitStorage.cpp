@@ -223,6 +223,16 @@ int MicroBitStorage::put(const char *key, uint8_t *data, int dataSize)
     if(keySize > (int)sizeof(pair.key) || dataSize > (int)sizeof(pair.value) || dataSize < 0)
         return MICROBIT_INVALID_PARAMETER;
 
+    KeyValuePair *currentValue = get(key);
+
+    int upToDate = currentValue && (memcmp(currentValue->value, data, dataSize) == 0);
+
+    if(currentValue)
+        delete currentValue;
+
+    if(upToDate)
+        return MICROBIT_OK;
+
     memcpy(pair.key, key, keySize);
     memcpy(pair.value, data, dataSize);
 
