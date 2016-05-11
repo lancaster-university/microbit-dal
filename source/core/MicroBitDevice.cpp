@@ -159,7 +159,7 @@ void microbit_panic_timeout(int iterations)
 /**
   * Disables all interrupts and user processing.
   * Displays "=(" and an accompanying status code on the default display.
-  * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
+  * @param statusCode the appropriate status code, must be in the range 0-999.
   *
   * @code
   * microbit_panic(20);
@@ -186,19 +186,18 @@ void microbit_panic(int statusCode)
 
     PortOut LEDMatrix(Port0, row_mask | col_mask);
 
-    if(statusCode < 0 || statusCode > 255)
+    if(statusCode < 0 || statusCode > 999)
         statusCode = 0;
 
     __disable_irq(); //stop ALL interrupts
 
 
     //point to the font stored in Flash
-    const unsigned char * fontLocation = MicroBitFont::defaultFont;
+    const unsigned char* fontLocation = MicroBitFont::defaultFont;
 
     //get individual digits of status code, and place it into a single array/
     const uint8_t* chars[MICROBIT_PANIC_ERROR_CHARS] = { panicFace, fontLocation+((((statusCode/100 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode/10 % 10)+48)-MICROBIT_FONT_ASCII_START) * 5), fontLocation+((((statusCode % 10)+48)-MICROBIT_FONT_ASCII_START) * 5)};
 
-    //enter infinite loop.
     while(count)
     {
         //iterate through our chars :)
@@ -234,10 +233,13 @@ void microbit_panic(int statusCode)
 
                 col_data = ~col_data << microbitMatrixMap.columnStart & col_mask;
 
-                LEDMatrix = col_data | row_data;
+                if(chars[characterCount] == chars[(characterCount - 1) % MICROBIT_PANIC_ERROR_CHARS] && outerCount < 50)
+                    LEDMatrix =  0;
+                else
+                    LEDMatrix = col_data | row_data;
 
                 //burn cycles
-                i = 1000;
+                i = 2000;
                 while(i>0)
                 {
                     // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
