@@ -437,9 +437,10 @@ ManagedString ManagedString::substring(int16_t start, int16_t length)
 }
 
 /**
-  * Concatenates this string with the one provided.
+  * Concatenates two strings.
   *
-  * @param s The ManagedString to concatenate.
+  * @param lhs The first ManagedString to concatenate.
+  * @param rhs The second ManagedString to concatenate.
   *
   * @return a new ManagedString representing the joined strings.
   *
@@ -451,16 +452,17 @@ ManagedString ManagedString::substring(int16_t start, int16_t length)
   * display.scroll(s + p) // scrolls "abcdefgh"
   * @endcode
   */
-ManagedString ManagedString::operator+ (const ManagedString& s)
+ManagedString operator+ (const ManagedString& lhs, const ManagedString& rhs)
 {
-    // If the other string is empty, nothing to do!
-    if(s.length() == 0)
-        return *this;
 
-    if (length() == 0)
-        return s;
+    // If the either string is empty, nothing to do!
+    if (rhs.length() == 0)
+        return lhs;
 
-    return ManagedString(*this, s);
+    if (lhs.length() == 0)
+        return rhs;
+
+    return ManagedString(lhs, rhs);
 }
 
 
