@@ -451,7 +451,7 @@ ManagedString ManagedString::substring(int16_t start, int16_t length)
   * display.scroll(s + p) // scrolls "abcdefgh"
   * @endcode
   */
-ManagedString ManagedString::operator+ (ManagedString& s)
+ManagedString ManagedString::operator+ (const ManagedString& s)
 {
     // If the other string is empty, nothing to do!
     if(s.length() == 0)

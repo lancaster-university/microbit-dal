@@ -314,7 +314,7 @@ class ManagedString
       * display.scroll(s + p) // scrolls "abcdefgh"
       * @endcode
       */
-    ManagedString operator+ (ManagedString& s);
+    ManagedString operator+ (const ManagedString& s);
 
     /**
       * Provides a character value at a given position in the string, indexed from zero.
