@@ -444,7 +444,7 @@ int MicroBitPin::getAnalogPeriod()
 /**
   * Configures the pull of this pin.
   *
-  * @param pull one of the mbed pull configurations: PullUp, PullDown, PullNone, OpenDrain
+  * @param pull one of the mbed pull configurations: PullUp, PullDown, PullNone
   *
   * @return MICROBIT_NOT_SUPPORTED if the current pin configuration is anything other
   *         than a digital input, otherwise MICROBIT_OK.
