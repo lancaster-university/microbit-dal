@@ -76,7 +76,7 @@ const char * microbit_dal_version();
 /**
   * Disables all interrupts and user processing.
   * Displays "=(" and an accompanying status code on the default display.
-  * @param statusCode the appropriate status code - 0 means no code will be displayed. Status codes must be in the range 0-255.
+  * @param statusCode the appropriate status code, must be in the range 0-999.
   *
   * @code
   * microbit_panic(20);

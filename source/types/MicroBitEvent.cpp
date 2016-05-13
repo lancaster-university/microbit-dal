@@ -58,7 +58,7 @@ MicroBitEvent::MicroBitEvent(uint16_t source, uint16_t value, MicroBitEventLaunc
 {
     this->source = source;
     this->value = value;
-    this->timestamp = system_timer_current_time();
+    this->timestamp = system_timer_current_time_us();
 
     if(mode != CREATE_ONLY)
         this->fire();
@@ -71,7 +71,7 @@ MicroBitEvent::MicroBitEvent()
 {
     this->source = 0;
     this->value = 0;
-    this->timestamp = system_timer_current_time();
+    this->timestamp = system_timer_current_time_us();
 }
 
 /**

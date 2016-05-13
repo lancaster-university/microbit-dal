@@ -52,7 +52,7 @@ class MicroBitEvent
 
     uint16_t source;         // ID of the MicroBit Component that generated the event e.g. MICROBIT_ID_BUTTON_A.
     uint16_t value;          // Component specific code indicating the cause of the event.
-    uint32_t timestamp;      // Time at which the event was generated. ms since power on.
+    uint64_t timestamp;      // Time at which the event was generated. us since power on.
 
     /**
       * Constructor.

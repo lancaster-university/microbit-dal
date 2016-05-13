@@ -40,6 +40,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitSerial.cpp"
     "drivers/MicroBitStorage.cpp"
     "drivers/MicroBitThermometer.cpp"
+    "drivers/TimedInterruptIn.cpp"
 
     "bluetooth/MicroBitAccelerometerService.cpp"
     "bluetooth/MicroBitBLEManager.cpp"

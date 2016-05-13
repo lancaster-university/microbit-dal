@@ -300,9 +300,10 @@ class ManagedString
     ManagedString substring(int16_t start, int16_t length);
 
     /**
-      * Concatenates this string with the one provided.
+      * Concatenates two strings.
       *
-      * @param s The ManagedString to concatenate.
+      * @param lhs The first ManagedString to concatenate.
+      * @param rhs The second ManagedString to concatenate.
       *
       * @return a new ManagedString representing the joined strings.
       *
@@ -314,7 +315,7 @@ class ManagedString
       * display.scroll(s + p) // scrolls "abcdefgh"
       * @endcode
       */
-    ManagedString operator+ (ManagedString& s);
+    friend ManagedString operator+ (const ManagedString& lhs, const ManagedString& rhs);
 
     /**
       * Provides a character value at a given position in the string, indexed from zero.
