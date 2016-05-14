@@ -348,23 +348,37 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
         shake.z = !shake.z;
     }
 
-    if (shakeDetected && shake.count < MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD && ++shake.count == MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD)
-        shake.shaken = 1;
-
-    if (++shake.timer >= MICROBIT_ACCELEROMETER_SHAKE_DAMPING)
+    if (shakeDetected && shake.count < MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD)
     {
-        shake.timer = 0;
-        if (shake.count > 0)
+        shake.count++;
+  
+        if (shake.count == 1)
+            shake.timer = 0;
+
+        if (shake.count == MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD)
+            shake.shaken = 1;
+    }
+
+    if (shake.count > 0)
+    {
+        shake.timer++;
+
+        if (shake.timer >= MICROBIT_ACCELEROMETER_SHAKE_DAMPING)
         {
-            if(--shake.count == 0)
-                shake.shaken = 0;
+            shake.timer = 0;
+            if (shake.count > 0)
+                shake.count--;
         }
     }
 
     // Shake events take the highest priority, as under high levels of change, other events
     // are likely to be transient.
     if (shake.shaken)
+    {
+        shake.shaken = 0;
+        shake.count = 0;
         return MICROBIT_ACCELEROMETER_EVT_SHAKE;
+    }
 
     if (instantaneousAccelerationSquared() < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD)
         return MICROBIT_ACCELEROMETER_EVT_FREEFALL;
@@ -432,6 +446,12 @@ void MicroBitAccelerometer::updateGesture()
 
     // Determine what it looks like we're doing based on the latest sample...
     uint16_t g = instantaneousPosture();
+
+    if (g == MICROBIT_ACCELEROMETER_EVT_SHAKE)
+    {
+        MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_SHAKE);
+        return;
+    }
 
     // Perform some low pass filtering to reduce jitter from any detected effects
     if (g == currentGesture)
