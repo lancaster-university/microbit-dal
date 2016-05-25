@@ -436,6 +436,8 @@ class MicroBitSerial : public RawSerial
     /**
       * Configures an event to be fired after "len" characters.
       *
+      * Will generate an event with the ID: MICROBIT_ID_SERIAL and the value MICROBIT_SERIAL_EVT_HEAD_MATCH.
+      *
       * @param len the number of characters to wait before triggering the event.
       *
       * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
@@ -455,7 +457,9 @@ class MicroBitSerial : public RawSerial
     /**
       * Configures an event to be fired on a match with one of the delimeters.
       *
-      * @param delimeters the characters to match received characters against e.g. ManagedString("\r\n")
+      * Will generate an event with the ID: MICROBIT_ID_SERIAL and the value MICROBIT_SERIAL_EVT_DELIM_MATCH.
+      *
+      * @param delimeters the characters to match received characters against e.g. ManagedString("\n")
       *
       * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
       *        gives a different behaviour:
