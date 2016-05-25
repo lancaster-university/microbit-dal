@@ -336,6 +336,8 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
     DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+#else
+    (void)serialNumber;
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
