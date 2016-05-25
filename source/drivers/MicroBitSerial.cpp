@@ -57,8 +57,9 @@ int MicroBitSerial::baudrate = 0;
   */
 MicroBitSerial::MicroBitSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uint8_t txBufferSize) : RawSerial(tx,rx), delimeters()
 {
-    this->rxBuffSize = rxBufferSize;
-    this->txBuffSize = txBufferSize;
+    // + 1 so there is a usable buffer size, of the size the user requested.
+    this->rxBuffSize = rxBufferSize + 1;
+    this->txBuffSize = txBufferSize + 1;
 
     this->rxBuff = NULL;
     this->txBuff = NULL;
@@ -961,7 +962,8 @@ int MicroBitSerial::setRxBufferSize(uint8_t size)
 
     lockRx();
 
-    this->rxBuffSize = size;
+    // + 1 so there is a usable buffer size, of the size the user requested.
+    this->rxBuffSize = size + 1;
 
     int result = initialiseRx();
 
@@ -985,7 +987,8 @@ int MicroBitSerial::setTxBufferSize(uint8_t size)
 
     lockTx();
 
-    this->txBuffSize = size;
+    // + 1 so there is a usable buffer size, of the size the user requested.
+    this->txBuffSize = size + 1;
 
     int result = initialiseTx();
 
