@@ -55,7 +55,7 @@ class MicroBitUARTService
 
     uint8_t txBufferSize;
 
-    uint32_t txCharacteristicHandle;
+    uint32_t rxCharacteristicHandle;
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
@@ -115,36 +115,69 @@ class MicroBitUARTService
     int getc(MicroBitSerialMode mode = SYNC_SLEEP);
 
     /**
-      * places a single character into our transmission buffer,
+      * Places a single character into our transmission buffer,
       *
       * @param c the character to transmit
       *
-      * @return the number of characters written (0, or 1).
+      * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
+      *        gives a different behaviour:
+      *
+      *            ASYNC - Will copy as many characters as it can into the buffer for transmission,
+      *                    and return control to the user.
+      *
+      *            SYNC_SPINWAIT - will return MICROBIT_INVALID_PARAMETER
+      *
+      *            SYNC_SLEEP - Will perform a cooperative blocking wait until all
+      *                         given characters have been received by the connected
+      *                         device.
+      *
+      * @return the number of characters written, or MICROBIT_NOT_SUPPORTED if there is
+      *         no connected device, or the connected device has not enabled indications.
       */
-    int putc(char c);
+    int putc(char c, MicroBitSerialMode mode = SYNC_SLEEP);
 
     /**
       * Copies characters into the buffer used for Transmitting to the central device.
       *
       * @param buf a buffer containing length number of bytes.
       * @param length the size of the buffer.
+      * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
+      *        gives a different behaviour:
       *
-      * @return the number of characters copied into the buffer
+      *            ASYNC - Will copy as many characters as it can into the buffer for transmission,
+      *                    and return control to the user.
       *
-      * @note no modes for sending are available at the moment, due to interrupt overhead.
+      *            SYNC_SPINWAIT - will return MICROBIT_INVALID_PARAMETER
+      *
+      *            SYNC_SLEEP - Will perform a cooperative blocking wait until all
+      *                         given characters have been received by the connected
+      *                         device.
+      *
+      * @return the number of characters written, or MICROBIT_NOT_SUPPORTED if there is
+      *         no connected device, or the connected device has not enabled indications.
       */
-    int send(const uint8_t *buf, int length);
+    int send(const uint8_t *buf, int length, MicroBitSerialMode mode = SYNC_SLEEP);
 
     /**
       * Copies characters into the buffer used for Transmitting to the central device.
       *
       * @param s the string to transmit
+      * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
+      *        gives a different behaviour:
       *
-      * @return the number of characters copied into the buffer
+      *            ASYNC - Will copy as many characters as it can into the buffer for transmission,
+      *                    and return control to the user.
       *
-      * @note no modes for sending are available at the moment, due to interrupt overhead.
+      *            SYNC_SPINWAIT - will return MICROBIT_INVALID_PARAMETER
+      *
+      *            SYNC_SLEEP - Will perform a cooperative blocking wait until all
+      *                         given characters have been received by the connected
+      *                         device.
+      *
+      * @return the number of characters written, or MICROBIT_NOT_SUPPORTED if there is
+      *         no connected device, or the connected device has not enabled indications.
       */
-    int send(ManagedString s);
+    int send(ManagedString s, MicroBitSerialMode mode = SYNC_SLEEP);
 
     /**
       * Reads a number of characters from the rxBuffer and fills user given buffer.

@@ -40,17 +40,14 @@ DEALINGS IN THE SOFTWARE.
 static uint8_t txBufferHead = 0;
 static uint8_t txBufferTail = 0;
 
-static GattCharacteristic* rxCharacteristic = NULL;
+static GattCharacteristic* txCharacteristic = NULL;
 
 /**
-  * A callback function for whenever a Bluetooth device consumes our RX Buffer
+  * A callback function for whenever a Bluetooth device consumes our TX Buffer
   */
-void on_confirmation_received_callback(uint16_t handle)
+void on_confirmation(uint16_t handle)
 {
-#if CONFIG_ENABLED(MICROBIT_DBG)
-    SERIAL_DEBUG->printf("RECEIVED!! %d \r\n",handle);
-#endif
-    if(handle == rxCharacteristic->getValueAttribute().getHandle())
+    if(handle == txCharacteristic->getValueAttribute().getHandle())
     {
         txBufferTail = txBufferHead;
         MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_UART_S_EVT_TX_EMPTY);
@@ -81,27 +78,27 @@ MicroBitUARTService::MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize, 
     txBufferTail = 0;
     this->txBufferSize = txBufferSize;
 
-    GattCharacteristic txCharacteristic(UARTServiceTXCharacteristicUUID, rxBuffer, 1, rxBufferSize, GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
+    GattCharacteristic rxCharacteristic(UARTServiceRXCharacteristicUUID, rxBuffer, 1, rxBufferSize, GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
 
-    rxCharacteristic = new GattCharacteristic(UARTServiceRXCharacteristicUUID, txBuffer, 1, txBufferSize, GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_INDICATE);
+    txCharacteristic = new GattCharacteristic(UARTServiceTXCharacteristicUUID, txBuffer, 1, txBufferSize, GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_INDICATE);
 
-    GattCharacteristic *charTable[] = {&txCharacteristic, rxCharacteristic};
+    GattCharacteristic *charTable[] = {txCharacteristic, &rxCharacteristic};
 
     GattService uartService(UARTServiceUUID, charTable, sizeof(charTable) / sizeof(GattCharacteristic *));
 
     _ble.addService(uartService);
 
-    this->txCharacteristicHandle = txCharacteristic.getValueAttribute().getHandle();
+    this->rxCharacteristicHandle = rxCharacteristic.getValueAttribute().getHandle();
 
     _ble.gattServer().onDataWritten(this, &MicroBitUARTService::onDataWritten);
-    _ble.gattServer().onConfirmationReceived(on_confirmation_received_callback);
+    _ble.gattServer().onConfirmationReceived(on_confirmation);
 }
 
 /**
-  * A callback function for whenever a Bluetooth device writes to our TX characteristic.
+  * A callback function for whenever a Bluetooth device writes to our RX characteristic.
   */
 void MicroBitUARTService::onDataWritten(const GattWriteCallbackParams *params) {
-    if (params->handle == this->txCharacteristicHandle)
+    if (params->handle == this->rxCharacteristicHandle)
     {
         uint16_t bytesWritten = params->len;
 
@@ -210,11 +207,24 @@ int MicroBitUARTService::getc(MicroBitSerialMode mode)
   *
   * @param c the character to transmit
   *
-  * @return the number of characters written (0, or 1).
+  * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
+  *        gives a different behaviour:
+  *
+  *            ASYNC - Will copy as many characters as it can into the buffer for transmission,
+  *                    and return control to the user.
+  *
+  *            SYNC_SPINWAIT - will return MICROBIT_INVALID_PARAMETER
+  *
+  *            SYNC_SLEEP - Will perform a cooperative blocking wait until all
+  *                         given characters have been received by the connected
+  *                         device.
+  *
+  * @return the number of characters written, or MICROBIT_NOT_SUPPORTED if there is
+  *         no connected device, or the connected device has not enabled indications.
   */
-int MicroBitUARTService::putc(char c)
+int MicroBitUARTService::putc(char c, MicroBitSerialMode mode)
 {
-    return (send((uint8_t *)&c, 1) == 1) ? 1 : EOF;
+    return (send((uint8_t *)&c, 1, mode) == 1) ? 1 : EOF;
 }
 
 /**
@@ -222,21 +232,38 @@ int MicroBitUARTService::putc(char c)
   *
   * @param buf a buffer containing length number of bytes.
   * @param length the size of the buffer.
+  * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
+  *        gives a different behaviour:
   *
-  * @return the number of characters copied into the buffer
+  *            ASYNC - Will copy as many characters as it can into the buffer for transmission,
+  *                    and return control to the user.
   *
-  * @note no modes for sending are available at the moment, due to interrupt overhead.
+  *            SYNC_SPINWAIT - will return MICROBIT_INVALID_PARAMETER
+  *
+  *            SYNC_SLEEP - Will perform a cooperative blocking wait until all
+  *                         given characters have been received by the connected
+  *                         device.
+  *
+  * @return the number of characters written, or MICROBIT_NOT_SUPPORTED if there is
+  *         no connected device, or the connected device has not enabled indications.
   */
-int MicroBitUARTService::send(const uint8_t *buf, int length)
+int MicroBitUARTService::send(const uint8_t *buf, int length, MicroBitSerialMode mode)
 {
-    if(length < 1)
+    if(length < 1 || mode == SYNC_SPINWAIT)
         return MICROBIT_INVALID_PARAMETER;
+
+    bool updatesEnabled = false;
+
+    ble.gattServer().areUpdatesEnabled(*txCharacteristic, &updatesEnabled);
+
+    if(!ble.getGapState().connected && !updatesEnabled)
+        return MICROBIT_NOT_SUPPORTED;
 
     int bytesWritten = 0;
 
-    if (ble.getGapState().connected) {
-
-        for(int bufferIterator = 0; bufferIterator < length; bufferIterator++)
+    while(bytesWritten < length && ble.getGapState().connected && updatesEnabled)
+    {
+        for(int bufferIterator = bytesWritten; bufferIterator < length; bufferIterator++)
         {
             int nextHead = (txBufferHead + 1) % txBufferSize;
 
@@ -252,27 +279,25 @@ int MicroBitUARTService::send(const uint8_t *buf, int length)
 
         int size = txBufferedSize();
 
-#if CONFIG_ENABLED(MICROBIT_DBG)
-        SERIAL_DEBUG->printf("tx size: %d", size);
-#endif
-
         uint8_t temp[size];
 
         memclr(&temp, size);
 
         circularCopy(txBuffer, txBufferSize, temp, txBufferTail, txBufferHead);
 
-#if CONFIG_ENABLED(MICROBIT_DBG)
-        for(int i = 0; i < size; i++)
-            SERIAL_DEBUG->printf("%c",temp[i]);
-#endif
 
-        ble.gattServer().write(rxCharacteristic->getValueAttribute().getHandle(), temp, size);
+        if(mode == SYNC_SLEEP)
+            fiber_wake_on_event(MICROBIT_ID_NOTIFY, MICROBIT_UART_S_EVT_TX_EMPTY);
+
+        ble.gattServer().write(txCharacteristic->getValueAttribute().getHandle(), temp, size);
+
+        if(mode == SYNC_SLEEP)
+            schedule();
+        else
+            break;
+
+        ble.gattServer().areUpdatesEnabled(*txCharacteristic, &updatesEnabled);
     }
-
-#if CONFIG_ENABLED(MICROBIT_DBG)
-    SERIAL_DEBUG->printf("written: %d \r\n",bytesWritten);
-#endif
 
     return bytesWritten;
 }
@@ -281,14 +306,24 @@ int MicroBitUARTService::send(const uint8_t *buf, int length)
   * Copies characters into the buffer used for Transmitting to the central device.
   *
   * @param s the string to transmit
+  * @param mode the selected mode, one of: ASYNC, SYNC_SPINWAIT, SYNC_SLEEP. Each mode
+  *        gives a different behaviour:
   *
-  * @return the number of characters copied into the buffer
+  *            ASYNC - Will copy as many characters as it can into the buffer for transmission,
+  *                    and return control to the user.
   *
-  * @note no modes for sending are available at the moment, due to interrupt overhead.
+  *            SYNC_SPINWAIT - will return MICROBIT_INVALID_PARAMETER
+  *
+  *            SYNC_SLEEP - Will perform a cooperative blocking wait until all
+  *                         given characters have been received by the connected
+  *                         device.
+  *
+  * @return the number of characters written, or MICROBIT_NOT_SUPPORTED if there is
+  *         no connected device, or the connected device has not enabled indications.
   */
-int MicroBitUARTService::send(ManagedString s)
+int MicroBitUARTService::send(ManagedString s, MicroBitSerialMode mode)
 {
-    return send((uint8_t *)s.toCharArray(), s.length());
+    return send((uint8_t *)s.toCharArray(), s.length(), mode);
 }
 
 /**
