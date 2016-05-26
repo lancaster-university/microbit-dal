@@ -546,7 +546,7 @@ int MicroBitSerial::read(MicroBitSerialMode mode)
             return result;
     }
 
-    char c = (char)getChar(mode);
+    int c = getChar(mode);
 
     unlockRx();
 
