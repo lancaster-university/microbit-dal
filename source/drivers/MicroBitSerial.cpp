@@ -835,7 +835,6 @@ int MicroBitSerial::redirect(PinName tx, PinName rx)
 
     detach(Serial::RxIrq);
 
-    serial_free(&_serial);
     serial_init(&_serial, tx, rx);
 
     attach(this, &MicroBitSerial::dataReceived, Serial::RxIrq);
