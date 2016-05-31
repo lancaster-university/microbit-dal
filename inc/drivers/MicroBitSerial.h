@@ -265,8 +265,9 @@ class MicroBitSerial : public RawSerial
       *
       *         Defaults to SYNC_SLEEP.
       *
-      * @return the number of bytes written, or MICROBIT_SERIAL_IN_USE if another fiber
-      *         is using the serial instance for transmission.
+      * @return the number of bytes written, MICROBIT_SERIAL_IN_USE if another fiber
+      *         is using the serial instance for transmission, MICROBIT_INVALID_PARAMETER
+      *         if buffer is invalid, or the given bufferLen is <= 0.
       */
     int send(ManagedString s, MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
@@ -292,8 +293,9 @@ class MicroBitSerial : public RawSerial
       *
       *         Defaults to SYNC_SLEEP.
       *
-      * @return the number of bytes written, or MICROBIT_SERIAL_IN_USE if another fiber
-      *         is using the serial instance for transmission.
+      * @return the number of bytes written, MICROBIT_SERIAL_IN_USE if another fiber
+      *         is using the serial instance for transmission, MICROBIT_INVALID_PARAMETER
+      *         if buffer is invalid, or the given bufferLen is <= 0.
       */
     int send(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode = MICROBIT_DEFAULT_SERIAL_MODE);
 
