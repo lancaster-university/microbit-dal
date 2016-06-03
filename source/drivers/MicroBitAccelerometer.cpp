@@ -348,6 +348,7 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
         shake.z = !shake.z;
     }
 
+    // If we detected a zero crossing in this sample period, count this.
     if (shakeDetected && shake.count < MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD)
     {
         shake.count++;
@@ -356,28 +357,33 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
             shake.timer = 0;
 
         if (shake.count == MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD)
+        {
             shake.shaken = 1;
+            shake.timer = 0;
+            return MICROBIT_ACCELEROMETER_EVT_SHAKE;
+        }
     }
 
+    // measure how long we have been detecting a SHAKE event.
     if (shake.count > 0)
     {
         shake.timer++;
 
-        if (shake.timer >= MICROBIT_ACCELEROMETER_SHAKE_DAMPING)
+        // If we've issued a SHAKE event already, and sufficient time has assed, allow another SHAKE event to be issued.
+        if (shake.shaken && shake.timer >= MICROBIT_ACCELEROMETER_SHAKE_RTX)
+        {
+            shake.shaken = 0;
+            shake.timer = 0;
+            shake.count = 0;
+        }
+
+        // Decay our count of zero crossings over time. We don't want them to accumulate if the user performs slow moving motions.
+        else if (!shake.shaken && shake.timer >= MICROBIT_ACCELEROMETER_SHAKE_DAMPING)
         {
             shake.timer = 0;
             if (shake.count > 0)
                 shake.count--;
         }
-    }
-
-    // Shake events take the highest priority, as under high levels of change, other events
-    // are likely to be transient.
-    if (shake.shaken)
-    {
-        shake.shaken = 0;
-        shake.count = 0;
-        return MICROBIT_ACCELEROMETER_EVT_SHAKE;
     }
 
     if (instantaneousAccelerationSquared() < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD)
