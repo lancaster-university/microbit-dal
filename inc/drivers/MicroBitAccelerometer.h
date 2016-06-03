@@ -41,7 +41,6 @@ DEALINGS IN THE SOFTWARE.
   * Status flags
   */
 #define MICROBIT_ACCEL_PITCH_ROLL_VALID           0x02
-#define MICROBIT_ACCEL_ADDED_TO_IDLE              0x04
 
 /**
   * I2C constants
@@ -199,6 +198,20 @@ class MicroBitAccelerometer : public MicroBitComponent
       * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the accelerometer could not be configured.
       */
     int configure();
+
+    /**
+      * Configures and enables the MMA8653 hardware module.
+      *
+      * @return MICROBIT_OK on success.
+      */
+    virtual int enable();
+
+    /**
+      * Places the MMA8653 hardware module into low power mode, disabling this component.
+      *
+      * @return MICROBIT_OK on success.
+      */
+    virtual int disable();
 
     /**
       * Reads the acceleration data from the accelerometer, and stores it in our buffer.
@@ -445,6 +458,11 @@ class MicroBitAccelerometer : public MicroBitComponent
      * @return A 'best guess' of the current posture of the device, based on instanataneous data.
      */
     uint16_t instantaneousPosture();
+
+    /**
+      * Obtains the nearest sample rate configuration base on the current samplePeriod
+      */
+    const MMA8653SampleRateConfig* findSampleRate();
 };
 
 #endif

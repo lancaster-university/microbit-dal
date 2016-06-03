@@ -41,8 +41,6 @@ DEALINGS IN THE SOFTWARE.
  */
 #define MICROBIT_THERMOMETER_EVT_UPDATE         1
 
-#define MICROBIT_THERMOMETER_ADDED_TO_IDLE      2
-
 /**
   * Class definition for MicroBit Thermometer.
   *
@@ -159,6 +157,20 @@ class MicroBitThermometer : public MicroBitComponent
       * Periodic callback from MicroBit idle thread.
       */
     virtual void idleTick();
+
+    /**
+      * Configures and enables the MAG3110 hardware module.
+      *
+      * @return MICROBIT_OK on success.
+      */
+    virtual int enable();
+
+    /**
+      * Places the MAG3110 hardware module into low power mode, disabling this component.
+      *
+      * @return MICROBIT_OK on success.
+      */
+    virtual int disable();
 
     private:
 

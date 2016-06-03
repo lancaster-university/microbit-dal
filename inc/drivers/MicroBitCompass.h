@@ -94,7 +94,6 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
   */
 #define MICROBIT_COMPASS_STATUS_CALIBRATED      2
 #define MICROBIT_COMPASS_STATUS_CALIBRATING     4
-#define MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE   8
 
 /**
   * Term to convert sample data into SI units
@@ -419,6 +418,20 @@ class MicroBitCompass : public MicroBitComponent
     virtual void idleTick();
 
     /**
+      * Configures and enables the MAG3110 hardware module.
+      *
+      * @return MICROBIT_OK on success.
+      */
+    virtual int enable();
+
+    /**
+      * Places the MAG3110 hardware module into low power mode, disabling this component.
+      *
+      * @return MICROBIT_OK on success.
+      */
+    virtual int disable();
+
+    /**
       * Returns 0 or 1. 1 indicates that the compass is calibrated, zero means the compass requires calibration.
       */
     int isCalibrated();
@@ -508,6 +521,11 @@ class MicroBitCompass : public MicroBitComponent
       * @param address the base address of the magnetometer on the i2c bus.
       */
     void init(uint16_t id, uint16_t address);
+
+    /**
+      * Obtains the nearest sample rate configuration base on the current samplePeriod
+      */
+    const MAG3110SampleRateConfig* findSampleRate();
 };
 
 #endif

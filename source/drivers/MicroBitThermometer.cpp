@@ -71,6 +71,8 @@ MicroBitThermometer::MicroBitThermometer(MicroBitStorage& _storage, uint16_t id)
     this->sampleTime = 0;
     this->offset = 0;
 
+    status &= ~MICROBIT_COMPONENT_RUNNING;
+
     KeyValuePair *tempCalibration =  storage->get("tempCal");
 
     if(tempCalibration != NULL)
@@ -97,6 +99,8 @@ MicroBitThermometer::MicroBitThermometer(uint16_t id) :
     this->samplePeriod = MICROBIT_THERMOMETER_PERIOD;
     this->sampleTime = 0;
     this->offset = 0;
+
+    status &= ~MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
@@ -126,13 +130,8 @@ int MicroBitThermometer::getTemperature()
   */
 int MicroBitThermometer::updateSample()
 {
-    if(!(status & MICROBIT_THERMOMETER_ADDED_TO_IDLE))
-    {
-        // If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
-        // Otherwise, we do just do this on demand, when polled through our read() interface.
-        fiber_add_idle_component(this);
-        status |= MICROBIT_THERMOMETER_ADDED_TO_IDLE;
-    }
+    if(!(status & MICROBIT_COMPONENT_RUNNING))
+        enable();
 
     // check if we need to update our sample...
     if(isSampleNeeded())
@@ -265,4 +264,40 @@ int MicroBitThermometer::setCalibration(int calibrationTemp)
 {
     updateSample();
     return setOffset(temperature - calibrationTemp);
+}
+
+/**
+  * Enabled this MicroBitThermometer instance.
+  *
+  * @return MICROBIT_OK on success.
+  */
+int MicroBitThermometer::enable()
+{
+    if((status & MICROBIT_COMPONENT_RUNNING))
+        return MICROBIT_OK;
+
+    // If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
+    // Otherwise, we do just do this on demand, when polled through our read() interface.
+    fiber_add_idle_component(this);
+    status |= MICROBIT_COMPONENT_RUNNING;
+
+    return MICROBIT_OK;
+}
+
+/**
+  * Disables this MicroBitThermometer instance.
+  *
+  * @return MICROBIT_OK on success.
+  */
+int MicroBitThermometer::disable()
+{
+    if(!(status & MICROBIT_COMPONENT_RUNNING))
+        return MICROBIT_OK;
+
+    // If we're running under a fiber scheduer, register ourselves for a periodic callback to keep our data up to date.
+    // Otherwise, we do just do this on demand, when polled through our read() interface.
+    fiber_remove_idle_component(this);
+    status &= ~MICROBIT_COMPONENT_RUNNING;
+
+    return MICROBIT_OK;
 }

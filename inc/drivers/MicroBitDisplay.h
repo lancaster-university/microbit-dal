@@ -230,8 +230,10 @@ class MicroBitDisplay : public MicroBitComponent
       * Enables or disables the display entirely, and releases the pins for other uses.
       *
       * @param enableDisplay true to enabled the display, or false to disable it.
+      *
+      * @return MICROBIT_OK on success.
       */
-    void setEnable(bool enableDisplay);
+    int setEnable(bool enableDisplay);
 
 public:
     // The mutable bitmap buffer being rendered to the LED matrix.
@@ -563,17 +565,21 @@ public:
     /**
       * Enables the display, should only be called if the display is disabled.
       *
+      * @return MICROBIT_OK on success.
+      *
       * @code
       * display.enable(); //Enables the display mechanics
       * @endcode
       *
       * @note Only enables the display if the display is currently disabled.
       */
-    void enable();
+    virtual int enable();
 
     /**
       * Disables the display, which releases control of the GPIO pins used by the display,
       * which are exposed on the edge connector.
+      *
+      * @return MICROBIT_OK on success.
       *
       * @code
       * display.disable(); //disables the display
@@ -581,7 +587,7 @@ public:
       *
       * @note Only disables the display if the display is currently enabled.
       */
-    void disable();
+    virtual int disable();
 
     /**
       * Clears the display of any remaining pixels.

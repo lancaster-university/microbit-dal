@@ -46,12 +46,14 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
     this->id = id;
     this->address = address;
 
-    // Select 10Hz update rate, with oversampling, and enable the device.
+    // Select 10Hz update rate, with oversampling
     this->samplePeriod = 100;
-    this->configure();
 
     // Assume that we have no calibration information.
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
+    status &= ~MICROBIT_COMPONENT_RUNNING;
+
+    this->configure();
 
     if(this->storage != NULL)
     {
@@ -68,9 +70,6 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
             delete calibrationData;
         }
     }
-
-    // Indicate that we're up and running.
-    status |= MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
@@ -380,15 +379,8 @@ int MicroBitCompass::heading()
   */
 int MicroBitCompass::updateSample()
 {
-    /**
-      * Adds the compass to idle, if it hasn't been added already.
-      * This is an optimisation so that the compass is only added on first 'use'.
-      */
-    if(!(status & MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE))
-    {
-        fiber_add_idle_component(this);
-        status |= MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE;
-    }
+    if(!(status & MICROBIT_COMPONENT_RUNNING))
+        enable();
 
     // Poll interrupt line from compass (Active HI).
     // Interrupt is cleared on data read of MAG_OUT_X_MSB.
@@ -413,6 +405,71 @@ int MicroBitCompass::updateSample()
 void MicroBitCompass::idleTick()
 {
     updateSample();
+}
+
+/**
+  * Configures and enables the MAG3110 hardware module.
+  *
+  * @return MICROBIT_OK on success.
+  */
+int MicroBitCompass::enable()
+{
+    if((status & MICROBIT_COMPONENT_RUNNING))
+        return MICROBIT_OK;
+
+    const MAG3110SampleRateConfig *actualSampleRate = findSampleRate();
+
+    // Bring the device online, with the requested sample frequency.
+    int result = writeCommand(MAG_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
+
+    if(result == MICROBIT_OK)
+    {
+        fiber_add_idle_component(this);
+        status |= MICROBIT_COMPONENT_RUNNING;
+    }
+
+    return result;
+}
+
+/**
+  * Places the MAG3110 hardware module into low power mode, disabling this component.
+  *
+  * @return MICROBIT_OK on success.
+  */
+int MicroBitCompass::disable()
+{
+    if(!(status & MICROBIT_COMPONENT_RUNNING))
+        return MICROBIT_OK;
+
+    int writeResult = 0;
+
+    // enter standby mode.
+    int result = writeCommand(MAG_CTRL_REG1, 0x00);
+
+    // Wait for the part to enter standby mode...
+    while(1)
+    {
+        // Read the status of the part...
+        // If we can't communicate with it over I2C, pass on the error.
+        writeResult = this->read8(MAG_SYSMOD);
+        if (writeResult == MICROBIT_I2C_ERROR)
+            result = MICROBIT_I2C_ERROR;
+
+        // if the part in in standby, we're good to carry on.
+        if((writeResult & 0x03) == 0)
+            break;
+
+        // Perform a power efficient sleep...
+		fiber_sleep(100);
+    }
+
+    if(result == MICROBIT_OK)
+    {
+        fiber_remove_idle_component(this);
+        status &= ~MICROBIT_COMPONENT_RUNNING;
+    }
+
+    return result;
 }
 
 /**
@@ -519,6 +576,27 @@ int MicroBitCompass::getFieldStrength()
 }
 
 /**
+  * Obtains the nearest sample rate configuration base on the current samplePeriod
+  */
+const MAG3110SampleRateConfig* MicroBitCompass::findSampleRate()
+{
+    const MAG3110SampleRateConfig *actualSampleRate;
+
+    // Find the nearest sample rate to that specified.
+    actualSampleRate = &MAG3110SampleRate[MAG3110_SAMPLE_RATES-1];
+
+    for (int i = MAG3110_SAMPLE_RATES-1; i >= 0; i--)
+    {
+        if(MAG3110SampleRate[i].sample_period < this->samplePeriod * 1000)
+            break;
+
+        actualSampleRate = &MAG3110SampleRate[i];
+    }
+
+    return actualSampleRate;
+}
+
+/**
   * Configures the compass for the sample rate defined in this object.
   * The nearest values are chosen to those defined that are supported by the hardware.
   * The instance variables are then updated to reflect reality.
@@ -527,40 +605,17 @@ int MicroBitCompass::getFieldStrength()
   */
 int MicroBitCompass::configure()
 {
-    const MAG3110SampleRateConfig  *actualSampleRate;
-    int result;
+    int result = MICROBIT_OK;
 
-    // First, take the device offline, so it can be configured.
-    result = writeCommand(MAG_CTRL_REG1, 0x00);
+    bool wasEnabled = status & MICROBIT_COMPONENT_RUNNING;
+
+    // First, enter standby mode.
+    result = disable();
+
     if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 
-    // Wait for the part to enter standby mode...
-    while(1)
-    {
-        // Read the status of the part...
-        // If we can't communicate with it over I2C, pass on the error.
-        result = this->read8(MAG_SYSMOD);
-        if (result == MICROBIT_I2C_ERROR)
-            return MICROBIT_I2C_ERROR;
-
-        // if the part in in standby, we're good to carry on.
-        if((result & 0x03) == 0)
-            break;
-
-        // Perform a power efficient sleep...
-		fiber_sleep(100);
-    }
-
-    // Find the nearest sample rate to that specified.
-    actualSampleRate = &MAG3110SampleRate[MAG3110_SAMPLE_RATES-1];
-    for (int i=MAG3110_SAMPLE_RATES-1; i>=0; i--)
-    {
-        if(MAG3110SampleRate[i].sample_period < this->samplePeriod * 1000)
-            break;
-
-        actualSampleRate = &MAG3110SampleRate[i];
-    }
+    const MAG3110SampleRateConfig *actualSampleRate = findSampleRate();
 
     // OK, we have the correct data. Update our local state.
     this->samplePeriod = actualSampleRate->sample_period / 1000;
@@ -570,13 +625,10 @@ int MicroBitCompass::configure()
     if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 
+    if (wasEnabled)
+        result = enable();
 
-    // Bring the device online, with the requested sample frequency.
-    result = writeCommand(MAG_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
-    if (result != MICROBIT_OK)
-        return MICROBIT_I2C_ERROR;
-
-    return MICROBIT_OK;
+    return result;
 }
 
 /**

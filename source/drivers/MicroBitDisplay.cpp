@@ -1086,11 +1086,11 @@ void MicroBitDisplay::rotateTo(DisplayRotation rotation)
  *
  * @param enableDisplay true to enabled the display, or false to disable it.
  */
-void MicroBitDisplay::setEnable(bool enableDisplay)
+int MicroBitDisplay::setEnable(bool enableDisplay)
 {
     // If we're already in the correct state, then there's nothing to do.
     if(((status & MICROBIT_COMPONENT_RUNNING) && enableDisplay) || (!(status & MICROBIT_COMPONENT_RUNNING) && !enableDisplay))
-        return;
+        return MICROBIT_OK;
 
     uint32_t rmask = 0;
     uint32_t cmask = 0;
@@ -1112,6 +1112,8 @@ void MicroBitDisplay::setEnable(bool enableDisplay)
         p.mode(PullNone);
         status &= ~MICROBIT_COMPONENT_RUNNING;
     }
+
+    return MICROBIT_OK;
 }
 
 /**
@@ -1123,9 +1125,9 @@ void MicroBitDisplay::setEnable(bool enableDisplay)
   *
   * @note Only enables the display if the display is currently disabled.
   */
-void MicroBitDisplay::enable()
+int MicroBitDisplay::enable()
 {
-    setEnable(true);
+    return setEnable(true);
 }
 
 /**
@@ -1138,9 +1140,9 @@ void MicroBitDisplay::enable()
   *
   * @note Only disables the display if the display is currently enabled.
   */
-void MicroBitDisplay::disable()
+int MicroBitDisplay::disable()
 {
-    setEnable(false);
+    return setEnable(false);
 }
 
 /**

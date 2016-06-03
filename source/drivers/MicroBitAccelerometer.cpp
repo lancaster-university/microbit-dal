@@ -38,6 +38,27 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitFiber.h"
 
 /**
+  * Obtains the nearest sample rate configuration base on the current samplePeriod
+  */
+const MMA8653SampleRateConfig* MicroBitAccelerometer::findSampleRate()
+{
+    const MMA8653SampleRateConfig *actualSampleRate;
+
+    // First find the nearest sample rate to that specified.
+    actualSampleRate = &MMA8653SampleRate[MMA8653_SAMPLE_RATES-1];
+
+    for (int i=MMA8653_SAMPLE_RATES-1; i>=0; i--)
+    {
+        if(MMA8653SampleRate[i].sample_period < this->samplePeriod * 1000)
+            break;
+
+        actualSampleRate = &MMA8653SampleRate[i];
+    }
+
+    return actualSampleRate;
+}
+
+/**
   * Configures the accelerometer for G range and sample rate defined
   * in this object. The nearest values are chosen to those defined
   * that are supported by the hardware. The instance variables are then
@@ -48,18 +69,9 @@ DEALINGS IN THE SOFTWARE.
 int MicroBitAccelerometer::configure()
 {
     const MMA8653SampleRangeConfig  *actualSampleRange;
-    const MMA8653SampleRateConfig  *actualSampleRate;
-    int result;
+    const MMA8653SampleRateConfig *actualSampleRate = findSampleRate();
 
-    // First find the nearest sample rate to that specified.
-    actualSampleRate = &MMA8653SampleRate[MMA8653_SAMPLE_RATES-1];
-    for (int i=MMA8653_SAMPLE_RATES-1; i>=0; i--)
-    {
-        if(MMA8653SampleRate[i].sample_period < this->samplePeriod * 1000)
-            break;
-
-        actualSampleRate = &MMA8653SampleRate[i];
-    }
+    int result = MICROBIT_OK;
 
     // Now find the nearest sample range to that specified.
     actualSampleRange = &MMA8653SampleRange[MMA8653_SAMPLE_RANGES-1];
@@ -75,38 +87,81 @@ int MicroBitAccelerometer::configure()
     this->samplePeriod = actualSampleRate->sample_period / 1000;
     this->sampleRange = actualSampleRange->sample_range;
 
-    // Now configure the accelerometer accordingly.
-    // First place the device into standby mode, so it can be configured.
-    result = writeCommand(MMA8653_CTRL_REG1, 0x00);
-    if (result != 0)
-        return MICROBIT_I2C_ERROR;
+    bool wasEnabled = status & MICROBIT_COMPONENT_RUNNING;
 
-    // Enable high precisiosn mode. This consumes a bit more power, but still only 184 uA!
+    result = disable();
+    if (result != MICROBIT_OK)
+        return result;
+
+    // Enable high precision mode. This consumes a bit more power, but still only 184 uA!
     result = writeCommand(MMA8653_CTRL_REG2, 0x10);
-    if (result != 0)
+    if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 
     // Enable the INT1 interrupt pin.
     result = writeCommand(MMA8653_CTRL_REG4, 0x01);
-    if (result != 0)
+    if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 
     // Select the DATA_READY event source to be routed to INT1
     result = writeCommand(MMA8653_CTRL_REG5, 0x01);
-    if (result != 0)
+    if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 
     // Configure for the selected g range.
     result = writeCommand(MMA8653_XYZ_DATA_CFG, actualSampleRange->xyz_data_cfg);
-    if (result != 0)
+    if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
+
+    if (wasEnabled)
+        result = enable();
+
+    return result;
+}
+
+/**
+  * Configures and enables the MMA8653 hardware module.
+  *
+  * @return MICROBIT_OK on success.
+  */
+int MicroBitAccelerometer::enable()
+{
+    if((status & MICROBIT_COMPONENT_RUNNING))
+        return MICROBIT_OK;
+
+    const MMA8653SampleRateConfig *actualSampleRate = findSampleRate();
 
     // Bring the device back online, with 10bit wide samples at the requested frequency.
-    result = writeCommand(MMA8653_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
-    if (result != 0)
-        return MICROBIT_I2C_ERROR;
+    int result = writeCommand(MMA8653_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
 
-    return MICROBIT_OK;
+    if (result == MICROBIT_OK)
+    {
+        fiber_add_idle_component(this);
+        status |= MICROBIT_COMPONENT_RUNNING;
+    }
+
+    return result;
+}
+
+/**
+  * Places the MMA8653 hardware module into low power mode, disabling this component.
+  *
+  * @return MICROBIT_OK on success.
+  */
+int MicroBitAccelerometer::disable()
+{
+    if(!(status & MICROBIT_COMPONENT_RUNNING))
+        return MICROBIT_OK;
+
+    int result = writeCommand(MMA8653_CTRL_REG1, 0x00);
+
+    if (result == MICROBIT_OK)
+    {
+        fiber_remove_idle_component(this);
+        status &= ~MICROBIT_COMPONENT_RUNNING;
+    }
+
+    return result;
 }
 
 /**
@@ -201,9 +256,8 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
     this->shake.impulse_6 = 1;
     this->shake.impulse_8 = 1;
 
-    // Configure and enable the accelerometer.
-    if (this->configure() == MICROBIT_OK)
-        status |= MICROBIT_COMPONENT_RUNNING;
+    // Configure the accelerometer.
+    this->configure();
 }
 
 /**
@@ -243,11 +297,8 @@ int MicroBitAccelerometer::whoAmI()
   */
 int MicroBitAccelerometer::updateSample()
 {
-    if(!(status & MICROBIT_ACCEL_ADDED_TO_IDLE))
-    {
-        fiber_add_idle_component(this);
-        status |= MICROBIT_ACCEL_ADDED_TO_IDLE;
-    }
+    if(!(status & MICROBIT_COMPONENT_RUNNING))
+        enable();
 
     // Poll interrupt line from accelerometer.
     // n.b. Default is Active LO. Interrupt is cleared in data read.

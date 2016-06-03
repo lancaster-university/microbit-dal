@@ -170,14 +170,14 @@ class MicroBitRadio : MicroBitComponent
       *
       * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the BLE stack is running.
       */
-    int enable();
+    virtual int enable();
 
     /**
       * Disables the radio for use as a multipoint sender/receiver.
       *
       * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the BLE stack is running.
       */
-    int disable();
+    virtual int disable();
 
     /**
       * Sets the radio to listen to packets sent with the given group id.
