@@ -296,15 +296,26 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
-
-    // @bluetooth_mdw: select either passkey pairing (more secure) or "just works" pairing (less secure but nice and simple for the user)    
+    
+    // @bluetooth_mdw: select either passkey pairing (more secure), "just works" pairing (less secure but nice and simple for the user) or no security
     if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM) {
+        // passkey
         ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY);
     } else {
-           if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_NO_MITM) {
-              ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE);
-           } 
+        if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_NO_MITM) {
+          // Just Works
+           ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE);
+        } else {
+           if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_OPEN_LINK) {
+              // open - no security
+              ble->securityManager().init(false, false, SecurityManager::IO_CAPS_DISPLAY_ONLY);
+           } else {
+              // default to the most secure pairing method we support.. should never get here but...
+              ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY);
+           }
+        }
     }
+
     if (enableBonding)
     {
         // If we're in pairing mode, review the size of the bond table.
@@ -343,8 +354,6 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
     DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
-#else
-    (void)serialNumber;
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
