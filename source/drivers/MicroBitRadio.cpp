@@ -74,7 +74,7 @@ extern "C" void RADIO_IRQHandler(void)
         {
             uint8_t sample = NRF_RADIO->RSSISAMPLE;
 
-            // Associate this packet's rssi value with the data just 
+            // Associate this packet's rssi value with the data just
             // transferred by DMA receive
             MicroBitRadio::instance->setRSSI(sample);
 
@@ -443,7 +443,7 @@ int MicroBitRadio::dataReady()
   *
   * @return The buffer containing the the packet. If no data is available, NULL is returned.
   *
-  * @note Once recv() has been called, it is the callers resposibility to
+  * @note Once recv() has been called, it is the callers responsibility to
   *       delete the buffer when appropriate.
   */
 FrameBuffer* MicroBitRadio::recv()

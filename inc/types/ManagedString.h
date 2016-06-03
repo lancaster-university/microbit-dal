@@ -199,7 +199,7 @@ class ManagedString
       *
       * Called when one ManagedString is assigned the value of another.
       *
-      * If the ManagedString being assigned is already refering to a character buffer,
+      * If the ManagedString being assigned is already referring to a character buffer,
       * decrement the reference count and free up the buffer as necessary.
       *
       * Then, update our character buffer to refer to that of the supplied ManagedString,

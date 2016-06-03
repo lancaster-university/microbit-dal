@@ -306,7 +306,7 @@ ManagedString::~ManagedString()
   *
   * Called when one ManagedString is assigned the value of another.
   *
-  * If the ManagedString being assigned is already refering to a character buffer,
+  * If the ManagedString being assigned is already referring to a character buffer,
   * decrement the reference count and free up the buffer as necessary.
   *
   * Then, update our character buffer to refer to that of the supplied ManagedString,
@@ -471,7 +471,7 @@ ManagedString operator+ (const ManagedString& lhs, const ManagedString& rhs)
   *
   * @param index The position of the character to return.
   *
-  * @return the character at posisiton index, zero if index is invalid.
+  * @return the character at position index, zero if index is invalid.
   *
   * @code
   * MicroBitDisplay display;

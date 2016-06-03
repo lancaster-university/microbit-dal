@@ -208,7 +208,7 @@ class MicroBitRadio : MicroBitComponent
       *
       * @return The buffer containing the the packet. If no data is available, NULL is returned.
       *
-      * @note Once recv() has been called, it is the callers resposibility to
+      * @note Once recv() has been called, it is the callers responsibility to
       *       delete the buffer when appropriate.
       */
     FrameBuffer* recv();

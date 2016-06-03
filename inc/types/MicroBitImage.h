@@ -247,7 +247,7 @@ class MicroBitImage
     int setPixelValue(int16_t x , int16_t y, uint8_t value);
 
     /**
-      * Retreives the value of a given pixel.
+      * Retrieves the value of a given pixel.
       *
       * @param x The x co-ordinate of the pixel to read. Must be within the dimensions of the image.
       *
@@ -287,7 +287,7 @@ class MicroBitImage
     /**
       * Pastes a given bitmap at the given co-ordinates.
       *
-      * Any pixels in the relvant area of this image are replaced.
+      * Any pixels in the relevant area of this image are replaced.
       *
       * @param image The MicroBitImage to paste.
       *
