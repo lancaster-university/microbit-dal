@@ -95,8 +95,8 @@ class MicroBitPin : public MicroBitComponent
 {
     // The mbed object looking after this pin at any point in time (untyped due to dynamic behaviour).
     void *pin;
-
     PinCapability capability;
+    uint8_t pullMode;
 
     /**
       * Disconnect any attached mBed IO from this pin.
@@ -198,6 +198,21 @@ class MicroBitPin : public MicroBitComponent
       * @endcode
       */
     int getDigitalValue();
+
+    /**
+      * Configures this IO pin as a digital input with the specified internal pull-up/pull-down configuraiton (if necessary) and tests its current value.
+      *
+      * @param pull one of the mbed pull configurations: PullUp, PullDown, PullNone
+      *
+      * @return 1 if this input is high, 0 if input is LO, or MICROBIT_NOT_SUPPORTED
+      *         if the given pin does not have digital capability.
+      *
+      * @code
+      * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
+      * P0.getDigitalValue(PullUp); // P0 is either 0 or 1;
+      * @endcode
+      */
+    int getDigitalValue(PinMode pull);
 
     /**
       * Configures this IO pin as an analog/pwm output, and change the output value to the given level.

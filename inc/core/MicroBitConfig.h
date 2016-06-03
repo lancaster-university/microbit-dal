@@ -320,6 +320,19 @@ DEALINGS IN THE SOFTWARE.
 
 
 //
+// I/O Options
+//
+
+
+//
+// Define the default mode in which the digital input pins are configured.
+// valid options are PullDown, PullUp and PullNone.
+//
+#ifndef MICROBIT_DEFAULT_PULLMODE
+#define MICROBIT_DEFAULT_PULLMODE                PullDown
+#endif
+
+//
 // Panic options
 //
 

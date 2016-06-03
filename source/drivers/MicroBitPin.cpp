@@ -57,6 +57,7 @@ MicroBitPin::MicroBitPin(int id, PinName name, PinCapability capability)
     this->id = id;
     this->name = name;
     this->capability = capability;
+    this->pullMode = MICROBIT_DEFAULT_PULLMODE;
 
     // Power up in a disconnected, low power state.
     // If we're unused, this is how it will stay...
@@ -159,7 +160,7 @@ int MicroBitPin::getDigitalValue()
     if (!(status & (IO_STATUS_DIGITAL_IN | IO_STATUS_EVENT_ON_EDGE | IO_STATUS_EVENT_PULSE_ON_EDGE)))
     {
         disconnect();
-        pin = new DigitalIn(name,PullDown);
+        pin = new DigitalIn(name, (PinMode)pullMode);
         status |= IO_STATUS_DIGITAL_IN;
     }
 
@@ -167,6 +168,25 @@ int MicroBitPin::getDigitalValue()
         return ((TimedInterruptIn *)pin)->read();
 
     return ((DigitalIn *)pin)->read();
+}
+
+/**
+ * Configures this IO pin as a digital input with the specified internal pull-up/pull-down configuraiton (if necessary) and tests its current value.
+ *
+ * @param pull one of the mbed pull configurations: PullUp, PullDown, PullNone
+ *
+ * @return 1 if this input is high, 0 if input is LO, or MICROBIT_NOT_SUPPORTED
+ *         if the given pin does not have digital capability.
+ *
+ * @code
+ * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
+ * P0.getDigitalValue(PullUp); // P0 is either 0 or 1;
+ * @endcode
+ */
+int MicroBitPin::getDigitalValue(PinMode pull)
+{
+    setPull(pull);
+    return getDigitalValue();
 }
 
 int MicroBitPin::obtainAnalogChannel()
@@ -451,6 +471,8 @@ int MicroBitPin::getAnalogPeriod()
   */
 int MicroBitPin::setPull(PinMode pull)
 {
+    pullMode = pull;
+
     if ((status & IO_STATUS_DIGITAL_IN))
     {
         ((DigitalIn *)pin)->mode(pull);
@@ -528,7 +550,7 @@ int MicroBitPin::enableRiseFallEvents(int eventType)
         disconnect();
         pin = new TimedInterruptIn(name);
 
-        ((TimedInterruptIn *)pin)->mode(PullDown);
+        ((TimedInterruptIn *)pin)->mode((PinMode)pullMode);
         ((TimedInterruptIn *)pin)->rise(this, &MicroBitPin::onRise);
         ((TimedInterruptIn *)pin)->fall(this, &MicroBitPin::onFall);
     }
