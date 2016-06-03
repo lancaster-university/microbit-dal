@@ -296,8 +296,15 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
-    ble->securityManager().init(enableBonding, (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM), SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
+    // @bluetooth_mdw: select either passkey pairing (more secure) or "just works" pairing (less secure but nice and simple for the user)    
+    if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM) {
+        ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY);
+    } else {
+           if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_NO_MITM) {
+              ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE);
+           } 
+    }
     if (enableBonding)
     {
         // If we're in pairing mode, review the size of the bond table.
