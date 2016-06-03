@@ -87,7 +87,7 @@ DEALINGS IN THE SOFTWARE.
 
 // The proportion of SRAM available on the mbed heap to reserve for the micro:bit heap.
 #ifndef MICROBIT_NESTED_HEAP_SIZE
-#define MICROBIT_NESTED_HEAP_SIZE               0.75
+#define MICROBIT_NESTED_HEAP_SIZE               0.50
 #endif
 
 // If defined, reuse any unused SRAM normally reserved for SoftDevice (Nordic's memory resident BLE stack) as heap memory.
@@ -101,7 +101,7 @@ DEALINGS IN THE SOFTWARE.
 // For standard S110 builds, this should be word aligned and in the range 0x300 - 0x700.
 // Any unused memory will be automatically reclaimed as HEAP memory if both MICROBIT_HEAP_REUSE_SD and MICROBIT_HEAP_ALLOCATOR are enabled.
 #ifndef MICROBIT_SD_GATT_TABLE_SIZE
-#define MICROBIT_SD_GATT_TABLE_SIZE             0x300
+#define MICROBIT_SD_GATT_TABLE_SIZE             0x700
 #endif
 
 //
@@ -206,7 +206,7 @@ DEALINGS IN THE SOFTWARE.
 // SECURITY_MODE_ENCRYPTION_WITH_MITM:      Bonding, encrytion and whitelisting with passkey authentication.
 //
 #ifndef MICROBIT_BLE_SECURITY_LEVEL
-#define MICROBIT_BLE_SECURITY_LEVEL             SECURITY_MODE_ENCRYPTION_WITH_MITM
+#define MICROBIT_BLE_SECURITY_LEVEL             SECURITY_MODE_ENCRYPTION_NO_MITM
 #endif
 
 // Enable/Disable the use of BLE whitelisting.
@@ -227,14 +227,14 @@ DEALINGS IN THE SOFTWARE.
 // Based on trials undertaken by the BBC, the radio is normally set to its lowest power level
 // to best protect children's privacy.
 #ifndef MICROBIT_BLE_DEFAULT_TX_POWER
-#define MICROBIT_BLE_DEFAULT_TX_POWER           0
+#define MICROBIT_BLE_DEFAULT_TX_POWER           7
 #endif
 
 // Enable/Disable BLE Service: MicroBitDFU
 // This allows over the air programming during normal operation.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_DFU_SERVICE
-#define MICROBIT_BLE_DFU_SERVICE                1
+#define MICROBIT_BLE_DFU_SERVICE                0
 #endif
 
 // Enable/Disable BLE Service: MicroBitEventService
