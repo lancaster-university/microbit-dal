@@ -59,10 +59,6 @@ MicroBitRadio* MicroBitRadio::instance = NULL;
 
 extern "C" void RADIO_IRQHandler(void)
 {
-    // Move on to the next buffer, if possible.
-    MicroBitRadio::instance->queueRxBuf();
-    NRF_RADIO->PACKETPTR = (uint32_t) MicroBitRadio::instance->getRxBuf();
-
     if(NRF_RADIO->EVENTS_READY)
     {
         NRF_RADIO->EVENTS_READY = 0;
@@ -74,12 +70,24 @@ extern "C" void RADIO_IRQHandler(void)
     if(NRF_RADIO->EVENTS_END)
     {
         NRF_RADIO->EVENTS_END = 0;
-
         if(NRF_RADIO->CRCSTATUS == 1)
         {
             uint8_t sample = NRF_RADIO->RSSISAMPLE;
 
+            // Associate this packet's rssi value with the data just 
+            // transferred by DMA receive
             MicroBitRadio::instance->setRSSI(sample);
+
+            // Now move on to the next buffer, if possible.
+            // The queued packet will get the rssi value set above.
+            MicroBitRadio::instance->queueRxBuf();
+
+            // Set the new buffer for DMA
+            NRF_RADIO->PACKETPTR = (uint32_t) MicroBitRadio::instance->getRxBuf();
+        }
+        else
+        {
+            MicroBitRadio::instance->setRSSI(0);
         }
 
         // Start listening and wait for the END event
