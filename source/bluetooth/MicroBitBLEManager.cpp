@@ -57,6 +57,22 @@ uint32_t btle_set_gatt_table_size(uint32_t size);
 
 #define MICROBIT_PAIRING_FADE_SPEED		4
 
+//
+// Local enumeration of valid security modes.  Used only to optimise pre-processor comparisons.
+//
+#define __SECURITY_MODE_ENCRYPTION_OPEN_LINK         0
+#define __SECURITY_MODE_ENCRYPTION_NO_MITM           1
+#define __SECURITY_MODE_ENCRYPTION_WITH_MITM         2
+//
+// Some Black Magic to compare the definition of our security mode in MicroBitConfig with a given parameter.
+// Required as the MicroBitConfig option is actually an mbed enum, that is not normally comparable at compile time.
+//
+
+#define __CAT(a, ...) a ## __VA_ARGS__
+#define SECURITY_MODE(x) __CAT(__,x)
+#define SECURITY_MODE_IS(x) (SECURITY_MODE(MICROBIT_BLE_SECURITY_LEVEL) == SECURITY_MODE(x))
+
+
 const char* MICROBIT_BLE_MANUFACTURER = NULL;
 const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
 const char* MICROBIT_BLE_HARDWARE_VERSION = NULL;
@@ -298,23 +314,17 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
     
     // @bluetooth_mdw: select either passkey pairing (more secure), "just works" pairing (less secure but nice and simple for the user) or no security
-    if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM) {
-        // passkey
-        ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY);
-    } else {
-        if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_NO_MITM) {
-          // Just Works
-           ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE);
-        } else {
-           if (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_OPEN_LINK) {
-              // open - no security
-              ble->securityManager().init(false, false, SecurityManager::IO_CAPS_DISPLAY_ONLY);
-           } else {
-              // default to the most secure pairing method we support.. should never get here but...
-              ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY);
-           }
-        }
-    }
+    // Default to passkey pairing with MITM protection
+#if (SECURITY_MODE_IS(SECURITY_MODE_ENCRYPTION_NO_MITM))
+    // Just Works
+    ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE);
+#elif (SECURITY_MODE_IS(SECURITY_MODE_ENCRYPTION_OPEN_LINK))
+    // no security
+    ble->securityManager().init(false, false, SecurityManager::IO_CAPS_DISPLAY_ONLY);
+#else
+    // passkey
+    ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY);
+#endif
 
     if (enableBonding)
     {
