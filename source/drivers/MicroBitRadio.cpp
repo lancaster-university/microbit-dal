@@ -452,8 +452,14 @@ FrameBuffer* MicroBitRadio::recv()
 
     if (p)
     {
+         // Protect shared resource from ISR activity
+        NVIC_DisableIRQ(RADIO_IRQn); 
+
         rxQueue = rxQueue->next;
         queueDepth--;
+
+        // Allow ISR access to shared resource
+        NVIC_EnableIRQ(RADIO_IRQn);
     }
 
     return p;
