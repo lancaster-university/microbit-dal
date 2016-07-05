@@ -139,7 +139,7 @@ void MicroBitDisplay::render()
         return;
 
     // Calculate the bitpattern to write.
-    uint32_t row_data = 0x01 << (microbitMatrixMap.rowStart + strobeRow);
+    uint32_t row_data = 0x01 << (matrixMap.rowStart + strobeRow);
     uint32_t col_data = 0;
 
     for (int i = 0; i < matrixMap.columns; i++)
@@ -208,7 +208,7 @@ void MicroBitDisplay::renderWithLightSense()
 
 void MicroBitDisplay::renderGreyscale()
 {
-    uint32_t row_data = 0x01 << (microbitMatrixMap.rowStart + strobeRow);
+    uint32_t row_data = 0x01 << (matrixMap.rowStart + strobeRow);
     uint32_t col_data = 0;
 
     // Calculate the bitpattern to write.
