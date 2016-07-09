@@ -172,6 +172,12 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_ENABLED                1
 #endif
 
+// Compile support for the raw 2.4GHz Packet Radio during normal operation.
+// Set '1' to enable.
+#ifndef MICROBIT_RADIO_ENABLED
+#define MICROBIT_RADIO_ENABLED              1
+#endif
+
 // Enable/Disable BLE pairing mode mode at power up.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_PAIRING_MODE

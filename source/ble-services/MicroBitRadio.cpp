@@ -50,6 +50,9 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBitRadio* MicroBitRadio::instance = NULL;
 
+
+#if (CONFIG_ENABLED(MICROBIT_RADIO_ENABLED))
+
 extern "C" void RADIO_IRQHandler(void)
 {
     // Move on to the next buffer, if possible.
@@ -79,6 +82,8 @@ extern "C" void RADIO_IRQHandler(void)
         NRF_RADIO->TASKS_START = 1;
     }
 }
+
+#endif
 
 /**
   * Constructor.
