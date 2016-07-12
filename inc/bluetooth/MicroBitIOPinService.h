@@ -56,6 +56,7 @@ struct IOData
 class MicroBitIOPinService : public MicroBitComponent
 {
     public:
+    static MicroBitIOPinService *instance;
 
     /**
       * Constructor.
@@ -65,6 +66,17 @@ class MicroBitIOPinService : public MicroBitComponent
       *            I/O operations.
       */
     MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io);
+
+    /**
+     * Singleton constructor.
+     * Create a representation of the IOPinService, unless one has already been created.
+     * If one has been created, this is returned to the caller.
+     * 
+     * @param _ble The instance of a BLE device that we're running on.
+     * @param _io An instance of MicroBitIO that this service will use to perform
+     * @return a MicroBitIOPinService.
+     */
+    MicroBitIOPinService* getInstance(BLEDevice &_ble, MicroBitIO &_io);
 
     /**
      * Periodic callback from MicroBit scheduler.

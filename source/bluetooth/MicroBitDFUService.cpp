@@ -60,6 +60,7 @@ extern "C" {
 #pragma GCC diagnostic pop
 #endif
 
+MicroBitDFUService* MicroBitDFUService::instance = NULL;
 
 /**
   * Constructor.
@@ -89,6 +90,21 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     ble.gattServer().onDataWritten(this, &MicroBitDFUService::onDataWritten);
 }
 
+/**
+ * Singleton constructor.
+ * Create a representation of the DFUService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @return a MicroBitDFUService.
+ */
+MicroBitDFUService* MicroBitDFUService::getInstance(BLEDevice &_ble)
+{
+    if (instance == NULL)
+       instance = new MicroBitDFUService(_ble); 
+
+    return instance;
+}
 /**
   * Callback. Invoked when any of our attributes are written via BLE.
   */

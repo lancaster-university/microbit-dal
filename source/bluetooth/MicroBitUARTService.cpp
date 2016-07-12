@@ -37,6 +37,8 @@ DEALINGS IN THE SOFTWARE.
 #include "ErrorNo.h"
 #include "NotifyEvents.h"
 
+MicroBitUARTService* MicroBitUARTService::instance = NULL;
+
 static uint8_t txBufferHead = 0;
 static uint8_t txBufferTail = 0;
 
@@ -94,6 +96,23 @@ MicroBitUARTService::MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize, 
     _ble.gattServer().onConfirmationReceived(on_confirmation);
 }
 
+/**
+ * Singleton constructor.
+ * Create a representation of the UARTService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @param rxBufferSize the size of the rxBuffer
+ * @param txBufferSize the size of the txBuffer
+ * @return a MicroBitUARTService.
+ */
+MicroBitUARTService* MicroBitUARTService::getInstance(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize)
+{
+    if (instance == NULL)
+       instance = new MicroBitUARTService(_ble, rxBufferSize, txBufferSize); 
+
+    return instance;
+}
 /**
   * A callback function for whenever a Bluetooth device writes to our RX characteristic.
   */

@@ -33,6 +33,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitButtonService.h"
 #include "MicroBitButton.h"
 
+MicroBitButtonService* MicroBitButtonService::instance = NULL;
+
 /**
   * Constructor.
   * Create a representation of the ButtonService
@@ -75,6 +77,21 @@ MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble) :
     }
 }
 
+/**
+ * Singleton constructor.
+ * Create a representation of the ButtonService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @return a MicroBitButtonService.
+ */
+MicroBitButtonService* MicroBitButtonService::getInstance(BLEDevice &_ble)
+{
+    if (instance == NULL)
+       instance = new MicroBitButtonService(_ble); 
+
+    return instance;
+}
 
 /**
   * Button B update callback

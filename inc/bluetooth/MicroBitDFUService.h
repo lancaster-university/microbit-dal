@@ -55,6 +55,7 @@ extern "C" void bootloader_start(void);
 class MicroBitDFUService
 {
     public:
+    static MicroBitDFUService *instance;
 
     /**
       * Constructor.
@@ -62,6 +63,16 @@ class MicroBitDFUService
       * @param _ble The instance of a BLE device that we're running on.
       */
     MicroBitDFUService(BLEDevice &_ble);
+
+    /**
+     * Singleton constructor.
+     * Create a representation of the DFUService, unless one has already been created.
+     * If one has been created, this is returned to the caller.
+     * 
+     * @param _ble The instance of a BLE device that we're running on.
+     * @return a MicroBitDFUService.
+     */
+    static MicroBitDFUService* getInstance(BLEDevice &_ble);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.

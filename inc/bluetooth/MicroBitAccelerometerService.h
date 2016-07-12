@@ -44,6 +44,7 @@ extern const uint8_t  MicroBitAccelerometerServicePeriodUUID[];
 class MicroBitAccelerometerService
 {
     public:
+    static MicroBitAccelerometerService *instance;
 
     /**
       * Constructor.
@@ -51,8 +52,18 @@ class MicroBitAccelerometerService
       * @param _ble The instance of a BLE device that we're running on.
       * @param _accelerometer An instance of MicroBitAccelerometer.
       */
-    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_acclerometer);
+    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer);
 
+    /**
+      * Singleton constructor.
+      * Create a representation of the AccelerometerService, unless one has already been created.
+      * If one has been created, this is returned to the caller.
+      * 
+      * @param _ble The instance of a BLE device that we're running on.
+      * @param _accelerometer An instance of MicroBitAccelerometer.
+      * @return a MicroBitAccelerometerService.
+      */
+    static MicroBitAccelerometerService* getInstance(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer);
 
     private:
 

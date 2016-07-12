@@ -44,6 +44,7 @@ extern const uint8_t  MicroBitTemperatureServicePeriodUUID[];
 class MicroBitTemperatureService
 {
     public:
+    static MicroBitTemperatureService *instance;
 
     /**
       * Constructor.
@@ -52,6 +53,17 @@ class MicroBitTemperatureService
       * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
       */
     MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer);
+
+    /**
+     * Singleton constructor.
+     * Create a representation of the TemperatureService, unless one has already been created.
+     * If one has been created, this is returned to the caller.
+     * 
+     * @param _ble The instance of a BLE device that we're running on.
+     * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
+     * @return a MicroBitTemperatureService.
+     */
+    MicroBitTemperatureService* getInstance(BLEDevice &_ble, MicroBitThermometer &_thermometer);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.

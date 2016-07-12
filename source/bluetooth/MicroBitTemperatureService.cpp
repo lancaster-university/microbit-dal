@@ -32,6 +32,8 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitTemperatureService.h"
 
+MicroBitTemperatureService* MicroBitTemperatureService::instance = NULL;
+
 /**
   * Constructor.
   * Create a representation of the TemperatureService
@@ -70,6 +72,23 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBit
     ble.onDataWritten(this, &MicroBitTemperatureService::onDataWritten);
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+}
+
+/**
+ * Singleton constructor.
+ * Create a representation of the TemperatureService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
+ * @return a MicroBitTemperatureService.
+ */
+MicroBitTemperatureService* MicroBitTemperatureService::getInstance(BLEDevice &_ble, MicroBitThermometer &_thermometer)
+{
+    if (instance == NULL)
+       instance = new MicroBitTemperatureService(_ble, _thermometer); 
+
+    return instance;
 }
 
 /**

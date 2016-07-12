@@ -33,6 +33,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitIOPinService.h"
 #include "MicroBitFiber.h"
 
+MicroBitIOPinService* MicroBitIOPinService::instance = NULL;
+
 /**
   * Constructor.
   * Create a representation of the IOPinService
@@ -78,6 +80,22 @@ MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io) :
     fiber_add_idle_component(this);
 }
 
+/**
+ * Singleton constructor.
+ * Create a representation of the IOPinService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @param _io An instance of MicroBitIO that this service will use to perform
+ * @return a MicroBitIOPinService.
+ */
+MicroBitIOPinService* MicroBitIOPinService::getInstance(BLEDevice &_ble, MicroBitIO &_io)
+{
+    if (instance == NULL)
+       instance = new MicroBitIOPinService(_ble, _io); 
+
+    return instance;
+}
 /**
   * Determines if the given pin was configured as a digital pin by the BLE ADPinConfigurationCharacterisitic.
   *

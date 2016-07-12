@@ -48,6 +48,7 @@ extern const uint8_t  MicroBitLEDServiceScrollingSpeedUUID[];
 class MicroBitLEDService
 {
     public:
+    static MicroBitLEDService *instance;
 
     /**
       * Constructor.
@@ -56,6 +57,17 @@ class MicroBitLEDService
       * @param _display An instance of MicroBitDisplay to interface with.
       */
     MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display);
+
+    /**
+     * Singleton constructor.
+     * Create a representation of the LEDService, unless one has already been created.
+     * If one has been created, this is returned to the caller.
+     * 
+     * @param _ble The instance of a BLE device that we're running on.
+     * @param _display An instance of MicroBitDisplay to interface with.
+     * @return a MicroBitLEDService.
+     */
+    MicroBitLEDService* getInstance(BLEDevice &_ble, MicroBitDisplay &_display);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.

@@ -43,6 +43,7 @@ extern const uint8_t  MicroBitButtonBServiceDataUUID[];
 class MicroBitButtonService
 {
     public:
+    static MicroBitButtonService *instance;
 
     /**
       * Constructor.
@@ -51,6 +52,15 @@ class MicroBitButtonService
       */
     MicroBitButtonService(BLEDevice &_ble);
 
+    /**
+     * Singleton constructor.
+     * Create a representation of the ButtonService, unless one has already been created.
+     * If one has been created, this is returned to the caller.
+     * 
+     * @param _ble The instance of a BLE device that we're running on.
+     * @return a MicroBitButtonService.
+     */
+    static MicroBitButtonService* getInstance(BLEDevice &_ble);
 
     private:
 

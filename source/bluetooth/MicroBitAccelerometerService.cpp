@@ -32,6 +32,8 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitAccelerometerService.h"
 
+MicroBitAccelerometerService* MicroBitAccelerometerService::instance = NULL;
+
 /**
   * Constructor.
   * Create a representation of the AccelerometerService
@@ -74,6 +76,23 @@ MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, Micr
 
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_ACCELEROMETER, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE, this, &MicroBitAccelerometerService::accelerometerUpdate,  MESSAGE_BUS_LISTENER_IMMEDIATE);
+}
+
+/**
+ * Singleton constructor.
+ * Create a representation of the AccelerometerService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @param _accelerometer An instance of MicroBitAccelerometer.
+ * @return a MicroBitAccelerometerService.
+ */
+MicroBitAccelerometerService* MicroBitAccelerometerService::getInstance(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer)
+{
+    if (instance == NULL)
+       instance = new MicroBitAccelerometerService(_ble, _accelerometer); 
+
+    return instance;
 }
 
 /**

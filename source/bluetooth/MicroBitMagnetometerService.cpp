@@ -32,6 +32,8 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitMagnetometerService.h"
 
+MicroBitMagnetometerService* MicroBitMagnetometerService::instance = NULL;
+
 /**
   * Constructor.
   * Create a representation of the MagnetometerService.
@@ -83,6 +85,23 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroB
         EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
         EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
     }
+}
+
+/**
+ * Singleton constructor.
+ * Create a representation of the MagnetometerService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @param _compass An instance of MicroBitCompass to use as our Magnetometer source.
+ * @return a MicroBitMagnetometerService.
+ */
+MicroBitMagnetometerService* MicroBitMagnetometerService::getInstance(BLEDevice &_ble, MicroBitCompass &_compass)
+{
+    if (instance == NULL)
+       instance = new MicroBitMagnetometerService(_ble, _compass); 
+
+    return instance;
 }
 
 /**

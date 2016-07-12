@@ -45,6 +45,7 @@ extern const uint8_t  MicroBitMagnetometerServicePeriodUUID[];
 class MicroBitMagnetometerService
 {
     public:
+    static MicroBitMagnetometerService *instance;
 
     /**
       * Constructor.
@@ -53,6 +54,17 @@ class MicroBitMagnetometerService
       * @param _compass An instance of MicroBitCompass to use as our Magnetometer source.
       */
     MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass);
+
+    /**
+     * Singleton constructor.
+     * Create a representation of the MagnetometerService, unless one has already been created.
+     * If one has been created, this is returned to the caller.
+     * 
+     * @param _ble The instance of a BLE device that we're running on.
+     * @param _compass An instance of MicroBitCompass to use as our Magnetometer source.
+     * @return a MicroBitMagnetometerService.
+     */
+    MicroBitMagnetometerService* getInstance(BLEDevice &_ble, MicroBitCompass &_compass);
 
     private:
 

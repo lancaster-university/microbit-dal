@@ -86,6 +86,7 @@ class MicroBitUARTService
     void circularCopy(uint8_t *circularBuff, uint8_t circularBuffSize, uint8_t *linearBuff, uint16_t tailPosition, uint16_t headPosition);
 
     public:
+    static MicroBitUARTService *instance;
 
     /**
      * Constructor for the UARTService.
@@ -96,6 +97,18 @@ class MicroBitUARTService
      * @note The default size is MICROBIT_UART_S_DEFAULT_BUF_SIZE (20 bytes).
      */
     MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize = MICROBIT_UART_S_DEFAULT_BUF_SIZE, uint8_t txBufferSize = MICROBIT_UART_S_DEFAULT_BUF_SIZE);
+
+    /**
+     * Singleton constructor.
+     * Create a representation of the UARTService, unless one has already been created.
+     * If one has been created, this is returned to the caller.
+     * 
+     * @param _ble The instance of a BLE device that we're running on.
+     * @param rxBufferSize the size of the rxBuffer
+     * @param txBufferSize the size of the txBuffer
+     * @return a MicroBitUARTService.
+     */
+    MicroBitUARTService* getInstance(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize);
 
     /**
       * Retreives a single character from our RxBuffer.

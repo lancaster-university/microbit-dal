@@ -82,6 +82,22 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_message
     fiber_add_idle_component(this);
 }
 
+/**
+ * Singleton constructor.
+ * Create a representation of the EventService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @param _messageBus An instance of an EventModel which events will be mirrored from.
+ * @return a MicroBitEventService.
+ */
+MicroBitEventService* MicroBitEventService::getInstance(BLEDevice &_ble, EventModel &_messageBus) 
+{
+    if (instance == NULL)
+       instance = new MicroBitEventService(_ble, _messageBus); 
+
+    return instance;
+}
 
 /**
   * Callback. Invoked when any of our attributes are written via BLE.

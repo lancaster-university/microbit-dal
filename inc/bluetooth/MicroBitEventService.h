@@ -52,6 +52,7 @@ struct EventServiceEvent
 class MicroBitEventService : public MicroBitComponent
 {
     public:
+    static MicroBitEventService *instance;
 
     /**
       * Constructor.
@@ -60,6 +61,17 @@ class MicroBitEventService : public MicroBitComponent
       * @param _messageBus An instance of an EventModel which events will be mirrored from.
       */
     MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus);
+
+    /**
+     * Singleton constructor.
+     * Create a representation of the EventService, unless one has already been created.
+     * If one has been created, this is returned to the caller.
+     * 
+     * @param _ble The instance of a BLE device that we're running on.
+     * @param _messageBus An instance of an EventModel which events will be mirrored from.
+     * @return a MicroBitEventService.
+     */
+    MicroBitEventService* getInstance(BLEDevice &_ble, EventModel &_messageBus);
 
     /**
      * Periodic callback from MicroBit scheduler.

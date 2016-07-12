@@ -32,6 +32,8 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitLEDService.h"
 
+MicroBitLEDService* MicroBitLEDService::instance = NULL;
+
 /**
   * Constructor.
   * Create a representation of the LEDService
@@ -75,6 +77,23 @@ MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_displa
     ble.gattServer().write(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitLEDService::onDataWritten);
+}
+
+/**
+ * Singleton constructor.
+ * Create a representation of the LEDService, unless one has already been created.
+ * If one has been created, this is returned to the caller.
+ * 
+ * @param _ble The instance of a BLE device that we're running on.
+ * @param _display An instance of MicroBitDisplay to interface with.
+ * @return a MicroBitLEDService.
+ */
+MicroBitLEDService* MicroBitLEDService::getInstance(BLEDevice &_ble, MicroBitDisplay &_display)
+{
+    if (instance == NULL)
+       instance = new MicroBitLEDService(_ble, _display); 
+
+    return instance;
 }
 
 
