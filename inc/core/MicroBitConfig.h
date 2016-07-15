@@ -99,6 +99,7 @@ DEALINGS IN THE SOFTWARE.
 
 // The amount of memory allocated to Soft Device to hold its BLE GATT table.
 // For standard S110 builds, this should be word aligned and in the range 0x300 - 0x700.
+// To use the default size, as defined by the Soft Device stack, use 0.
 // Any unused memory will be automatically reclaimed as HEAP memory if both MICROBIT_HEAP_REUSE_SD and MICROBIT_HEAP_ALLOCATOR are enabled.
 #ifndef MICROBIT_SD_GATT_TABLE_SIZE
 #define MICROBIT_SD_GATT_TABLE_SIZE             0x300
@@ -230,26 +231,6 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_DEFAULT_TX_POWER           0
 #endif
 
-// Enable/Disable BLE Service: MicroBitDFU
-// This allows over the air programming during normal operation.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_DFU_SERVICE
-#define MICROBIT_BLE_DFU_SERVICE                1
-#endif
-
-// Enable/Disable BLE Service: MicroBitEventService
-// This allows routing of events from the micro:bit message bus over BLE.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_EVENT_SERVICE
-#define MICROBIT_BLE_EVENT_SERVICE              1
-#endif
-
-// Enable/Disable BLE Service: MicroBitDeviceInformationService
-// This enables the standard BLE device information service.
-// Set '1' to enable.
-#ifndef MICROBIT_BLE_DEVICE_INFORMATION_SERVICE
-#define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE 1
-#endif
 
 //
 // Accelerometer options
