@@ -70,6 +70,10 @@ MicroBitDFUService* MicroBitDFUService::instance = NULL;
 MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     ble(_ble)
 {
+    // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
+    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+        return;
+
     // Opcodes can be issued here to control the MicroBitDFU Service, as defined above.
     GattCharacteristic  microBitDFUServiceControlCharacteristic(MicroBitDFUServiceControlCharacteristicUUID, &controlByte, 0, sizeof(uint8_t),
             GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);

@@ -66,6 +66,10 @@ void on_confirmation(uint16_t handle)
  */
 MicroBitUARTService::MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize) : ble(_ble)
 {
+    // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
+    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+        return;
+
     rxBufferSize += 1;
     txBufferSize += 1;
 

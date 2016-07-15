@@ -43,6 +43,10 @@ MicroBitTemperatureService* MicroBitTemperatureService::instance = NULL;
 MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer) :
         ble(_ble), thermometer(_thermometer)
 {
+    // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
+    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+        return;
+
     // Create the data structures that represent each of our characteristics in Soft Device.
     GattCharacteristic  temperatureDataCharacteristic(MicroBitTemperatureServiceDataUUID, (uint8_t *)&temperatureDataCharacteristicBuffer, 0,
     sizeof(temperatureDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);

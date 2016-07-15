@@ -51,6 +51,10 @@ MicroBitDeviceInformationService::MicroBitDeviceInformationService(BLEDevice &_b
     int n1 = microbit_serial_number() & 0xffff;
     int n2 = (microbit_serial_number() >> 16) & 0xffff;
 
+    // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
+    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+        return;
+
     DeviceInformationService ble_device_information_service (_ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, (ManagedString(n1) + ManagedString(n2)).toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 }
 

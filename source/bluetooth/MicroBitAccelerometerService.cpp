@@ -43,6 +43,10 @@ MicroBitAccelerometerService* MicroBitAccelerometerService::instance = NULL;
 MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer) :
         ble(_ble), accelerometer(_accelerometer)
 {
+    // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
+    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+        return;
+
     // Create the data structures that represent each of our characteristics in Soft Device.
     GattCharacteristic  accelerometerDataCharacteristic(MicroBitAccelerometerServiceDataUUID, (uint8_t *)accelerometerDataCharacteristicBuffer, 0,
     sizeof(accelerometerDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
