@@ -230,7 +230,7 @@ void MicroBitIOPinService::onDataRead(GattReadAuthCallbackParams *params)
                 if (isDigital(i))
                		value = io.pin[i].getDigitalValue();
                 else
-               		value = io.pin[i].getAnalogValue();
+               		value = io.pin[i].getAnalogValue() / 4;
 
                 ioPinServiceIOData[i] = value;
                 ioPinServiceDataCharacteristicBuffer[pairs].pin = i;
@@ -274,7 +274,7 @@ void MicroBitIOPinService::idleTick()
             if (isDigital(i))
                	value = io.pin[i].getDigitalValue();
             else
-               	value = io.pin[i].getAnalogValue();
+               	value = io.pin[i].getAnalogValue() / 4;
 
             // If the data has changed, send an update.
             if (value != ioPinServiceIOData[i])
