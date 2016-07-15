@@ -67,7 +67,7 @@ class MicroBitLEDService
      * @param _display An instance of MicroBitDisplay to interface with.
      * @return a MicroBitLEDService.
      */
-    MicroBitLEDService* getInstance(BLEDevice &_ble, MicroBitDisplay &_display);
+    static MicroBitLEDService* getInstance(BLEDevice &_ble, MicroBitDisplay &_display);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.

@@ -76,7 +76,7 @@ class MicroBitIOPinService : public MicroBitComponent
      * @param _io An instance of MicroBitIO that this service will use to perform
      * @return a MicroBitIOPinService.
      */
-    MicroBitIOPinService* getInstance(BLEDevice &_ble, MicroBitIO &_io);
+    static MicroBitIOPinService* getInstance(BLEDevice &_ble, MicroBitIO &_io);
 
     /**
      * Periodic callback from MicroBit scheduler.

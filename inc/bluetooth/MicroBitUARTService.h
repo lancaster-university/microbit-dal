@@ -108,7 +108,7 @@ class MicroBitUARTService
      * @param txBufferSize the size of the txBuffer
      * @return a MicroBitUARTService.
      */
-    MicroBitUARTService* getInstance(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize);
+    static MicroBitUARTService* getInstance(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize);
 
     /**
       * Retreives a single character from our RxBuffer.

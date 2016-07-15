@@ -64,7 +64,7 @@ class MicroBitMagnetometerService
      * @param _compass An instance of MicroBitCompass to use as our Magnetometer source.
      * @return a MicroBitMagnetometerService.
      */
-    MicroBitMagnetometerService* getInstance(BLEDevice &_ble, MicroBitCompass &_compass);
+    static MicroBitMagnetometerService* getInstance(BLEDevice &_ble, MicroBitCompass &_compass);
 
     private:
 
