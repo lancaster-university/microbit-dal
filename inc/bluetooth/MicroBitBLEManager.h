@@ -48,7 +48,6 @@ DEALINGS IN THE SOFTWARE.
 #pragma GCC diagnostic pop
 #endif
 
-#include "ble/services/DeviceInformationService.h"
 #include "MicroBitDFUService.h"
 #include "MicroBitEventService.h"
 #include "MicroBitLEDService.h"
@@ -124,8 +123,6 @@ class MicroBitBLEManager : MicroBitComponent
       * up in a static context.
       *
       * @param deviceName The name used when advertising
-      * @param serialNumber The serial number exposed by the device information service
-      * @param messageBus An instance of an EventModel, used during pairing.
       * @param enableBonding If true, the security manager enabled bonding.
       * @param enableWhitelisting If true, only connections from paired devices will be permitted, and an anonymous device name will be used.
       * @param enablePrivateAddressing If true, private resolvable MAC addressed will be used. Otherwise, the device's public MAC address wil be used.
@@ -134,7 +131,7 @@ class MicroBitBLEManager : MicroBitComponent
       * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
       * @endcode
       */
-    void init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding, bool enableWhitelisting = true, bool enablePrivateAddressing = false);
+    void init(ManagedString deviceName, bool enableBonding, bool enableWhitelisting = true, bool enablePrivateAddressing = false);
 
     /**
      * Change the output power level of the transmitter to the given value.

@@ -57,11 +57,6 @@ uint32_t btle_set_gatt_table_size(uint32_t size);
 
 #define MICROBIT_PAIRING_FADE_SPEED		4
 
-const char* MICROBIT_BLE_MANUFACTURER = NULL;
-const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
-const char* MICROBIT_BLE_HARDWARE_VERSION = NULL;
-const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
-const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
 const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 
 /*
@@ -247,8 +242,6 @@ void MicroBitBLEManager::advertise()
   * up in a static context.
   *
   * @param deviceName The name used when advertising
-  * @param serialNumber The serial number exposed by the device information service
-  * @param messageBus An instance of an EventModel, used during pairing.
   * @param enableBonding If true, the security manager will permit the pairing process to be initiated.
   * @param enableWhitelisting If true, only connections from paired devices will be permitted, and an anonymous device name will be used.
   * @param enablePrivateAddressing If true, private resolvable MAC addressed will be used. Otherwise, the device's public MAC address wil be used.
@@ -257,7 +250,7 @@ void MicroBitBLEManager::advertise()
   * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
   * @endcode
   */
-void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding, bool enableWhitelisting, bool enablePrivateAddressing)
+void MicroBitBLEManager::init(ManagedString deviceName, bool enableBonding, bool enableWhitelisting, bool enablePrivateAddressing)
 {
 	ManagedString BLEName("BBC micro:bit");
     Gap::Whitelist_t whitelist;
@@ -328,24 +321,6 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     // Configure the radio at our default power level
     setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER);
-
-    // Bring up core BLE services.
-#if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
-    new MicroBitDFUService(*ble);
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
-#else
-    (void)serialNumber;
-#endif
-
-#if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
-    new MicroBitEventService(*ble, messageBus);
-#else
-    (void)messageBus;
-#endif
-
 
     // Configure for high speed mode where possible.
     Gap::ConnectionParams_t fast;
