@@ -55,7 +55,7 @@ class MicroBitDeviceInformationService
      * @param _ble The instance of a BLE device that we're running on.
      * @return a MicroBitDeviceInformationService.
      */
-    MicroBitDeviceInformationService* getInstance(BLEDevice &_ble);
+    static MicroBitDeviceInformationService* getInstance(BLEDevice &_ble);
 };
 
 
