@@ -61,6 +61,13 @@ DEALINGS IN THE SOFTWARE.
 // Flag to indicate that a given block is FREE/USED
 #define MICROBIT_HEAP_BLOCK_FREE		0x80000000
 
+// Heap type IDs. Used purely to label heaps, for ease of management.
+#define MICROBIT_HEAP_TYPE_UNKNOWN          0
+#define MICROBIT_HEAP_TYPE_NESTED           1
+#define MICROBIT_HEAP_TYPE_BLE_RECYCLED     2
+#define MICROBIT_HEAP_TYPE_ISR              3
+
+
 /**
   * Create and initialise a given memory region as for heap storage.
   * After this is called, any future calls to malloc, new, free or delete may use the new heap.
@@ -68,8 +75,8 @@ DEALINGS IN THE SOFTWARE.
   * i.e. memory will be allocated from first heap created until it is full, then the second heap, and so on.
   *
   * @param start The start address of memory to use as a heap region.
-  *
   * @param end The end address of memory to use as a heap region.
+  * @param type An optional user defined label for the new heap region, e.g. MICROBIT_HEAP_TYPE_UNKNOWN.
   *
   * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocated.
   *
@@ -77,7 +84,7 @@ DEALINGS IN THE SOFTWARE.
   * code, and user code targetting the runtime. External code can choose to include this file, or
   * simply use the standard heap.
   */
-int microbit_create_heap(uint32_t start, uint32_t end);
+int microbit_create_heap(uint32_t start, uint32_t end, int type = MICROBIT_HEAP_TYPE_UNKNOWN);
 
 /**
   * Create and initialise a heap region within the current the heap region specified
@@ -91,6 +98,15 @@ int microbit_create_heap(uint32_t start, uint32_t end);
   * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocated.
   */
 int microbit_create_nested_heap(float ratio);
+
+/**
+  * Determines if a heap of a given type has been created.
+  *
+  * @param type The type of heap to look for.
+  *
+  * @return 1 if there is a valid, initialised heap of the given type. 0 otherwise.
+  */
+int microbit_heap_in_use(int type);
 
 /**
   * Attempt to allocate a given amount of memory from any of our configured heap areas.

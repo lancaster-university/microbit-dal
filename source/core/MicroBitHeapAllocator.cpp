@@ -57,6 +57,7 @@ struct HeapDefinition
 {
     uint32_t *heap_start;		// Physical address of the start of this heap.
     uint32_t *heap_end;		    // Physical address of the end of this heap.
+    int      type;              // A user defined type ID for this heap (e.g. MICROBIT_HEAP_TYPE_UNKNOWN, MICROBIT_HEAP_TYPE_BLE_RECYCLED, etc).
 };
 
 // A list of all active heap regions, and their dimensions in memory.
@@ -140,8 +141,8 @@ void microbit_initialise_heap(HeapDefinition &heap)
   * i.e. memory will be allocated from first heap created until it is full, then the second heap, and so on.
   *
   * @param start The start address of memory to use as a heap region.
-  *
   * @param end The end address of memory to use as a heap region.
+  * @param type An optional user defined label for the new heap region, e.g. MICROBIT_HEAP_TYPE_UNKNOWN.
   *
   * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocated.
   *
@@ -149,7 +150,7 @@ void microbit_initialise_heap(HeapDefinition &heap)
   * code, and user code targetting the runtime. External code can choose to include this file, or
   * simply use the standard heap.
   */
-int microbit_create_heap(uint32_t start, uint32_t end)
+int microbit_create_heap(uint32_t start, uint32_t end, int type)
 {
     // Ensure we don't exceed the maximum number of heap segments.
     if (heap_count == MICROBIT_MAXIMUM_HEAPS)
@@ -165,6 +166,7 @@ int microbit_create_heap(uint32_t start, uint32_t end)
     // Record the dimensions of this new heap
     heap[heap_count].heap_start = (uint32_t *)start;
     heap[heap_count].heap_end = (uint32_t *)end;
+    heap[heap_count].type = type;
 
     // Initialise the heap as being completely empty and available for use.
     microbit_initialise_heap(heap[heap_count]);
@@ -224,9 +226,27 @@ int microbit_create_nested_heap(float ratio)
     }
 
     uint32_t start = (uint32_t) p;
-    microbit_create_heap(start, start + length);
+    microbit_create_heap(start, start + length, MICROBIT_HEAP_TYPE_NESTED);
 
     return MICROBIT_OK;
+}
+
+/**
+  * Determines if a heap of a given type has been created.
+  *
+  * @param type The type of heap to look for.
+  *
+  * @return 1 if there is a valid, initialised heap of the given type. 0 otherwise.
+  */
+int microbit_heap_in_use(int type)
+{
+    for (int i=0; i < heap_count; i++)
+    {
+        if(heap[i].type == type)
+            return 1;
+    }
+
+    return 0;
 }
 
 /**
