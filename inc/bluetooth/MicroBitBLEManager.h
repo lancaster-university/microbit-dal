@@ -127,12 +127,14 @@ class MicroBitBLEManager : MicroBitComponent
       * @param serialNumber The serial number exposed by the device information service
       * @param messageBus An instance of an EventModel, used during pairing.
       * @param enableBonding If true, the security manager enabled bonding.
+      * @param enableWhitelisting If true, only connections from paired devices will be permitted, and an anonymous device name will be used.
+      * @param enablePrivateAddressing If true, private resolvable MAC addressed will be used. Otherwise, the device's public MAC address wil be used.
       *
       * @code
       * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
       * @endcode
       */
-    void init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding);
+    void init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding, bool enableWhitelisting = true, bool enablePrivateAddressing = false);
 
     /**
      * Change the output power level of the transmitter to the given value.

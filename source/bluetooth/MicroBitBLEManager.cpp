@@ -249,28 +249,29 @@ void MicroBitBLEManager::advertise()
   * @param deviceName The name used when advertising
   * @param serialNumber The serial number exposed by the device information service
   * @param messageBus An instance of an EventModel, used during pairing.
-  * @param enableBonding If true, the security manager enabled bonding.
+  * @param enableBonding If true, the security manager will permit the pairing process to be initiated.
+  * @param enableWhitelisting If true, only connections from paired devices will be permitted, and an anonymous device name will be used.
+  * @param enablePrivateAddressing If true, private resolvable MAC addressed will be used. Otherwise, the device's public MAC address wil be used.
   *
   * @code
   * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
   * @endcode
   */
-void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding)
+void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding, bool enableWhitelisting, bool enablePrivateAddressing)
 {
 	ManagedString BLEName("BBC micro:bit");
+    Gap::Whitelist_t whitelist;
 	this->deviceName = deviceName;
 
-#if !(CONFIG_ENABLED(MICROBIT_BLE_WHITELIST))
-	ManagedString namePrefix(" [");
-	ManagedString namePostfix("]");
-	BLEName = BLEName + namePrefix + deviceName + namePostfix;
-#endif
+    if (!enableWhitelisting)
+	    BLEName = BLEName + " [" + deviceName + "]";
+
+    // If a specific GATT table size has been defined, use it. Otherwise, use the BLE stack default.
+    // This is important as differnet stacks (e.g. S110 and S130) have differenbt default GATT table sizes.
+    if (MICROBIT_SD_GATT_TABLE_SIZE > 0)
+        btle_set_gatt_table_size(MICROBIT_SD_GATT_TABLE_SIZE);
 
     // Start the BLE stack.
-#if CONFIG_ENABLED(MICROBIT_HEAP_REUSE_SD)
-    btle_set_gatt_table_size(MICROBIT_SD_GATT_TABLE_SIZE);
-#endif
-
     ble = new BLEDevice();
     ble->init();
 
@@ -288,10 +289,9 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     opt.enable = 1;
     sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
 
-#if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
-	// Configure for private addresses, so kids' behaviour can't be easily tracked.
-	ble->gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
-#endif
+	// If configured, use private addresses, so kids' behaviour can't be easily tracked.
+    if (enablePrivateAddressing)
+	    ble->gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
 
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
@@ -311,20 +311,20 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
             ble->securityManager().purgeAllBondingState();
     }
 
-#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
-    // Configure a whitelist to filter all connection requetss from unbonded devices.
+    // If configured, use a whitelist to filter all connection requetss from unbonded devices.
     // Most BLE stacks only permit one connection at a time, so this prevents denial of service attacks.
-    BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
-    Gap::Whitelist_t whitelist;
-    whitelist.addresses = bondedAddresses;
-    whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
+    if (enableWhitelisting)
+    {
+        BLEProtocol::Address_t bondedAddresses[MICROBIT_BLE_MAXIMUM_BONDS];
+        whitelist.addresses = bondedAddresses;
+        whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
 
-    ble->securityManager().getAddressesFromBondTable(whitelist);
+        ble->securityManager().getAddressesFromBondTable(whitelist);
 
-    ble->gap().setWhitelist(whitelist);
-    ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
-    ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
-#endif
+        ble->gap().setWhitelist(whitelist);
+        ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
+        ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
+    }
 
     // Configure the radio at our default power level
     setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER);
@@ -356,11 +356,10 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->setPreferredConnectionParams(&fast);
 
     // Setup advertising.
-#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED);
-#else
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-#endif
+    if (enableWhitelisting)
+        ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED);
+    else
+        ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
@@ -373,9 +372,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // If we have whitelisting enabled, then prevent only enable advertising of we have any binded devices...
     // This is to further protect kids' privacy. If no-one initiates BLE, then the device is unreachable.
     // If whiltelisting is disabled, then we always advertise.
-#if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
-    if (whitelist.size > 0)
-#endif
+    if (!enableWhitelisting || whitelist.size > 0)
         ble->startAdvertising();
 }
 
