@@ -46,7 +46,7 @@ MicroBitIOPinService::MicroBitIOPinService(MicroBitBLEManager &_ble, MicroBitIO 
         bleManager(_ble), io(_io)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
-    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+    if(bleManager.isLocked())
         return;
 
     // Create the AD characteristic, that defines whether each pin is treated as analogue or digital

@@ -44,7 +44,7 @@ MicroBitEventService::MicroBitEventService(MicroBitBLEManager &_ble, EventModel 
         bleManager(_ble),messageBus(_messageBus)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
-    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+    if(bleManager.isLocked())
         return;
 
     GattCharacteristic  microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent),

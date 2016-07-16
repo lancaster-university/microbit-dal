@@ -46,7 +46,7 @@ MicroBitLEDService::MicroBitLEDService(MicroBitBLEManager &_ble, MicroBitDisplay
     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
-    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+    if(bleManager.isLocked())
         return;
 
     // Create the data structures that represent each of our characteristics in Soft Device.

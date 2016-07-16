@@ -71,7 +71,7 @@ MicroBitDFUService::MicroBitDFUService(MicroBitBLEManager &_ble) :
     bleManager(_ble)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
-    if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
+    if(bleManager.isLocked())
         return;
 
     // Opcodes can be issued here to control the MicroBitDFU Service, as defined above.
