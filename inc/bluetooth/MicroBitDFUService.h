@@ -28,16 +28,12 @@ DEALINGS IN THE SOFTWARE.
 
 #include "mbed.h"
 #include "MicroBitConfig.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "MicroBitEvent.h"
 
 // MicroBit ControlPoint OpCodes
 // Requests transfer to the Nordic DFU bootloader.
 #define MICROBIT_DFU_OPCODE_START_DFU       1
-
-// visual ID code constants
-#define MICROBIT_DFU_HISTOGRAM_WIDTH        5
-#define MICROBIT_DFU_HISTOGRAM_HEIGHT       5
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitDFUServiceUUID[];
@@ -62,7 +58,7 @@ class MicroBitDFUService
       * Initialise the Device Firmware Update service.
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitDFUService(BLEDevice &_ble);
+    MicroBitDFUService(MicroBitBLEManager &_ble);
 
     /**
      * Singleton constructor.
@@ -72,7 +68,7 @@ class MicroBitDFUService
      * @param _ble The instance of a BLE device that we're running on.
      * @return a MicroBitDFUService.
      */
-    static MicroBitDFUService* getInstance(BLEDevice &_ble);
+    static MicroBitDFUService* getInstance(MicroBitBLEManager &_ble);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
@@ -86,7 +82,7 @@ class MicroBitDFUService
     bool flashCodeRequested;
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
+    MicroBitBLEManager           &bleManager;
 
     // memory for our 8 bit control characteristic.
     uint8_t             controlByte;

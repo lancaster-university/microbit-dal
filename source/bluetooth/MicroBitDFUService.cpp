@@ -67,8 +67,8 @@ MicroBitDFUService* MicroBitDFUService::instance = NULL;
   * Initialise the Device Firmware Update service.
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
-    ble(_ble)
+MicroBitDFUService::MicroBitDFUService(MicroBitBLEManager &_ble) :
+    bleManager(_ble)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
     if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
@@ -86,12 +86,12 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
     GattCharacteristic *characteristics[] = {&microBitDFUServiceControlCharacteristic};
     GattService         service(MicroBitDFUServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
-    ble.addService(service);
+    bleManager.ble.addService(service);
 
     microBitDFUServiceControlCharacteristicHandle = microBitDFUServiceControlCharacteristic.getValueHandle();
 
-    ble.gattServer().write(microBitDFUServiceControlCharacteristicHandle, &controlByte, sizeof(uint8_t));
-    ble.gattServer().onDataWritten(this, &MicroBitDFUService::onDataWritten);
+    bleManager.ble.gattServer().write(microBitDFUServiceControlCharacteristicHandle, &controlByte, sizeof(uint8_t));
+    bleManager.ble.gattServer().onDataWritten(this, &MicroBitDFUService::onDataWritten);
 }
 
 /**
@@ -102,7 +102,7 @@ MicroBitDFUService::MicroBitDFUService(BLEDevice &_ble) :
  * @param _ble The instance of a BLE device that we're running on.
  * @return a MicroBitDFUService.
  */
-MicroBitDFUService* MicroBitDFUService::getInstance(BLEDevice &_ble)
+MicroBitDFUService* MicroBitDFUService::getInstance(MicroBitBLEManager &_ble)
 {
     if (instance == NULL)
        instance = new MicroBitDFUService(_ble); 
@@ -127,7 +127,7 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
 #endif
 
             // Perform an explicit disconnection to assist our peer to reconnect to the DFU service
-            ble.disconnect(Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+            bleManager.ble.disconnect(Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
 
             wait_ms(1000);
 

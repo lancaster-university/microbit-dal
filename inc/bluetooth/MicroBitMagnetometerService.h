@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef MICROBIT_MAGNETOMETER_SERVICE_H
 #define MICROBIT_MAGNETOMETER_SERVICE_H
 
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "MicroBitConfig.h"
 #include "MicroBitCompass.h"
 #include "EventModel.h"
@@ -53,7 +53,7 @@ class MicroBitMagnetometerService
       * @param _ble The instance of a BLE device that we're running on.
       * @param _compass An instance of MicroBitCompass to use as our Magnetometer source.
       */
-    MicroBitMagnetometerService(BLEDevice &_ble, MicroBitCompass &_compass);
+    MicroBitMagnetometerService(MicroBitBLEManager &_ble, MicroBitCompass &_compass);
 
     /**
      * Singleton constructor.
@@ -64,7 +64,7 @@ class MicroBitMagnetometerService
      * @param _compass An instance of MicroBitCompass to use as our Magnetometer source.
      * @return a MicroBitMagnetometerService.
      */
-    static MicroBitMagnetometerService* getInstance(BLEDevice &_ble, MicroBitCompass &_compass);
+    static MicroBitMagnetometerService* getInstance(MicroBitBLEManager &_ble, MicroBitCompass &_compass);
 
     private:
 
@@ -86,7 +86,7 @@ class MicroBitMagnetometerService
     void samplePeriodUpdateNeeded(MicroBitEvent e);
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
+    MicroBitBLEManager  &bleManager;
     MicroBitCompass     &compass;
 
     // memory for our 8 bit control characteristics.

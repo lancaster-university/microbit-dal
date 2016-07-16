@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitConfig.h"
 #include "ManagedString.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "ble/services/DeviceInformationService.h"
 
 /**
@@ -45,7 +45,7 @@ class MicroBitDeviceInformationService
       * Create a representation of the DeviceInformationService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitDeviceInformationService(BLEDevice &_ble);
+    MicroBitDeviceInformationService(MicroBitBLEManager &_ble);
 
     /**
      * Singleton constructor.
@@ -55,7 +55,7 @@ class MicroBitDeviceInformationService
      * @param _ble The instance of a BLE device that we're running on.
      * @return a MicroBitDeviceInformationService.
      */
-    static MicroBitDeviceInformationService* getInstance(BLEDevice &_ble);
+    static MicroBitDeviceInformationService* getInstance(MicroBitBLEManager &_ble);
 };
 
 

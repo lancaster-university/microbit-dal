@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_LED_SERVICE_H
 
 #include "MicroBitConfig.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "MicroBitDisplay.h"
 
 // Defines the buffer size for scrolling text over BLE, hence also defines
@@ -56,7 +56,7 @@ class MicroBitLEDService
       * @param _ble The instance of a BLE device that we're running on.
       * @param _display An instance of MicroBitDisplay to interface with.
       */
-    MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display);
+    MicroBitLEDService(MicroBitBLEManager &_ble, MicroBitDisplay &_display);
 
     /**
      * Singleton constructor.
@@ -67,7 +67,7 @@ class MicroBitLEDService
      * @param _display An instance of MicroBitDisplay to interface with.
      * @return a MicroBitLEDService.
      */
-    static MicroBitLEDService* getInstance(BLEDevice &_ble, MicroBitDisplay &_display);
+    static MicroBitLEDService* getInstance(MicroBitBLEManager &_ble, MicroBitDisplay &_display);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
@@ -82,7 +82,7 @@ class MicroBitLEDService
     private:
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
+    MicroBitBLEManager  &bleManager;
     MicroBitDisplay     &display;
 
     // memory for our 8 bit control characteristics.

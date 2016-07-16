@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_TEMPERATURE_SERVICE_H
 
 #include "MicroBitConfig.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "MicroBitThermometer.h"
 #include "EventModel.h"
 
@@ -52,7 +52,7 @@ class MicroBitTemperatureService
       * @param _ble The instance of a BLE device that we're running on.
       * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
       */
-    MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer);
+    MicroBitTemperatureService(MicroBitBLEManager &_ble, MicroBitThermometer &_thermometer);
 
     /**
      * Singleton constructor.
@@ -63,7 +63,7 @@ class MicroBitTemperatureService
      * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
      * @return a MicroBitTemperatureService.
      */
-    MicroBitTemperatureService* getInstance(BLEDevice &_ble, MicroBitThermometer &_thermometer);
+    MicroBitTemperatureService* getInstance(MicroBitBLEManager &_ble, MicroBitThermometer &_thermometer);
 
     /**
       * Callback. Invoked when any of our attributes are written via BLE.
@@ -78,7 +78,7 @@ class MicroBitTemperatureService
     private:
 
     // Bluetooth stack we're running on.
-    BLEDevice           	&ble;
+    MicroBitBLEManager     	&bleManager;
     MicroBitThermometer     &thermometer;
 
     // memory for our 8 bit temperature characteristic.

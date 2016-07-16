@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "mbed.h"
 #include "ble/UUID.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "MicroBitConfig.h"
 #include "MicroBitSerial.h"
 
@@ -58,7 +58,7 @@ class MicroBitUARTService
     uint32_t rxCharacteristicHandle;
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
+    MicroBitBLEManager           &bleManager;
 
     //delimeters used for matching on receive.
     ManagedString delimeters;
@@ -96,7 +96,7 @@ class MicroBitUARTService
      *
      * @note The default size is MICROBIT_UART_S_DEFAULT_BUF_SIZE (20 bytes).
      */
-    MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize = MICROBIT_UART_S_DEFAULT_BUF_SIZE, uint8_t txBufferSize = MICROBIT_UART_S_DEFAULT_BUF_SIZE);
+    MicroBitUARTService(MicroBitBLEManager &_ble, uint8_t rxBufferSize = MICROBIT_UART_S_DEFAULT_BUF_SIZE, uint8_t txBufferSize = MICROBIT_UART_S_DEFAULT_BUF_SIZE);
 
     /**
      * Singleton constructor.
@@ -108,7 +108,7 @@ class MicroBitUARTService
      * @param txBufferSize the size of the txBuffer
      * @return a MicroBitUARTService.
      */
-    static MicroBitUARTService* getInstance(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize);
+    static MicroBitUARTService* getInstance(MicroBitBLEManager &_ble, uint8_t rxBufferSize, uint8_t txBufferSize);
 
     /**
       * Retreives a single character from our RxBuffer.

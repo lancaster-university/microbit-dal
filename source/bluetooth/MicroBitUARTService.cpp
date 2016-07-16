@@ -64,7 +64,7 @@ void on_confirmation(uint16_t handle)
  *
  * @note defaults to 20
  */
-MicroBitUARTService::MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize) : ble(_ble)
+MicroBitUARTService::MicroBitUARTService(MicroBitBLEManager &_ble, uint8_t rxBufferSize, uint8_t txBufferSize) : bleManager(_ble)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
     if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
@@ -92,12 +92,12 @@ MicroBitUARTService::MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize, 
 
     GattService uartService(UARTServiceUUID, charTable, sizeof(charTable) / sizeof(GattCharacteristic *));
 
-    _ble.addService(uartService);
+    bleManager.ble.addService(uartService);
 
     this->rxCharacteristicHandle = rxCharacteristic.getValueAttribute().getHandle();
 
-    _ble.gattServer().onDataWritten(this, &MicroBitUARTService::onDataWritten);
-    _ble.gattServer().onConfirmationReceived(on_confirmation);
+    bleManager.ble.gattServer().onDataWritten(this, &MicroBitUARTService::onDataWritten);
+    bleManager.ble.gattServer().onConfirmationReceived(on_confirmation);
 }
 
 /**
@@ -110,7 +110,7 @@ MicroBitUARTService::MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize, 
  * @param txBufferSize the size of the txBuffer
  * @return a MicroBitUARTService.
  */
-MicroBitUARTService* MicroBitUARTService::getInstance(BLEDevice &_ble, uint8_t rxBufferSize, uint8_t txBufferSize)
+MicroBitUARTService* MicroBitUARTService::getInstance(MicroBitBLEManager &_ble, uint8_t rxBufferSize, uint8_t txBufferSize)
 {
     if (instance == NULL)
        instance = new MicroBitUARTService(_ble, rxBufferSize, txBufferSize); 
@@ -277,14 +277,14 @@ int MicroBitUARTService::send(const uint8_t *buf, int length, MicroBitSerialMode
 
     bool updatesEnabled = false;
 
-    ble.gattServer().areUpdatesEnabled(*txCharacteristic, &updatesEnabled);
+    bleManager.ble.gattServer().areUpdatesEnabled(*txCharacteristic, &updatesEnabled);
 
-    if(!ble.getGapState().connected && !updatesEnabled)
+    if(!bleManager.ble.getGapState().connected && !updatesEnabled)
         return MICROBIT_NOT_SUPPORTED;
 
     int bytesWritten = 0;
 
-    while(bytesWritten < length && ble.getGapState().connected && updatesEnabled)
+    while(bytesWritten < length && bleManager.ble.getGapState().connected && updatesEnabled)
     {
         for(int bufferIterator = bytesWritten; bufferIterator < length; bufferIterator++)
         {
@@ -312,14 +312,14 @@ int MicroBitUARTService::send(const uint8_t *buf, int length, MicroBitSerialMode
         if(mode == SYNC_SLEEP)
             fiber_wake_on_event(MICROBIT_ID_NOTIFY, MICROBIT_UART_S_EVT_TX_EMPTY);
 
-        ble.gattServer().write(txCharacteristic->getValueAttribute().getHandle(), temp, size);
+        bleManager.ble.gattServer().write(txCharacteristic->getValueAttribute().getHandle(), temp, size);
 
         if(mode == SYNC_SLEEP)
             schedule();
         else
             break;
 
-        ble.gattServer().areUpdatesEnabled(*txCharacteristic, &updatesEnabled);
+        bleManager.ble.gattServer().areUpdatesEnabled(*txCharacteristic, &updatesEnabled);
     }
 
     return bytesWritten;

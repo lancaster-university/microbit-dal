@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_EVENT_SERVICE_H
 
 #include "MicroBitConfig.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "MicroBitEvent.h"
 #include "EventModel.h"
 
@@ -60,7 +60,7 @@ class MicroBitEventService : public MicroBitComponent
       * @param _ble The instance of a BLE device that we're running on.
       * @param _messageBus An instance of an EventModel which events will be mirrored from.
       */
-    MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus);
+    MicroBitEventService(MicroBitBLEManager &_ble, EventModel &_messageBus);
 
     /**
      * Singleton constructor.
@@ -71,7 +71,7 @@ class MicroBitEventService : public MicroBitComponent
      * @param _messageBus An instance of an EventModel which events will be mirrored from.
      * @return a MicroBitEventService.
      */
-    static MicroBitEventService* getInstance(BLEDevice &_ble, EventModel &_messageBus);
+    static MicroBitEventService* getInstance(MicroBitBLEManager &_ble, EventModel &_messageBus);
 
     /**
      * Periodic callback from MicroBit scheduler.
@@ -99,8 +99,8 @@ class MicroBitEventService : public MicroBitComponent
     private:
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
-	EventModel	        &messageBus;
+    MicroBitBLEManager      &bleManager;
+	EventModel	            &messageBus;
 
     // memory for our event characteristics.
     EventServiceEvent   clientEventBuffer;

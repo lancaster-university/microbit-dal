@@ -48,27 +48,31 @@ DEALINGS IN THE SOFTWARE.
 #pragma GCC diagnostic pop
 #endif
 
-#include "MicroBitDFUService.h"
-#include "MicroBitEventService.h"
-#include "MicroBitLEDService.h"
-#include "MicroBitAccelerometerService.h"
-#include "MicroBitMagnetometerService.h"
-#include "MicroBitButtonService.h"
-#include "MicroBitIOPinService.h"
-#include "MicroBitTemperatureService.h"
 #include "ExternalEvents.h"
 #include "MicroBitButton.h"
 #include "MicroBitStorage.h"
+#include "MicroBitDisplay.h"
 
+// State machine constats for pairingStatus 
 #define MICROBIT_BLE_PAIR_REQUEST               0x01
 #define MICROBIT_BLE_PAIR_COMPLETE              0x02
 #define MICROBIT_BLE_PAIR_PASSCODE              0x04
 #define MICROBIT_BLE_PAIR_SUCCESSFUL            0x08
 
+// Configuration constants
 #define MICROBIT_BLE_PAIRING_TIMEOUT	        90
 #define MICROBIT_BLE_POWER_LEVELS               8
 #define MICROBIT_BLE_MAXIMUM_BONDS              4
 #define MICROBIT_BLE_ENABLE_BONDING 	        true
+
+// Status flags
+#define MICROBIT_BLE_STATUS_RUNNING             0x01
+#define MICROBIT_BLE_STATUS_LOCKED              0x02
+
+// visual ID code constants
+#define MICROBIT_DFU_HISTOGRAM_WIDTH            5
+#define MICROBIT_DFU_HISTOGRAM_HEIGHT           5
+
 
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
@@ -91,36 +95,17 @@ class MicroBitBLEManager : MicroBitComponent
     public:
 
 	// The mbed abstraction of the BlueTooth Low Energy (BLE) hardware
-    BLEDevice                       *ble;
+    BLEDevice        ble;
 
     //an instance of MicroBitStorage used to store sysAttrs from softdevice
     MicroBitStorage* storage;
 
     /**
-     * Constructor.
-     *
-     * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
-     *
-     * @param _storage an instance of MicroBitStorage used to persist sys attribute information. (This is required for compatability with iOS).
-     *
-     * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
-     * Hence, the init() member function should be used to initialise the BLE stack.
-     */
-    MicroBitBLEManager(MicroBitStorage& _storage);
-
-    /**
-     * Constructor.
-     *
-     * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
-     *
-     * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
-     * Hence, the init() member function should be used to initialise the BLE stack.
-     */
-    MicroBitBLEManager();
-
-    /**
-      * Post constructor initialisation method as the BLE stack cannot be brought
-      * up in a static context.
+      * Constructor.
+      *
+      * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
+      * @note The BLE stack *cannot*  be brought up in a static context (the BLE stack simply hangs or corrupts itself).
+      * Hence, the this constructor should *ONLY* be called by using the new operator. 
       *
       * @param deviceName The name used when advertising
       * @param enableBonding If true, the security manager enabled bonding.
@@ -128,10 +113,29 @@ class MicroBitBLEManager : MicroBitComponent
       * @param enablePrivateAddressing If true, private resolvable MAC addressed will be used. Otherwise, the device's public MAC address wil be used.
       *
       * @code
-      * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
+      * MicroBitBLEManager manager = new MicroBitBLEManager(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
       * @endcode
       */
-    void init(ManagedString deviceName, bool enableBonding, bool enableWhitelisting = true, bool enablePrivateAddressing = false);
+    MicroBitBLEManager(ManagedString deviceName, bool enableBonding, bool enableWhitelisting = true, bool enablePrivateAddressing = false);
+
+    /**
+      * Constructor.
+      *
+      * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
+      * @note The BLE stack *cannot*  be brought up in a static context (the BLE stack simply hangs or corrupts itself).
+      * Hence, the this constructor should *ONLY* be called by using the new operator. 
+      *
+      * @param deviceName The name used when advertising
+      * @param enableBonding If true, the security manager enabled bonding.
+      * @param enableWhitelisting If true, only connections from paired devices will be permitted, and an anonymous device name will be used.
+      * @param enablePrivateAddressing If true, private resolvable MAC addressed will be used. Otherwise, the device's public MAC address wil be used.
+      * @param _storage an instance of MicroBitStorage used to persist sys attribute information. (This is required for compatability with iOS).
+      *
+      * @code
+      * MicroBitBLEManager manager = new MicroBitBLEManager(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
+      * @endcode
+      */
+    MicroBitBLEManager(ManagedString deviceName, MicroBitStorage& _storage, bool enableBonding, bool enableWhitelisting = true, bool enablePrivateAddressing = false);
 
     /**
      * Change the output power level of the transmitter to the given value.
@@ -196,6 +200,25 @@ class MicroBitBLEManager : MicroBitComponent
 	 */
 	void idleTick();
 
+    /**
+     * Determines if the Bluetooth stack has been initialised
+     * @return true if the stack has completed initialisation, false otherwise.
+     */
+    int isRunning();
+
+    /**
+     * Determines if the Bluetooth stack has been locked (made immutable), such that no changes can be made
+     * to the services provided. 
+     * @return true if the configuration of the stack has been intentionally frozen, false otherwise.
+     */
+    int isLocked();
+
+    /**
+     * Freeze the confiugration of the stack (prevent any new services or characterisitics).
+     * @return MICROBIT_OK on success.
+     */
+    int lock();
+
     private:
 
 	/**
@@ -205,10 +228,33 @@ class MicroBitBLEManager : MicroBitComponent
 	 */
 	void showNameHistogram(MicroBitDisplay &display);
 
+    /**
+      * internal constructor body - used for constructor chaining.
+      */ 
+    void init(ManagedString deviceName, bool enableBonding, bool enableWhitelisting, bool enablePrivateAddressing);
+
 	int				pairingStatus;
 	ManagedString	passKey;
 	ManagedString	deviceName;
 
 };
+
+/**
+ * Determines if the Bluetooth stack has been initialised
+ * @return true if the stack has completed initialisation, false otherwise.
+ */
+inline int MicroBitBLEManager::isRunning()
+{
+    return (this->status & MICROBIT_BLE_STATUS_RUNNING);
+}
+
+/**
+ * Freeze the confiugration of the stack (prevent any new services or characteristics).
+ * @return MICROBIT_OK on success.
+ */
+inline int MicroBitBLEManager::isLocked()
+{
+    return (this->status & MICROBIT_BLE_STATUS_LOCKED);
+}
 
 #endif

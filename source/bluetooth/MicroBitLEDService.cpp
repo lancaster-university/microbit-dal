@@ -40,8 +40,8 @@ MicroBitLEDService* MicroBitLEDService::instance = NULL;
   * @param _ble The instance of a BLE device that we're running on.
   * @param _display An instance of MicroBitDisplay to interface with.
   */
-MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_display) :
-        ble(_ble), display(_display),
+MicroBitLEDService::MicroBitLEDService(MicroBitBLEManager &_ble, MicroBitDisplay &_display) :
+        bleManager(_ble), display(_display),
         matrixCharacteristic(MicroBitLEDServiceMatrixUUID, (uint8_t *)&matrixCharacteristicBuffer, 0, sizeof(matrixCharacteristicBuffer),
     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ)
 {
@@ -71,16 +71,16 @@ MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_displa
     GattCharacteristic *characteristics[] = {&matrixCharacteristic, &textCharacteristic, &scrollingSpeedCharacteristic};
     GattService         service(MicroBitLEDServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
-    ble.addService(service);
+    bleManager.ble.addService(service);
 
     matrixCharacteristicHandle = matrixCharacteristic.getValueHandle();
     textCharacteristicHandle = textCharacteristic.getValueHandle();
     scrollingSpeedCharacteristicHandle = scrollingSpeedCharacteristic.getValueHandle();
 
-    ble.gattServer().write(scrollingSpeedCharacteristicHandle, (const uint8_t *)&scrollingSpeedCharacteristicBuffer, sizeof(scrollingSpeedCharacteristicBuffer));
-    ble.gattServer().write(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
+    bleManager.ble.gattServer().write(scrollingSpeedCharacteristicHandle, (const uint8_t *)&scrollingSpeedCharacteristicBuffer, sizeof(scrollingSpeedCharacteristicBuffer));
+    bleManager.ble.gattServer().write(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
 
-    ble.onDataWritten(this, &MicroBitLEDService::onDataWritten);
+    bleManager.ble.onDataWritten(this, &MicroBitLEDService::onDataWritten);
 }
 
 /**
@@ -92,7 +92,7 @@ MicroBitLEDService::MicroBitLEDService(BLEDevice &_ble, MicroBitDisplay &_displa
  * @param _display An instance of MicroBitDisplay to interface with.
  * @return a MicroBitLEDService.
  */
-MicroBitLEDService* MicroBitLEDService::getInstance(BLEDevice &_ble, MicroBitDisplay &_display)
+MicroBitLEDService* MicroBitLEDService::getInstance(MicroBitBLEManager &_ble, MicroBitDisplay &_display)
 {
     if (instance == NULL)
        instance = new MicroBitLEDService(_ble, _display); 
@@ -151,7 +151,7 @@ void MicroBitLEDService::onDataRead(GattReadAuthCallbackParams *params)
             }
         }
 
-        ble.gattServer().write(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
+        bleManager.ble.gattServer().write(matrixCharacteristicHandle, (const uint8_t *)&matrixCharacteristicBuffer, sizeof(matrixCharacteristicBuffer));
     }
 }
 

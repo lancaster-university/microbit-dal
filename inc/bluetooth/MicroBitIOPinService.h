@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_IO_PIN_SERVICE_H
 
 #include "MicroBitConfig.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "MicroBitIO.h"
 
 #define MICROBIT_IO_PIN_SERVICE_PINCOUNT       19
@@ -65,7 +65,7 @@ class MicroBitIOPinService : public MicroBitComponent
       * @param _io An instance of MicroBitIO that this service will use to perform
       *            I/O operations.
       */
-    MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io);
+    MicroBitIOPinService(MicroBitBLEManager &_ble, MicroBitIO &_io);
 
     /**
      * Singleton constructor.
@@ -76,7 +76,7 @@ class MicroBitIOPinService : public MicroBitComponent
      * @param _io An instance of MicroBitIO that this service will use to perform
      * @return a MicroBitIOPinService.
      */
-    static MicroBitIOPinService* getInstance(BLEDevice &_ble, MicroBitIO &_io);
+    static MicroBitIOPinService* getInstance(MicroBitBLEManager &_ble, MicroBitIO &_io);
 
     /**
      * Periodic callback from MicroBit scheduler.
@@ -134,7 +134,7 @@ class MicroBitIOPinService : public MicroBitComponent
 
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
+    MicroBitBLEManager  &bleManager;
     MicroBitIO          &io;
 
     // memory for our 8 bit control characteristics.

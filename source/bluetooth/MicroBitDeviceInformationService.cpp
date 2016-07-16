@@ -46,7 +46,7 @@ static const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
   * @param _ble The instance of a BLE device that we're running on.
   * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
   */
-MicroBitDeviceInformationService::MicroBitDeviceInformationService(BLEDevice &_ble)
+MicroBitDeviceInformationService::MicroBitDeviceInformationService(MicroBitBLEManager &_ble)
 {
     int n1 = microbit_serial_number() & 0xffff;
     int n2 = (microbit_serial_number() >> 16) & 0xffff;
@@ -55,7 +55,7 @@ MicroBitDeviceInformationService::MicroBitDeviceInformationService(BLEDevice &_b
     if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
         return;
 
-    DeviceInformationService ble_device_information_service (_ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, (ManagedString(n1) + ManagedString(n2)).toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    DeviceInformationService ble_device_information_service (_ble.ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, (ManagedString(n1) + ManagedString(n2)).toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 }
 
 /**
@@ -66,7 +66,7 @@ MicroBitDeviceInformationService::MicroBitDeviceInformationService(BLEDevice &_b
  * @param _ble The instance of a BLE device that we're running on.
  * @return a MicroBitDeviceInformationService.
  */
-MicroBitDeviceInformationService* MicroBitDeviceInformationService::getInstance(BLEDevice &_ble)
+MicroBitDeviceInformationService* MicroBitDeviceInformationService::getInstance(MicroBitBLEManager &_ble)
 {
     if (instance == NULL)
        instance = new MicroBitDeviceInformationService(_ble); 

@@ -40,8 +40,8 @@ DEALINGS IN THE SOFTWARE.
   * @param _ble The instance of a BLE device that we're running on.
   * @param _messageBus An instance of an EventModel which events will be mirrored from.
   */
-MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus) :
-        ble(_ble),messageBus(_messageBus)
+MicroBitEventService::MicroBitEventService(MicroBitBLEManager &_ble, EventModel &_messageBus) :
+        bleManager(_ble),messageBus(_messageBus)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
     if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
@@ -75,13 +75,13 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_message
     GattCharacteristic *characteristics[] = {&microBitEventCharacteristic, &clientEventCharacteristic, &clientRequirementsCharacteristic, microBitRequirementsCharacteristic};
     GattService         service(MicroBitEventServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
-    ble.addService(service);
+    bleManager.ble.addService(service);
 
     microBitEventCharacteristicHandle = microBitEventCharacteristic.getValueHandle();
     clientEventCharacteristicHandle = clientEventCharacteristic.getValueHandle();
     clientRequirementsCharacteristicHandle = clientRequirementsCharacteristic.getValueHandle();
 
-    ble.onDataWritten(this, &MicroBitEventService::onDataWritten);
+    bleManager.ble.onDataWritten(this, &MicroBitEventService::onDataWritten);
 
     fiber_add_idle_component(this);
 }
@@ -95,7 +95,7 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_message
  * @param _messageBus An instance of an EventModel which events will be mirrored from.
  * @return a MicroBitEventService.
  */
-MicroBitEventService* MicroBitEventService::getInstance(BLEDevice &_ble, EventModel &_messageBus) 
+MicroBitEventService* MicroBitEventService::getInstance(MicroBitBLEManager &_ble, EventModel &_messageBus) 
 {
     if (instance == NULL)
        instance = new MicroBitEventService(_ble, _messageBus); 
@@ -143,11 +143,11 @@ void MicroBitEventService::onMicroBitEvent(MicroBitEvent evt)
 {
     EventServiceEvent *e = &microBitEventBuffer;
 
-    if (ble.getGapState().connected) {
+    if (bleManager.ble.getGapState().connected) {
         e->type = evt.source;
         e->reason = evt.value;
 
-        ble.gattServer().notify(microBitEventCharacteristicHandle, (const uint8_t *)e, sizeof(EventServiceEvent));
+        bleManager.ble.gattServer().notify(microBitEventCharacteristicHandle, (const uint8_t *)e, sizeof(EventServiceEvent));
     }
 }
 
@@ -157,7 +157,7 @@ void MicroBitEventService::onMicroBitEvent(MicroBitEvent evt)
   */
 void MicroBitEventService::idleTick()
 {
-    if (!ble.getGapState().connected && messageBusListenerOffset >0) {
+    if (!bleManager.ble.getGapState().connected && messageBusListenerOffset >0) {
         messageBusListenerOffset = 0;
         messageBus.ignore(MICROBIT_ID_ANY, MICROBIT_EVT_ANY, this, &MicroBitEventService::onMicroBitEvent);
     }
@@ -180,9 +180,9 @@ void MicroBitEventService::onRequirementsRead(GattReadAuthCallbackParams *params
         {
             microBitRequirementsBuffer.type = l->id;
             microBitRequirementsBuffer.reason = l->value;
-            ble.gattServer().write(microBitRequirementsCharacteristic->getValueHandle(), (uint8_t *)&microBitRequirementsBuffer, sizeof(EventServiceEvent));
+            bleManager.ble.gattServer().write(microBitRequirementsCharacteristic->getValueHandle(), (uint8_t *)&microBitRequirementsBuffer, sizeof(EventServiceEvent));
         } else {
-            ble.gattServer().write(microBitRequirementsCharacteristic->getValueHandle(), (uint8_t *)&microBitRequirementsBuffer, 0);
+            bleManager.ble.gattServer().write(microBitRequirementsCharacteristic->getValueHandle(), (uint8_t *)&microBitRequirementsBuffer, 0);
         }
     }
 }

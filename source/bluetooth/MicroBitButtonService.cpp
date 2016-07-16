@@ -40,8 +40,8 @@ MicroBitButtonService* MicroBitButtonService::instance = NULL;
   * Create a representation of the ButtonService
   * @param _ble The instance of a BLE device that we're running on.
   */
-MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble) :
-        ble(_ble)
+MicroBitButtonService::MicroBitButtonService(MicroBitBLEManager &_ble) :
+        bleManager(_ble)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
     if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
@@ -66,13 +66,13 @@ MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble) :
     GattCharacteristic *characteristics[] = {&buttonADataCharacteristic, &buttonBDataCharacteristic};
     GattService         service(MicroBitButtonServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
-    ble.addService(service);
+    bleManager.ble.addService(service);
 
     buttonADataCharacteristicHandle = buttonADataCharacteristic.getValueHandle();
     buttonBDataCharacteristicHandle = buttonBDataCharacteristic.getValueHandle();
 
-    ble.gattServer().write(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
-    ble.gattServer().write(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
+    bleManager.ble.gattServer().write(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
+    bleManager.ble.gattServer().write(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
 
     if (EventModel::defaultEventBus)
     {
@@ -89,7 +89,7 @@ MicroBitButtonService::MicroBitButtonService(BLEDevice &_ble) :
  * @param _ble The instance of a BLE device that we're running on.
  * @return a MicroBitButtonService.
  */
-MicroBitButtonService* MicroBitButtonService::getInstance(BLEDevice &_ble)
+MicroBitButtonService* MicroBitButtonService::getInstance(MicroBitBLEManager &_ble)
 {
     if (instance == NULL)
        instance = new MicroBitButtonService(_ble); 
@@ -102,24 +102,24 @@ MicroBitButtonService* MicroBitButtonService::getInstance(BLEDevice &_ble)
   */
 void MicroBitButtonService::buttonAUpdate(MicroBitEvent e)
 {
-    if (ble.getGapState().connected)
+    if (bleManager.ble.getGapState().connected)
     {
         if (e.value == MICROBIT_BUTTON_EVT_UP)
         {
             buttonADataCharacteristicBuffer = 0;
-            ble.gattServer().notify(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
+            bleManager.ble.gattServer().notify(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
         }
 
         if (e.value == MICROBIT_BUTTON_EVT_DOWN)
         {
             buttonADataCharacteristicBuffer = 1;
-            ble.gattServer().notify(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
+            bleManager.ble.gattServer().notify(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
         }
 
         if (e.value == MICROBIT_BUTTON_EVT_HOLD)
         {
             buttonADataCharacteristicBuffer = 2;
-            ble.gattServer().notify(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
+            bleManager.ble.gattServer().notify(buttonADataCharacteristicHandle,(uint8_t *)&buttonADataCharacteristicBuffer, sizeof(buttonADataCharacteristicBuffer));
         }
     }
 }
@@ -129,24 +129,24 @@ void MicroBitButtonService::buttonAUpdate(MicroBitEvent e)
   */
 void MicroBitButtonService::buttonBUpdate(MicroBitEvent e)
 {
-    if (ble.getGapState().connected)
+    if (bleManager.ble.getGapState().connected)
     {
         if (e.value == MICROBIT_BUTTON_EVT_UP)
         {
             buttonBDataCharacteristicBuffer = 0;
-            ble.gattServer().notify(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
+            bleManager.ble.gattServer().notify(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
         }
 
         if (e.value == MICROBIT_BUTTON_EVT_DOWN)
         {
             buttonBDataCharacteristicBuffer = 1;
-            ble.gattServer().notify(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
+            bleManager.ble.gattServer().notify(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
         }
 
         if (e.value == MICROBIT_BUTTON_EVT_HOLD)
         {
             buttonBDataCharacteristicBuffer = 2;
-            ble.gattServer().notify(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
+            bleManager.ble.gattServer().notify(buttonBDataCharacteristicHandle,(uint8_t *)&buttonBDataCharacteristicBuffer, sizeof(buttonBDataCharacteristicBuffer));
         }
     }
 }

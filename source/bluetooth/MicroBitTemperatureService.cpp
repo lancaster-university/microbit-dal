@@ -40,8 +40,8 @@ MicroBitTemperatureService* MicroBitTemperatureService::instance = NULL;
   * @param _ble The instance of a BLE device that we're running on.
   * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
   */
-MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBitThermometer &_thermometer) :
-        ble(_ble), thermometer(_thermometer)
+MicroBitTemperatureService::MicroBitTemperatureService(MicroBitBLEManager &_ble, MicroBitThermometer &_thermometer) :
+        bleManager(_ble), thermometer(_thermometer)
 {
     // If the memory of associated with the BLE stack has been recycled, it isn't safe to add more services.
     if(microbit_heap_in_use(MICROBIT_HEAP_TYPE_BLE_RECYCLED))
@@ -65,15 +65,15 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBit
     GattCharacteristic *characteristics[] = {&temperatureDataCharacteristic, &temperaturePeriodCharacteristic};
     GattService         service(MicroBitTemperatureServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
-    ble.addService(service);
+    bleManager.ble.addService(service);
 
     temperatureDataCharacteristicHandle = temperatureDataCharacteristic.getValueHandle();
     temperaturePeriodCharacteristicHandle = temperaturePeriodCharacteristic.getValueHandle();
 
-    ble.gattServer().write(temperatureDataCharacteristicHandle,(uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
-    ble.gattServer().write(temperaturePeriodCharacteristicHandle,(uint8_t *)&temperaturePeriodCharacteristicBuffer, sizeof(temperaturePeriodCharacteristicBuffer));
+    bleManager.ble.gattServer().write(temperatureDataCharacteristicHandle,(uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
+    bleManager.ble.gattServer().write(temperaturePeriodCharacteristicHandle,(uint8_t *)&temperaturePeriodCharacteristicBuffer, sizeof(temperaturePeriodCharacteristicBuffer));
 
-    ble.onDataWritten(this, &MicroBitTemperatureService::onDataWritten);
+    bleManager.ble.onDataWritten(this, &MicroBitTemperatureService::onDataWritten);
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_THERMOMETER, MICROBIT_THERMOMETER_EVT_UPDATE, this, &MicroBitTemperatureService::temperatureUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
@@ -87,7 +87,7 @@ MicroBitTemperatureService::MicroBitTemperatureService(BLEDevice &_ble, MicroBit
  * @param _thermometer An instance of MicroBitThermometer to use as our temperature source.
  * @return a MicroBitTemperatureService.
  */
-MicroBitTemperatureService* MicroBitTemperatureService::getInstance(BLEDevice &_ble, MicroBitThermometer &_thermometer)
+MicroBitTemperatureService* MicroBitTemperatureService::getInstance(MicroBitBLEManager &_ble, MicroBitThermometer &_thermometer)
 {
     if (instance == NULL)
        instance = new MicroBitTemperatureService(_ble, _thermometer); 
@@ -100,10 +100,10 @@ MicroBitTemperatureService* MicroBitTemperatureService::getInstance(BLEDevice &_
   */
 void MicroBitTemperatureService::temperatureUpdate(MicroBitEvent)
 {
-    if (ble.getGapState().connected)
+    if (bleManager.ble.getGapState().connected)
     {
         temperatureDataCharacteristicBuffer = thermometer.getTemperature();
-        ble.gattServer().notify(temperatureDataCharacteristicHandle,(uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
+        bleManager.ble.gattServer().notify(temperatureDataCharacteristicHandle,(uint8_t *)&temperatureDataCharacteristicBuffer, sizeof(temperatureDataCharacteristicBuffer));
     }
 }
 
@@ -120,7 +120,7 @@ void MicroBitTemperatureService::onDataWritten(const GattWriteCallbackParams *pa
         // The accelerometer will choose the nearest period to that requested that it can support
         // Read back the ACTUAL period it is using, and report this back.
         temperaturePeriodCharacteristicBuffer = thermometer.getPeriod();
-        ble.gattServer().write(temperaturePeriodCharacteristicHandle, (const uint8_t *)&temperaturePeriodCharacteristicBuffer, sizeof(temperaturePeriodCharacteristicBuffer));
+        bleManager.ble.gattServer().write(temperaturePeriodCharacteristicHandle, (const uint8_t *)&temperaturePeriodCharacteristicBuffer, sizeof(temperaturePeriodCharacteristicBuffer));
     }
 }
 

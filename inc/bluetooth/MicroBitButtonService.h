@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BUTTON_SERVICE_H
 
 #include "MicroBitConfig.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "EventModel.h"
 
 // UUIDs for our service and characteristics
@@ -50,7 +50,7 @@ class MicroBitButtonService
       * Create a representation of the ButtonService
       * @param _ble The instance of a BLE device that we're running on.
       */
-    MicroBitButtonService(BLEDevice &_ble);
+    MicroBitButtonService(MicroBitBLEManager &_ble);
 
     /**
      * Singleton constructor.
@@ -60,7 +60,7 @@ class MicroBitButtonService
      * @param _ble The instance of a BLE device that we're running on.
      * @return a MicroBitButtonService.
      */
-    static MicroBitButtonService* getInstance(BLEDevice &_ble);
+    static MicroBitButtonService* getInstance(MicroBitBLEManager &_ble);
 
     private:
 
@@ -75,7 +75,7 @@ class MicroBitButtonService
     void buttonBUpdate(MicroBitEvent e);
 
     // Bluetooth stack we're running on.
-    BLEDevice           &ble;
+    MicroBitBLEManager           &bleManager;
 
     // memory for our 8 bit control characteristics.
     uint8_t            buttonADataCharacteristicBuffer;

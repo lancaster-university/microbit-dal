@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_ACCELEROMETER_SERVICE_H
 
 #include "MicroBitConfig.h"
-#include "ble/BLE.h"
+#include "MicroBitBLEManager.h"
 #include "MicroBitAccelerometer.h"
 #include "EventModel.h"
 
@@ -52,7 +52,7 @@ class MicroBitAccelerometerService
       * @param _ble The instance of a BLE device that we're running on.
       * @param _accelerometer An instance of MicroBitAccelerometer.
       */
-    MicroBitAccelerometerService(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer);
+    MicroBitAccelerometerService(MicroBitBLEManager& _ble, MicroBitAccelerometer &_accelerometer);
 
     /**
       * Singleton constructor.
@@ -63,7 +63,7 @@ class MicroBitAccelerometerService
       * @param _accelerometer An instance of MicroBitAccelerometer.
       * @return a MicroBitAccelerometerService.
       */
-    static MicroBitAccelerometerService* getInstance(BLEDevice &_ble, MicroBitAccelerometer &_accelerometer);
+    static MicroBitAccelerometerService* getInstance(MicroBitBLEManager &_ble, MicroBitAccelerometer &_accelerometer);
 
     private:
 
@@ -78,7 +78,7 @@ class MicroBitAccelerometerService
     void accelerometerUpdate(MicroBitEvent e);
 
     // Bluetooth stack we're running on.
-    BLEDevice           	&ble;
+    MicroBitBLEManager      &bleManager;
 	MicroBitAccelerometer	&accelerometer;
 
     // memory for our 8 bit control characteristics.

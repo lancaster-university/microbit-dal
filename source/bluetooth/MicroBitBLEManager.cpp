@@ -203,12 +203,10 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
  * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
  * Hence, the init() member function should be used to initialise the BLE stack.
  */
-MicroBitBLEManager::MicroBitBLEManager(MicroBitStorage& _storage) :
-    storage(&_storage)
+MicroBitBLEManager::MicroBitBLEManager(ManagedString deviceName, MicroBitStorage& _storage, bool enableBonding, bool enableWhitelisting, bool enablePrivateAddressing) :
+    ble(), storage(&_storage)
 {
-    manager = this;
-	this->ble = NULL;
-	this->pairingStatus = 0;
+    init(deviceName, enableBonding, enableWhitelisting, enablePrivateAddressing);
 }
 
 /**
@@ -219,12 +217,10 @@ MicroBitBLEManager::MicroBitBLEManager(MicroBitStorage& _storage) :
  * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
  * Hence, the init() member function should be used to initialise the BLE stack.
  */
-MicroBitBLEManager::MicroBitBLEManager() :
-    storage(NULL)
+MicroBitBLEManager::MicroBitBLEManager(ManagedString deviceName, bool enableBonding, bool enableWhitelisting, bool enablePrivateAddressing) :
+    ble(), storage(NULL)
 {
-    manager = this;
-	this->ble = NULL;
-	this->pairingStatus = 0;
+    init(deviceName, enableBonding, enableWhitelisting, enablePrivateAddressing);
 }
 
 /**
@@ -233,8 +229,7 @@ MicroBitBLEManager::MicroBitBLEManager() :
  */
 void MicroBitBLEManager::advertise()
 {
-    if(ble)
-        ble->gap().startAdvertising();
+    ble.gap().startAdvertising();
 }
 
 /**
@@ -254,8 +249,16 @@ void MicroBitBLEManager::init(ManagedString deviceName, bool enableBonding, bool
 {
 	ManagedString BLEName("BBC micro:bit");
     Gap::Whitelist_t whitelist;
-	this->deviceName = deviceName;
 
+    // Store a reference to this object for use with Callbacks from the BLE stack.
+    manager = this;
+
+    // Reset internal state
+	this->deviceName = deviceName;
+	this->pairingStatus = 0;
+    this->status = 0;
+
+    // Add the device name we advertise, if appropriate.
     if (!enableWhitelisting)
 	    BLEName = BLEName + " [" + deviceName + "]";
 
@@ -265,15 +268,15 @@ void MicroBitBLEManager::init(ManagedString deviceName, bool enableBonding, bool
         btle_set_gatt_table_size(MICROBIT_SD_GATT_TABLE_SIZE);
 
     // Start the BLE stack.
-    ble = new BLEDevice();
-    ble->init();
+    ble.init();
+    status |= MICROBIT_BLE_STATUS_RUNNING;
 
     // automatically restart advertising after a device disconnects.
-    ble->gap().onDisconnection(bleDisconnectionCallback);
-    ble->gattServer().onSysAttrMissing(bleSysAttrMissingCallback);
+    ble.gap().onDisconnection(bleDisconnectionCallback);
+    ble.gattServer().onSysAttrMissing(bleSysAttrMissingCallback);
 
     // generate an event when a Bluetooth connection is established
-    ble->gap().onConnection(bleConnectionCallback);
+    ble.gap().onConnection(bleConnectionCallback);
 
     // Configure the stack to hold onto the CPU during critical timing events.
     // mbed-classic performs __disable_irq() calls in its timers that can cause
@@ -284,12 +287,12 @@ void MicroBitBLEManager::init(ManagedString deviceName, bool enableBonding, bool
 
 	// If configured, use private addresses, so kids' behaviour can't be easily tracked.
     if (enablePrivateAddressing)
-	    ble->gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
+	    ble.gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
 
     // Setup our security requirements.
-    ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
-    ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
-    ble->securityManager().init(enableBonding, (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM), SecurityManager::IO_CAPS_DISPLAY_ONLY);
+    ble.securityManager().onPasskeyDisplay(passkeyDisplayCallback);
+    ble.securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
+    ble.securityManager().init(enableBonding, (SecurityManager::MICROBIT_BLE_SECURITY_LEVEL == SecurityManager::SECURITY_MODE_ENCRYPTION_WITH_MITM), SecurityManager::IO_CAPS_DISPLAY_ONLY);
 
     if (enableBonding)
     {
@@ -301,7 +304,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, bool enableBonding, bool
 
         // If we're full, empty the bond table.
         if (bonds >= MICROBIT_BLE_MAXIMUM_BONDS)
-            ble->securityManager().purgeAllBondingState();
+            ble.securityManager().purgeAllBondingState();
     }
 
     // If configured, use a whitelist to filter all connection requetss from unbonded devices.
@@ -312,11 +315,11 @@ void MicroBitBLEManager::init(ManagedString deviceName, bool enableBonding, bool
         whitelist.addresses = bondedAddresses;
         whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
 
-        ble->securityManager().getAddressesFromBondTable(whitelist);
+        ble.securityManager().getAddressesFromBondTable(whitelist);
 
-        ble->gap().setWhitelist(whitelist);
-        ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
-        ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
+        ble.gap().setWhitelist(whitelist);
+        ble.gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
+        ble.gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
     }
 
     // Configure the radio at our default power level
@@ -324,31 +327,31 @@ void MicroBitBLEManager::init(ManagedString deviceName, bool enableBonding, bool
 
     // Configure for high speed mode where possible.
     Gap::ConnectionParams_t fast;
-    ble->getPreferredConnectionParams(&fast);
+    ble.getPreferredConnectionParams(&fast);
     fast.minConnectionInterval = 8; // 10 ms
     fast.maxConnectionInterval = 16; // 20 ms
     fast.slaveLatency = 0;
-    ble->setPreferredConnectionParams(&fast);
+    ble.setPreferredConnectionParams(&fast);
 
     // Setup advertising.
     if (enableWhitelisting)
-        ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED);
+        ble.accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED);
     else
-        ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+        ble.accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
 
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
-    ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble->setAdvertisingInterval(200);
+    ble.accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
+    ble.setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
+    ble.setAdvertisingInterval(200);
 
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
-    ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
+    ble.gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
 #endif
 
     // If we have whitelisting enabled, then prevent only enable advertising of we have any binded devices...
     // This is to further protect kids' privacy. If no-one initiates BLE, then the device is unreachable.
     // If whiltelisting is disabled, then we always advertise.
     if (!enableWhitelisting || whitelist.size > 0)
-        ble->startAdvertising();
+        ble.startAdvertising();
 }
 
 /**
@@ -368,7 +371,7 @@ int MicroBitBLEManager::setTransmitPower(int power)
     if (power < 0 || power >= MICROBIT_BLE_POWER_LEVELS)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (ble->gap().setTxPower(MICROBIT_BLE_POWER_LEVEL[power]) != NRF_SUCCESS)
+    if (ble.gap().setTxPower(MICROBIT_BLE_POWER_LEVEL[power]) != NRF_SUCCESS)
         return MICROBIT_NOT_SUPPORTED;
 
     return MICROBIT_OK;
@@ -384,7 +387,7 @@ int MicroBitBLEManager::getBondCount()
     Gap::Whitelist_t whitelist;
     whitelist.addresses = bondedAddresses;
     whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
-    ble->securityManager().getAddressesFromBondTable(whitelist);
+    ble.securityManager().getAddressesFromBondTable(whitelist);
 
     return whitelist.bonds;
 }
@@ -426,8 +429,7 @@ void MicroBitBLEManager::pairingComplete(bool success)
  */
 void MicroBitBLEManager::idleTick()
 {
-    if (ble)
-        ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+    ble.disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
 
     fiber_remove_idle_component(this);
 }
@@ -456,7 +458,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay& display, MicroBitButton& a
 	int brightness = 255;
 	int fadeDirection = 0;
 
-    ble->gap().stopAdvertising();
+    ble.gap().stopAdvertising();
 
     // Clear the whitelist (if we have one), so that we're discoverable by all BLE devices.
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
@@ -465,20 +467,20 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay& display, MicroBitButton& a
     whitelist.addresses = addresses;
     whitelist.capacity = MICROBIT_BLE_MAXIMUM_BONDS;
     whitelist.size = 0;
-    ble->gap().setWhitelist(whitelist);
-    ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_IGNORE_WHITELIST);
+    ble.gap().setWhitelist(whitelist);
+    ble.gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_IGNORE_WHITELIST);
 #endif
 
 	// Update the advertised name of this micro:bit to include the device name
-    ble->clearAdvertisingPayload();
+    ble.clearAdvertisingPayload();
 
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
-    ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble->setAdvertisingInterval(200);
+    ble.accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+    ble.accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
+    ble.setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
+    ble.setAdvertisingInterval(200);
 
-    ble->gap().setAdvertisingTimeout(0);
-    ble->gap().startAdvertising();
+    ble.gap().setAdvertisingTimeout(0);
+    ble.gap().startAdvertising();
 
 	// Stop any running animations on the display
 	display.stopAnimation();
@@ -596,4 +598,14 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
         for (int j=0; j<h+1; j++)
             display.image.setPixelValue(MICROBIT_DFU_HISTOGRAM_WIDTH-i-1, MICROBIT_DFU_HISTOGRAM_HEIGHT-j-1, 255);
     }
+}
+
+/**
+ * Freeze the configuration of the stack (prevent any new services or characteristics).
+ * @return MICROBIT_OK on success.
+ */
+int MicroBitBLEManager::lock()
+{
+    this->status |= MICROBIT_BLE_STATUS_LOCKED;
+    return MICROBIT_OK;
 }
