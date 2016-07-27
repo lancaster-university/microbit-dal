@@ -87,8 +87,8 @@ void MicroBitLEDService::onDataWritten(const GattWriteCallbackParams *params)
 
     if (params->handle == matrixCharacteristicHandle && params->len > 0 && params->len < 6)
     {
-         // interrupt any animation that might be currently going on
-        display.stopAnimation();
+       // interrupt any animation that might be currently going on
+       display.stopAnimation();
        for (int y=0; y<params->len; y++)
             for (int x=0; x<5; x++)
                 display.image.setPixelValue(x, y, (data[y] & (0x01 << (4-x))) ? 255 : 0);
