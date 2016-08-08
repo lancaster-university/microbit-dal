@@ -30,7 +30,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 #include "MicroBitCoordinateSystem.h"
-#include "MicroBitAccelerometer.h"
+#include "MicroBitAccelerometer-bmx.h"
 #include "MicroBitStorage.h"
 
 /**

@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitConfig.h"
 #include "ble/BLE.h"
-#include "MicroBitAccelerometer.h"
+#include "MicroBitAccelerometer-bmx.h"
 #include "EventModel.h"
 
 // UUIDs for our service and characteristics
