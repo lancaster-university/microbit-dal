@@ -4,6 +4,10 @@ The MIT License (MIT)
 Copyright (c) 2016 British Broadcasting Corporation.
 This software is provided by Lancaster University by arrangement with the BBC.
 
+Modifications Copyright (c) 2016 Calliope GbR
+Modifications are provided by DELTA Systems (Georg Sommer) - Thomas Kern
+und Björn Eberhardt GbR by arrangement with Calliope GbR. 
+
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation
@@ -35,10 +39,9 @@ DEALINGS IN THE SOFTWARE.
 #define IO_STATUS_ANALOG_IN                 0x04        // Pin is Analog in
 #define IO_STATUS_ANALOG_OUT                0x08        // Pin is Analog out
 #define IO_STATUS_TOUCH_IN                  0x10        // Pin is a makey-makey style touch sensor
-#define IO_STATUS_EVENT_ON_EDGE             0x20        // Pin will generate events on pin change
-#define IO_STATUS_EVENT_PULSE_ON_EDGE       0x40        // Pin will generate events on pin change
+#define IO_STATUS_EVENTBUS_ENABLED          0x80        // Pin is will generate events on change
 
-//#defines for each edge connector pin
+//#defines for each edge connector pin - changed!
 #define MICROBIT_PIN_P0                     P0_3        //P0 is the left most pad (ANALOG/DIGITAL) used to be P0_3 on green board
 #define MICROBIT_PIN_P1                     P0_2        //P1 is the middle pad (ANALOG/DIGITAL)
 #define MICROBIT_PIN_P2                     P0_1        //P2 is the right most pad (ANALOG/DIGITAL) used to be P0_1 on green board
@@ -47,17 +50,19 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_PIN_P5                     P0_17       //BTN_A
 #define MICROBIT_PIN_P6                     P0_12       //COL9
 #define MICROBIT_PIN_P7                     P0_11       //COL8
-#define MICROBIT_PIN_P8                     P0_18       //PIN 18
 #define MICROBIT_PIN_P9                     P0_10       //COL7
 #define MICROBIT_PIN_P10                    P0_6        //COL3 (ANALOG/DIGITAL)
 #define MICROBIT_PIN_P11                    P0_26       //BTN_B
-#define MICROBIT_PIN_P12                    P0_20       //PIN 20
-#define MICROBIT_PIN_P13                    P0_23       //SCK
-#define MICROBIT_PIN_P14                    P0_22       //MISO
-#define MICROBIT_PIN_P15                    P0_21       //MOSI
-#define MICROBIT_PIN_P16                    P0_16       //PIN 16
-#define MICROBIT_PIN_P19                    P0_0        //SCL
-#define MICROBIT_PIN_P20                    P0_30       //SDA
+#define MICROBIT_PIN_P19                    P0_19       //SCL
+#define MICROBIT_PIN_P20                    P0_20       //SDA
+//CALLIOPE MINI pins added here
+#define CALLIOPE_PIN_P0                     P0_0        //pad P0 on Calliope Mini board
+#define CALLIOPE_PIN_P7                     P0_7        //LED control / IO pin  
+#define CALLIOPE_PIN_P8                     P0_8        //LED control / IO pin       
+#define CALLIOPE_PIN_P9                     P0_9        //LED control / IO pin 
+#define CALLIOPE_PIN_P13                    P0_13       //LED control / IO pin 
+#define CALLIOPE_PIN_P14                    P0_14       //LED control / IO pin 
+#define CALLIOPE_PIN_P15                    P0_15       //LED control / IO pin 
 
 #define MICROBIT_PIN_MAX_OUTPUT             1023
 
@@ -65,15 +70,6 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_PIN_DEFAULT_SERVO_RANGE    2000
 #define MICROBIT_PIN_DEFAULT_SERVO_CENTER   1500
 
-#define MICROBIT_PIN_EVENT_NONE             0
-#define MICROBIT_PIN_EVENT_ON_EDGE          1
-#define MICROBIT_PIN_EVENT_ON_PULSE         2
-#define MICROBIT_PIN_EVENT_ON_TOUCH         3
-
-#define MICROBIT_PIN_EVT_RISE               2
-#define MICROBIT_PIN_EVT_FALL               3
-#define MICROBIT_PIN_EVT_PULSE_HI           4
-#define MICROBIT_PIN_EVT_PULSE_LO           5
 
 /**
   * Pin capabilities enum.
@@ -82,8 +78,9 @@ DEALINGS IN THE SOFTWARE.
 enum PinCapability{
     PIN_CAPABILITY_DIGITAL = 0x01,
     PIN_CAPABILITY_ANALOG = 0x02,
+    PIN_CAPABILITY_TOUCH = 0x04,
     PIN_CAPABILITY_AD = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG,
-    PIN_CAPABILITY_ALL = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG
+    PIN_CAPABILITY_ALL = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG | PIN_CAPABILITY_TOUCH
 };
 
 /**
@@ -95,8 +92,8 @@ class MicroBitPin : public MicroBitComponent
 {
     // The mbed object looking after this pin at any point in time (untyped due to dynamic behaviour).
     void *pin;
+
     PinCapability capability;
-    uint8_t pullMode;
 
     /**
       * Disconnect any attached mBed IO from this pin.
@@ -110,43 +107,6 @@ class MicroBitPin : public MicroBitComponent
       * DynamicPwm instance, and if it's not, allocates a new DynamicPwm instance.
       */
     int obtainAnalogChannel();
-
-    /**
-      * Interrupt handler for when an rise interrupt is triggered.
-      */
-    void onRise();
-
-    /**
-      * Interrupt handler for when an fall interrupt is triggered.
-      */
-    void onFall();
-
-    /**
-      * This member function manages the calculation of the timestamp of a pulse detected
-      * on a pin whilst in IO_STATUS_EVENT_PULSE_ON_EDGE or IO_STATUS_EVENT_ON_EDGE modes.
-      *
-      * @param eventValue the event value to distribute onto the message bus.
-      */
-    void pulseWidthEvent(int eventValue);
-
-    /**
-      * This member function will construct an TimedInterruptIn instance, and configure
-      * interrupts for rise and fall.
-      *
-      * @param eventType the specific mode used in interrupt context to determine how an
-      *                  edge/rise is processed.
-      *
-      * @return MICROBIT_OK on success
-      */
-    int enableRiseFallEvents(int eventType);
-
-    /**
-      * If this pin is in a mode where the pin is generating events, it will destruct
-      * the current instance attached to this MicroBitPin instance.
-      *
-      * @return MICROBIT_OK on success.
-      */
-    int disableEvents();
 
     public:
 
@@ -162,7 +122,7 @@ class MicroBitPin : public MicroBitComponent
       * @param name the mbed PinName for this MicroBitPin instance.
       *
       * @param capability the capabilities this MicroBitPin instance should have.
-      *                   (PIN_CAPABILITY_DIGITAL, PIN_CAPABILITY_ANALOG, PIN_CAPABILITY_AD, PIN_CAPABILITY_ALL)
+      *                   (PIN_CAPABILITY_DIGITAL, PIN_CAPABILITY_ANALOG, PIN_CAPABILITY_TOUCH, PIN_CAPABILITY_AD, PIN_CAPABILITY_ALL)
       *
       * @code
       * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_ALL);
@@ -188,9 +148,8 @@ class MicroBitPin : public MicroBitComponent
     /**
       * Configures this IO pin as a digital input (if necessary) and tests its current value.
       *
-      *
       * @return 1 if this input is high, 0 if input is LO, or MICROBIT_NOT_SUPPORTED
-      *         if the given pin does not have digital capability.
+      *         if the given pin does not have analog capability.
       *
       * @code
       * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
@@ -198,21 +157,6 @@ class MicroBitPin : public MicroBitComponent
       * @endcode
       */
     int getDigitalValue();
-
-    /**
-      * Configures this IO pin as a digital input with the specified internal pull-up/pull-down configuraiton (if necessary) and tests its current value.
-      *
-      * @param pull one of the mbed pull configurations: PullUp, PullDown, PullNone
-      *
-      * @return 1 if this input is high, 0 if input is LO, or MICROBIT_NOT_SUPPORTED
-      *         if the given pin does not have digital capability.
-      *
-      * @code
-      * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
-      * P0.getDigitalValue(PullUp); // P0 is either 0 or 1;
-      * @endcode
-      */
-    int getDigitalValue(PinMode pull);
 
     /**
       * Configures this IO pin as an analog/pwm output, and change the output value to the given level.
@@ -353,47 +297,6 @@ class MicroBitPin : public MicroBitComponent
       *         given pin is not configured as an analog output.
       */
     int getAnalogPeriod();
-
-    /**
-      * Configures the pull of this pin.
-      *
-      * @param pull one of the mbed pull configurations: PullUp, PullDown, PullNone
-      *
-      * @return MICROBIT_NOT_SUPPORTED if the current pin configuration is anything other
-      *         than a digital input, otherwise MICROBIT_OK.
-      */
-    int setPull(PinMode pull);
-
-    /**
-      * Configures the events generated by this MicroBitPin instance.
-      *
-      * MICROBIT_PIN_EVENT_ON_EDGE - Configures this pin to a digital input, and generates events whenever a rise/fall is detected on this pin. (MICROBIT_PIN_EVT_RISE, MICROBIT_PIN_EVT_FALL)
-      * MICROBIT_PIN_EVENT_ON_PULSE - Configures this pin to a digital input, and generates events where the timestamp is the duration that this pin was either HI or LO. (MICROBIT_PIN_EVT_PULSE_HI, MICROBIT_PIN_EVT_PULSE_LO)
-      * MICROBIT_PIN_EVENT_ON_TOUCH - Configures this pin as a makey makey style touch sensor, in the form of a MicroBitButton. Normal button events will be generated using the ID of this pin.
-      * MICROBIT_PIN_EVENT_NONE - Disables events for this pin.
-      *
-      * @param eventType One of: MICROBIT_PIN_EVENT_ON_EDGE, MICROBIT_PIN_EVENT_ON_PULSE, MICROBIT_PIN_EVENT_ON_TOUCH, MICROBIT_PIN_EVENT_NONE
-      *
-      * @code
-      * MicroBitMessageBus bus;
-      *
-      * MicroBitPin P0(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_BOTH);
-      * P0.eventOn(MICROBIT_PIN_EVENT_ON_PULSE);
-      *
-      * void onPulse(MicroBitEvent evt)
-      * {
-      *     int duration = evt.timestamp;
-      * }
-      *
-      * bus.listen(MICROBIT_ID_IO_P0, MICROBIT_PIN_EVT_PULSE_HI, onPulse, MESSAGE_BUS_LISTENER_IMMEDIATE)
-      * @endcode
-      *
-      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the given eventype does not match
-      *
-      * @note In the MICROBIT_PIN_EVENT_ON_PULSE mode, the smallest pulse that was reliably detected was 85us, around 5khz. If more precision is required,
-      *       please use the InterruptIn class supplied by ARM mbed.
-      */
-    int eventOn(int eventType);
 };
 
 #endif
