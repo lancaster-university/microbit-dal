@@ -2,8 +2,8 @@
 The MIT License (MIT)
 
 Copyright (c) 2016 Calliope GbR
-This software is provided by DELTA Systems - Thomas Kern und Björn 
-Eberhardt GbR by arrangement with Calliope GbR. 
+This software is provided by DELTA Systems (Georg Sommer) - Thomas Kern
+und BjÃ¶rn Eberhardt GbR by arrangement with Calliope GbR. 
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -28,10 +28,15 @@ DEALINGS IN THE SOFTWARE.
 #include "CalliopeRGB.h"
 #include "MicroBitSystemTimer.h"
 #include "nrf_delay.h"
+#include "nrf_gpio.h"
 
 
-CalliopeRGB::CalliopeRGB() : pin(CALLIOPE_PIN_RGB, 0)
+CalliopeRGB::CalliopeRGB()
 {
+    //init pin
+    nrf_gpio_cfg_output(CALLIOPE_PIN_RGB);
+    nrf_gpio_pin_clear(CALLIOPE_PIN_RGB);
+    
     state = 0;
     
     //init color settings
@@ -81,10 +86,10 @@ void CalliopeRGB::Set_Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t wh
 void CalliopeRGB::Set_Color2(int red, int green, int blue, int white)
 {
     //set color
-    if(green != -1) GRBW[0] = green;      
-    if(red != -1) GRBW[1] = red;
-    if(blue != -1) GRBW[2] = blue;
-    if(white != -1) GRBW[3] = white;
+    if(green != RGB_KEEP_VALUE) GRBW[0] = green;      
+    if(red != RGB_KEEP_VALUE) GRBW[1] = red;
+    if(blue != RGB_KEEP_VALUE) GRBW[2] = blue;
+    if(white != RGB_KEEP_VALUE) GRBW[3] = white;
     
     //check intensity
     for(uint8_t i=0; i<4; i++) {
