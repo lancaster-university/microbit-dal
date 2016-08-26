@@ -2,8 +2,8 @@
 The MIT License (MIT)
 
 Copyright (c) 2016 Calliope GbR
-This software is provided by DELTA Systems - Thomas Kern und Björn 
-Eberhardt GbR by arrangement with Calliope GbR. 
+This software is provided by DELTA Systems (Georg Sommer) - Thomas Kern
+und BjÃ¶rn Eberhardt GbR by arrangement with Calliope GbR. 
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -42,14 +42,15 @@ DEALINGS IN THE SOFTWARE.
 #define RGB_LED_DEFAULT_RED                 0
 #define RGB_LED_DEFAULT_BLUE                0
 #define RGB_LED_DEFAULT_WHITE               0
+#define RGB_KEEP_VALUE                      -1
 
 //max light intensity
 #define RGB_LED_MAX_INTENSITY               50
 
 //the following defines are timed specifically to the sending algorithm in CalliopeRGB.cpp
 //timings for sending to the RGB LED: 
-//logical '0': time HIGH: 0.35 us ±150 ns   time LOW: 0.9 us ±150 ns 
-//logical '1': time HIGH: 0.9 us ±150 ns    time LOW: 0.35 us ±150 ns
+//logical '0': time HIGH: 0.35 us Â±150 ns   time LOW: 0.9 us Â±150 ns 
+//logical '1': time HIGH: 0.9 us Â±150 ns    time LOW: 0.35 us Â±150 ns
 
 //sends a logical '1' to the receiver
 #define CALLIOPE_RGB_SEND_HIGH  NRF_GPIO->OUTSET = (1UL << PIN); \
@@ -87,9 +88,6 @@ DEALINGS IN THE SOFTWARE.
 
 class CalliopeRGB : public MicroBitComponent
 {   
-    //pin object for data transfer                                            
-    DigitalOut pin;      
-    
     //values for the displayed color
     uint8_t GRBW[4];
     
@@ -107,7 +105,7 @@ class CalliopeRGB : public MicroBitComponent
         //sets all 4 color settings to the given values  
         void Set_Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t white);
         //sets all 4 color settings to the given values or leaves them as they are if no value is given
-        void Set_Color2(int red = -1, int green = -1, int blue = -1, int white = -1);
+        void Set_Color2(int red = RGB_KEEP_VALUE, int green = RGB_KEEP_VALUE, int blue = RGB_KEEP_VALUE, int white = RGB_KEEP_VALUE);
         void On();
         void Off();
         void Send_to_LED();
