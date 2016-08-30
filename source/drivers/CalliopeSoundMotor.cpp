@@ -3,7 +3,7 @@ The MIT License (MIT)
 
 Copyright (c) 2016 Calliope GbR
 This software is provided by DELTA Systems (Georg Sommer) - Thomas Kern 
-und Björn Eberhardt GbR by arrangement with Calliope GbR. 
+und BjÃ¶rn Eberhardt GbR by arrangement with Calliope GbR. 
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -529,7 +529,8 @@ void CalliopeSoundMotor::Sound_On(uint16_t frequency_hz)
     NRF_TIMER2->TASKS_CLEAR = 1;
     
     //set prescaler for sound use
-    NRF_TIMER2->PRESCALER = CALLIOPE_SM_PRESCALER_S;
+    if(frequency_hz < CALLIOPE_MIN_FREQUENCY_HZ_S_NP) NRF_TIMER2->PRESCALER = CALLIOPE_SM_PRESCALER_S_LF;
+    else NRF_TIMER2->PRESCALER = CALLIOPE_SM_PRESCALER_S;
     
     //disable GPIOTE control of the pins
     nrf_gpiote_task_disable(0);
@@ -542,8 +543,10 @@ void CalliopeSoundMotor::Sound_On(uint16_t frequency_hz)
     //max 50% duty per pwm just like in dual motor use
     uint8_t duty = uint8_t(CALLIOPE_SM_DEFAULT_DUTY_S/2);
     
-    //calculate period corresponding to desired frequency
-    uint16_t period = uint16_t(uint32_t(CALLIOPE_BOARD_FREQUENCY) / uint32_t(frequency_hz));
+    //calculate period corresponding to the desired frequency and the currently used prescaler
+    uint16_t period;
+    if(frequency_hz < CALLIOPE_MIN_FREQUENCY_HZ_S_NP) period = uint16_t(uint32_t(CALLIOPE_BOARD_FREQUENCY) / (uint32_t(frequency_hz) << CALLIOPE_SM_PRESCALER_S_LF));
+    else period = uint16_t(uint32_t(CALLIOPE_BOARD_FREQUENCY) / uint32_t(frequency_hz));
     
     //set compare register 2 and 3 according to the gives frequency (this sets the PWM period)
     NRF_TIMER2->CC[2] = period-1;
