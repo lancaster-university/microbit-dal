@@ -3,7 +3,7 @@ The MIT License (MIT)
 
 Copyright (c) 2016 Calliope GbR
 This software is provided by DELTA Systems (Georg Sommer) - Thomas Kern 
-und Björn Eberhardt GbR by arrangement with Calliope GbR. 
+und BjÃ¶rn Eberhardt GbR by arrangement with Calliope GbR. 
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -46,9 +46,11 @@ DEALINGS IN THE SOFTWARE.
 //constants
 #define CALLIOPE_SM_PRESCALER_M                         2
 #define CALLIOPE_SM_PRESCALER_S                         0
+#define CALLIOPE_SM_PRESCALER_S_LF                      4           //prescaler for creating low frequencies
 #define CALLIOPE_SM_PERIOD_M                            100
-#define CALLIOPE_MIN_FREQUENCY_HZ_S                     245         //min possible frequency due to 16bit timer resolution
-#define CALLIOPE_MAX_FREQUENCY_HZ_S                     20000       //max human audible frquency 
+#define CALLIOPE_MIN_FREQUENCY_HZ_S_NP                  245         //min possible frequency due to 16bit timer resolution (without prescaler)
+#define CALLIOPE_MIN_FREQUENCY_HZ_S                     20          //min human audible frequency
+#define CALLIOPE_MAX_FREQUENCY_HZ_S                     20000       //max human audible frequency 
 #define CALLIOPE_BOARD_FREQUENCY                        16000000
 
 class CalliopeSoundMotor : public MicroBitComponent
