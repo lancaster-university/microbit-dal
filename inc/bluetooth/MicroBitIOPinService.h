@@ -32,7 +32,7 @@ DEALINGS IN THE SOFTWARE.
 
 #define MICROBIT_IO_PIN_SERVICE_PINCOUNT       19
 #define MICROBIT_IO_PIN_SERVICE_DATA_SIZE      10
-#define MICROBIT_PWM_PIN_SERVICE_DATA_SIZE     3
+#define MICROBIT_PWM_PIN_SERVICE_DATA_SIZE     2
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitIOPinServiceUUID[];
