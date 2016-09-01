@@ -49,6 +49,9 @@ MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io) :
     // Create the IO characteristic, that defines whether each pin is treated as input or output
     GattCharacteristic ioPinServiceIOCharacteristic(MicroBitIOPinServiceIOConfigurationUUID, (uint8_t *)&ioPinServiceIOCharacteristicBuffer, 0, sizeof(ioPinServiceIOCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
+    // Create the PWM characteristic, that allows up to 3 compatible pins to be used for PWM
+    GattCharacteristic ioPinServicePWMCharacteristic(MicroBitIOPinServicePWMControlUUID, (uint8_t *)&ioPinServicePWMCharacteristicBuffer, 0, sizeof(ioPinServicePWMCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
+
     // Create the Data characteristic, that allows the actual read and write operations.
     ioPinServiceDataCharacteristic = new GattCharacteristic(MicroBitIOPinServiceDataUUID, (uint8_t *)ioPinServiceDataCharacteristicBuffer, 0, sizeof(ioPinServiceDataCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
@@ -57,22 +60,26 @@ MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io) :
     ioPinServiceADCharacteristicBuffer = 0;
     ioPinServiceIOCharacteristicBuffer = 0;
     memset(ioPinServiceIOData, 0, sizeof(ioPinServiceIOData));
+    memset(ioPinServicePWMCharacteristicBuffer, 0, sizeof(ioPinServicePWMCharacteristicBuffer));
 
     // Set default security requirements
     ioPinServiceADCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
     ioPinServiceIOCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
+    ioPinServicePWMCharacteristic.requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
     ioPinServiceDataCharacteristic->requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
 
-    GattCharacteristic *characteristics[] = {&ioPinServiceADCharacteristic, &ioPinServiceIOCharacteristic, ioPinServiceDataCharacteristic};
+    GattCharacteristic *characteristics[] = {&ioPinServiceADCharacteristic, &ioPinServiceIOCharacteristic, &ioPinServicePWMCharacteristic, ioPinServiceDataCharacteristic};
     GattService         service(MicroBitIOPinServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
     ble.addService(service);
 
     ioPinServiceADCharacteristicHandle = ioPinServiceADCharacteristic.getValueHandle();
     ioPinServiceIOCharacteristicHandle = ioPinServiceIOCharacteristic.getValueHandle();
+    ioPinServicePWMCharacteristicHandle = ioPinServicePWMCharacteristic.getValueHandle();
 
     ble.gattServer().write(ioPinServiceADCharacteristicHandle, (const uint8_t *)&ioPinServiceADCharacteristicBuffer, sizeof(ioPinServiceADCharacteristicBuffer));
     ble.gattServer().write(ioPinServiceIOCharacteristicHandle, (const uint8_t *)&ioPinServiceIOCharacteristicBuffer, sizeof(ioPinServiceIOCharacteristicBuffer));
+    ble.gattServer().write(ioPinServicePWMCharacteristicHandle, (const uint8_t *)&ioPinServicePWMCharacteristicBuffer, sizeof(ioPinServicePWMCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitIOPinService::onDataWritten);
     fiber_add_idle_component(this);
@@ -171,13 +178,40 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         }
     }
 
+    // Check for writes to the PWM Control characteristic
+    if (params->handle == ioPinServicePWMCharacteristicHandle)
+    {
+        uint16_t len = params->len;
+        IOPWMData *pwm_data = (IOPWMData *)params->data;
+        
+        //validate - len must be a multiple of 7 and greater than 0
+        if (len == 0) {
+            return;
+        }
+
+        bool is_valid_length = len % 7 == 0;
+	    if (is_valid_length) {
+            uint8_t field_count = len / 7;
+            for (int i=0;i<field_count;i++) {
+                uint8_t  pin    = pwm_data[i].pin;
+                uint16_t value = pwm_data[i].value;
+                uint32_t period = pwm_data[i].period;
+                io.pin[pin].setAnalogValue(value);
+                io.pin[pin].setAnalogPeriodUs(period);
+            }
+        } else {
+            // there's no way to return an error response via the current mbed BLE API :-( See https://github.com/ARMmbed/ble/issues/181
+            return;
+        }        
+    }
+
     if (params->handle == ioPinServiceDataCharacteristic->getValueHandle())
     {
         // We have some pin data to change...
         uint16_t len = params->len;
         IOData *data = (IOData *)params->data;
 
-        // There may be multiple write operaitons... take each in turn and update the pin values
+        // There may be multiple write operations... take each in turn and update the pin values
         while (len >= sizeof(IOData))
         {
             if (isOutput(data->pin))
@@ -299,6 +333,10 @@ const uint8_t  MicroBitIOPinServiceIOConfigurationUUID[] = {
 
 const uint8_t  MicroBitIOPinServiceADConfigurationUUID[] = {
     0xe9,0x5d,0x58,0x99,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
+};
+
+const uint8_t  MicroBitIOPinServicePWMControlUUID[] = {
+    0xe9,0x5d,0xd8,0x22,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
 
 const uint8_t MicroBitIOPinServiceDataUUID[] = {
