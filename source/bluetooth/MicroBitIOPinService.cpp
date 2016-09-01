@@ -134,8 +134,6 @@ int MicroBitIOPinService::isOutput(int i)
   */
 void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
 {
-    SERIAL_DEBUG->printf("params->len: %d",params->len);
-    
     // Check for writes to the IO configuration characteristic
     if (params->handle == ioPinServiceIOCharacteristicHandle && params->len >= sizeof(ioPinServiceIOCharacteristicBuffer))
     {
@@ -188,7 +186,6 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         
         //validate - len must be a multiple of 7 and greater than 0
         if (len == 0) {
-            SERIAL_DEBUG->printf("ERROR - zero length PWM Control field: %d",len);
             return;
         }
 
@@ -204,7 +201,6 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
             }
         } else {
             // there's no way to return an error response via the current mbed BLE API :-( See https://github.com/ARMmbed/ble/issues/181
-            SERIAL_DEBUG->printf("ERROR - invalid PWM Control field length: %d",len);
             return;
         }        
     }
