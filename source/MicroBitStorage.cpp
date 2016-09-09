@@ -121,6 +121,8 @@ MicroBitConfigurationBlock *MicroBitStorage::getConfigurationBlock()
         uBit.serial.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
 
         uBit.serial.printf("temperature: %d\r\n", block->thermometerCalibration);
+
+        uBit.serial.printf("accessibility: %d\r\n", block->accessibility);
     }
 #endif
 

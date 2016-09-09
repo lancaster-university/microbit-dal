@@ -110,6 +110,9 @@ class MicroBitAccessibility : public MicroBitComponent
      * Snapshot of the last frame transmitted. Used to determine if a display has been updated.
      */
     MicroBitImage lastFrame;
+
+    void start();
+    void stop();
 };
 
 #endif

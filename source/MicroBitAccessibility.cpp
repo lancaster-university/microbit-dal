@@ -54,14 +54,36 @@ MicroBitAccessibility::MicroBitAccessibility(uint16_t id)
     MicroBitStorage s = MicroBitStorage();
     MicroBitConfigurationBlock *b = s.getConfigurationBlock();
 
-    if(b->accessibility)
+    if(b->magic == MICROBIT_STORAGE_CONFIG_MAGIC && b->accessibility == 1)
         e = 1;
 
     delete b;
 
-    // If so, turn ourselve on
+    // If so, turn ourselves on
     if (e)
-        this->enable();
+        start();
+}
+
+void MicroBitAccessibility::start()
+{
+    if (!(status & MICROBIT_ACCESSIBILITY_ENABLED))
+    {
+        uBit.addIdleComponent(this);
+        uBit.MessageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
+        uBit.MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
+        status |= MICROBIT_ACCESSIBILITY_ENABLED;
+    }
+}
+
+void MicroBitAccessibility::stop()
+{
+    if (status & MICROBIT_ACCESSIBILITY_ENABLED)
+    {
+        uBit.removeIdleComponent(this);
+        uBit.MessageBus.ignore(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent);
+        uBit.MessageBus.ignore(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent);
+        status &= ~MICROBIT_ACCESSIBILITY_ENABLED;
+    }
 }
 
 /**
@@ -91,11 +113,8 @@ int MicroBitAccessibility::enable()
 
     delete b;
 
-    status |= MICROBIT_ACCESSIBILITY_ENABLED;
-
-    uBit.addIdleComponent(this);
-    uBit.MessageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
-    uBit.MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    // Start running, if necessary.
+    start();
 
     return MICROBIT_OK;
 }
@@ -127,10 +146,8 @@ int MicroBitAccessibility::disable()
 
     delete b;
 
-    status &= ~MICROBIT_ACCESSIBILITY_ENABLED;
-    uBit.removeIdleComponent(this);
-    uBit.MessageBus.ignore(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent);
-    uBit.MessageBus.ignore(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent);
+    // Stop running, if necessary.
+    stop();
 
     return MICROBIT_OK;
 }
@@ -243,8 +260,6 @@ void MicroBitAccessibility::animationEvent(MicroBitEvent e)
   */
 MicroBitAccessibility::~MicroBitAccessibility()
 {
-    uBit.removeIdleComponent(this);
-    uBit.MessageBus.ignore(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent);
-    uBit.MessageBus.ignore(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent);
+    stop();
 }
 
