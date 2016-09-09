@@ -460,6 +460,9 @@ int MicroBitCompass::calibrate()
     // Record that we've finished calibrating.
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATING;
 
+    // Launch any registred calibration alogrithm visialisation
+    MicroBitEvent(id, MICROBIT_COMPASS_EVT_CALIBRATE_COMPLETE);
+
     // If there are no changes to our sample data, we either have no calibration algorithm, or it couldn't complete succesfully.
     if(!(status & MICROBIT_COMPASS_STATUS_CALIBRATED))
         return MICROBIT_CALIBRATION_REQUIRED;

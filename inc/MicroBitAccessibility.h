@@ -97,6 +97,11 @@ class MicroBitAccessibility : public MicroBitComponent
     private:
 
     /**
+     * Event handler, called whenever compass calibration occurs.
+     */
+    void calibrationEvent(MicroBitEvent e);
+
+    /**
      * Event handler, called whenever a text based animation (such as scroll, print, etc) is called on the display.
      */
     void animationEvent(MicroBitEvent e);

@@ -80,7 +80,7 @@ int MicroBitAccessibility::enable()
 
     uBit.addIdleComponent(this);
     uBit.MessageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent);
-
+    uBit.MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
     return MICROBIT_OK;
 }
@@ -115,6 +115,7 @@ int MicroBitAccessibility::disable()
     status &= ~MICROBIT_ACCESSIBILITY_ENABLED;
     uBit.removeIdleComponent(this);
     uBit.MessageBus.ignore(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent);
+    uBit.MessageBus.ignore(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent);
 
     return MICROBIT_OK;
 }
@@ -172,6 +173,18 @@ void MicroBitAccessibility::idleTick()
         }
         uBit.serial.printf("\"}\n");
     }
+}
+
+/**
+ * Event handler, called whenever compass calibration occurs.
+ */
+void MicroBitAccessibility::calibrationEvent(MicroBitEvent e)
+{
+    if (e.value == MICROBIT_COMPASS_EVT_CALIBRATE)
+        uBit.serial.printf("{compass-calibrating: 1}\n");
+
+    if (e.value == MICROBIT_COMPASS_EVT_CALIBRATE_COMPLETE)
+        uBit.serial.printf("{compass-calibrating: 0}\n");
 }
 
 /**
