@@ -47,6 +47,21 @@ MicroBitAccessibility::MicroBitAccessibility(uint16_t id)
     // Store our identifiers.
     this->id = id;
     this->status = 0;
+
+    int e = 0;
+
+    // check if accessibiliy is enabled.
+    MicroBitStorage s = MicroBitStorage();
+    MicroBitConfigurationBlock *b = s.getConfigurationBlock();
+
+    if(b->accessibility)
+        e = 1;
+
+    delete b;
+
+    // If so, turn ourselve on
+    if (e)
+        this->enable();
 }
 
 /**
@@ -79,7 +94,7 @@ int MicroBitAccessibility::enable()
     status |= MICROBIT_ACCESSIBILITY_ENABLED;
 
     uBit.addIdleComponent(this);
-    uBit.MessageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent);
+    uBit.MessageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
     uBit.MessageBus.listen(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
     return MICROBIT_OK;
@@ -230,5 +245,6 @@ MicroBitAccessibility::~MicroBitAccessibility()
 {
     uBit.removeIdleComponent(this);
     uBit.MessageBus.ignore(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::animationEvent);
+    uBit.MessageBus.ignore(MICROBIT_ID_COMPASS, MICROBIT_EVT_ANY, this, &MicroBitAccessibility::calibrationEvent);
 }
 
