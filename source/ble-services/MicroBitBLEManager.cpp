@@ -82,11 +82,11 @@ static void storeSystemAttributes(Gap::Handle_t handle)
         MicroBitStorage s = MicroBitStorage();
         MicroBitConfigurationBlock *b = s.getConfigurationBlock();
 
-        if(b->sysAttrs[deviceID].magic != MICROBIT_STORAGE_CONFIG_MAGIC || memcmp(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(attrib.sys_attr)) != 0)
+        if(b->sysAttrs[deviceID].magic != MICROBIT_STORAGE_CONFIG_MAGIC || memcmp(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, len) != 0)
         {
             b->magic = MICROBIT_STORAGE_CONFIG_MAGIC;
             b->sysAttrs[deviceID].magic = MICROBIT_STORAGE_CONFIG_MAGIC;
-            memcpy(b->sysAttrs[deviceID].sys_attr, attrib.sys_attr, sizeof(attrib.sys_attr));
+            b->sysAttrs[deviceID] = attrib;
             s.setConfigurationBlock(b);
         }
 

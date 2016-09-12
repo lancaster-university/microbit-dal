@@ -136,7 +136,7 @@ int MicroBitAccessibility::disable()
     MicroBitConfigurationBlock *b = s.getConfigurationBlock();
 
     //check we are not storing our restored calibration data.
-    if(b->accessibility)
+    if(b->magic != MICROBIT_STORAGE_CONFIG_MAGIC || b->accessibility != 0)
     {
         b->magic = MICROBIT_STORAGE_CONFIG_MAGIC;
         b->accessibility = 0;
