@@ -200,18 +200,18 @@ int MicroBitFlash::flash_write_mem(uint8_t* address, uint8_t* from_buffer,
   * flash.flash_write((uint8_t*)0x38000, &word, sizeof(word))
   * @endcode
   */
-int MicroBitFlash::flash_write(uint8_t* address, uint8_t* from_buffer, 
-                               int length, uint8_t* scratch_addr)
+int MicroBitFlash::flash_write(void* address, void* from_buffer, 
+                               int length, void* scratch_addr)
 {
     if(scratch_addr == NULL) 
     {
-        return this->flash_write_mem(address, from_buffer, 0, length,
+        return this->flash_write_mem((uint8_t *)address, (uint8_t *)from_buffer, 0, length,
                                      WR_WRITE,(uint8_t*)DEFAULT_SCRATCH_ADDR);
     }
     else 
     {
-         return this->flash_write_mem(address, from_buffer, 0, length,
-                                     WR_WRITE, scratch_addr);
+         return this->flash_write_mem((uint8_t *)address, (uint8_t *)from_buffer, 0, length,
+                                     WR_WRITE, (uint8_t *)scratch_addr);
     }
 }
 

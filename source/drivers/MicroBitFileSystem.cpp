@@ -1,7 +1,7 @@
 //#ifdef SIMULATOR
-#include "stdafx.h"
-#include <string.h>
-#include "malloc.h"
+//#include "stdafx.h"
+//#include <string.h>
+//#include "malloc.h"
 
 #include "MicroBitConfig.h"
 #include "MicroBitFileSystem.h"
@@ -20,6 +20,8 @@ extern uint32_t __etext;
 static uint8_t fs_mem_buf[2*MBFS_PAGES*PAGE_SIZE] = { };
 static uint8_t *fs_mem;
 static uint32_t defaultScratchPage[PAGE_SIZE];
+#else
+static uint32_t *defaultScratchPage = (uint32_t *)DEFAULT_SCRATCH_PAGE;
 #endif
 
 MicroBitFileSystem* MicroBitFileSystem::defaultFileSystem = NULL;
@@ -196,7 +198,7 @@ int MicroBitFileSystem::init(uint32_t flashStart, int flashPages)
 #ifdef SIMULATOR
 		flashPages = MBFS_PAGES;
 #else
-		flashPages = (MBFS_LAST_PAGE_ADDR - flashStart) / PAGE_SIZE + 1;
+		flashPages = (DEFAULT_SCRATCH_PAGE - flashStart) / PAGE_SIZE;
 #endif
 	}
 
@@ -490,7 +492,7 @@ int MicroBitFileSystem::recycleBlock(uint16_t block, int type)
 			DirectoryEntry *direntIn = (DirectoryEntry *)getBlock(b);
 			DirectoryEntry *direntOut = (DirectoryEntry *)write;
 
-			for (int entry = 0; entry < MBFS_BLOCK_SIZE / sizeof(DirectoryEntry); entry++)
+			for (uint16_t entry = 0; entry < MBFS_BLOCK_SIZE / sizeof(DirectoryEntry); entry++)
 			{
 				if (direntIn->flags & MBFS_DIRECTORY_ENTRY_VALID)
 					flash.flash_write((uint32_t *)direntOut, (uint32_t *)direntIn, sizeof(DirectoryEntry));
@@ -894,7 +896,7 @@ int MicroBitFileSystem::close(int fd)
 
 	// Ensure the file is open.
     if(file == NULL)
-		return NULL;
+		return MICROBIT_INVALID_PARAMETER;
 
 	// Flush any data in the writeback cache.
 	writeBack(file);
@@ -955,7 +957,7 @@ int MicroBitFileSystem::close(int fd)
 int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
 {
 	FileDescriptor *file;
-	uint32_t position;
+	int position;
 
 	// Protect against accidental re-initialisation
 	if ((status & MBFS_STATUS_INITIALISED) == 0)
@@ -981,7 +983,7 @@ int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
 	if (flags == MB_SEEK_CUR)
 		position = file->seek + offset;
 	
-	if (position < 0 || position > file->length)
+	if (position < 0 || (uint32_t)position > file->length)
         return MICROBIT_INVALID_PARAMETER;
 
 	file->seek = position;
@@ -1284,31 +1286,32 @@ int MicroBitFileSystem::remove(char const * filename)
 	return MICROBIT_OK;
 }
 
+#ifdef MICROBIT_DBG
 void MicroBitFileSystem::debugFAT()
 {
 	int index = 0;
-	printf("------ FAT ------\n");
+	SERIAL_DEBUG->printf("------ FAT ------\n");
 	for (int j = 0; j < fileSystemSize / 16; j++)
 	{
 		for (int i = 0; i < 16; i++)
 		{
 			if (fileSystemTable[index] == MBFS_UNUSED)
-				printf(" ---- ");
+				SERIAL_DEBUG->printf(" ---- ");
 
 			else if (fileSystemTable[index] == MBFS_EOF)
-				printf(" _EOF ");
+				SERIAL_DEBUG->printf(" _EOF ");
 
 			else if (fileSystemTable[index] == MBFS_DELETED)
-				printf(" _XX_ ");
+				SERIAL_DEBUG->printf(" _XX_ ");
 			else
-				printf(" %.4X ", fileSystemTable[index]);
+				SERIAL_DEBUG->printf(" %.4X ", fileSystemTable[index]);
 
 			index++;
 		}
-		printf("\n");
+		SERIAL_DEBUG->printf("\n");
 	}
 
-	printf("\n\n");
+	SERIAL_DEBUG->printf("\n\n");
 }
 
 void MicroBitFileSystem::debugRootDirectory()
@@ -1349,19 +1352,18 @@ int MicroBitFileSystem::debugDirectory(char *name)
 
 void MicroBitFileSystem::debugDirectory(DirectoryEntry *directory)
 {
-	int index = 0;
 	int block = directory->first_block;
 	Directory *dir;
 
-	char *STATUS, *NAME, *TYPE;
+	const char *STATUS, *NAME, *TYPE;
 
-	printf("--- DIRECTORY: %s ---\n", directory->file_name);
+	SERIAL_DEBUG->printf("--- DIRECTORY: %s ---\n", directory->file_name);
 
 	while (block != MBFS_EOF)
 	{
 		dir = (Directory *)getBlock(block);
 
-		for (int i = 0; i < MBFS_BLOCK_SIZE / sizeof(DirectoryEntry); i++) {
+		for (uint16_t i = 0; i < MBFS_BLOCK_SIZE / sizeof(DirectoryEntry); i++) {
 
 			STATUS = " ";
 			NAME = "<NONE>";
@@ -1393,12 +1395,12 @@ void MicroBitFileSystem::debugDirectory(DirectoryEntry *directory)
 				TYPE = "<NONE>";
 			}
 
-			printf("  %s [type: %s] [status: %s] [length: %d] [start: %.4X]\n", NAME, TYPE, STATUS, dir->entry[i].length, dir->entry[i].first_block);
+			SERIAL_DEBUG->printf("  %s [type: %s] [status: %s] [length: %d] [start: %.4X]\n", NAME, TYPE, STATUS, (int)dir->entry[i].length, (int)dir->entry[i].first_block);
 		}
 
 		block = getNextFileBlock(block);
 	}
 
-	printf("\n\n");
-
+	SERIAL_DEBUG->printf("\n\n");
 }
+#endif

@@ -77,6 +77,18 @@ DEALINGS IN THE SOFTWARE.
 #define PAGE_SIZE			1024
 #endif
 
+// Defines where in memory persistent data is stored.
+#ifndef KEY_VALUE_STORE_PAGE
+#define KEY_VALUE_STORE_PAGE	    (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))	
+#endif
+
+#ifndef BLE_BOND_DATA_PAGE 
+#define BLE_BOND_DATA_PAGE          (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
+#endif
+
+#ifndef DEFAULT_SCRATCH_PAGE
+#define DEFAULT_SCRATCH_PAGE	    (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
+#endif
 // Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
 // reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
 // i.e. panic() will no longer be triggered on memory full conditions.
@@ -365,7 +377,7 @@ DEALINGS IN THE SOFTWARE.
 // n.b. This also disables the user serial port 'uBit.serial'.
 // Set '1' to enable.
 #ifndef MICROBIT_DBG
-#define MICROBIT_DBG                            0
+#define MICROBIT_DBG                            1
 #endif
 
 // Enable this to receive diagnostic messages from the heap allocator via the USB serial interface.

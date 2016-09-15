@@ -1,7 +1,7 @@
 #ifndef MICROBIT_FLASH_H_
 #define MICROBIT_FLASH_H_
 
-#include <stdint.h>
+#include <mbed.h>
 
 #define DEFAULT_SCRATCH_ADDR 0x3B000
 #define PAGE_SIZE 1024
@@ -89,8 +89,8 @@ class MicroBitFlash
       * flash.flash_write((uint8_t*)0x38000, &word, sizeof(word))
       * @endcode
       */
-    int flash_write(uint8_t* address, uint8_t* buffer, int length, 
-                    uint8_t* scratch_addr);
+    int flash_write(void* address, void* buffer, int length, 
+                    void* scratch_addr = NULL);
 
     /**
       * Set bytes in [address, address+length] to byte.
@@ -109,7 +109,7 @@ class MicroBitFlash
       * @endcode
       */
     int flash_memset(uint8_t* address, uint8_t byte, int length, 
-                     uint8_t* scratch_addr);
+                     uint8_t* scratch_addr = NULL);
 
     /**
       * Erase bytes in memory, from set address.
@@ -126,7 +126,7 @@ class MicroBitFlash
       * @endcode
       */
     int flash_erase_mem(uint8_t* address, int length,
-                        uint8_t* scratch_addr);
+                        uint8_t* scratch_addr = NULL);
 
     /**
       * Erase an entire page.
