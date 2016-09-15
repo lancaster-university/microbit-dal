@@ -51,9 +51,15 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_ID_IO_P5               12          //COL2 (ANALOG/DIGITAL)
 #define MICROBIT_ID_IO_P6               13          //ROW2
 #define MICROBIT_ID_IO_P7               14          //ROW1
+#define MICROBIT_ID_IO_P8               15          //PIN 18
 #define MICROBIT_ID_IO_P9               16          //ROW3
 #define MICROBIT_ID_IO_P10              17          //COL3 (ANALOG/DIGITAL)
 #define MICROBIT_ID_IO_P11              18          //BTN_B
+#define MICROBIT_ID_IO_P12              19          //PIN 20
+#define MICROBIT_ID_IO_P13              20          //SCK
+#define MICROBIT_ID_IO_P14              21          //MISO
+#define MICROBIT_ID_IO_P15              22          //MOSI
+#define MICROBIT_ID_IO_P16              23          //PIN 16
 #define MICROBIT_ID_IO_P19              24          //SCL
 #define MICROBIT_ID_IO_P20              25          //SDA
 
