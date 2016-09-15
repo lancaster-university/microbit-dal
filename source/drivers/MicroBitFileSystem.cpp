@@ -189,7 +189,7 @@ int MicroBitFileSystem::init(uint32_t flashStart, int flashPages)
 		flashStart = (uint32_t) fs_mem;
 #else
 		flashStart = (uint32_t)&__etext + ((uint32_t)&__data_end__ - (uint32_t)&__data_start__);
-		flashStart = ((uint32_t)flashStart & ~0x3FF) + PAGE_SIZE;
+		flashStart = ((uint32_t)flashStart & ~(PAGE_SIZE-1)) + PAGE_SIZE;
 #endif
 	}
 
@@ -238,11 +238,11 @@ int MicroBitFileSystem::load()
 	}
 
 	// Check for a valid signature at the start of the root directory
-	DirectoryEntry *root = (DirectoryEntry *) getBlock(rootOffset);
-	if (strcmp(root->file_name, MBFS_MAGIC) != 0)
-		return MICROBIT_NO_DATA;
+    DirectoryEntry *root = (DirectoryEntry *) getBlock(rootOffset);
+    if (strcmp(root->file_name, MBFS_MAGIC) != 0)
+        return MICROBIT_NO_DATA;
 
-	// We have a valid File System. Load the data...
+    rootDirectory = root;
 	fileSystemSize = root->length;
 	fileSystemTableSize = calculateFileTableSize();
 
