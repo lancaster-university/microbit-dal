@@ -72,6 +72,11 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_HEAP_END                       (CORTEX_M0_STACK_BASE - MICROBIT_STACK_SIZE)
 #endif
 
+// Defines the size of a physical FLASH page in RAM.
+#ifndef PAGE_SIZE
+#define PAGE_SIZE			1024
+#endif
+
 // Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
 // reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
 // i.e. panic() will no longer be triggered on memory full conditions.
@@ -318,6 +323,16 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_DEFAULT_SERIAL_MODE            SYNC_SLEEP
 #endif
 
+//
+// File System configuration defaults
+//
+#ifndef MBFS_BLOCK_SIZE		
+#define MBFS_BLOCK_SIZE		256
+#endif
+
+#ifndef MBFS_CACHE_SIZE
+#define MBFS_CACHE_SIZE		0
+#endif
 
 //
 // I/O Options
