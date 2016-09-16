@@ -1,3 +1,4 @@
+#include "MicroBitConfig.h"
 #include "MicroBitFlash.h"
 #include "mbed.h"                   // NVIC
 
@@ -42,7 +43,6 @@ int MicroBitFlash::need_erase(uint8_t* source, uint8_t* flash_addr, int len)
   */
 void MicroBitFlash::erase_page(uint32_t* pg_addr) 
 {
-
     // Turn on flash erase enable and wait until the NVMC is ready:
     NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Een);
     while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
@@ -172,12 +172,6 @@ int MicroBitFlash::flash_write_mem(uint8_t* address, uint8_t* from_buffer,
             this->flash_burn(pgAddr + (i/4), &writeWord, 1);
             writeWord = 0;
         }
-    }
-
-    // If the scratch page was used, reset it to 0xFF.
-    if(erase) 
-    {
-        this->erase_page((uint32_t*)scratch_addr);
     }
 
     return 1;

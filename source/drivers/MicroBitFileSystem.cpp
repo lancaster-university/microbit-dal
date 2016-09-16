@@ -124,7 +124,8 @@ uint32_t* MicroBitFileSystem::getFreePage()
 		return address;
 	}
 
-	// Nothing available at all. 
+	// Nothing available at all. Use the default.
+	flash.erase_page(defaultScratchPage);
 	return defaultScratchPage;
 }
 
@@ -532,9 +533,6 @@ int MicroBitFileSystem::recycleBlock(uint16_t block, int type)
 	flash.erase_page(page);
 	flash.flash_write(page, scratch, PAGE_SIZE);
 
-	// Recycle the scratch page for later use.
-	flash.erase_page(scratch);
-
 	return MICROBIT_OK;
 }
 
@@ -908,7 +906,7 @@ int MicroBitFileSystem::close(int fd)
 		d.length = file->length;
 
 		// Do some optimising to reduce FLASH churn if this is the first write to a file. No need then to create a new dirent...
-		if (file->dirent->flags & MBFS_DIRECTORY_ENTRY_NEW)
+		if (file->dirent->flags == MBFS_DIRECTORY_ENTRY_NEW)
 		{
 			d.flags = MBFS_DIRECTORY_ENTRY_VALID;
 			flash.flash_write(file->dirent, &d, sizeof(DirectoryEntry));
@@ -1140,7 +1138,7 @@ int MicroBitFileSystem::writeBuffer(FileDescriptor *file, uint8_t *buffer, int s
 		segmentLength = min(size - bytesCopied, MBFS_BLOCK_SIZE - offset);
 
 		if (segmentLength != 0)
-			flash.flash_write(writePointer, readPointer, segmentLength);
+			flash.flash_write(writePointer, readPointer, segmentLength, file->seek + bytesCopied < file->length ? getFreePage() : NULL);
 
 		offset += segmentLength;
 		bytesCopied += segmentLength;
@@ -1290,25 +1288,29 @@ int MicroBitFileSystem::remove(char const * filename)
 void MicroBitFileSystem::debugFAT()
 {
 	int index = 0;
+    int col = 0;
 	SERIAL_DEBUG->printf("------ FAT ------\n");
-	for (int j = 0; j < fileSystemSize / 16; j++)
-	{
-		for (int i = 0; i < 16; i++)
-		{
-			if (fileSystemTable[index] == MBFS_UNUSED)
-				SERIAL_DEBUG->printf(" ---- ");
+    while(index < fileSystemSize)
+    {
+        if (fileSystemTable[index] == MBFS_UNUSED)
+            SERIAL_DEBUG->printf(" ---- ");
 
-			else if (fileSystemTable[index] == MBFS_EOF)
-				SERIAL_DEBUG->printf(" _EOF ");
+        else if (fileSystemTable[index] == MBFS_EOF)
+            SERIAL_DEBUG->printf(" _EOF ");
 
-			else if (fileSystemTable[index] == MBFS_DELETED)
-				SERIAL_DEBUG->printf(" _XX_ ");
-			else
-				SERIAL_DEBUG->printf(" %.4X ", fileSystemTable[index]);
+        else if (fileSystemTable[index] == MBFS_DELETED)
+            SERIAL_DEBUG->printf(" _XX_ ");
+        else
+            SERIAL_DEBUG->printf(" %.4X ", fileSystemTable[index]);
 
-			index++;
+        index++;
+        col++;
+
+        if (col == 16)
+        {
+            col = 0;
+	    	SERIAL_DEBUG->printf("\n");
 		}
-		SERIAL_DEBUG->printf("\n");
 	}
 
 	SERIAL_DEBUG->printf("\n\n");
