@@ -54,23 +54,10 @@ int MicroBitAccelerometer::configure()
     pc.baud(115200);
 	//    pc.printf("RUN BMX055 start\r\n");
 
-    char    cmd;
-    char v;
-    cmd    = BMX055_GYRO_WHOAMI;
     id =    BMX055_ACC_ADDRESS<<1;
     wait_ms(100);
 
-    /*    while (1) {
     i2c.start();
-    i2c.write(id, &cmd, 1);
-    wait_ms(100);
-    cmd    = BMX055_GYRO_WHOAMI;
-    i2c.write( id, &cmd, 1 );
-    i2c.read( id, &v, 1 );
-    } */
-
-    i2c.start();
-    v = readByte(BMX055_ACC_ADDRESS, BMX055_ACC_WHOAMI);
     //        pc.printf("id = %x\r\n",v);
     //        pc.printf("address = %x\r\n",address);
    
@@ -324,7 +311,6 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
 int MicroBitAccelerometer::whoAmI()
 {
     uint8_t data;
-    int result;
 
     /*    result = readCommand(BMX055_ACC_WHOAMI, &data, 1);
     if (result !=0)
@@ -361,9 +347,7 @@ int MicroBitAccelerometer::updateSample()
     if(!int1)
     {
 	    //	    pc.printf("data ready\r\n");
-        int8_t data[6];
 	int16_t ndata[3];
-        int result;
 	readAccelData((int16_t *) ndata);  // Read the x/y/z adc values
 
 	// Now we'll calculate the accleration value into actual g's
