@@ -35,12 +35,12 @@ DEALINGS IN THE SOFTWARE.
 /**
   * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
   *
-  * The nrf51822 RADIO module supports a number of proprietary modes of operation oher than the typical BLE usage.
+  * The nrf51822 RADIO module supports a number of proprietary modes of operation in addition to the typical BLE usage.
   * This class uses one of these modes to enable simple, point to multipoint communication directly between micro:bits.
   *
   * TODO: The protocols implemented here do not currently perform any significant form of energy management,
   * which means that they will consume far more energy than their BLE equivalent. Later versions of the protocol
-  * should look to address this through energy efficient broadcast techbiques / sleep scheduling. In particular, the GLOSSY
+  * should look to address this through energy efficient broadcast techniques / sleep scheduling. In particular, the GLOSSY
   * approach to efficient rebroadcast and network synchronisation would likely provide an effective future step.
   *
   * TODO: Meshing should also be considered - again a GLOSSY approach may be effective here, and highly complementary to

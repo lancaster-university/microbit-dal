@@ -32,11 +32,13 @@ DEALINGS IN THE SOFTWARE.
 
 #define MICROBIT_IO_PIN_SERVICE_PINCOUNT       19
 #define MICROBIT_IO_PIN_SERVICE_DATA_SIZE      10
+#define MICROBIT_PWM_PIN_SERVICE_DATA_SIZE     2
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitIOPinServiceUUID[];
 extern const uint8_t  MicroBitIOPinServiceADConfigurationUUID[];
 extern const uint8_t  MicroBitIOPinServiceIOConfigurationUUID[];
+extern const uint8_t  MicroBitIOPinServicePWMControlUUID[];
 extern const uint8_t  MicroBitIOPinServiceDataUUID[];
 extern MicroBitPin * const MicroBitIOPins[];
 
@@ -48,6 +50,16 @@ struct IOData
     uint8_t     pin;
     uint8_t     value;
 };
+
+/**
+  * PWM control type definition, as used to set PWM properties of one of more conpatible pins over BLE
+  */
+struct IOPWMData
+{
+    uint8_t     pin;
+    uint16_t    value;
+    uint32_t    period;
+} __attribute__((packed));
 
 /**
   * Class definition for the custom MicroBit IOPin Service.
@@ -128,6 +140,7 @@ class MicroBitIOPinService : public MicroBitComponent
     // memory for our 8 bit control characteristics.
     uint32_t            ioPinServiceADCharacteristicBuffer;
     uint32_t            ioPinServiceIOCharacteristicBuffer;
+    IOPWMData           ioPinServicePWMCharacteristicBuffer[MICROBIT_PWM_PIN_SERVICE_DATA_SIZE];
     IOData              ioPinServiceDataCharacteristicBuffer[MICROBIT_IO_PIN_SERVICE_DATA_SIZE];
 
     // Historic information about our pin data data.
@@ -136,8 +149,8 @@ class MicroBitIOPinService : public MicroBitComponent
     // Handles to access each characteristic when they are held by Soft Device.
     GattAttribute::Handle_t ioPinServiceADCharacteristicHandle;
     GattAttribute::Handle_t ioPinServiceIOCharacteristicHandle;
+    GattAttribute::Handle_t ioPinServicePWMCharacteristicHandle;
     GattCharacteristic *ioPinServiceDataCharacteristic;
 };
-
 
 #endif

@@ -230,9 +230,10 @@ int microbit_create_nested_heap(float ratio)
 }
 
 /**
-  * Attempt to allocate a given amount of memory from any of our configured heap areas.
+  * Attempt to allocate a given amount of memory from a given heap area.
   *
   * @param size The amount of memory, in bytes, to allocate.
+  * @param heap The heap to allocate memory from.
   *
   * @return A pointer to the allocated memory, or NULL if insufficient memory is available.
   */
@@ -320,9 +321,11 @@ void *microbit_malloc(size_t size, HeapDefinition &heap)
 }
 
 /**
-  * Release a given area of memory from the heap.
+  * Attempt to allocate a given amount of memory from any of our configured heap areas.
   *
-  * @param mem The memory area to release.
+  * @param size The amount of memory, in bytes, to allocate.
+  *
+  * @return A pointer to the allocated memory, or NULL if insufficient memory is available.
   */
 void *microbit_malloc(size_t size)
 {

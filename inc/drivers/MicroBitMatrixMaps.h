@@ -70,6 +70,9 @@ struct MatrixMap
  */
 #define MICROBIT_DISPLAY_WIDTH                  5
 #define MICROBIT_DISPLAY_HEIGHT                 5
+#define MICROBIT_DISPLAY_ROW1                   p13
+#define MICROBIT_DISPLAY_COL1                   p4
+
 
 #if MICROBIT_DISPLAY_TYPE == MICROBUG_REFERENCE_DEVICE
 
@@ -149,8 +152,8 @@ const MatrixMap microbitMatrixMap =
     MICROBIT_DISPLAY_HEIGHT,
     MICROBIT_DISPLAY_ROW_COUNT,
     MICROBIT_DISPLAY_COLUMN_COUNT,
-    ROW1,
-    COL1,
+    MICROBIT_DISPLAY_ROW1,
+    MICROBIT_DISPLAY_COL1,
     microbitDisplayMap
 };
 
