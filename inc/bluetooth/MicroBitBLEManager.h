@@ -197,6 +197,18 @@ class MicroBitBLEManager : MicroBitComponent
 	 */
 	void idleTick();
 
+	/**
+	* Stops any currently running BLE advertisements
+	*/
+	void stopAdvertise();
+
+	/**
+	* Transmits a physical web url
+	* @param url: the url to transmit. Must be no longer than the supported physical web url length
+	* @param callibratedPower: the calibrated to transmit at
+	*/
+    	void advertisePhysicalWebUrl(char* url, uint8_t callibratedPower);
+
     private:
 
 	/**
