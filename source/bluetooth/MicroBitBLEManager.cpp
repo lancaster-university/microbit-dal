@@ -485,7 +485,7 @@ void MicroBitBLEManager::stopAdvertising()
 * @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
 * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
 * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
-* @param internval: the advertising interval of the beacon
+* @param interval: the advertising interval of the beacon
 */
 void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, int8_t calibratedPower, uint16_t interval)
 {
