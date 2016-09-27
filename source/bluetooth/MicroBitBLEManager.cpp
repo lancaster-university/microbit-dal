@@ -64,12 +64,12 @@ const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
 const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 
-#if CONFIG_ENABLED(MICROBIT_BLE_PHYSICAL_WEB)
-const char* PWEB_URL_PREFIXES[] = { "http://www.", "https://www.", "http://", "https://" };
-const size_t PWEB_URL_PREFIXES_LENGTH = sizeof(PWEB_URL_PREFIXES) / sizeof(char*);
-const char* PWEB_URL_SUFFIXES[] = { ".com/", ".org/", ".edu/", ".net/", ".info/", ".biz/", ".gov/", ".com", ".org", ".edu", ".net", ".info", ".biz", ".gov" };
-const size_t PWEB_URL_SUFFIXES_LENGTH = sizeof(PWEB_URL_SUFFIXES) / sizeof(char*);
-const int PWEB_URL_MAX_LENGTH = 18;
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
+const char* EDDYSTONE_URL_PREFIXES[] = { "http://www.", "https://www.", "http://", "https://" };
+const size_t EDDYSTONE_URL_PREFIXES_LENGTH = sizeof(EDDYSTONE_URL_PREFIXES) / sizeof(char*);
+const char* EDDYSTONE_URL_SUFFIXES[] = { ".com/", ".org/", ".edu/", ".net/", ".info/", ".biz/", ".gov/", ".com", ".org", ".edu", ".net", ".info", ".biz", ".gov" };
+const size_t EDDYSTONE_URL_SUFFIXES_LENGTH = sizeof(EDDYSTONE_URL_SUFFIXES) / sizeof(char*);
+const int EDDYSTONE_URL_MAX_LENGTH = 18;
 const uint8_t EDDYSTONE_UUID[] = {0xAA, 0xFE};
 const uint8_t EDDYSTONE_URL_FRAME_TYPE = 0x10;
 #endif
@@ -478,27 +478,27 @@ void MicroBitBLEManager::stopAdvertising()
     ble->gap().stopAdvertising();
 }
 
-#if CONFIG_ENABLED(MICROBIT_BLE_PHYSICAL_WEB)
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 /**
-* Transmits a physical web url
-* @param url: the url to transmit. Must be no longer than the supported physical web url length
+* Transmits an Eddystone url
+* @param url: the url to transmit. Must be no longer than the supported eddystone url length
 * @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
 * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
 * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
 * @param interval: the advertising interval of the beacon
 */
-void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, int8_t calibratedPower, uint16_t interval)
+void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower, uint16_t interval)
 {
     int urlDataLength = 0;
-    char urlData[PWEB_URL_MAX_LENGTH];
-    memset(urlData, 0, PWEB_URL_MAX_LENGTH);
+    char urlData[EDDYSTONE_URL_MAX_LENGTH];
+    memset(urlData, 0, EDDYSTONE_URL_MAX_LENGTH);
 
     if ((url == NULL) || (strlen(url) == 0)) { return; }
 
     // Prefix
-    for (size_t i = 0; i < PWEB_URL_PREFIXES_LENGTH; i++) {
-        size_t prefixLen = strlen(PWEB_URL_PREFIXES[i]);
-        if (strncmp(url, PWEB_URL_PREFIXES[i], prefixLen) == 0) {
+    for (size_t i = 0; i < EDDYSTONE_URL_PREFIXES_LENGTH; i++) {
+        size_t prefixLen = strlen(EDDYSTONE_URL_PREFIXES[i]);
+        if (strncmp(url, EDDYSTONE_URL_PREFIXES[i], prefixLen) == 0) {
             urlData[urlDataLength++] = i;
             url+= prefixLen;
             break;
@@ -506,11 +506,11 @@ void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, int8_t calibratedPow
     }
 
     // Suffix
-    while (*url && (urlDataLength < PWEB_URL_MAX_LENGTH)) {
+    while (*url && (urlDataLength < EDDYSTONE_URL_MAX_LENGTH)) {
         size_t i;
-        for (i = 0; i < PWEB_URL_SUFFIXES_LENGTH; i++) {
-            size_t suffixLen = strlen(PWEB_URL_SUFFIXES[i]);
-            if (strncmp(url, PWEB_URL_SUFFIXES[i], suffixLen) == 0) {
+        for (i = 0; i < EDDYSTONE_URL_SUFFIXES_LENGTH; i++) {
+            size_t suffixLen = strlen(EDDYSTONE_URL_SUFFIXES[i]);
+            if (strncmp(url, EDDYSTONE_URL_SUFFIXES[i], suffixLen) == 0) {
                 urlData[urlDataLength++] = i;
                 url+= suffixLen;
                 break;
@@ -518,13 +518,13 @@ void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, int8_t calibratedPow
         }
 
         // Catch the default case where the suffix doesn't match a preset ones
-        if (i == PWEB_URL_SUFFIXES_LENGTH) {
+        if (i == EDDYSTONE_URL_SUFFIXES_LENGTH) {
             urlData[urlDataLength++] = *url;
             ++url;
         }
     }
  
-    uint8_t rawFrame[PWEB_URL_MAX_LENGTH+4];
+    uint8_t rawFrame[EDDYSTONE_URL_MAX_LENGTH+4];
     size_t index = 0;
     rawFrame[index++] = EDDYSTONE_UUID[0];
     rawFrame[index++] = EDDYSTONE_UUID[1];
@@ -547,12 +547,12 @@ void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, int8_t calibratedPow
 }
 
 /**
-* Transmits a physical web url, but accepts a ManagedString as a url. For more info see
-* advertisePhysicalWebUrl(char* url, uint8_t calibratedPower, uint16_t interval)
+* Transmits a eddystone url, but accepts a ManagedString as a url. For more info see
+* advertiseEddystoneUrl(char* url, int8_t calibratedPower, uint16_t interval)
 */
-void advertisePhysicalWebUrl(ManagedString url, int8_t calibratedPower, uint16_t interval)
+void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, uint16_t interval)
 {
-    advertisePhysicalWebUrl((char *)url.toCharArray(), calibratedPower, interval);
+    advertiseEddystoneUrl((char *)url.toCharArray(), calibratedPower, interval);
 }
 #endif
 

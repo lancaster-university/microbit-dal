@@ -240,8 +240,8 @@ DEALINGS IN THE SOFTWARE.
 // Enable/Disable BLE Service: PhysicalWeb
 // This enables the physical web apis
 // Set '1' to enable.
-#ifndef MICROBIT_BLE_PHYSICAL_WEB
-#define MICROBIT_BLE_PHYSICAL_WEB                0
+#ifndef MICROBIT_BLE_EDDYSTONE_URL
+#define MICROBIT_BLE_EDDYSTONE_URL               0
 #endif
 
 // Enable/Disable BLE Service: MicroBitEventService

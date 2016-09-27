@@ -71,7 +71,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_MAXIMUM_BONDS              4
 #define MICROBIT_BLE_ENABLE_BONDING 	        true
 
-#define MICROBIT_BLE_PW_ADV_INTERVAL            400
+#define MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL            400
 
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
@@ -203,22 +203,22 @@ class MicroBitBLEManager : MicroBitComponent
 	* Stops any currently running BLE advertisements
 	*/
 	void stopAdvertising();
-#if CONFIG_ENABLED(MICROBIT_BLE_PHYSICAL_WEB)
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 	/**
-	* Transmits a physical web url
-	* @param url: the url to transmit. Must be no longer than the supported physical web url length
+	* Transmits an Eddystone url
+	* @param url: the url to transmit. Must be no longer than the supported eddystone url length
 	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
         * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
         * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
         * @param interval: the advertising interval of the beacon
 	*/
-    	void advertisePhysicalWebUrl(char* url, int8_t calibratedPower, uint16_t interval = MICROBIT_BLE_PW_ADV_INTERVAL);
+    	void advertiseEddystoneUrl(char* url, int8_t calibratedPower, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
 
         /**
-        * Transmits a physical web url, but accepts a ManagedString as a url. For more info see
-        * advertisePhysicalWebUrl(char* url, int8_t calibratedPower, uint16_t interval)
+        * Transmits a eddystone url, but accepts a ManagedString as a url. For more info see
+        * advertiseEddystoneUrl(char* url, int8_t calibratedPower, uint16_t interval)
         */
-    	void advertisePhysicalWebUrl(ManagedString url, int8_t calibratedPower, uint16_t interval = MICROBIT_BLE_PW_ADV_INTERVAL);
+    	void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
 #endif
 
     private:
