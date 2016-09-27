@@ -482,8 +482,9 @@ void MicroBitBLEManager::stopAdvertising()
 * @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
 * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
 * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
+* @param internval: the advertising interval of the beacon
 */
-void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, uint8_t calibratedPower)
+void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, int8_t calibratedPower, uint16_t interval)
 {
     int urlDataLength = 0;
     char urlData[PWEB_URL_MAX_LENGTH];
@@ -534,7 +535,7 @@ void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, uint8_t calibratedPo
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
     ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index+urlDataLength);
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble->setAdvertisingInterval(400);
+    ble->setAdvertisingInterval(interval);
   
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
     ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
@@ -544,11 +545,11 @@ void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, uint8_t calibratedPo
 
 /**
 * Transmits a physical web url, but accepts a ManagedString as a url. For more info see
-* advertisePhysicalWebUrl(char* url, uint8_t calibratedPower)
+* advertisePhysicalWebUrl(char* url, uint8_t calibratedPower, uint16_t interval)
 */
-void advertisePhysicalWebUrl(ManagedString url, uint8_t calibratedPower)
+void advertisePhysicalWebUrl(ManagedString url, int8_t calibratedPower, uint16_t interval)
 {
-    advertisePhysicalWebUrl((char *)url.toCharArray(), calibratedPower);
+    advertisePhysicalWebUrl((char *)url.toCharArray(), calibratedPower, interval);
 }
 
 /**

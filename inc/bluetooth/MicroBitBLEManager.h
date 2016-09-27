@@ -71,6 +71,8 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_MAXIMUM_BONDS              4
 #define MICROBIT_BLE_ENABLE_BONDING 	        true
 
+#define MICROBIT_BLE_PW_ADV_INTERVAL            400
+
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
 struct BLESysAttribute
@@ -208,14 +210,15 @@ class MicroBitBLEManager : MicroBitComponent
 	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
         * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
         * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
+        * @param internval: the advertising interval of the beacon
 	*/
-    	void advertisePhysicalWebUrl(char* url, uint8_t calibratedPower);
+    	void advertisePhysicalWebUrl(char* url, int8_t calibratedPower, uint16_t interval = MICROBIT_BLE_PW_ADV_INTERVAL);
 
         /**
         * Transmits a physical web url, but accepts a ManagedString as a url. For more info see
-        * advertisePhysicalWebUrl(char* url, uint8_t calibratedPower)
+        * advertisePhysicalWebUrl(char* url, int8_t calibratedPower, uint16_t interval)
         */
-    	void advertisePhysicalWebUrl(ManagedString url, uint8_t calibratedPower);
+    	void advertisePhysicalWebUrl(ManagedString url, int8_t calibratedPower, uint16_t internval = MICROBIT_BLE_PW_ADV_INTERVAL);
 
     private:
 
