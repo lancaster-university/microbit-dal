@@ -237,6 +237,13 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_DFU_SERVICE                1
 #endif
 
+// Enable/Disable BLE Service: PhysicalWeb
+// This enables the physical web apis
+// Set '1' to enable.
+#ifndef MICROBIT_BLE_PHYSICAL_WEB
+#define MICROBIT_BLE_PHYSICAL_WEB                0
+#endif
+
 // Enable/Disable BLE Service: MicroBitEventService
 // This allows routing of events from the micro:bit message bus over BLE.
 // Set '1' to enable.

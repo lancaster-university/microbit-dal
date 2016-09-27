@@ -203,7 +203,7 @@ class MicroBitBLEManager : MicroBitComponent
 	* Stops any currently running BLE advertisements
 	*/
 	void stopAdvertising();
-
+#if CONFIG_ENABLED(MICROBIT_BLE_PHYSICAL_WEB)
 	/**
 	* Transmits a physical web url
 	* @param url: the url to transmit. Must be no longer than the supported physical web url length
@@ -219,6 +219,7 @@ class MicroBitBLEManager : MicroBitComponent
         * advertisePhysicalWebUrl(char* url, int8_t calibratedPower, uint16_t interval)
         */
     	void advertisePhysicalWebUrl(ManagedString url, int8_t calibratedPower, uint16_t internval = MICROBIT_BLE_PW_ADV_INTERVAL);
+#endif
 
     private:
 
