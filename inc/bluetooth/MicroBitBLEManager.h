@@ -205,17 +205,17 @@ class MicroBitBLEManager : MicroBitComponent
 	/**
 	* Transmits a physical web url
 	* @param url: the url to transmit. Must be no longer than the supported physical web url length
-	* @param callibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-        * The value ranges from -100 to +20 to a resolution of 1. The callibrated power should be binary encoded.
+	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
+        * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
         * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
 	*/
-    	void advertisePhysicalWebUrl(char* url, uint8_t callibratedPower);
+    	void advertisePhysicalWebUrl(char* url, uint8_t calibratedPower);
 
         /**
         * Transmits a physical web url, but accepts a ManagedString as a url. For more info see
-        * advertisePhysicalWebUrl(char* url, uint8_t callibratedPower)
+        * advertisePhysicalWebUrl(char* url, uint8_t calibratedPower)
         */
-    	void advertisePhysicalWebUrl(ManagedString url, uint8_t callibratedPower);
+    	void advertisePhysicalWebUrl(ManagedString url, uint8_t calibratedPower);
 
     private:
 

@@ -479,11 +479,11 @@ void MicroBitBLEManager::stopAdvertising()
 /**
 * Transmits a physical web url
 * @param url: the url to transmit. Must be no longer than the supported physical web url length
-* @param callibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-* The value ranges from -100 to +20 to a resolution of 1. The callibrated power should be binary encoded.
+* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
+* The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
 * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
 */
-void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, uint8_t callibratedPower)
+void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, uint8_t calibratedPower)
 {
     int urlDataLength = 0;
     char urlData[PWEB_URL_MAX_LENGTH];
@@ -525,7 +525,7 @@ void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, uint8_t callibratedP
     rawFrame[index++] = EDDYSTONE_UUID[0];
     rawFrame[index++] = EDDYSTONE_UUID[1];
     rawFrame[index++] = EDDYSTONE_URL_FRAME_TYPE;
-    rawFrame[index++] = callibratedPower;
+    rawFrame[index++] = calibratedPower;
     memcpy(rawFrame + index, urlData, urlDataLength);
 
     ble->gap().stopAdvertising();
@@ -544,11 +544,11 @@ void MicroBitBLEManager::advertisePhysicalWebUrl(char* url, uint8_t callibratedP
 
 /**
 * Transmits a physical web url, but accepts a ManagedString as a url. For more info see
-* advertisePhysicalWebUrl(char* url, uint8_t callibratedPower)
+* advertisePhysicalWebUrl(char* url, uint8_t calibratedPower)
 */
-void advertisePhysicalWebUrl(ManagedString url, uint8_t callibratedPower)
+void advertisePhysicalWebUrl(ManagedString url, uint8_t calibratedPower)
 {
-    advertisePhysicalWebUrl((char *)url.toCharArray(), callibratedPower);
+    advertisePhysicalWebUrl((char *)url.toCharArray(), calibratedPower);
 }
 
 /**
