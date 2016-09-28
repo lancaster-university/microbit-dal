@@ -4,6 +4,10 @@ The MIT License (MIT)
 Copyright (c) 2016 British Broadcasting Corporation.
 This software is provided by Lancaster University by arrangement with the BBC.
 
+Modifications Copyright (c) 2016 Calliope GbR
+Modifications are provided by DELTA Systems (Georg Sommer) - Thomas Kern
+und Björn Eberhardt GbR by arrangement with Calliope GbR. 
+
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation
@@ -37,8 +41,9 @@ DEALINGS IN THE SOFTWARE.
 #define IO_STATUS_TOUCH_IN                  0x10        // Pin is a makey-makey style touch sensor
 #define IO_STATUS_EVENT_ON_EDGE             0x20        // Pin will generate events on pin change
 #define IO_STATUS_EVENT_PULSE_ON_EDGE       0x40        // Pin will generate events on pin change
+#define IO_STATUS_EVENTBUS_ENABLED          0x80        // Pin is will generate events on change
 
-//#defines for each edge connector pin
+//#defines for each edge connector pin - changed!
 #define MICROBIT_PIN_P0                     P0_3        //P0 is the left most pad (ANALOG/DIGITAL) used to be P0_3 on green board
 #define MICROBIT_PIN_P1                     P0_2        //P1 is the middle pad (ANALOG/DIGITAL)
 #define MICROBIT_PIN_P2                     P0_1        //P2 is the right most pad (ANALOG/DIGITAL) used to be P0_1 on green board
@@ -47,17 +52,19 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_PIN_P5                     P0_17       //BTN_A
 #define MICROBIT_PIN_P6                     P0_12       //COL9
 #define MICROBIT_PIN_P7                     P0_11       //COL8
-#define MICROBIT_PIN_P8                     P0_18       //PIN 18
 #define MICROBIT_PIN_P9                     P0_10       //COL7
 #define MICROBIT_PIN_P10                    P0_6        //COL3 (ANALOG/DIGITAL)
 #define MICROBIT_PIN_P11                    P0_26       //BTN_B
-#define MICROBIT_PIN_P12                    P0_20       //PIN 20
-#define MICROBIT_PIN_P13                    P0_23       //SCK
-#define MICROBIT_PIN_P14                    P0_22       //MISO
-#define MICROBIT_PIN_P15                    P0_21       //MOSI
-#define MICROBIT_PIN_P16                    P0_16       //PIN 16
-#define MICROBIT_PIN_P19                    P0_0        //SCL
-#define MICROBIT_PIN_P20                    P0_30       //SDA
+#define MICROBIT_PIN_P19                    P0_19       //SCL
+#define MICROBIT_PIN_P20                    P0_20       //SDA
+//CALLIOPE MINI pins added here
+#define CALLIOPE_PIN_P0                     P0_0        //pad P0 on Calliope Mini board
+#define CALLIOPE_PIN_P7                     P0_7        //LED control / IO pin  
+#define CALLIOPE_PIN_P8                     P0_8        //LED control / IO pin       
+#define CALLIOPE_PIN_P9                     P0_9        //LED control / IO pin 
+#define CALLIOPE_PIN_P13                    P0_13       //LED control / IO pin 
+#define CALLIOPE_PIN_P14                    P0_14       //LED control / IO pin 
+#define CALLIOPE_PIN_P15                    P0_15       //LED control / IO pin 
 
 #define MICROBIT_PIN_MAX_OUTPUT             1023
 
@@ -82,8 +89,9 @@ DEALINGS IN THE SOFTWARE.
 enum PinCapability{
     PIN_CAPABILITY_DIGITAL = 0x01,
     PIN_CAPABILITY_ANALOG = 0x02,
+    PIN_CAPABILITY_TOUCH = 0x04,
     PIN_CAPABILITY_AD = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG,
-    PIN_CAPABILITY_ALL = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG
+    PIN_CAPABILITY_ALL = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG | PIN_CAPABILITY_TOUCH
 };
 
 /**
