@@ -210,15 +210,16 @@ class MicroBitBLEManager : MicroBitComponent
 	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
         * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
         * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
+        * @param connectable: true to keep bluetooth connectable for other services, false otherwise
         * @param interval: the advertising interval of the beacon
 	*/
-    	void advertiseEddystoneUrl(char* url, int8_t calibratedPower, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
+    	void advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
 
         /**
         * Transmits a eddystone url, but accepts a ManagedString as a url. For more info see
-        * advertiseEddystoneUrl(char* url, int8_t calibratedPower, uint16_t interval)
+        * advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
         */
-    	void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
+    	void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
 #endif
 
     private:
