@@ -71,6 +71,8 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_MAXIMUM_BONDS              4
 #define MICROBIT_BLE_ENABLE_BONDING 	        true
 
+#define MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL            400
+
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
 struct BLESysAttribute
@@ -196,6 +198,29 @@ class MicroBitBLEManager : MicroBitComponent
      * We use this here purely to safely issue a disconnect operation after a pairing operation is complete.
 	 */
 	void idleTick();
+
+	/**
+	* Stops any currently running BLE advertisements
+	*/
+	void stopAdvertising();
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
+	/**
+	* Transmits an Eddystone url
+	* @param url: the url to transmit. Must be no longer than the supported eddystone url length
+	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
+        * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+        * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
+        * @param connectable: true to keep bluetooth connectable for other services, false otherwise
+        * @param interval: the advertising interval of the beacon
+	*/
+    	void advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
+
+        /**
+        * Transmits a eddystone url, but accepts a ManagedString as a url. For more info see
+        * advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
+        */
+    	void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
+#endif
 
     private:
 

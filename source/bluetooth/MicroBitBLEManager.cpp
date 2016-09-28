@@ -64,6 +64,16 @@ const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
 const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
+const char* EDDYSTONE_URL_PREFIXES[] = { "http://www.", "https://www.", "http://", "https://" };
+const size_t EDDYSTONE_URL_PREFIXES_LENGTH = sizeof(EDDYSTONE_URL_PREFIXES) / sizeof(char*);
+const char* EDDYSTONE_URL_SUFFIXES[] = { ".com/", ".org/", ".edu/", ".net/", ".info/", ".biz/", ".gov/", ".com", ".org", ".edu", ".net", ".info", ".biz", ".gov" };
+const size_t EDDYSTONE_URL_SUFFIXES_LENGTH = sizeof(EDDYSTONE_URL_SUFFIXES) / sizeof(char*);
+const int EDDYSTONE_URL_MAX_LENGTH = 18;
+const uint8_t EDDYSTONE_UUID[] = {0xAA, 0xFE};
+const uint8_t EDDYSTONE_URL_FRAME_TYPE = 0x10;
+#endif
+
 /*
  * Many of the mbed interfaces we need to use only support callbacks to plain C functions, rather than C++ methods.
  * So, we maintain a pointer to the MicroBitBLEManager that's in use. Ths way, we can still access resources on the micro:bit
@@ -459,6 +469,93 @@ void MicroBitBLEManager::idleTick()
 
     fiber_remove_idle_component(this);
 }
+
+/**
+* Stops any currently running BLE advertisements
+*/
+void MicroBitBLEManager::stopAdvertising()
+{
+    ble->gap().stopAdvertising();
+}
+
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
+/**
+* Transmits an Eddystone url
+* @param url: the url to transmit. Must be no longer than the supported eddystone url length
+* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
+* The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+* More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
+* @param connectable: true to keep bluetooth connectable for other services, false otherwise
+* @param interval: the advertising interval of the beacon
+*/
+void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
+{
+    int urlDataLength = 0;
+    char urlData[EDDYSTONE_URL_MAX_LENGTH];
+    memset(urlData, 0, EDDYSTONE_URL_MAX_LENGTH);
+
+    if ((url == NULL) || (strlen(url) == 0)) { return; }
+
+    // Prefix
+    for (size_t i = 0; i < EDDYSTONE_URL_PREFIXES_LENGTH; i++) {
+        size_t prefixLen = strlen(EDDYSTONE_URL_PREFIXES[i]);
+        if (strncmp(url, EDDYSTONE_URL_PREFIXES[i], prefixLen) == 0) {
+            urlData[urlDataLength++] = i;
+            url+= prefixLen;
+            break;
+        }
+    }
+
+    // Suffix
+    while (*url && (urlDataLength < EDDYSTONE_URL_MAX_LENGTH)) {
+        size_t i;
+        for (i = 0; i < EDDYSTONE_URL_SUFFIXES_LENGTH; i++) {
+            size_t suffixLen = strlen(EDDYSTONE_URL_SUFFIXES[i]);
+            if (strncmp(url, EDDYSTONE_URL_SUFFIXES[i], suffixLen) == 0) {
+                urlData[urlDataLength++] = i;
+                url+= suffixLen;
+                break;
+            }
+        }
+
+        // Catch the default case where the suffix doesn't match a preset ones
+        if (i == EDDYSTONE_URL_SUFFIXES_LENGTH) {
+            urlData[urlDataLength++] = *url;
+            ++url;
+        }
+    }
+ 
+    uint8_t rawFrame[EDDYSTONE_URL_MAX_LENGTH+4];
+    size_t index = 0;
+    rawFrame[index++] = EDDYSTONE_UUID[0];
+    rawFrame[index++] = EDDYSTONE_UUID[1];
+    rawFrame[index++] = EDDYSTONE_URL_FRAME_TYPE;
+    rawFrame[index++] = calibratedPower;
+    memcpy(rawFrame + index, urlData, urlDataLength);
+
+    ble->gap().stopAdvertising();
+    ble->clearAdvertisingPayload();
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index+urlDataLength);
+    ble->setAdvertisingType(connectable ? GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED : GapAdvertisingParams::ADV_NON_CONNECTABLE_UNDIRECTED);
+    ble->setAdvertisingInterval(interval);
+  
+#if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
+    ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
+#endif
+    ble->gap().startAdvertising();
+}
+
+/**
+* Transmits a eddystone url, but accepts a ManagedString as a url. For more info see
+* advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
+*/
+void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval)
+{
+    advertiseEddystoneUrl((char *)url.toCharArray(), calibratedPower, connectable, interval);
+}
+#endif
 
 /**
  * Enter pairing mode. This is mode is called to initiate pairing, and to enable FOTA programming
