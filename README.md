@@ -1,3 +1,5 @@
+> This is a fork of the original microbit-dal adapted for the [Calliope](http://calliope.cc) board.
+
 # microbit-dal
 
 The core set of drivers, mechanisms and types that make up the micro:bit runtime.
