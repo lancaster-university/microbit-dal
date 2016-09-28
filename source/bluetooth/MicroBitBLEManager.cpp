@@ -485,9 +485,10 @@ void MicroBitBLEManager::stopAdvertising()
 * @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
 * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
 * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
+* @param connectable: true to keep bluetooth connectable for other services, false otherwise
 * @param interval: the advertising interval of the beacon
 */
-void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower, uint16_t interval)
+void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
     int urlDataLength = 0;
     char urlData[EDDYSTONE_URL_MAX_LENGTH];
@@ -537,7 +538,7 @@ void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
     ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index+urlDataLength);
-    ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
+    ble->setAdvertisingType(connectable ? GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED : GapAdvertisingParams::ADV_NON_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(interval);
   
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
@@ -548,11 +549,11 @@ void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower
 
 /**
 * Transmits a eddystone url, but accepts a ManagedString as a url. For more info see
-* advertiseEddystoneUrl(char* url, int8_t calibratedPower, uint16_t interval)
+* advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
 */
-void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, uint16_t interval)
+void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
-    advertiseEddystoneUrl((char *)url.toCharArray(), calibratedPower, interval);
+    advertiseEddystoneUrl((char *)url.toCharArray(), calibratedPower, connectable, interval);
 }
 #endif
 
