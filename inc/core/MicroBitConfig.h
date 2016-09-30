@@ -74,20 +74,20 @@ DEALINGS IN THE SOFTWARE.
 
 // Defines the size of a physical FLASH page in RAM.
 #ifndef PAGE_SIZE
-#define PAGE_SIZE			1024
+#define PAGE_SIZE                               1024
 #endif
 
 // Defines where in memory persistent data is stored.
 #ifndef KEY_VALUE_STORE_PAGE
-#define KEY_VALUE_STORE_PAGE	    (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))	
+#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))	
 #endif
 
 #ifndef BLE_BOND_DATA_PAGE 
-#define BLE_BOND_DATA_PAGE          (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
+#define BLE_BOND_DATA_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
 #endif
 
 #ifndef DEFAULT_SCRATCH_PAGE
-#define DEFAULT_SCRATCH_PAGE	    (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
+#define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
 #endif
 // Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
 // reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
@@ -184,7 +184,7 @@ DEALINGS IN THE SOFTWARE.
 // Enable/Disable BLE during normal operation.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_ENABLED
-#define MICROBIT_BLE_ENABLED                    0
+#define MICROBIT_BLE_ENABLED                    1
 #endif
 
 // Enable/Disable BLE pairing mode mode at power up.
@@ -338,12 +338,22 @@ DEALINGS IN THE SOFTWARE.
 //
 // File System configuration defaults
 //
+
+//
+// Defines the logical block size for the file system.
+// Must be a factor of the physical PAGE_SIZE (ideally a power of two less).
+//
 #ifndef MBFS_BLOCK_SIZE		
 #define MBFS_BLOCK_SIZE		256
 #endif
 
+//
+// FileSystem writeback cache size, in bytes. Defines how many bytes will be stored
+// in RAM before being written back to FLASH. Set to zero to disable this feature.
+// Should be <= MBFS_BLOCK_SIZE.
+//
 #ifndef MBFS_CACHE_SIZE
-#define MBFS_CACHE_SIZE		0
+#define MBFS_CACHE_SIZE		16
 #endif
 
 //
@@ -377,7 +387,7 @@ DEALINGS IN THE SOFTWARE.
 // n.b. This also disables the user serial port 'uBit.serial'.
 // Set '1' to enable.
 #ifndef MICROBIT_DBG
-#define MICROBIT_DBG                            1
+#define MICROBIT_DBG                            0
 #endif
 
 // Enable this to receive diagnostic messages from the heap allocator via the USB serial interface.
