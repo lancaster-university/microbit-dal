@@ -325,6 +325,16 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_DEFAULT_SERIAL_MODE            SYNC_SLEEP
 #endif
 
+//
+// Storage options
+//
+
+// Address of last writable page in flash, used to calculate the number of pages
+// the file system will consume by default.
+#ifndef MBFS_LAST_PAGE_ADDR
+#define MBFS_LAST_PAGE_ADDR                     0x3AC00
+#endif
+
 
 //
 // I/O Options
