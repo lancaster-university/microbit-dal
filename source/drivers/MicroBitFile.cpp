@@ -209,43 +209,6 @@ int MicroBitFile::append(ManagedString s)
 }
 
 /**
-  * Seeks to the end of the file, and appends the given character to this MicroBitFile instance.
-  *
-  * @param c The character to write to this file.
-  */
-void MicroBitFile::operator+=(const char c)
-{
-    char s[1];
-
-    s[0] = c;
-
-    append(s, 1);
-}
-
-/**
-  * Seeks to the end of the file, and appends the given sequence of characters to this MicroBitFile instance.
-  *
-  * @param s The sequence of characters to write to this file.
-  *
-  */
-void MicroBitFile::operator+=(const char* s)
-{
-    int len = strlen(s);
-    append(s, len);
-}
-
-/**
-  * Seeks to the end of the file, and appends the given ManagedString to this MicroBitFile instance.
-  *
-  * @param s The ManagedString to write to this file.
-  *
-  */
-void MicroBitFile::operator+=(ManagedString& s)
-{
-    append(s);
-}
-
-/**
   * Returns the handle used by this MicroBitFile instance.
   *
   * @note This member function will also inform the user of any errors encountered
