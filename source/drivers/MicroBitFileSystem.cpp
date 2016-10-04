@@ -76,7 +76,8 @@ uint32_t* MicroBitFileSystem::getFreePage()
     uint16_t currentPage = getBlockNumber(getPage(lastBlockAllocated));
     uint16_t page = (currentPage + blocksPerPage) % fileSystemSize;
     uint16_t recyclablePage = 0;
-    // Walk aaround the file table, looking for a free page.
+
+    // Walk around the file table, looking for a free page.
     while (page != currentPage)
     {
         bool empty = true;

@@ -141,7 +141,7 @@ class MicroBitFileSystem
       * and code data finishes. This avoids having to allocate a fixed flash
       * region for builds even without MicroBitFileSystem. 
       *      
-      * This method checks if the file system already exists, and loads it it. 
+      * This method checks if the file system already exists, and loads it. 
       * If not, it will determines the optimal size of the file system, if necessary, and format the space
       *
       * @return MICROBIT_OK on success, or an error code.
@@ -211,7 +211,7 @@ class MicroBitFileSystem
     *
     * @param block the block to recycle.
     * @param type One of MBFS_BLOCK_TYPE_FILE, MBFS_BLOCK_TYPE_DIRECTORY, MBFS_BLOCK_TYPE_FILETABLE. 
-    * Erases and regenerates the given block, recycling and data marked for deletion.
+    * Erases and regenerates the given block, recycling any data marked for deletion.
     * @return MICROBIT_OK on success.
     */
     int recycleBlock(uint16_t block, int type = MBFS_BLOCK_TYPE_FILE);
