@@ -26,7 +26,7 @@ class MicroBitFile
       *
       * @param mode One of: READ, WRITE, READ_AND_WRITE. Defaults to READ_AND_WRITE.
       */
-    MicroBitFile(ManagedString fileName, int mode = READ_AND_WRITE);
+    MicroBitFile(ManagedString fileName, int mode = READ | WRITE | CREATE);
 
     /**
       * Seeks to a position in this MicroBitFile instance from the beginning of the file.
@@ -128,6 +128,14 @@ class MicroBitFile
       *         handle is invalid or this file was not opened in WRITE mode.
       */
     int append(ManagedString s);
+
+    /**
+     * Determines if this MicroBitFile instance refers to a valid, open file.
+     *
+     * @return true if this file is valid, false otherwise.
+     *
+     */
+    bool isValid();
 
     /**
       * Returns the handle used by this MicroBitFile instance.

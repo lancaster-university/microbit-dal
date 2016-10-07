@@ -19,7 +19,7 @@ MicroBitFile::MicroBitFile(ManagedString fileName, int mode)
     else
         fs = MicroBitFileSystem::defaultFileSystem;
 
-    fileHandle = fs->open(fileName.toCharArray(), mode | CREATE);
+    fileHandle = fs->open(fileName.toCharArray(), mode);
 }
 
 /**
@@ -206,6 +206,17 @@ int MicroBitFile::append(const char *bytes, int len)
 int MicroBitFile::append(ManagedString s)
 {
     return append(s.toCharArray(), s.length());
+}
+
+/**
+  * Determines if this MicroBitFile instance refers to a valid, open file.
+  *
+  * @return true if this file is valid, false otherwise.
+  *
+  */
+bool MicroBitFile::isValid()
+{
+    return fileHandle >= 0;
 }
 
 /**
