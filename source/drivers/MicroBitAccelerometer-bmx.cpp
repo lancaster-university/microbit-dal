@@ -39,7 +39,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
 
-Serial pc(USBTX, USBRX);
+//Serial pc(USBTX, USBRX);
 
 /**
   * Configures the accelerometer for G range and sample rate defined
@@ -51,7 +51,7 @@ Serial pc(USBTX, USBRX);
   */
 int MicroBitAccelerometer::configure()
 {
-    pc.baud(115200);
+    //pc.baud(115200);
 	//    pc.printf("RUN BMX055 start\r\n");
 
     id =    BMX055_ACC_ADDRESS<<1;
@@ -363,7 +363,7 @@ int MicroBitAccelerometer::updateSample()
         sample.y *= 8;
         sample.z *= 8; 
 	*/
-	pc.printf("x=%d y=%d\r\n",sample.x, sample.y);
+	//pc.printf("x=%d y=%d\r\n",sample.x, sample.y);
 #if CONFIG_ENABLED(USE_ACCEL_LSB)
         // Add in LSB values.
         sample.x += (data[1] / 64);
