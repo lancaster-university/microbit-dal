@@ -311,6 +311,17 @@ class MicroBitFileSystem
       */
     int writeBuffer(FileDescriptor *file, uint8_t* buffer, int length);
 
+
+    /**
+     * Determines if the given filename is a valid filename for use in MicroBitFileSystem. 
+     * valid filenames must be >0 characters in lenght, NULL temrinated and contain
+     * only printable characters.
+     *
+     * @param name The name of the file to test.
+     * @return true if the filename is valid, false otherwsie.
+     */
+    bool isValidFilename(const char *name);
+
     public:
 
     static MicroBitFileSystem *defaultFileSystem;
@@ -330,7 +341,7 @@ class MicroBitFileSystem
       * If a file is opened that doesn't exist, and MB_CREAT isn't passed,
       * an error is returned, otherwise the file is created.
       *
-      * @param filename name of the file to open, must be null terminated.
+      * @param filename name of the file to open, must contain only printable characters.
       * @param flags One or more of MB_READ, MB_WRITE or MB_CREAT. 
       * @return return the file handle,MICROBIT_NOT_SUPPORTED if the file system has
       *         not been initialised MICROBIT_INVALID_PARAMETER if the filename is

@@ -714,6 +714,7 @@ FileDescriptor* MicroBitFileSystem::getFileDescriptor(int fd, bool remove)
     return NULL;
 }
 
+
 /**
   * Creates a new directory with the given name and location
   *
@@ -730,7 +731,7 @@ int MicroBitFileSystem::createDirectory(char const *name)
         return MICROBIT_NOT_SUPPORTED;
 
     // Reject invalid filenames.
-    if (name == NULL || strlen(name) == 0)
+    if (!isValidFilename(name))
         return MICROBIT_INVALID_PARAMETER;
 
     // Determine the directory for this file.
@@ -764,7 +765,7 @@ int MicroBitFileSystem::createDirectory(char const *name)
   * If a file is opened that doesn't exist, and MB_CREAT isn't passed,
   * an error is returned, otherwise the file is created.
   *
-  * @param filename name of the file to open, must be null terminated.
+  * @param filename name of the file to open, must contian only printable characters.
   * @param flags One or more of MB_READ, MB_WRITE or MB_CREAT. 
   * @return return the file handle,MICROBIT_NOT_SUPPORTED if the file system has
   *         not been initialised MICROBIT_INVALID_PARAMETER if the filename is
@@ -779,17 +780,17 @@ int MicroBitFileSystem::createDirectory(char const *name)
   */
 int MicroBitFileSystem::open(char const * filename, uint32_t flags)
 {
-    FileDescriptor *file;            // File Descriptor of this file.
-    DirectoryEntry* directory;        // Directory holding this file.
-    DirectoryEntry* dirent;            // Entry in the direcoty of this file.
-    int id;                            // FileDescriptor id to be return to the caller.
+    FileDescriptor *file;               // File Descriptor of this file.
+    DirectoryEntry* directory;          // Directory holding this file.
+    DirectoryEntry* dirent;             // Entry in the direcoty of this file.
+    int id;                             // FileDescriptor id to be return to the caller.
 
     // Protect against accidental re-initialisation
     if ((status & MBFS_STATUS_INITIALISED) == 0)
         return MICROBIT_NOT_SUPPORTED;
 
     // Reject invalid filenames.
-    if (filename == NULL || strlen(filename) == 0)
+    if(!isValidFilename(filename))
         return MICROBIT_INVALID_PARAMETER;
 
     // Determine the directory for this file.
@@ -1191,6 +1192,26 @@ int MicroBitFileSystem::writeBuffer(FileDescriptor *file, uint8_t *buffer, int s
     file->seek += bytesCopied;
 
     return bytesCopied;
+}
+
+/**
+  * Determines if the given filename is a valid filename for use in MicroBitFileSystem. 
+  * valid filenames must be >0 characters in lenght, NULL temrinated and contain
+  * only printable characters.
+  *
+  * @param name The name of the file to test.
+  * @return true if the filename is valid, false otherwsie.
+  */
+bool MicroBitFileSystem::isValidFilename(const char *name)
+{
+    if (name == NULL || strlen(name) == 0)
+        return false;
+
+    for (unsigned int i=0; i<strlen(name); i++)
+        if(name[i] < 32 || name[i] > 126) 
+            return false;
+
+    return true;
 }
 
 
