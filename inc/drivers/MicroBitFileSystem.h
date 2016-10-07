@@ -346,6 +346,26 @@ class MicroBitFileSystem
     int open(char const * filename, uint32_t flags);
 
     /**
+     * Writes back all state associated with the given file to FLASH memory, 
+     * leaving the file open.
+     *
+     * @param fd file descriptor - obtained with open().
+     * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file system has not
+     *         been initialised, MICROBIT_INVALID_PARAMETER if the given file handle
+     *         is invalid.
+     *
+     * @code
+     * MicroBitFileSystem f();
+     * int fd = f.open("test.txt", MB_READ);
+     *
+     * ...
+     *
+     * f.flush(fd);
+     * @endcode
+     */
+    int flush(int fd);
+
+    /**
       * Close the specified file handle.
       * File handle resources are then made available for future open() calls.
       *

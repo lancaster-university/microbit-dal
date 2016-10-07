@@ -840,8 +840,8 @@ int MicroBitFileSystem::open(char const * filename, uint32_t flags)
     // Populate the FileDescriptor
     file->flags = (flags & ~(MB_CREAT));
     file->id = id;
-    file->seek = (flags & MB_APPEND) ? dirent->length : 0;
     file->length = dirent->flags == MBFS_DIRECTORY_ENTRY_NEW ? 0 : dirent->length;
+    file->seek = (flags & MB_APPEND) ? file->length : 0;
     file->dirent = dirent;
     file->directory = directory;
     file->cacheLength = 0;
@@ -856,14 +856,8 @@ int MicroBitFileSystem::open(char const * filename, uint32_t flags)
 
 
 /**
-  * Close the specified file handle.
-  * File handle resources are then made available for future open() calls.
-  *
-  * close() must be called at some point to ensure the filesize in the
-  * FT is synced with the cached value in the FD.
-  *
-  * @warning if close() is not called, the FT may not be correct,
-  * leading to data loss.
+  * Writes back all state associated with the given file to FLASH memory, 
+  * leaving the file open.
   *
   * @param fd file descriptor - obtained with open().
   * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file system has not
@@ -873,17 +867,19 @@ int MicroBitFileSystem::open(char const * filename, uint32_t flags)
   * @code
   * MicroBitFileSystem f();
   * int fd = f.open("test.txt", MB_READ);
-  * if(!f.close(fd))
-  *    print("error closing file.");
+  *
+  * ...
+  *
+  * f.flush(fd);
   * @endcode
   */
-int MicroBitFileSystem::close(int fd)
+int MicroBitFileSystem::flush(int fd)
 {
     // Protect against accidental re-initialisation
     if ((status & MBFS_STATUS_INITIALISED) == 0)
         return MICROBIT_NOT_SUPPORTED;
 
-    FileDescriptor *file = getFileDescriptor(fd, true);
+    FileDescriptor *file = getFileDescriptor(fd);
 
     // Ensure the file is open.
     if(file == NULL)
@@ -918,7 +914,44 @@ int MicroBitFileSystem::close(int fd)
         }
     }
 
-    delete file;
+    return MICROBIT_OK;
+}
+
+/**
+  * Close the specified file handle.
+  * File handle resources are then made available for future open() calls.
+  *
+  * close() must be called at some point to ensure the filesize in the
+  * FT is synced with the cached value in the FD.
+  *
+  * @warning if close() is not called, the FT may not be correct,
+  * leading to data loss.
+  *
+  * @param fd file descriptor - obtained with open().
+  * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file system has not
+  *         been initialised, MICROBIT_INVALID_PARAMETER if the given file handle
+  *         is invalid.
+  *
+  * @code
+  * MicroBitFileSystem f();
+  * int fd = f.open("test.txt", MB_READ);
+  * if(!f.close(fd))
+  *    print("error closing file.");
+  * @endcode
+  */
+int MicroBitFileSystem::close(int fd)
+{
+    // Firstly, ensure all unwritten data is flushed.
+    int r = flush(fd);
+
+    // If the flush called failed on validation, pass the error code onto the caller.
+    if (r != MICROBIT_OK)
+        return r;
+
+    // Remove the file descriptor from the list of open files, and free it.
+    // n.b. we know this is safe, as flush() validates this.
+    delete getFileDescriptor(fd, true);
+
     return MICROBIT_OK;
 }
 
