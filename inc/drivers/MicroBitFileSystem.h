@@ -120,19 +120,19 @@ class MicroBitFileSystem
     int    fileSystemSize;
 
     // Memory address of the start of the file system.
-    uint16_t* fileSystemTable = NULL;
+    uint16_t* fileSystemTable;
 
     // Size of the file table (blocks)
     uint16_t fileSystemTableSize;
 
     // Cache of the last block allocated. Used to enable round robin use of blocks.
-    uint16_t lastBlockAllocated = 0;
+    uint16_t lastBlockAllocated;
 
     // Reference to the root directory of the file system.
-    DirectoryEntry *rootDirectory = NULL;
+    DirectoryEntry *rootDirectory;
 
     // Chain of open files.
-    FileDescriptor *openFiles = NULL;
+    FileDescriptor *openFiles;
 
     /**
       * Initialize the flash storage system

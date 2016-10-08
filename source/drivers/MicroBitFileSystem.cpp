@@ -1,21 +1,9 @@
-//#ifdef SIMULATOR
-//#include "stdafx.h"
-//#include <string.h>
-//#include "malloc.h"
-
 #include "MicroBitConfig.h"
 #include "MicroBitFileSystem.h"
 #include "MicroBitFlash.h"
 #include "MicroBitStorage.h"        
 #include "MicroBitCompat.h"
 #include "ErrorNo.h"
-
-//
-// Symbols provided by the linker script.
-//
-extern uint32_t __data_end__;
-extern uint32_t __data_start__;
-extern uint32_t __etext;
 
 static uint32_t *defaultScratchPage = (uint32_t *)DEFAULT_SCRATCH_PAGE;
 
@@ -161,16 +149,22 @@ int MicroBitFileSystem::init(uint32_t flashStart, int flashPages)
     if (flashPages < 0)
         return MICROBIT_INVALID_PARAMETER;
 
+    // Zero initialise default parameters (mbed/ARMCC does not permit this is the class definition).
+    fileSystemTable = NULL;
+    lastBlockAllocated = 0;
+    rootDirectory = NULL;
+    openFiles = NULL;
+
     // If we have a zero length, then dynamically determine our geometry.
     if (flashStart == 0)
     {
         // Flash start is on the first page after the programmed ROM contents.
-        // This is: __etext (program code) + static data.
-        // Size of static data is calculated from __data_end__ and __data_start__
-        // (See the linker script)
+        // This is: __etext (program code) for GCC and Image$$RO$$Limit for ARMCC.
+        flashStart = FLASH_PROGRAM_END;
 
-        flashStart = (uint32_t)&__etext + ((uint32_t)&__data_end__ - (uint32_t)&__data_start__);
-        flashStart = ((uint32_t)flashStart & ~(PAGE_SIZE-1)) + PAGE_SIZE;
+        // Round up to the nearest free page.
+        if (flashStart % PAGE_SIZE != 0)
+            flashStart = ((uint32_t)flashStart & ~(PAGE_SIZE-1)) + PAGE_SIZE;
     }
 
     if (flashPages == 0)

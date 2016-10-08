@@ -89,6 +89,18 @@ DEALINGS IN THE SOFTWARE.
 #ifndef DEFAULT_SCRATCH_PAGE
 #define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
 #endif
+
+// Address of the end of the current program in FLASH memory.
+// This is recorded by the C/C++ linker, but the symbol name varies depending on which compiler is used.
+#if defined(__arm)
+extern uint32_t Image$$ER_IROM1$$RO$$Limit;
+#define FLASH_PROGRAM_END (uint32_t) (&Image$$ER_IROM1$$RO$$Limit)
+#else
+extern uint32_t __etext;
+#define FLASH_PROGRAM_END (uint32_t) (&__etext)
+#endif
+
+
 // Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
 // reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
 // i.e. panic() will no longer be triggered on memory full conditions.
