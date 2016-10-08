@@ -759,7 +759,7 @@ int MicroBitFileSystem::createDirectory(char const *name)
   * If a file is opened that doesn't exist, and MB_CREAT isn't passed,
   * an error is returned, otherwise the file is created.
   *
-  * @param filename name of the file to open, must contian only printable characters.
+  * @param filename name of the file to open, must contain only printable characters.
   * @param flags One or more of MB_READ, MB_WRITE or MB_CREAT. 
   * @return return the file handle,MICROBIT_NOT_SUPPORTED if the file system has
   *         not been initialised MICROBIT_INVALID_PARAMETER if the filename is

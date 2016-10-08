@@ -172,6 +172,15 @@ class MicroBitFile
     int close();
 
     /**
+     * Writes back all state associated with the given file to FLASH memory, 
+     * leaving the file open.
+     *
+     * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file system has not
+     *         been initialised or if this file is invalid.
+     */
+    int flush();
+
+    /**
       * Destructor for MicroBitFile. Implicitly closes the current file.
       */
     ~MicroBitFile();

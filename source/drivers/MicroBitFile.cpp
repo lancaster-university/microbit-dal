@@ -283,6 +283,21 @@ int MicroBitFile::close()
 }
 
 /**
+ * Writes back all state associated with the given file to FLASH memory, 
+ * leaving the file open.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file system has not
+ *         been initialised or if this file is invalid.
+ */
+int MicroBitFile::flush()
+{
+    if(fileHandle < 0)
+        return MICROBIT_NOT_SUPPORTED;
+
+    return MicroBitFileSystem::defaultFileSystem->flush(fileHandle);
+}
+
+/**
   * Destructor for MicroBitFile. Implicitly closes the current file.
   */
 MicroBitFile::~MicroBitFile()
