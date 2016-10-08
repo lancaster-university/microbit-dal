@@ -39,8 +39,12 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
 
-//Serial pc(USBTX, USBRX);
-
+#if CONFIG_ENABLED(MICROBIT_DBG)
+#  define BMX_DEBUG(...)  SERIAL_DEBUG->printf(__VA_ARGS__)
+#else
+#  define BMX_DEBUG(...)
+#  error "NO DEBUG ENABLED!"
+#endif
 /**
   * Configures the accelerometer for G range and sample rate defined
   * in this object. The nearest values are chosen to those defined
@@ -51,23 +55,22 @@ DEALINGS IN THE SOFTWARE.
   */
 int MicroBitAccelerometer::configure()
 {
-    //pc.baud(115200);
-	//    pc.printf("RUN BMX055 start\r\n");
+    BMX_DEBUG("RUN BMX055 start\r\n");
 
     id =    BMX055_ACC_ADDRESS<<1;
     wait_ms(100);
 
     i2c.start();
-    //        pc.printf("id = %x\r\n",v);
-    //        pc.printf("address = %x\r\n",address);
+    //        BMX_DEBUG("id = %x\r\n",v);
+    //        BMX_DEBUG("address = %x\r\n",address);
    
     
-    //    pc.printf("RUN BMX055 id found\r\n");
+    //    BMX_DEBUG("RUN BMX055 id found\r\n");
     // start with all sensors in default mode with all registers reset
     writeByte(BMX055_ACC_ADDRESS,  BMX055_ACC_BGW_SOFTRESET, 0xB6);  // reset accelerometer
     wait_ms(1000); // Wait for all registers to reset
 
-    //    pc.printf("RUN BMX055 after reset\r\n");
+    //    BMX_DEBUG("RUN BMX055 after reset\r\n");
     
     // Configure accelerometer
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_PMU_RANGE, Ascale & 0x0F); // Set accelerometer full range
@@ -153,6 +156,9 @@ int MicroBitAccelerometer::configure()
     }
     */    
     i2c.stop();
+
+    status |= MICROBIT_COMPONENT_RUNNING;
+
     return MICROBIT_OK;
 }
 
@@ -182,15 +188,15 @@ void MicroBitAccelerometer::readBytes(uint8_t id, uint8_t addr, uint8_t num, uin
 void MicroBitAccelerometer::readAccelData(int16_t * destination)
 {
     uint8_t rawData[6];  // x/y/z accel register data stored here
-    //    pc.printf("before read\r\n");
+    //    BMX_DEBUG("before read\r\n");
     readBytes(BMX055_ACC_ADDRESS, BMX055_ACC_D_X_LSB, 6, &rawData[0]);       // Read the six raw data registers into data array
-    //    pc.printf("after read\r\n");
+    //    BMX_DEBUG("after read\r\n");
     if((rawData[0] & 0x01) && (rawData[2] & 0x01) && (rawData[4] & 0x01)) {  // Check that all 3 axes have new data
         destination[0] = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]) >> 4;  // Turn the MSB and LSB into a signed 12-bit value
         destination[1] = (int16_t) (((int16_t)rawData[3] << 8) | rawData[2]) >> 4;
         destination[2] = (int16_t) (((int16_t)rawData[5] << 8) | rawData[4]) >> 4;
     }
-    //    pc.printf("after end %d %d\r\n", destination[0], destination[1]);
+    //    BMX_DEBUG("after end %d %d\r\n", destination[0], destination[1]);
 
 }
 
@@ -234,12 +240,12 @@ int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
     if (buffer == NULL || length <= 0 )
         return MICROBIT_INVALID_PARAMETER;
 
-    //    pc.printf("start write to address %x \r\n", address);
+    //    BMX_DEBUG("start write to address %x \r\n", address);
 
     result = i2c.write(address, (const char *)&reg, 1, true);
     if (result !=0)
         return MICROBIT_I2C_ERROR;
-    //    pc.printf("start read from  address %x \r\n", address);
+    //    BMX_DEBUG("start read from  address %x \r\n", address);
 
     result = i2c.read(address, (char *)buffer, length);
     if (result !=0)
@@ -267,8 +273,7 @@ int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
 MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address, uint16_t id) : sample(), int1(MICROBIT_PIN_ACCEL_DATA_READY), i2c(_i2c)
 {
 
-	//    pc.baud(115200);
-	//    pc.printf("Constructor\r\n");
+	//    BMX_DEBUG("Constructor\r\n");
 
     // Store our identifiers.
     this->id = id;
@@ -292,10 +297,6 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
     this->shake.impulse_3 = 1;
     this->shake.impulse_6 = 1;
     this->shake.impulse_8 = 1;
-
-    // Configure and enable the accelerometer.
-    //    if (this->configure() == MICROBIT_OK)
-    //        status |= MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
@@ -346,7 +347,7 @@ int MicroBitAccelerometer::updateSample()
     // n.b. Default is Active LO. Interrupt is cleared in data read.
     if(!int1)
     {
-	    //	    pc.printf("data ready\r\n");
+	    //	    BMX_DEBUG("data ready\r\n");
 	int16_t ndata[3];
 	readAccelData((int16_t *) ndata);  // Read the x/y/z adc values
 
@@ -357,13 +358,13 @@ int MicroBitAccelerometer::updateSample()
         sample.y = ndata[1];
         sample.z = ndata[2];
 
-	//	pc.printf("x=%d y=%d x=%d y=%d\r\n",data[0], data[1], data[2], data[3]);
+	//	BMX_DEBUG("x=%d y=%d x=%d y=%d\r\n",data[0], data[1], data[2], data[3]);
         // Normalize the data in the 0..1024 range.
 	/*	sample.x *= 8;
         sample.y *= 8;
         sample.z *= 8; 
 	*/
-	//pc.printf("x=%d y=%d\r\n",sample.x, sample.y);
+	BMX_DEBUG("x=%d y=%d\r\n",sample.x, sample.y);
 #if CONFIG_ENABLED(USE_ACCEL_LSB)
         // Add in LSB values.
         sample.x += (data[1] / 64);
@@ -385,7 +386,7 @@ int MicroBitAccelerometer::updateSample()
         // Indicate that a new sample is available
         MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
     } else {
-	    //	    	    pc.printf("data not ready\r\n");
+	    // BMX_DEBUG("data not ready\r\n");
     }
 
 
@@ -651,7 +652,7 @@ int MicroBitAccelerometer::getRange()
   */
 int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
 {
-	//	pc.printf("before\r\n");
+	//	BMX_DEBUG("before\r\n");
 	updateSample();
 
     switch (system)
