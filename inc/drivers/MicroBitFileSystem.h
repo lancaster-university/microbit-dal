@@ -6,7 +6,7 @@
 
 
 // Configuration options.
-#define MBFS_FILENAME_LENGTH		16		
+#define MBFS_FILENAME_LENGTH		16
 #define MBFS_MAGIC					"MICROBIT_FS_1_0"
 
 // open() flags.
@@ -39,7 +39,6 @@
 #define MBFS_BLOCK_TYPE_FILE			1
 #define MBFS_BLOCK_TYPE_DIRECTORY		2
 #define MBFS_BLOCK_TYPE_FILETABLE		3
-
 
 
 //
@@ -76,10 +75,10 @@ struct FileDescriptor
     // the current file size. n.b. this may be different to that stored in the DirectoryEntry.
     uint32_t length;
 
-	// the directory entry of this file. 
+	// the directory entry of this file.
 	DirectoryEntry *dirent;
 
-	// the directory entry of our parent directory. 
+	// the directory entry of our parent directory.
 	DirectoryEntry *directory;
 
 	// We maintain a chain of open file descriptors. Reference to the next FileDescriptor in the chain.
@@ -135,9 +134,9 @@ class MicroBitFileSystem
       *
       * The file system is located dynamically, based on where the program code
       * and code data finishes. This avoids having to allocate a fixed flash
-      * region for builds even without MicroBitFileSystem. 
-	  *	  
-      * This method checks if the file system already exists, and loads it it. 
+      * region for builds even without MicroBitFileSystem.
+	  *
+      * This method checks if the file system already exists, and loads it it.
 	  * If not, it will determines the optimal size of the file system, if necessary, and format the space
       *
       * @return MICROBIT_OK on success, or an error code.
@@ -183,7 +182,7 @@ class MicroBitFileSystem
 	* @return A pointer to the DirectoryEntry for the given file, or NULL if no entry is found.
 	*/
 	DirectoryEntry* getDirectoryEntry(char const * filename, const DirectoryEntry *directory = NULL);
-	
+
 	/**
 	* Create a new DirectoryEntry with the given filename and flags.
 	*
@@ -300,7 +299,7 @@ class MicroBitFileSystem
 
 	/**
 	  * Write a given buffer to the file provided.
-	  * 
+	  *
 	  * @param file FileDescriptor of the file to write
 	  * @param buffer The start of the buffer to write
 	  * @param length The number of bytes to write

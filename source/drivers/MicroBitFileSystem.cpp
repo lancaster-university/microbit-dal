@@ -6,7 +6,7 @@
 #include "MicroBitConfig.h"
 #include "MicroBitFileSystem.h"
 #include "MicroBitFlash.h"
-#include "MicroBitStorage.h"        
+#include "MicroBitStorage.h"
 #include "MicroBitCompat.h"
 #include "ErrorNo.h"
 
@@ -57,7 +57,7 @@ uint16_t MicroBitFileSystem::getFreeBlock()
 	if (block)
 	{
 		// recycle the FileTable, such that we can mark all previously deleted blocks as re-usable.
-		// Better to do this in bulk, rather than on a block by block basis to improve efficiency. 
+		// Better to do this in bulk, rather than on a block by block basis to improve efficiency.
 		recycleFileTable();
 
 		// Record the block we just allocated, so we can round-robin around blocks for load balancing.
@@ -91,10 +91,10 @@ uint32_t* MicroBitFileSystem::getFreePage()
 		for (int i = 0; i < blocksPerPage; i++)
 		{
 			next = getNextFileBlock(page + i);
-			
+
 			if (next == MBFS_DELETED)
 				deleted = true;
-			
+
 			else if (next != MBFS_UNUSED)
 			{
 				empty = false;
@@ -148,7 +148,7 @@ MicroBitFileSystem::MicroBitFileSystem(uint32_t flashStart, int flashPages)
 			defaultScratchPage[i] = 0xff;
 
 #endif
-		// Attempt tp load an existing filesystem, if it exisits
+		// Attempt to load an existing filesystem, if it exists
         init(flashStart, flashPages);
 
 		// If this is the first FileSystem created, so it as the default.
@@ -164,7 +164,7 @@ MicroBitFileSystem::MicroBitFileSystem(uint32_t flashStart, int flashPages)
   * region for builds even without MicroBitFileSystem.
   *
   * This method checks if the file system already exists, and loads it it.
-  * If not, it will determines the optimal size of the file system, if necessary, and format the space 
+  * If not, it will determines the optimal size of the file system, if necessary, and format the space
   *
   * @return MICROBIT_OK on success, or an error code.
   */
@@ -244,7 +244,7 @@ int MicroBitFileSystem::load()
         return MICROBIT_NO_DATA;
 
     rootDirectory = root;
-	fileSystemSize = root->length;
+	fileSystemSize = root->length / MBFS_BLOCK_SIZE;
 	fileSystemTableSize = calculateFileTableSize();
 
 	return MICROBIT_OK;
@@ -267,15 +267,15 @@ int MicroBitFileSystem::format()
 	// Create a root directory
 	value = MBFS_EOF;
 	flash.flash_write(&fileSystemTable[fileSystemTableSize], &value, 2);
-	
-	// Store a MAGIC value in the first root directory entry. 
+
+	// Store a MAGIC value in the first root directory entry.
 	// This will let us identify a valid File System later.
 	DirectoryEntry magic;
 
 	strcpy(magic.file_name, MBFS_MAGIC);
 	magic.first_block = fileSystemTableSize;
 	magic.flags = MBFS_DIRECTORY_ENTRY_VALID;
-	magic.length = fileSystemSize;
+	magic.length = fileSystemSize * MBFS_BLOCK_SIZE;
 
 	// Cache the root directory entry for later use.
 	rootDirectory = (DirectoryEntry *)getBlock(fileSystemTableSize);
@@ -298,6 +298,21 @@ DirectoryEntry* MicroBitFileSystem::getDirectoryEntry(char const * filename, con
 	char const *file;
 	uint16_t block;
 	DirectoryEntry *dirent;
+
+	if(filename[0] == '/' && filename[1] == 0)
+	{
+		uint16_t rootOffset = fileSystemTable[0];
+
+		// A valid MBFS has the first 'N' blocks set to the value 'N' followed by a valid root directory block with magic signature.
+		for (int i = 0; i < rootOffset; i++)
+		{
+			if (fileSystemTable[i] >= MBFS_EOF || fileSystemTable[i] != rootOffset)
+				return NULL;
+		}
+
+		return (DirectoryEntry *)getBlock(rootOffset);
+	}
+
 
 	// Determine the filename from the (potentially) fully qualified filename.
 	file = filename + strlen(filename);
@@ -429,8 +444,8 @@ DirectoryEntry* MicroBitFileSystem::getDirectoryOf(char const * filename)
 {
 	DirectoryEntry* directory;
 
-	// If not path is provided, return the root diretory.
-	if (filename == NULL || filename[0] == 0)
+	// If no path is provided, return the root diretory.
+	if (filename == NULL || filename[0] == 0 || ((filename[0] == '/') && strlen(filename) == 1))
 		return rootDirectory;
 
 	char s[MBFS_FILENAME_LENGTH + 1];
@@ -484,7 +499,7 @@ int MicroBitFileSystem::recycleBlock(uint16_t block, int type)
 	for (int i = 0; i < PAGE_SIZE / MBFS_BLOCK_SIZE; i++)
 	{
 		// If we have an unused or deleted block, there's nothing to do - allow the block to be recycled.
-		if (fileSystemTable[b] == MBFS_DELETED || fileSystemTable[b] == MBFS_UNUSED) 
+		if (fileSystemTable[b] == MBFS_DELETED || fileSystemTable[b] == MBFS_UNUSED)
 		{}
 
 		// If we have been asked to recycle a valid directory block, recycle individual entries where possible.
@@ -503,13 +518,13 @@ int MicroBitFileSystem::recycleBlock(uint16_t block, int type)
 			}
 		}
 
-		// All blocks before the root directory are the FileTable. 
+		// All blocks before the root directory are the FileTable.
 		// Recycle any entries marked as DELETED to UNUSED.
 		else if (getBlock(b) < (uint32_t *)rootDirectory)
 		{
 			uint16_t *tableIn = (uint16_t *)getBlock(b);
 			uint16_t *tableOut = (uint16_t *)write;
-			
+
 			for (int entry = 0; entry < MBFS_BLOCK_SIZE / 2; entry++)
 			{
 				if (*tableIn != MBFS_DELETED)
@@ -523,7 +538,7 @@ int MicroBitFileSystem::recycleBlock(uint16_t block, int type)
 		// Copy all other VALID blocks directly into the scratch page.
 		else
 			flash.flash_write(write, getBlock(b), MBFS_BLOCK_SIZE);
-		
+
 		// move on to next block.
 		write += MBFS_BLOCK_SIZE;
 		b++;
@@ -545,7 +560,7 @@ int MicroBitFileSystem::recycleBlock(uint16_t block, int type)
 int MicroBitFileSystem::recycleFileTable()
 {
 	bool pageRecycled = false;
-	
+
 	for (uint16_t block = 0; block < fileSystemSize; block++)
 	{
 		// if we just crossed a page boundary, reset pageRecycled.
@@ -715,7 +730,7 @@ DirectoryEntry* MicroBitFileSystem::createFile(char const * filename, DirectoryE
 * Searches the list of open files for one with the given identifier.
 *
 * @param fd A previsouly opened file identifier, as returned by open().
-* @param remove Remove the file descriptor from the list if true. 
+* @param remove Remove the file descriptor from the list if true.
 * @return A FileDescriptor matching the given ID, or NULL if the file is not open.
 */
 FileDescriptor* MicroBitFileSystem::getFileDescriptor(int fd, bool remove)
@@ -795,10 +810,6 @@ int MicroBitFileSystem::open(char const * filename, uint32_t flags)
 	if ((status & MBFS_STATUS_INITIALISED) == 0)
 		return MICROBIT_NOT_SUPPORTED;
 
-	// Reject invalid filenames.
-	if (filename == NULL || strlen(filename) == 0)
-		return MICROBIT_INVALID_PARAMETER;
-
 	// Determine the directory for this file.
 	directory = getDirectoryOf(filename);
 
@@ -808,11 +819,11 @@ int MicroBitFileSystem::open(char const * filename, uint32_t flags)
 	// Find the DirectoryEntry assoviate with the given file (if it exists).
 	dirent = getDirectoryEntry(filename, directory);
 
-	// Only permit files to be opened once... 
-	// also, detemrine a valid ID for this open file as we go.
+	// Only permit files to be opened once...
+	// also, determine a valid ID for this open file as we go.
 	file = openFiles;
 	id = 0;
-	
+
 	while (file && dirent)
 	{
 		if (file->dirent == dirent)
@@ -966,7 +977,7 @@ int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
 
 	if (file == NULL)
 		return MICROBIT_INVALID_PARAMETER;
-	
+
 	// Flush any data in the writeback cache.
 	writeBack(file);
 
@@ -974,18 +985,18 @@ int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
 
     if(flags == MB_SEEK_SET)
         position = offset;
-    
+
     if(flags == MB_SEEK_END)
 		position = file->length + offset;
-    
+
 	if (flags == MB_SEEK_CUR)
 		position = file->seek + offset;
-	
+
 	if (position < 0 || (uint32_t)position > file->length)
         return MICROBIT_INVALID_PARAMETER;
 
 	file->seek = position;
-    
+
 	return position;
 }
 
@@ -1040,11 +1051,15 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
 	size = min(size, file->length - file->seek);
 
 	// Find the read position.
-	block = file->dirent->first_block; 
+	block = file->dirent->first_block;
 
 	// Walk the file table until we reach the start block
 	while (file->seek - position > MBFS_BLOCK_SIZE)
 	{
+		// validation check
+		if(block == MBFS_EOF)
+			return 0;
+
 		block = getNextFileBlock(block);
 		position += MBFS_BLOCK_SIZE;
 	}
@@ -1056,6 +1071,10 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
 	writePointer = buffer;
 	while (bytesCopied < size)
 	{
+		// validation check
+		if(block == MBFS_EOF)
+			return bytesCopied;
+
 		// First, determine if we need to write a partial block.
 		readPointer = (uint8_t *)getBlock(block) + offset;
 		segmentLength = min(size - bytesCopied, MBFS_BLOCK_SIZE - offset);
@@ -1084,7 +1103,7 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
 *
 * @param file File descriptor to flush.
 * @return The number of bytes written.
-* 
+*
 */
 int MicroBitFileSystem::writeBack(FileDescriptor *file)
 {
@@ -1210,7 +1229,7 @@ int MicroBitFileSystem::write(int fd, uint8_t* buffer, int size)
 	if (file == NULL || buffer == NULL || size == 0)
 		return MICROBIT_INVALID_PARAMETER;
 
-	// Determine how to handle the write. If the buffer size is less than our cache size, 
+	// Determine how to handle the write. If the buffer size is less than our cache size,
 	// write the data via the cache. Otherwise, a direct write through is likely more efficient.
 	// This may take a few iterations if the cache is already quite full.
 	if (size < MBFS_CACHE_SIZE)
@@ -1222,7 +1241,7 @@ int MicroBitFileSystem::write(int fd, uint8_t* buffer, int size)
 
 			file->cacheLength += segmentSize;
 			bytesCopied += segmentSize;
-			
+
 			if (file->cacheLength == MBFS_CACHE_SIZE)
 				writeBack(file);
 
@@ -1284,7 +1303,7 @@ int MicroBitFileSystem::remove(char const * filename)
 	return MICROBIT_OK;
 }
 
-#ifdef MICROBIT_DBG
+#if CONFIG_ENABLED(MICROBIT_DBG)
 void MicroBitFileSystem::debugFAT()
 {
 	int index = 0;
