@@ -416,6 +416,22 @@ extern uint32_t __etext;
 #define MICROBIT_HEAP_DBG                       0
 #endif
 
+// Enabling this flag will proxy File system requests on the interface chip to
+// the micro:bit, allowing easy access to files stored on the micro:bit.
+// A specific revision of the firmware is required for this to function.
+#ifndef MICROBIT_IF_CHIP_FS
+#define MICROBIT_IF_CHIP_FS                     0
+#endif
+
+#define MICROBIT_IF_CHIP_VERSION                "0.0.1"
+
+// Enabling this flag will inform the interface chip to preserve MICROBIT_IF_PRES_1
+// and MICROBIT_IF_PRES_2 during the flashing of hex files.
+// A specific revision of the firmware is required for this to function.
+#ifndef MICROBIT_IF_CHIP_PRESERVE
+#define MICROBIT_IF_CHIP_PRESERVE               0
+#endif
+
 // Versioning options.
 // We use semantic versioning (http://semver.org/) to identify differnet versions of the micro:bit runtime.
 // Where possible we use yotta (an ARM mbed build tool) to help us track versions.
@@ -434,6 +450,20 @@ extern uint32_t __etext;
 
 #if CONFIG_ENABLED(MICROBIT_HEAP_ALLOCATOR)
 #include "MicroBitHeapAllocator.h"
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_IF_CHIP_PRESERVE)
+
+// Preserve our storage page used by MicroBitStorage, and the Bluetooth bonding
+// table.
+// Setting these values to 0 will disable preservation if this option is enabled.
+#ifndef MICROBIT_IF_PRES_1
+#define MICROBIT_IF_PRES_1                      0x0003BC00
+#endif
+
+#ifndef MICROBIT_IF_PRES_2
+#define MICROBIT_IF_PRES_2                      0x0003B800
+#endif
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
