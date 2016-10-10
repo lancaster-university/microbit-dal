@@ -56,12 +56,17 @@ enum MicroBitSerialMode
   */
 class MicroBitSerial : public RawSerial
 {
-
-    //holds that state of the mutex locks for all MicroBitSerial instances.
-    static uint8_t status;
-
+    protected:
     //holds the state of the baudrate for all MicroBitSerial instances.
     static int baudrate;
+
+    //holds that state of the mutex locks for all MicroBitSerial instances.
+    static uint8_t serial_status;
+
+    uint8_t *txBuff;
+    uint8_t txBuffSize;
+    uint16_t txBuffHead;
+    volatile uint16_t txBuffTail;
 
     //delimeters used for matching on receive.
     ManagedString delimeters;
@@ -73,45 +78,6 @@ class MicroBitSerial : public RawSerial
     uint8_t rxBuffSize;
     volatile uint16_t rxBuffHead;
     uint16_t rxBuffTail;
-
-
-    uint8_t *txBuff;
-    uint8_t txBuffSize;
-    uint16_t txBuffHead;
-    volatile uint16_t txBuffTail;
-
-    /**
-      * An internal interrupt callback for MicroBitSerial configured for when a
-      * character is received.
-      *
-      * Each time a character is received fill our circular buffer!
-      */
-    void dataReceived();
-
-    /**
-      * An internal interrupt callback for MicroBitSerial.
-      *
-      * Each time the Serial module's buffer is empty, write a character if we have
-      * characters to write.
-      */
-    void dataWritten();
-
-    /**
-      * An internal method to configure an interrupt on tx buffer and also
-      * a best effort copy operation to move bytes from a user buffer to our txBuff
-      *
-      * @param string a pointer to the first character of the users' buffer.
-      *
-      * @param len the length of the string, and ultimately the maximum number of bytes
-      *        that will be copied dependent on the state of txBuff
-      *
-      * @param mode determines whether to configure the current fiber context or not. If
-      *             The mode is SYNC_SPINWAIT, the context will not be configured, otherwise
-      *             no context will be configured.
-      *
-      * @return the number of bytes copied into the buffer.
-      */
-    int setTxInterrupt(uint8_t *string, int len, MicroBitSerialMode mode);
 
     /**
       * Locks the mutex so that others can't use this serial instance for reception
@@ -144,6 +110,41 @@ class MicroBitSerial : public RawSerial
       * use them. We only bring them up on demand.
       */
     int initialiseTx();
+
+    /**
+      * An internal interrupt callback for MicroBitSerial configured for when a
+      * character is received.
+      *
+      * Each time a character is received fill our circular buffer!
+      */
+    virtual void dataReceived();
+
+    /**
+      * An internal interrupt callback for MicroBitSerial.
+      *
+      * Each time the Serial module's buffer is empty, write a character if we have
+      * characters to write.
+      */
+    virtual void dataWritten();
+
+    private:
+
+    /**
+      * An internal method to configure an interrupt on tx buffer and also
+      * a best effort copy operation to move bytes from a user buffer to our txBuff
+      *
+      * @param string a pointer to the first character of the users' buffer.
+      *
+      * @param len the length of the string, and ultimately the maximum number of bytes
+      *        that will be copied dependent on the state of txBuff
+      *
+      * @param mode determines whether to configure the current fiber context or not. If
+      *             The mode is SYNC_SPINWAIT, the context will not be configured, otherwise
+      *             no context will be configured.
+      *
+      * @return the number of bytes copied into the buffer.
+      */
+    int setTxInterrupt(uint8_t *string, int len, MicroBitSerialMode mode);
 
     /**
       * An internal method that either spin waits if mode is set to SYNC_SPINWAIT
