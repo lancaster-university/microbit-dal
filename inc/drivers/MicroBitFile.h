@@ -147,20 +147,6 @@ class MicroBitFile
     int getHandle();
 
     /**
-      * Opens this MicroBitFile instance if the file has previously been closed.
-      *
-      * @param mode One of: READ, WRITE, READ_AND_WRITE. Defaults to READ_AND_WRITE.
-      *
-      * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file is already open,
-      *         MICROBIT_INVALID_PARAMETER if the filename is too large, MICROBIT_NO_RESOURCES
-      *         if the file system is full, or memory could not be allocated..
-      *
-      * @note MicroBitFiles are opened at construction and are implicitly closed at
-      *       destruction. They can be closed explicitly using the close() member function.
-      */
-    int open(int mode = READ_AND_WRITE);
-
-    /**
       * Closes this MicroBitFile instance
       *
       * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file handle
@@ -172,7 +158,7 @@ class MicroBitFile
     int close();
 
     /**
-     * Writes back all state associated with the given file to FLASH memory, 
+     * Writes back all state associated with the given file to FLASH memory,
      * leaving the file open.
      *
      * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the file system has not
