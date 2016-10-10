@@ -24,6 +24,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "types/RefCounted.cpp"
 
     "drivers/DynamicPwm.cpp"
+    "drivers/JMXSerial.cpp"
     "drivers/MicroBitAccelerometer.cpp"
     "drivers/MicroBitButton.cpp"
     "drivers/MicroBitCompass.cpp"
@@ -56,6 +57,9 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "bluetooth/MicroBitMagnetometerService.cpp"
     "bluetooth/MicroBitTemperatureService.cpp"
     "bluetooth/MicroBitUARTService.cpp"
+
+    "platform/Base64.cpp"
+    "platform/jmx.cpp"
 )
 
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)
