@@ -15,6 +15,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "core/MicroBitListener.cpp"
     "core/MicroBitSystemTimer.cpp"
 
+    "types/ManagedBuffer.cpp"
     "types/ManagedString.cpp"
     "types/Matrix4.cpp"
     "types/MicroBitEvent.cpp"
