@@ -31,61 +31,6 @@ DEALINGS IN THE SOFTWARE.
 #include "mbed.h"
 #include "MicroBitComponent.h"
 
-//Pin of RGB LED on the MicroBit
-#define CALLIOPE_PIN_RGB                    P0_18
-
-//assembler code: do nothing
-#define RGB_WAIT                            " NOP\n\t"
-
-//Default values for the LED color
-#define RGB_LED_DEFAULT_GREEN               0
-#define RGB_LED_DEFAULT_RED                 0
-#define RGB_LED_DEFAULT_BLUE                0
-#define RGB_LED_DEFAULT_WHITE               0
-#define RGB_KEEP_VALUE                      -1
-
-//max light intensity
-#define RGB_LED_MAX_INTENSITY               50
-
-//the following defines are timed specifically to the sending algorithm in CalliopeRGB.cpp
-//timings for sending to the RGB LED: 
-//logical '0': time HIGH: 0.35 us ±150 ns   time LOW: 0.9 us ±150 ns 
-//logical '1': time HIGH: 0.9 us ±150 ns    time LOW: 0.35 us ±150 ns
-
-//sends a logical '1' to the receiver
-#define CALLIOPE_RGB_SEND_HIGH  NRF_GPIO->OUTSET = (1UL << PIN); \
-    __ASM ( \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-    ); \
-    NRF_GPIO->OUTCLR = (1UL << PIN);
-
-
-//sends a logical '0' to the receiver
-#define CALLIOPE_RGB_SEND_LOW   NRF_GPIO->OUTSET = (1UL << PIN); \
-    __ASM (  \
-        RGB_WAIT \
-    );  \
-    NRF_GPIO->OUTCLR = (1UL << PIN);  \
-    __ASM ( \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-        RGB_WAIT \
-    );
-
-
 class CalliopeRGB : public MicroBitComponent
 {   
     //values for the displayed color
@@ -105,7 +50,7 @@ class CalliopeRGB : public MicroBitComponent
         //sets all 4 color settings to the given values  
         void Set_Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t white);
         //sets all 4 color settings to the given values or leaves them as they are if no value is given
-        void Set_Color2(int red = RGB_KEEP_VALUE, int green = RGB_KEEP_VALUE, int blue = RGB_KEEP_VALUE, int white = RGB_KEEP_VALUE);
+        //void Set_Color2(int red = RGB_KEEP_VALUE, int green = RGB_KEEP_VALUE, int blue = RGB_KEEP_VALUE, int white = RGB_KEEP_VALUE);
         void On();
         void Off();
         void Send_to_LED();
