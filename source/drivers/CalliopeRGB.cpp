@@ -30,6 +30,63 @@ DEALINGS IN THE SOFTWARE.
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
 
+//Pin of RGB LED on the MicroBit
+#define CALLIOPE_PIN_RGB                    P0_18
+
+//Default values for the LED color
+#define RGB_LED_DEFAULT_GREEN               0
+#define RGB_LED_DEFAULT_RED                 0
+#define RGB_LED_DEFAULT_BLUE                0
+#define RGB_LED_DEFAULT_WHITE               0
+#define RGB_KEEP_VALUE                      -1
+
+//max light intensity
+#define RGB_LED_MAX_INTENSITY               50
+
+//the following defines are timed specifically to the sending algorithm in CalliopeRGB.cpp
+//timings for sending to the RGB LED: 
+//logical '0': time HIGH: 0.35 us ±150 ns   time LOW: 0.9 us ±150 ns 
+//logical '1': time HIGH: 0.9 us ±150 ns    time LOW: 0.35 us ±150 ns
+
+uint8_t PIN = CALLIOPE_PIN_RGB;
+uint8_t CONST_BIT = 1UL << PIN;
+
+#define RGB_WAIT    "NOP\n\t"
+
+//sends a logical '1' to the receiver
+#define CALLIOPE_RGB_SEND_HIGH \
+    NRF_GPIO->OUTSET = (CONST_BIT); \
+    __ASM volatile ( \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+    ); \
+    NRF_GPIO->OUTCLR = (CONST_BIT);
+
+//sends a logical '0' to the receiver
+#define CALLIOPE_RGB_SEND_LOW \
+    NRF_GPIO->OUTSET = (CONST_BIT); \
+    __ASM volatile (  \
+        RGB_WAIT \
+    );  \
+    NRF_GPIO->OUTCLR = (CONST_BIT);  \
+    __ASM volatile ( \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+        RGB_WAIT \
+    );
+
 
 CalliopeRGB::CalliopeRGB()
 {
@@ -53,7 +110,6 @@ CalliopeRGB::CalliopeRGB()
     //add RGB LED object to the sytem timer
     system_timer_add_component(this);
 }
-
 
 CalliopeRGB::~CalliopeRGB()
 {
@@ -83,22 +139,22 @@ void CalliopeRGB::Set_Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t wh
 //sets all 4 color settings to the given values or leaves them as they are if a -1 is given
 //for example Set_Color2(10, -1, -1, 30) would only affect red and white color settings
 //-1 is the default value for all 4 parameters
-void CalliopeRGB::Set_Color2(int red, int green, int blue, int white)
-{
-    //set color
-    if(green != RGB_KEEP_VALUE) GRBW[0] = green;      
-    if(red != RGB_KEEP_VALUE) GRBW[1] = red;
-    if(blue != RGB_KEEP_VALUE) GRBW[2] = blue;
-    if(white != RGB_KEEP_VALUE) GRBW[3] = white;
+// void CalliopeRGB::Set_Color2(int red, int green, int blue, int white)
+// {
+//     //set color
+//     if(green != RGB_KEEP_VALUE) GRBW[0] = green;      
+//     if(red != RGB_KEEP_VALUE) GRBW[1] = red;
+//     if(blue != RGB_KEEP_VALUE) GRBW[2] = blue;
+//     if(white != RGB_KEEP_VALUE) GRBW[3] = white;
     
-    //check intensity
-    for(uint8_t i=0; i<4; i++) {
-        if(GRBW[i] > RGB_LED_MAX_INTENSITY) GRBW[i] = RGB_LED_MAX_INTENSITY;
-    }
+//     //check intensity
+//     for(uint8_t i=0; i<4; i++) {
+//         if(GRBW[i] > RGB_LED_MAX_INTENSITY) GRBW[i] = RGB_LED_MAX_INTENSITY;
+//     }
     
-    //apply settings
-    this->Send_to_LED();
-}
+//     //apply settings
+//     this->Send_to_LED();
+// }
 
 
 void CalliopeRGB::On()
@@ -126,9 +182,9 @@ void CalliopeRGB::Off()
 void CalliopeRGB::Send_to_LED()
 {   
     //PIN is used in CALLIOPE_RGB_SEND_HIGH and CALLIOPE_RGB_SEND_LOW definitions
-    const uint8_t PIN =  CALLIOPE_PIN_RGB;
+    // const uint8_t PIN =  CALLIOPE_PIN_RGB;
     //set PIN to LOW for 50 us
-    NRF_GPIO->OUTCLR = (1UL << PIN);
+    NRF_GPIO->OUTCLR = (CONST_BIT);
     nrf_delay_us(50);
     
     //send bytes
