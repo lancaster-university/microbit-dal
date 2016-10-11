@@ -43,8 +43,8 @@ DEALINGS IN THE SOFTWARE.
 #  define BMX_DEBUG(...)  SERIAL_DEBUG->printf(__VA_ARGS__)
 #else
 #  define BMX_DEBUG(...)
-#  error "NO DEBUG ENABLED!"
 #endif
+
 /**
   * Configures the accelerometer for G range and sample rate defined
   * in this object. The nearest values are chosen to those defined
@@ -354,8 +354,8 @@ int MicroBitAccelerometer::updateSample()
 	// Now we'll calculate the accleration value into actual g's
 
         // read MSB values...
-        sample.x = ndata[0];
-        sample.y = ndata[1];
+        sample.x = ndata[1];
+        sample.y = -ndata[0];
         sample.z = ndata[2];
 
 	//	BMX_DEBUG("x=%d y=%d x=%d y=%d\r\n",data[0], data[1], data[2], data[3]);
