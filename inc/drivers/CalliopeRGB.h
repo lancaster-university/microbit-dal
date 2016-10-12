@@ -33,6 +33,8 @@ DEALINGS IN THE SOFTWARE.
 
 class CalliopeRGB : public MicroBitComponent
 {   
+    uint8_t PIN = CALLIOPE_PIN_RGB;
+
     //values for the displayed color
     uint8_t GRBW[4];
     
