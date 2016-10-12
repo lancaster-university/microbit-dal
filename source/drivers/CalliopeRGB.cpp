@@ -36,7 +36,7 @@ DEALINGS IN THE SOFTWARE.
 #define RGB_LED_DEFAULT_WHITE               0
 
 //max light intensity
-#define RGB_LED_MAX_INTENSITY               255
+#define RGB_LED_MAX_INTENSITY               40
 
 // a more accurate delay function, just to make sure
 static void inline
@@ -108,10 +108,13 @@ void CalliopeRGB::setColour(uint8_t red, uint8_t green, uint8_t blue, uint8_t wh
     GRBW[2] = blue;
     GRBW[3] = white;
     
+    if(MICROBIT_DBG) SERIAL_DEBUG->printf("RGB(%d,%d,%d,%d)\r\n", GRBW[1], GRBW[0],GRBW[2],GRBW[3]);
     //check intensity
     for(uint8_t i=0; i<4; i++) {
-        if(GRBW[i] > RGB_LED_MAX_INTENSITY) GRBW[i] = RGB_LED_MAX_INTENSITY;
+        GRBW[i] = ((float)RGB_LED_MAX_INTENSITY/255.0) * GRBW[i];
+        // if(GRBW[i] > RGB_LED_MAX_INTENSITY) GRBW[i] = RGB_LED_MAX_INTENSITY;
     }
+    if(MICROBIT_DBG) SERIAL_DEBUG->printf("RGB(%d,%d,%d,%d)\r\n", GRBW[1], GRBW[0],GRBW[2],GRBW[3]);
     
     //apply settings
     this->send();
@@ -197,6 +200,9 @@ void CalliopeRGB::send()
             }
         }
     }
+    // set PIN to LOW for 50 us to latch LEDs
+    NRF_GPIO->OUTCLR = (1UL << PIN);
+    nrf_delay_us(50);
     
     //set state
     uint16_t temp = GRBW[0] + GRBW[1] + GRBW[2] + GRBW[3];

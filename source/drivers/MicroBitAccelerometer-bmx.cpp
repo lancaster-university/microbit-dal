@@ -55,7 +55,7 @@ DEALINGS IN THE SOFTWARE.
   */
 int MicroBitAccelerometer::configure()
 {
-    BMX_DEBUG("RUN BMX055 start\r\n");
+    // BMX_DEBUG("RUN BMX055 start\r\n");
 
     id =    BMX055_ACC_ADDRESS<<1;
     wait_ms(100);
@@ -364,7 +364,7 @@ int MicroBitAccelerometer::updateSample()
         sample.y *= 8;
         sample.z *= 8; 
 	*/
-	BMX_DEBUG("x=%d y=%d\r\n",sample.x, sample.y);
+	// BMX_DEBUG("x=%d y=%d\r\n",sample.x, sample.y);
 #if CONFIG_ENABLED(USE_ACCEL_LSB)
         // Add in LSB values.
         sample.x += (data[1] / 64);
