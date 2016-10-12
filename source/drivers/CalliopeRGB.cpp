@@ -27,7 +27,6 @@ DEALINGS IN THE SOFTWARE.
 
 #include "CalliopeRGB.h"
 #include "MicroBitSystemTimer.h"
-#include "nrf_delay.h"
 #include "nrf_gpio.h"
 
 //Default values for the LED color
@@ -39,6 +38,29 @@ DEALINGS IN THE SOFTWARE.
 //max light intensity
 #define RGB_LED_MAX_INTENSITY               255
 
+// a more accurate delay function, just to make sure
+static void inline
+__attribute__((__gnu_inline__,__always_inline__))
+nrf_delay_us(uint32_t volatile number_of_us)
+{
+    __ASM volatile (
+        "1:\tSUB %0, %0, #1\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "NOP\n\t"
+        "BNE 1b\n\t"
+        : "+r"(number_of_us)
+    );
+}
 //the following defines are timed specifically to the sending algorithm in CalliopeRGB.cpp
 //timings for sending to the RGB LED:
 //logical '0': time HIGH: 0.35 us ±150 ns   time LOW: 0.9 us ±150 ns
@@ -62,6 +84,11 @@ CalliopeRGB::CalliopeRGB()
     for(uint8_t i=0; i<4; i++) {
         if(GRBW[i] > RGB_LED_MAX_INTENSITY) GRBW[i] = RGB_LED_MAX_INTENSITY;
     }
+
+    NRF_GPIO->OUTCLR = (1UL << PIN);
+    nrf_delay_us(50);
+
+    off();
     
     //add RGB LED object to the sytem timer
     system_timer_add_component(this);
@@ -72,9 +99,8 @@ CalliopeRGB::~CalliopeRGB()
     system_timer_remove_component(this);
 }
  
-
 //sets all 4 color settings to the given values        
-void CalliopeRGB::Set_Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t white)
+void CalliopeRGB::setColour(uint8_t red, uint8_t green, uint8_t blue, uint8_t white)
 {
     //set color
     GRBW[0] = green;      
@@ -88,16 +114,16 @@ void CalliopeRGB::Set_Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t wh
     }
     
     //apply settings
-    this->Send_to_LED();
+    this->send();
 }
 
-void CalliopeRGB::On()
+void CalliopeRGB::on()
 {
-    this->Send_to_LED();
+    this->send();
 }
 
 
-void CalliopeRGB::Off()
+void CalliopeRGB::off()
 {
     //save color settings
     uint8_t GRBW_temp[4];
@@ -105,7 +131,7 @@ void CalliopeRGB::Off()
     
     //set all color values to zero and send to LED
     for(uint8_t i=0; i<4; i++) GRBW[i] = 0;
-    this->Send_to_LED();
+    this->send();
     
     //restore color values
     for(uint8_t i=0; i<4; i++) GRBW[i] = GRBW_temp[i];
@@ -113,14 +139,14 @@ void CalliopeRGB::Off()
 
 
 //sends current color settings to the RGB LED
-void CalliopeRGB::Send_to_LED()
+void CalliopeRGB::send()
 {   
+    // //set PIN to LOW for 50 us
+    // NRF_GPIO->OUTCLR = (1UL << PIN);
+    // nrf_delay_us(50);
+    
     const uint32_t CONST_BIT = 1UL << PIN;
 
-    //set PIN to LOW for 50 us
-    NRF_GPIO->OUTCLR = (CONST_BIT);
-    nrf_delay_us(50);
-    
     //send bytes
     for (uint8_t i=0; i<4; i++)
     {
@@ -170,37 +196,35 @@ void CalliopeRGB::Send_to_LED()
     else state = 0;
 }
 
-
 //getter functions for current color settings
-uint8_t CalliopeRGB::Get_Red()
+uint8_t CalliopeRGB::getRed()
 {
     return GRBW[1];   
 }
 
-uint8_t CalliopeRGB::Get_Green()
+uint8_t CalliopeRGB::getGreen()
 {
     return GRBW[0];  
 }
 
-uint8_t CalliopeRGB::Get_Blue()
+uint8_t CalliopeRGB::getBlue()
 {
     return GRBW[2];
 }
 
-uint8_t CalliopeRGB::Get_White()
+uint8_t CalliopeRGB::getWhite()
 {
     return GRBW[3]; 
 }
 
         
 //check function
-bool CalliopeRGB::Is_On()
+bool CalliopeRGB::isOn()
 {
     if(state) return true;
     else return false;  
 }
-        
-    
+            
 void CalliopeRGB::systemTick()
 {
     //currently not in use

@@ -53,24 +53,25 @@ class CalliopeRGB : public MicroBitComponent
         
         //functions to control the the LED
         //sets all 4 color settings to the given values  
-        void Set_Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t white);
-        //sets all 4 color settings to the given values or leaves them as they are if no value is given
-        //void Set_Color2(int red = RGB_KEEP_VALUE, int green = RGB_KEEP_VALUE, int blue = RGB_KEEP_VALUE, int white = RGB_KEEP_VALUE);
-        void On();
-        void Off();
-        void Send_to_LED();
+        void setColour(uint8_t red, uint8_t green, uint8_t blue, uint8_t white);
+        void on();
+        void off();
         
         //getter functions
-        uint8_t Get_Red();
-        uint8_t Get_Green();
-        uint8_t Get_Blue();
-        uint8_t Get_White();
+        uint8_t getRed();
+        uint8_t getGreen();
+        uint8_t getBlue();
+        uint8_t getWhite();
         
         //check function
-        bool Is_On();
+        bool isOn();
         
         //periodic callback from MicroBit system timer.
         virtual void systemTick();
+
+    protected:
+        void send();
+
 };
 
 #endif
