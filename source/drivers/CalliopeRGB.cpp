@@ -44,8 +44,8 @@ DEALINGS IN THE SOFTWARE.
 #define RGB_LED_MAX_INTENSITY               255
 
 //the following defines are timed specifically to the sending algorithm in CalliopeRGB.cpp
-//timings for sending to the RGB LED: 
-//logical '0': time HIGH: 0.35 us ±150 ns   time LOW: 0.9 us ±150 ns 
+//timings for sending to the RGB LED:
+//logical '0': time HIGH: 0.35 us ±150 ns   time LOW: 0.9 us ±150 ns
 //logical '1': time HIGH: 0.9 us ±150 ns    time LOW: 0.35 us ±150 ns
 
 CalliopeRGB::CalliopeRGB()
@@ -125,13 +125,12 @@ void CalliopeRGB::Send_to_LED()
     NRF_GPIO->OUTCLR = (CONST_BIT);
     nrf_delay_us(50);
     
-    SERIAL_DEBUG->printf("RGB(%02x, %02x, %02x, %02x)\r\n", GRBW[1], GRBW[0], GRBW[2], GRBW[3]);
     //send bytes
     for (uint8_t i=0; i<4; i++)
     {
         for(int8_t j=7; j>-1; j--) 
         {
-            if (GRBW[i] & (1 << j)) 
+            if (GRBW[i] & (1 << j))
             {
                 NRF_GPIO->OUTSET = (CONST_BIT);
                 __ASM volatile (
@@ -147,7 +146,7 @@ void CalliopeRGB::Send_to_LED()
                 );
                 NRF_GPIO->OUTCLR = (CONST_BIT);
             }
-            else 
+            else
             {
                  NRF_GPIO->OUTSET = (CONST_BIT);
                 __ASM volatile (
