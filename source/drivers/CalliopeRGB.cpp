@@ -30,15 +30,11 @@ DEALINGS IN THE SOFTWARE.
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
 
-//Pin of RGB LED on the MicroBit
-#define CALLIOPE_PIN_RGB                    P0_18
-
 //Default values for the LED color
 #define RGB_LED_DEFAULT_GREEN               0
 #define RGB_LED_DEFAULT_RED                 0
 #define RGB_LED_DEFAULT_BLUE                0
 #define RGB_LED_DEFAULT_WHITE               0
-#define RGB_KEEP_VALUE                      -1
 
 //max light intensity
 #define RGB_LED_MAX_INTENSITY               255
