@@ -144,19 +144,13 @@ void CalliopeRGB::off()
     for(uint8_t i=0; i<4; i++) GRBW[i] = GRBW_temp[i];
 }
 
-
 //sends current color settings to the RGB LED
-void /*__attribute((optimize("O0")))*/ CalliopeRGB::send()
+void CalliopeRGB::send()
 {
-    // TODO: this code is very sensible to compiler optimization
-    // TODO: we need to replace the output part with something else
-    // TODO: taking out the initial LOW output for now clears the issue
-
-    ////set PIN to LOW for 50 us
+    //set PIN to LOW for 50 us
     NRF_GPIO->OUTCLR = (1UL << PIN);
     nrf_delay_us(50);
     
-
     //send bytes
     for (uint8_t i=0; i<4; i++)
     {
@@ -164,6 +158,25 @@ void /*__attribute((optimize("O0")))*/ CalliopeRGB::send()
         {
             if (GRBW[i] & (1 << j))
             {
+                //  Timings where off when using GCC and okay using ARMCC with the original
+                //  code.
+                // 
+                //  THE FIX:
+                //  Originally all instances of CONST_BIT uses where macro usages of (1UL<<PIN)
+                //  to set or clear the output on that pin. This produced correct timing using
+                //  ARMCC, but signals were too long on GCC. James Devine found that introducing
+                //  a variable and using it fixed that issue. However, only if used in our main()
+                //  program. When moved here, it broke again. Adding a debug printf() statement
+                //  between the initial LOW signal and the sending loop fixed it again, but that 
+                //  is not a good solution. Inspecting the assembler code, I found that the off
+                //  timing was due to an extra LDR instruction issued before the STR to write to 
+                //  the OUTSET/OUTCLR.
+                //  
+                //  By declaring the pin number into a register forces the compiler issue a STR
+                //  assembler instruction instead of the LDR + STR sequence, thus fixing the timing.
+                // 
+                //  I am sure there must be a better solution, but for now it works. A big obstacle
+                //  was the use of different compilers for local development and cloud ... 
                 register uint32_t CONST_BIT = 1UL << PIN;
                 NRF_GPIO->OUTSET = CONST_BIT;
                 __ASM volatile (
@@ -181,6 +194,7 @@ void /*__attribute((optimize("O0")))*/ CalliopeRGB::send()
             }
             else
             {
+                // put here to force use of a register (see above)
                 register uint32_t CONST_BIT = 1UL << PIN;
                 NRF_GPIO->OUTSET = CONST_BIT;
                 __ASM volatile ( 
