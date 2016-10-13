@@ -146,17 +146,16 @@ void CalliopeRGB::off()
 
 
 //sends current color settings to the RGB LED
-void CalliopeRGB::send()
+void /*__attribute((optimize("O0")))*/ CalliopeRGB::send()
 {
     // TODO: this code is very sensible to compiler optimization
     // TODO: we need to replace the output part with something else
     // TODO: taking out the initial LOW output for now clears the issue
 
     ////set PIN to LOW for 50 us
-    // NRF_GPIO->OUTCLR = (1UL << PIN);
-    // nrf_delay_us(50);
+    NRF_GPIO->OUTCLR = (1UL << PIN);
+    nrf_delay_us(50);
     
-    const uint32_t CONST_BIT = 1UL << PIN;
 
     //send bytes
     for (uint8_t i=0; i<4; i++)
@@ -165,42 +164,39 @@ void CalliopeRGB::send()
         {
             if (GRBW[i] & (1 << j))
             {
-                // TODO: replace with inline assembler, keep CONST_BIT in a register
-                NRF_GPIO->OUTSET = (CONST_BIT);
+                register uint32_t CONST_BIT = 1UL << PIN;
+                NRF_GPIO->OUTSET = CONST_BIT;
                 __ASM volatile (
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
                 );
-                // TODO: replace with inline assembler, keep CONST_BIT in a register
-                NRF_GPIO->OUTCLR = (CONST_BIT);
+                NRF_GPIO->OUTCLR = CONST_BIT; 
             }
             else
             {
-                // TODO: replace with inline assembler, keep CONST_BIT in a register
-                 NRF_GPIO->OUTSET = (CONST_BIT);
-                __ASM volatile (
+                register uint32_t CONST_BIT = 1UL << PIN;
+                NRF_GPIO->OUTSET = CONST_BIT;
+                __ASM volatile ( 
                     "NOP\n\t"
                 );
-                // TODO: replace with inline assembler, keep CONST_BIT in a register
-                NRF_GPIO->OUTCLR = (CONST_BIT);
-                __ASM volatile (
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                    "NOP\n\t"
-                );
-
+                NRF_GPIO->OUTCLR = CONST_BIT; 
+                __ASM volatile ( 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                    "NOP\n\t" 
+                ); 
             }
         }
     }
