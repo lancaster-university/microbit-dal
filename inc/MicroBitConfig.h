@@ -393,7 +393,7 @@ DEALINGS IN THE SOFTWARE.
 // Enabling this flag will inform the interface chip to preserve pages at addresses
 // 0x0003BC00 and 0x0003BC00
 #ifndef MICROBIT_IF_CHIP_PRESERVE
-#define MICROBIT_IF_CHIP_PRESERVE               0
+#define MICROBIT_IF_CHIP_PRESERVE               1
 #endif
 
 // Versioning options.
