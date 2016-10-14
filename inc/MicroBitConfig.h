@@ -390,6 +390,12 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_HEAP_DBG       0
 #endif
 
+// Enabling this flag will inform the interface chip to preserve pages at addresses
+// 0x0003BC00 and 0x0003BC00
+#ifndef MICROBIT_IF_CHIP_PRESERVE
+#define MICROBIT_IF_CHIP_PRESERVE               0
+#endif
+
 // Versioning options.
 // We use semantic versioning (http://semver.org/) to identify differnet versions of the micro:bit runtime.
 // Where possible we use yotta (an ARM mbed build tool) to help us track versions.
