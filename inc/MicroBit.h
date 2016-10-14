@@ -62,6 +62,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitBLEManager.h"
 #include "MicroBitRadio.h"
 #include "MicroBitStorage.h"
+#include "MicroBitAccessibility.h"
 
 // MicroBit::flags values
 #define MICROBIT_FLAG_SCHEDULER_RUNNING         0x00000001
@@ -130,9 +131,8 @@ class MicroBit
     MicroBitAccelerometer   accelerometer;
     MicroBitCompass         compass;
     MicroBitThermometer     thermometer;
-
-    //An object of available IO pins on the device
     MicroBitIO              io;
+    MicroBitAccessibility   accessibility;
 
     // Bluetooth related member variables.
 	MicroBitBLEManager		bleManager;
@@ -155,6 +155,7 @@ class MicroBit
       * uBit.accelerometer; //The object that represents the inbuilt accelerometer
       * uBit.compass; //The object that represents the inbuilt compass(magnetometer)
       * uBit.io.P*; //Where P* is P0 to P16, P19 & P20 on the edge connector
+      * uBit.accessibility; //The object that enabled accessibility functions on the device 
       * @endcode
       */
     MicroBit();

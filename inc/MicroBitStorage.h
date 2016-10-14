@@ -44,6 +44,7 @@ struct MicroBitConfigurationBlock
     BLESysAttribute     sysAttrs[MICROBIT_BLE_MAXIMUM_BONDS];
     CompassSample       compassCalibrationData;
     int                 thermometerCalibration;
+    int                 accessibility;
 };
 
 

@@ -31,7 +31,9 @@ DEALINGS IN THE SOFTWARE.
   */
 #define MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE         1
 #define MICROBIT_DISPLAY_EVT_FREE                       2
+#define MICROBIT_DISPLAY_EVT_ANIMATION_STARTED          3
 #define MICROBIT_DISPLAY_EVT_LIGHT_SENSE                4
+#define MICROBIT_DISPLAY_EVT_ANIMATION_STOPPED          5
 
 /**
   * I/O configurations for common devices.
@@ -286,6 +288,12 @@ public:
     void stopAnimation();
 
     /**
+     * Provides the currently running animation mode, if any.
+     * @return Th AnimationMode that is currently running.
+     */
+    AnimationMode getAnimationMode();
+
+    /**
       * Frame update method, invoked periodically to strobe the display.
       */
     virtual void systemTick();
@@ -532,6 +540,18 @@ public:
       * @endcode
       */
     int getBrightness();
+
+    /**
+      * Fetches the current string being scrolled or printed on the display (if any).
+      * @return the the string currently being scrolled or printed, or EmptyString if no text based animation is ongoing.
+      *
+      * Example:
+      * @code
+      * ManagedString s;
+      * s = uBit.display.getMessage(); 
+      * @endcode
+      */
+    ManagedString getMessage();
 
     /**
       * Rotates the display to the given position.

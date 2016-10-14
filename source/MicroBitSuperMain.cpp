@@ -70,6 +70,9 @@ int main()
     {
         if(b->compassCalibrationData != CompassSample(0,0,0))
             uBit.compass.setCalibration(b->compassCalibrationData);
+
+        if(b->accessibility)
+            uBit.accessibility.enable();
     }
 
     delete b;

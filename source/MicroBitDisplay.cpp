@@ -258,6 +258,16 @@ void MicroBitDisplay::renderGreyscale()
 }
 
 /**
+ * Provides the currently running animation mode, if any.
+ * @return Th AnimationMode that is currently running.
+ */
+AnimationMode
+MicroBitDisplay::getAnimationMode()
+{
+    return animationMode;
+}
+
+/**
   * Periodic callback, that we use to perform any animations we have running.
   */
 void
@@ -324,6 +334,7 @@ void MicroBitDisplay::updateScrollText()
         if (scrollingChar > scrollingText.length())
         {
             animationMode = ANIMATION_MODE_NONE;
+            scrollingText = ManagedString::EmptyString;
             this->sendAnimationCompleteEvent();
             return;
         }
@@ -341,6 +352,7 @@ void MicroBitDisplay::updatePrintText()
 
     if (printingChar > printingText.length())
     {
+        printingText = ManagedString::EmptyString;
         animationMode = ANIMATION_MODE_NONE;
 
         this->sendAnimationCompleteEvent();
@@ -414,7 +426,10 @@ void MicroBitDisplay::stopAnimation()
         // Indicate that we've completed an animation.
         MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE);
 
-        // Wake up aall fibers that may blocked on the animation (if any).
+        //Indicate that the animaiton has been forcably terminated (just for accessibility functions)
+        MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_STOPPED);
+
+        // Wake up all fibers that may blocked on the animation (if any).
         MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_DISPLAY_EVT_FREE);
     }
 
@@ -464,6 +479,9 @@ int MicroBitDisplay::printAsync(char c, int delay)
             animationDelay = delay;
             animationTick = 0;
             animationMode = ANIMATION_MODE_PRINT_CHARACTER;
+
+            // Indicate that we've started an animation.
+            MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_STARTED);
         }
     }
     else
@@ -501,6 +519,9 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
         animationTick = 0;
 
         animationMode = ANIMATION_MODE_PRINT_TEXT;
+
+        // Indicate that we've started an animation.
+        MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_STARTED);
     }
     else
     {
@@ -541,6 +562,9 @@ int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int de
             animationDelay = delay;
             animationTick = 0;
             animationMode = ANIMATION_MODE_PRINT_CHARACTER;
+
+            // Indicate that we've started an animation.
+            MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_STARTED);
         }
     }
     else
@@ -694,6 +718,9 @@ int MicroBitDisplay::scrollAsync(ManagedString s, int delay)
         animationDelay = delay;
         animationTick = 0;
         animationMode = ANIMATION_MODE_SCROLL_TEXT;
+
+        // Indicate that we've started an animation.
+        MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_STARTED);
     }
     else
     {
@@ -735,6 +762,9 @@ int MicroBitDisplay::scrollAsync(MicroBitImage image, int delay, int stride)
         animationDelay = stride == 0 ? 0 : delay;
         animationTick = 0;
         animationMode = ANIMATION_MODE_SCROLL_IMAGE;
+
+        // Indicate that we've started an animation.
+        MicroBitEvent(id,MICROBIT_DISPLAY_EVT_ANIMATION_STARTED);
     }
     else
     {
@@ -1001,6 +1031,26 @@ int MicroBitDisplay::getBrightness()
     return this->brightness;
 }
 
+/**
+ * Fetches the current string being scrolled or printed on the display (if any).
+ * @return the the string currently being scrolled or printed, or EmptyString if no text based animation is ongoing.
+ *
+ * Example:
+ * @code
+ * ManagedString s;
+ * s = uBit.display.getMessage(); 
+ * @endcode
+ */
+ManagedString MicroBitDisplay::getMessage()
+{
+    if (!(scrollingText == ManagedString::EmptyString))
+        return scrollingText;
+
+    if (!(printingText == ManagedString::EmptyString))
+        return printingText;
+
+    return ManagedString::EmptyString;
+}
 /**
   * Rotates the display to the given position.
   * Axis aligned values only.

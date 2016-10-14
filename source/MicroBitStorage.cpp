@@ -87,7 +87,7 @@ void MicroBitStorage::flashPageErase(uint32_t * page_address)
 MicroBitConfigurationBlock *MicroBitStorage::getConfigurationBlock()
 {
     uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
-    uint32_t pg_num  = NRF_FICR->CODESIZE - 19;          // Use the page just below the BLE Bond Data 
+    uint32_t pg_num  = NRF_FICR->CODESIZE - 17;          // Use the page just below the BLE Bond Data 
 
     MicroBitConfigurationBlock *block = new MicroBitConfigurationBlock();
     memcpy(block, (uint32_t *)(pg_size * pg_num), sizeof(MicroBitConfigurationBlock));
@@ -121,6 +121,8 @@ MicroBitConfigurationBlock *MicroBitStorage::getConfigurationBlock()
         uBit.serial.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
 
         uBit.serial.printf("temperature: %d\r\n", block->thermometerCalibration);
+
+        uBit.serial.printf("accessibility: %d\r\n", block->accessibility);
     }
 #endif
 
@@ -184,6 +186,8 @@ int MicroBitStorage::setConfigurationBlock(MicroBitConfigurationBlock *block)
             uBit.serial.printf("compass x: %d y: %d z: %d\r\n", block->compassCalibrationData.x, block->compassCalibrationData.y, block->compassCalibrationData.z);
 
             uBit.serial.printf("temperature: %d\r\n", block->thermometerCalibration);
+
+            uBit.serial.printf("accessibility: %d\r\n", block->accessibility);
         }
     #endif
 
@@ -194,7 +198,7 @@ int MicroBitStorage::setConfigurationBlock(MicroBitConfigurationBlock *block)
     int   wordsToWrite = sizeof(MicroBitConfigurationBlock) / 4 + 1;
     
     pg_size = NRF_FICR->CODEPAGESIZE;
-    pg_num  = NRF_FICR->CODESIZE - 19;          // Use the page just below the BLE Bond Data 
+    pg_num  = NRF_FICR->CODESIZE - 17;          // Use the page just below the BLE Bond Data 
 
     addr = (uint32_t *)(pg_size * pg_num);
 
