@@ -77,9 +77,9 @@ int MicroBitAccelerometer::configure()
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_PMU_BW, ACCBW & 0x0F);     // Set accelerometer bandwidth
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_D_HBW, 0x00);              // Use filtered data
 
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_0, 0x00);           // Enable ACC data ready interrupt
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_1, 0x10);           // Enable ACC data ready interrupt
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_2, 0x00);           // Enable ACC data ready interrupt
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_0, 0x70);           // Enable ACC data ready interrupt
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_1, 0x7F);           // Enable ACC data ready interrupt
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_2, 0x02);           // Enable ACC data ready interrupt
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_OUT_CTRL, 0x02);       // open drain, active low
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_MAP_0, 0x00);        // Define INT1 (intACC1) as ACC data ready interrupt
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_MAP_1, 0x01);          // Define INT2 (intACC2) as ACC data ready interrupt
@@ -89,6 +89,7 @@ int MicroBitAccelerometer::configure()
     writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_1, 0x04);  // select push-pull, active high interrupts
 
     writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_MAP_1, 0x01); // select INT3 (intGYRO1) as GYRO data ready interrupt, somehow requirement for acc data ready
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_SRC_3, 0x07);
 
 // Configure Gyro
 // start by resetting gyro, better not since it ends up in sleep mode?!
@@ -109,11 +110,10 @@ int MicroBitAccelerometer::configure()
 // and collect data for an effective ODR of 50 Hz, other duty cycles are possible but there
 // is a minimum wake duration determined by the bandwidth duration, e.g.,  > 10 ms for 23Hz gyro bandwidth
 //  writeByte(BMX055_ACC_ADDRESS, BMX055_GYRO_LPM2, 0x87);
-/*
     writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_RANGE, Gscale);  // set GYRO FS range
     writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_BW, GODRBW);     // set GYRO ODR and Bandwidth
 
-    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_0, 0x80);  // enable data ready interrupt
+/*    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_0, 0x80);  // enable data ready interrupt
     writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_1, 0x04);  // select push-pull, active high interrupts
     writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_MAP_1, 0x01); // select INT3 (intGYRO1) as GYRO data ready interrupt
 
@@ -354,17 +354,17 @@ int MicroBitAccelerometer::updateSample()
 	// Now we'll calculate the accleration value into actual g's
 
         // read MSB values...
-        sample.x = ndata[1];
-        sample.y = -ndata[0];
+        sample.x = ndata[0];
+        sample.y = ndata[1];
         sample.z = ndata[2];
 
-	//	BMX_DEBUG("x=%d y=%d x=%d y=%d\r\n",data[0], data[1], data[2], data[3]);
+//	BMX_DEBUG("x=%d y=%d x=%d y=%d\r\n",data[0], data[1], data[2], data[3]);
         // Normalize the data in the 0..1024 range.
 	/*	sample.x *= 8;
         sample.y *= 8;
         sample.z *= 8; 
 	*/
-	// BMX_DEBUG("x=%d y=%d\r\n",sample.x, sample.y);
+	 BMX_DEBUG("x=%d y=%d z=%d\r\n",sample.x, sample.y, sample.z);
 #if CONFIG_ENABLED(USE_ACCEL_LSB)
         // Add in LSB values.
         sample.x += (data[1] / 64);
@@ -519,12 +519,14 @@ void MicroBitAccelerometer::updateGesture()
     // Again, during such spikes, these event take priority of the posture of the device.
     // For these events, we don't perform any low pass filtering.
     int force = instantaneousAccelerationSquared();
+    BMX_DEBUG("force=%d\r\n",force);
 
-    if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD)
+
+    if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD)
     {
-        if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD && !shake.impulse_3)
+        if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD && !shake.impulse_3)
         {
-            MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_3G);
+            MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_2G);
             shake.impulse_3 = 1;
         }
         if (force > MICROBIT_ACCELEROMETER_6G_THRESHOLD && !shake.impulse_6)

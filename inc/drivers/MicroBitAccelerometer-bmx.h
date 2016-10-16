@@ -321,7 +321,7 @@ enum Mmode {
 #define MICROBIT_ACCELEROMETER_EVT_FACE_UP                  5
 #define MICROBIT_ACCELEROMETER_EVT_FACE_DOWN                6
 #define MICROBIT_ACCELEROMETER_EVT_FREEFALL                 7
-#define MICROBIT_ACCELEROMETER_EVT_3G                       8
+#define MICROBIT_ACCELEROMETER_EVT_2G                       8
 #define MICROBIT_ACCELEROMETER_EVT_6G                       9
 #define MICROBIT_ACCELEROMETER_EVT_8G                       10
 #define MICROBIT_ACCELEROMETER_EVT_SHAKE                    11
@@ -333,7 +333,7 @@ enum Mmode {
 #define MICROBIT_ACCELEROMETER_TILT_TOLERANCE               200
 #define MICROBIT_ACCELEROMETER_FREEFALL_TOLERANCE           400
 #define MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE              400
-#define MICROBIT_ACCELEROMETER_3G_TOLERANCE                 3072
+#define MICROBIT_ACCELEROMETER_2G_TOLERANCE                 2048
 #define MICROBIT_ACCELEROMETER_6G_TOLERANCE                 6144
 #define MICROBIT_ACCELEROMETER_8G_TOLERANCE                 8192
 #define MICROBIT_ACCELEROMETER_GESTURE_DAMPING              5
@@ -342,7 +342,7 @@ enum Mmode {
 
 #define MICROBIT_ACCELEROMETER_REST_THRESHOLD               (MICROBIT_ACCELEROMETER_REST_TOLERANCE * MICROBIT_ACCELEROMETER_REST_TOLERANCE)
 #define MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD           (MICROBIT_ACCELEROMETER_FREEFALL_TOLERANCE * MICROBIT_ACCELEROMETER_FREEFALL_TOLERANCE)
-#define MICROBIT_ACCELEROMETER_3G_THRESHOLD                 (MICROBIT_ACCELEROMETER_3G_TOLERANCE * MICROBIT_ACCELEROMETER_3G_TOLERANCE)
+#define MICROBIT_ACCELEROMETER_2G_THRESHOLD                 (MICROBIT_ACCELEROMETER_2G_TOLERANCE * MICROBIT_ACCELEROMETER_2G_TOLERANCE)
 #define MICROBIT_ACCELEROMETER_6G_THRESHOLD                 (MICROBIT_ACCELEROMETER_6G_TOLERANCE * MICROBIT_ACCELEROMETER_6G_TOLERANCE)
 #define MICROBIT_ACCELEROMETER_8G_THRESHOLD                 (MICROBIT_ACCELEROMETER_8G_TOLERANCE * MICROBIT_ACCELEROMETER_8G_TOLERANCE)
 #define MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD        4
@@ -409,10 +409,10 @@ class MicroBitAccelerometer : public MicroBitComponent
 
     // Specify sensor full scale
     uint8_t OSR    = ADC_8192;         // set pressure amd temperature oversample rate
-    uint8_t Gscale = GFS_125DPS;       // set gyro full scale
-    uint8_t GODRBW = G_200Hz23Hz;      // set gyro ODR and bandwidth
+    uint8_t Gscale = GFS_250DPS;       // set gyro full scale
+    uint8_t GODRBW = G_2000Hz523Hz;      // set gyro ODR and bandwidth
     uint8_t Ascale = AFS_2G;           // set accel full scale
-    uint8_t ACCBW  = 0x08 | ABW_16Hz;  // Choose bandwidth for accelerometer, need bit 3 = 1 to enable bandwidth choice in enum
+    uint8_t ACCBW  = 0x03 | ABW_63Hz;  // Choose bandwidth for accelerometer, need bit 3 = 1 to enable bandwidth choice in enum
     uint8_t Mmode  = Regular;          // Choose magnetometer operation mode
     uint8_t MODR   = MODR_10Hz;        // set magnetometer data rate
     float aRes, gRes, mRes;            // scale resolutions per LSB for the sensors
