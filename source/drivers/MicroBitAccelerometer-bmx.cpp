@@ -34,7 +34,6 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitAccelerometer-bmx.h"
 #include "ErrorNo.h"
-#include "MicroBitConfig.h"
 #include "MicroBitEvent.h"
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
@@ -489,22 +488,22 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
 
     // Determine our posture.
     if (getX() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return MICROBIT_ACCELEROMETER_EVT_TILT_LEFT;
-
-    if (getX() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return MICROBIT_ACCELEROMETER_EVT_TILT_RIGHT;
-
-    if (getY() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return MICROBIT_ACCELEROMETER_EVT_TILT_DOWN;
 
-    if (getY() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (getX() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return MICROBIT_ACCELEROMETER_EVT_TILT_UP;
 
+    if (getY() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+        return MICROBIT_ACCELEROMETER_EVT_TILT_LEFT;
+
+    if (getY() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+        return MICROBIT_ACCELEROMETER_EVT_TILT_RIGHT;
+
     if (getZ() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return MICROBIT_ACCELEROMETER_EVT_FACE_UP;
+        return MICROBIT_ACCELEROMETER_EVT_FACE_DOWN;
 
     if (getZ() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
-        return MICROBIT_ACCELEROMETER_EVT_FACE_DOWN;
+        return MICROBIT_ACCELEROMETER_EVT_FACE_UP;
 
     return MICROBIT_ACCELEROMETER_EVT_NONE;
 }
@@ -519,14 +518,22 @@ void MicroBitAccelerometer::updateGesture()
     // Again, during such spikes, these event take priority of the posture of the device.
     // For these events, we don't perform any low pass filtering.
     int force = instantaneousAccelerationSquared();
-    BMX_DEBUG("force=%d\r\n",force);
+    //BMX_DEBUG("force=%d\r\n",force);
 
 
     if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD)
     {
-        if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD && !shake.impulse_3)
+// TODO correctly support 2G
+#if defined(MICROBIT_ACCELEROMETER_2G_THRESHOLD) && defined(MICROBIT_ACCELEROMETER_EVT_2G)
+        if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD && !shake.impulse_2)
         {
             MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_2G);
+            shake.impulse_2 = 1;
+        }
+#endif
+        if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD && !shake.impulse_3)
+        {
+            MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_3G);
             shake.impulse_3 = 1;
         }
         if (force > MICROBIT_ACCELEROMETER_6G_THRESHOLD && !shake.impulse_6)
