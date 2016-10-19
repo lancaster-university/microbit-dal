@@ -58,13 +58,14 @@ class MicroBitIO
     MicroBitPin          P11;
     MicroBitPin          P19;
     MicroBitPin          P20;
-	MicroBitPin			 CAL_P0;
+	MicroBitPin			 CAL_P3;
 	MicroBitPin			 CAL_P7;
 	MicroBitPin			 CAL_P8;
 	MicroBitPin			 CAL_P9;
 	MicroBitPin			 CAL_P13;
 	MicroBitPin			 CAL_P14;
 	MicroBitPin			 CAL_P15;
+	MicroBitPin			 CAL_P22;
 	
     /**
       * Constructor.
@@ -78,9 +79,9 @@ class MicroBitIO
                int ID_P3, int ID_P4, int ID_P5,
                int ID_P6, int ID_P7, int ID_P9, 
                int ID_P10,int ID_P11,int ID_P19,
-               int ID_P20, int ID_CAL_P0, int ID_CAL_P7,
+               int ID_P20, int ID_CAL_P3, int ID_CAL_P7,
                int ID_CAL_P8, int ID_CAL_P9, int ID_CAL_P13, 
-               int ID_CAL_P14, int ID_CAL_P15);
+               int ID_CAL_P14, int ID_CAL_P15, int ID_CAL_P22);
 };
 
 #endif
