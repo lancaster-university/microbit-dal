@@ -266,26 +266,14 @@ DirectoryEntry* MicroBitFileSystem::getDirectoryEntry(char const * filename, con
     uint16_t block;
     DirectoryEntry *dirent;
 
-	if(filename[0] == '/' && filename[1] == 0)
-	{
-		uint16_t rootOffset = fileSystemTable[0];
+    if(filename[0] == '/' && strlen(filename) == 1)
+        return rootDirectory;
 
-		// A valid MBFS has the first 'N' blocks set to the value 'N' followed by a valid root directory block with magic signature.
-		for (int i = 0; i < rootOffset; i++)
-		{
-			if (fileSystemTable[i] >= MBFS_EOF || fileSystemTable[i] != rootOffset)
-				return NULL;
-		}
-
-		return (DirectoryEntry *)getBlock(rootOffset);
-	}
-
-
-	// Determine the filename from the (potentially) fully qualified filename.
-	file = filename + strlen(filename);
-	while (file >= filename && *file != '/')
-		file--;
-	file++;
+    // Determine the filename from the (potentially) fully qualified filename.
+    file = filename + strlen(filename);
+    while (file >= filename && *file != '/')
+        file--;
+    file++;
 
     // Obtain a handle on the directory to search.
     if (directory == NULL)
@@ -408,9 +396,9 @@ DirectoryEntry* MicroBitFileSystem::getDirectoryOf(char const * filename)
 {
     DirectoryEntry* directory;
 
-	// If no path is provided, return the root diretory.
-	if (filename == NULL || filename[0] == 0 || ((filename[0] == '/') && strlen(filename) == 1))
-		return rootDirectory;
+    // If no path is provided, return the root diretory.
+    if (filename == NULL || filename[0] == 0 || ((filename[0] == '/') && strlen(filename) == 1))
+        return rootDirectory;
 
     char s[MBFS_FILENAME_LENGTH + 1];
 
@@ -1081,6 +1069,10 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
     // Walk the file table until we reach the start block
     while (file->seek - position > MBFS_BLOCK_SIZE)
     {
+        // validation check
+        if(block == MBFS_EOF)
+            return 0;
+
         block = getNextFileBlock(block);
         position += MBFS_BLOCK_SIZE;
     }
@@ -1092,6 +1084,9 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
     writePointer = buffer;
     while (bytesCopied < size)
     {
+        if(block == MBFS_EOF)
+            return bytesCopied;
+
         // First, determine if we need to write a partial block.
         readPointer = (uint8_t *)getBlock(block) + offset;
         segmentLength = min(size - bytesCopied, MBFS_BLOCK_SIZE - offset);
