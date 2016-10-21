@@ -10,7 +10,7 @@ enum SLIPCharacters {
     ESC_ESC
 };
 
-static int is_slip_character(char c)
+inline int is_slip_character(char c)
 {
     switch (c)
     {
