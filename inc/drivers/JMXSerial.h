@@ -32,8 +32,6 @@ class JMXSerial : public MicroBitSerial, public MicroBitComponent
     // the currently open file descriptor returned by MicroBitFileSystem.
     int fd;
 
-    MicroBitFileSystem* fs;
-
     /**
       * Internal method to send a JSON formatted string.
       */

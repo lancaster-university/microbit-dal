@@ -72,20 +72,24 @@ int JMXSerial::openFile(const char* file, int mode)
 {
     if(fd >= 0 && strcmp(filename.toCharArray(), file) != 0)
     {
-        fs->close(fd);
+        MicroBitFileSystem::defaultFileSystem->close(fd);
         filename = ManagedString();
         fd = -1;
     }
 
     if(fd < 0)
     {
-        fd = fs->open(file, mode);
+        fd = MicroBitFileSystem::defaultFileSystem->open(file, mode);
 
         if(fd < 0)
             return MICROBIT_INVALID_PARAMETER;
 
         filename = file;
-        fiber_add_idle_component(this);
+
+        if(status == 0)
+            fiber_add_idle_component(this);
+
+        status = FILE_CLOSE_TIMEOUT;
     }
 
     return MICROBIT_OK;
@@ -104,12 +108,12 @@ void JMXSerial::fsRead(FSRequestPacket* p)
     {
         send("status", (void*)&status_p_success);
 
-        fs->seek(fd, p->offset, MB_SEEK_SET);
+        MicroBitFileSystem::defaultFileSystem->seek(fd, p->offset, MB_SEEK_SET);
 
         char c = 0;
         int i = 0;
 
-        while(fs->read(fd, (uint8_t*)&c, 1) && i < p->len)
+        while(MicroBitFileSystem::defaultFileSystem->read(fd, (uint8_t*)&c, 1) && i < p->len)
         {
             status = FILE_CLOSE_TIMEOUT;
             putc(c);
@@ -150,7 +154,7 @@ void JMXSerial::fsWrite(FSRequestPacket* p)
         return;
     }
 
-    fs->seek(fd, p->offset, MB_SEEK_SET);
+    MicroBitFileSystem::defaultFileSystem->seek(fd, p->offset, MB_SEEK_SET);
 
     putc(SLIP_ESC);
     putc('A');
@@ -181,7 +185,7 @@ void JMXSerial::fsWrite(FSRequestPacket* p)
             putc('A');
         }
 
-        fs->write(fd, buf, rx_size);
+        MicroBitFileSystem::defaultFileSystem->write(fd, buf, rx_size);
 
         i += rx_size;//
     }
@@ -197,7 +201,7 @@ void JMXSerial::fsWrite(FSRequestPacket* p)
   */
 void JMXSerial::fsDelete(FSRequestPacket* p)
 {
-    int localFd = fs->remove(p->filename);
+    int localFd = MicroBitFileSystem::defaultFileSystem->remove(p->filename);
 
     if(localFd)
         send("status", (void*)&status_p_success);
@@ -225,10 +229,10 @@ void JMXSerial::fsList(DIRRequestPacket* dir)
 
     while(entryOffset < dir->entry + 1)
     {
-        if(fs->seek(fd, byteOffset, MB_SEEK_SET) < 0)
+        if(MicroBitFileSystem::defaultFileSystem->seek(fd, byteOffset, MB_SEEK_SET) < 0)
             break;
 
-        if(fs->read(fd, (uint8_t *)&e, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
+        if(MicroBitFileSystem::defaultFileSystem->read(fd, (uint8_t *)&e, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
             break;
 
         if(e.flags & MBFS_DIRECTORY_ENTRY_VALID && !(e.flags & MBFS_DIRECTORY_ENTRY_DIRECTORY))
@@ -297,7 +301,7 @@ void JMXSerial::idleTick()
     if(status <= 1  && fd >= 0)
     {
         MicroBitEvent(7777,5);
-        fs->close(fd);
+        MicroBitFileSystem::defaultFileSystem->close(fd);
         fd = -1;
 
         fiber_remove_idle_component(this);
@@ -447,6 +451,8 @@ JMXSerial::JMXSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uint8_t txBuf
 
     fd = -1;
     status = 0;
+
+    MicroBitFileSystem* fs = NULL;
 
     if(MicroBitFileSystem::defaultFileSystem == NULL)
         fs = new MicroBitFileSystem();
