@@ -36,10 +36,12 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_SERIAL_EVT_HEAD_MATCH      2
 #define MICROBIT_SERIAL_EVT_RX_FULL         3
 
-#define MICROBIT_SERIAL_RX_IN_USE           1
-#define MICROBIT_SERIAL_TX_IN_USE           2
-#define MICROBIT_SERIAL_RX_BUFF_INIT        4
-#define MICROBIT_SERIAL_TX_BUFF_INIT        8
+#define MICROBIT_SERIAL_RX_IN_USE           0x01
+#define MICROBIT_SERIAL_TX_IN_USE           0x02
+#define MICROBIT_SERIAL_RX_BUFF_INIT        0x04
+#define MICROBIT_SERIAL_TX_BUFF_INIT        0x08
+
+#define MICROBIT_JMX_ENABLED                0x10
 
 
 enum MicroBitSerialMode

@@ -464,6 +464,20 @@ extern uint32_t __etext;
 #ifndef MICROBIT_IF_PRES_2
 #define MICROBIT_IF_PRES_2                      0x0003B800
 #endif
+
+// If we need to preserve pages, but we don't want the file system, then we
+// inform the constructor of JMXSerial to explicitly disable JMX, whilst preserving
+// the specific pages of flash memory above.
+
+// This ultimately means: pages can be preserved without the need (or overhead)
+// of file system request handlers.
+#if !CONFIG_ENABLED(MICROBIT_IF_CHIP_FS)
+#undef MICROBIT_IF_CHIP_FS
+
+#define MICROBIT_IF_CHIP_FS                     1
+#define MICROBIT_IF_CHIP_FS_OVERRIDE            1
+#endif
+
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_DBG)

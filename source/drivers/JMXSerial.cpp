@@ -465,24 +465,37 @@ JMXSerial::JMXSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uint8_t txBuf
         JMXInitPacket p;
 
         p.enable = 1;
+
+#if CONFIG_ENABLED(MICROBIT_IF_CHIP_FS_OVERRIDE)
+        // If we just want to preserve pages, we can send a packet with an explicit
+        // disable.
+        p.enable = 0;
+#endif
+
         strcpy(p.v, MICROBIT_IF_CHIP_VERSION);
 
-    	p.p1 = 0;
-    	p.p2 = 0;
+        p.p1 = 0;
+        p.p2 = 0;
 
 #if CONFIG_ENABLED(MICROBIT_IF_CHIP_PRESERVE)
-
         // tell the firmware to preserve these pages if the config option is enabled.
         p.p1 = MICROBIT_IF_PRES_1;
         p.p2 = MICROBIT_IF_PRES_2;
 #endif
         send("jmx",(void*)&p);
+
+        // we should only consume resources if we expect to respond to the interface
+        // chip.
+        if(p.enable)
+        {
+            serial_status |= MICROBIT_JMX_ENABLED;
+
+            initialiseRx();
+
+            if (EventModel::defaultEventBus)
+                EventModel::defaultEventBus->listen(MICROBIT_ID_JMX, MICROBIT_EVT_ANY, this, &JMXSerial::requestHandler);
+        }
     }
-
-    initialiseRx();
-
-    if (EventModel::defaultEventBus)
-        EventModel::defaultEventBus->listen(MICROBIT_ID_JMX, MICROBIT_EVT_ANY, this, &JMXSerial::requestHandler);
 }
 
 /**
@@ -501,11 +514,15 @@ void JMXSerial::baud(int baudrate)
     if(baudrate < 0)
         return;
 
-    UARTConfigPacket p;
+    // we only are required to tell the Interface chip if jmx is enabled.
+    if(serial_status & MICROBIT_JMX_ENABLED)
+    {
+        UARTConfigPacket p;
 
-    p.baud = baudrate;
+        p.baud = baudrate;
 
-    send("uart", (void*)&p);
+        send("uart", (void*)&p);
+    }
 
     MicroBitSerial::baud(baudrate);
 }
