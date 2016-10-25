@@ -244,7 +244,8 @@ class PacketBuffer
     /**
       * Retrieves the received signal strength of this packet.
       *
-      * @return The signal strength of the radio when this packet was received, in -dbM.
+      * @return The signal strength of the radio when this packet was received, in -dbm.
+      * The higher the value, the stronger the signal. Typical values are in the range -42 to -128.
       *
       * @code
       * PacketBuffer p1(16);

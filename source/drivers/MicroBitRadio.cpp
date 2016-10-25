@@ -215,6 +215,8 @@ int MicroBitRadio::queueRxBuf()
 
 /**
   * Sets the RSSI for the most recent packet.
+  * The value is measured in -dbm. The higher the value, the stronger the signal.
+  * Typical values are in the range -42 to -128.
   *
   * @param rssi the new rssi value.
   *
@@ -232,6 +234,8 @@ int MicroBitRadio::setRSSI(int rssi)
 
 /**
   * Retrieves the current RSSI for the most recent packet.
+  * The return value is measured in -dbm. The higher the value, the stronger the signal.
+  * Typical values are in the range -42 to -128.
   *
   * @return the most recent RSSI value or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */
