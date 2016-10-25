@@ -87,7 +87,7 @@ struct FrameBuffer
 
     uint8_t         payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
     FrameBuffer     *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
-    uint8_t         rssi;                               // Received signal strength of this frame.
+    int             rssi;                               // Received signal strength of this frame.
 };
 
 
@@ -95,7 +95,7 @@ class MicroBitRadio : MicroBitComponent
 {
     uint8_t                 group;      // The radio group to which this micro:bit belongs.
     uint8_t                 queueDepth; // The number of packets in the receiver queue.
-    uint8_t                 rssi;
+    int                     rssi;
     FrameBuffer             *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
     FrameBuffer             *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
 
@@ -156,7 +156,7 @@ class MicroBitRadio : MicroBitComponent
       *
       * @note should only be called from RADIO_IRQHandler...
       */
-    int setRSSI(uint8_t rssi);
+    int setRSSI(int rssi);
 
     /**
       * Retrieves the current RSSI for the most recent packet.

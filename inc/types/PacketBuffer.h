@@ -32,7 +32,7 @@ DEALINGS IN THE SOFTWARE.
 
 struct PacketData : RefCounted
 {
-    uint16_t        rssi;               // The radio signal strength this packet was received.
+    int             rssi;               // The radio signal strength this packet was received.
     uint8_t         length;             // The length of the payload in bytes
     uint8_t         payload[0];         // User / higher layer protocol data
 };
