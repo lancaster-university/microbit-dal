@@ -93,6 +93,8 @@ class MicroBitBLEManager : MicroBitComponent
 {
     public:
 
+    static MicroBitBLEManager *manager;
+
 	// The mbed abstraction of the BlueTooth Low Energy (BLE) hardware
     BLEDevice                       *ble;
 
@@ -244,7 +246,6 @@ class MicroBitBLEManager : MicroBitComponent
 	ManagedString	passKey;
 	ManagedString	deviceName;
 
-    static MicroBitBLEManager *manager;
 };
 
 #endif

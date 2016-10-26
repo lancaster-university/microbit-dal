@@ -24,7 +24,6 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "MicroBitConfig.h"
-#include "MicroBitBLEManager.h"
 #include "MicroBitEddystone.h"
 
 
@@ -67,13 +66,7 @@ const uint8_t EDDYSTONE_URL_FRAME_TYPE = 0x10;
  */
 MicroBitEddystone::MicroBitEddystone()
 {
-  	ble_manager = MicroBitBLEManager::getInstance();
 }
-
-MicroBitEddystone::~MicroBitEddystone() {
-	_instance = 0;
-}
-
 
 MicroBitEddystone* MicroBitEddystone::getInstance() {
 	if (_instance == 0) {

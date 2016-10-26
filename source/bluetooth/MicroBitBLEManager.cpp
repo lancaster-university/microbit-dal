@@ -92,11 +92,11 @@ static Gap::Handle_t pairingHandle = 0;                         // The connectio
 
 static void storeSystemAttributes(Gap::Handle_t handle)
 {
-    if(MicroBitBLEManager::getInstance()->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    if(MicroBitBLEManager::manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
         ManagedString key("bleSysAttrs");
 
-        KeyValuePair* bleSysAttrs = MicroBitBLEManager::getInstance()->storage->get(key);
+        KeyValuePair* bleSysAttrs = MicroBitBLEManager::manager->storage->get(key);
 
         BLESysAttribute attrib;
         BLESysAttributeStore attribStore;
@@ -116,7 +116,7 @@ static void storeSystemAttributes(Gap::Handle_t handle)
         if(memcmp(attribStore.sys_attrs[deviceID].sys_attr, attrib.sys_attr, len) != 0)
         {
             attribStore.sys_attrs[deviceID] = attrib;
-            MicroBitBLEManager::getInstance()->storage->put(key, (uint8_t *)&attribStore, sizeof(attribStore));
+            MicroBitBLEManager::manager->storage->put(key, (uint8_t *)&attribStore, sizeof(attribStore));
         }
     }
 }
@@ -130,8 +130,8 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 
     storeSystemAttributes(reason->handle);
 
-    if (MicroBitBLEManager::getInstance())
-	    MicroBitBLEManager::getInstance()->advertise();
+    if (MicroBitBLEManager::manager)
+	    MicroBitBLEManager::manager->advertise();
 }
 
 /**
@@ -157,11 +157,11 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
     if (ret == 0)
         deviceID = dm_handle.device_id;
 
-    if(MicroBitBLEManager::getInstance()->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    if(MicroBitBLEManager::manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
         ManagedString key("bleSysAttrs");
 
-        KeyValuePair* bleSysAttrs = MicroBitBLEManager::getInstance()->storage->get(key);
+        KeyValuePair* bleSysAttrs = MicroBitBLEManager::manager->storage->get(key);
 
         BLESysAttributeStore attribStore;
         BLESysAttribute attrib;
@@ -194,8 +194,8 @@ static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::
 
 	ManagedString passKey((const char *)passkey, SecurityManager::PASSKEY_LEN);
 
-    if (MicroBitBLEManager::getInstance())
-	    MicroBitBLEManager::getInstance()->pairingRequested(passKey);
+    if (MicroBitBLEManager::manager)
+	    MicroBitBLEManager::manager->pairingRequested(passKey);
 }
 
 static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager::SecurityCompletionStatus_t status)
@@ -208,10 +208,10 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
     if (ret == 0)
         deviceID = dm_handle.device_id;
 
-    if (MicroBitBLEManager::getInstance())
+    if (MicroBitBLEManager::manager)
     {
         pairingHandle = handle;
-	    MicroBitBLEManager::getInstance()->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
+	    MicroBitBLEManager::manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
     }
 }
 

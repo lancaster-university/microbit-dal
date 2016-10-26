@@ -47,7 +47,6 @@ class MicroBitEddystone
 {
     public:
     
-	virtual ~MicroBitEddystone();
 	static MicroBitEddystone* getInstance();     
 
 	/**
@@ -80,7 +79,6 @@ class MicroBitEddystone
      */
     MicroBitEddystone();
 	static MicroBitEddystone* _instance;
-	MicroBitBLEManager* ble_manager;
 };
 
 #endif
