@@ -120,6 +120,15 @@ class MicroBitBLEManager : MicroBitComponent
      * Hence, the init() member function should be used to initialise the BLE stack.
      */
     MicroBitBLEManager();
+    
+    /**
+     * getInstance
+     *
+     * Allows other objects to easily obtain a pointer to the single instance of this object. By rights the constructor should be made
+     * private to properly implement the singleton pattern.
+     *
+     */
+	static MicroBitBLEManager* getInstance(); 
 
     /**
       * Post constructor initialisation method as the BLE stack cannot be brought
@@ -235,6 +244,7 @@ class MicroBitBLEManager : MicroBitComponent
 	ManagedString	passKey;
 	ManagedString	deviceName;
 
+    static MicroBitBLEManager *manager;
 };
 
 #endif

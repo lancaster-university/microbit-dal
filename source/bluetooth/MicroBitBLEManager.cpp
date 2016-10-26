@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitConfig.h"
 #include "MicroBitBLEManager.h"
+#include "MicroBitEddystone.h"
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
 
@@ -79,32 +80,23 @@ const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
 const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 
-#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
-const char* EDDYSTONE_URL_PREFIXES[] = { "http://www.", "https://www.", "http://", "https://" };
-const size_t EDDYSTONE_URL_PREFIXES_LENGTH = sizeof(EDDYSTONE_URL_PREFIXES) / sizeof(char*);
-const char* EDDYSTONE_URL_SUFFIXES[] = { ".com/", ".org/", ".edu/", ".net/", ".info/", ".biz/", ".gov/", ".com", ".org", ".edu", ".net", ".info", ".biz", ".gov" };
-const size_t EDDYSTONE_URL_SUFFIXES_LENGTH = sizeof(EDDYSTONE_URL_SUFFIXES) / sizeof(char*);
-const int EDDYSTONE_URL_MAX_LENGTH = 18;
-const uint8_t EDDYSTONE_UUID[] = {0xAA, 0xFE};
-const uint8_t EDDYSTONE_URL_FRAME_TYPE = 0x10;
-#endif
-
 /*
  * Many of the mbed interfaces we need to use only support callbacks to plain C functions, rather than C++ methods.
  * So, we maintain a pointer to the MicroBitBLEManager that's in use. Ths way, we can still access resources on the micro:bit
  * whilst keeping the code modular.
  */
-static MicroBitBLEManager *manager = NULL;                      // Singleton reference to the BLE manager. many mbed BLE API callbacks still do not support member funcions yet. :-(
+MicroBitBLEManager* MicroBitBLEManager::manager = NULL; // Singleton reference to the BLE manager. many mbed BLE API callbacks still do not support member funcions yet. :-(
+
 static uint8_t deviceID = 255;                                  // Unique ID for the peer that has connected to us.
 static Gap::Handle_t pairingHandle = 0;                         // The connection handle used during a pairing process. Used to ensure that connections are dropped elegantly.
 
 static void storeSystemAttributes(Gap::Handle_t handle)
 {
-    if(manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    if(MicroBitBLEManager::getInstance()->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
         ManagedString key("bleSysAttrs");
 
-        KeyValuePair* bleSysAttrs = manager->storage->get(key);
+        KeyValuePair* bleSysAttrs = MicroBitBLEManager::getInstance()->storage->get(key);
 
         BLESysAttribute attrib;
         BLESysAttributeStore attribStore;
@@ -124,7 +116,7 @@ static void storeSystemAttributes(Gap::Handle_t handle)
         if(memcmp(attribStore.sys_attrs[deviceID].sys_attr, attrib.sys_attr, len) != 0)
         {
             attribStore.sys_attrs[deviceID] = attrib;
-            manager->storage->put(key, (uint8_t *)&attribStore, sizeof(attribStore));
+            MicroBitBLEManager::getInstance()->storage->put(key, (uint8_t *)&attribStore, sizeof(attribStore));
         }
     }
 }
@@ -138,8 +130,8 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 
     storeSystemAttributes(reason->handle);
 
-    if (manager)
-	    manager->advertise();
+    if (MicroBitBLEManager::getInstance())
+	    MicroBitBLEManager::getInstance()->advertise();
 }
 
 /**
@@ -165,11 +157,11 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
     if (ret == 0)
         deviceID = dm_handle.device_id;
 
-    if(manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    if(MicroBitBLEManager::getInstance()->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
         ManagedString key("bleSysAttrs");
 
-        KeyValuePair* bleSysAttrs = manager->storage->get(key);
+        KeyValuePair* bleSysAttrs = MicroBitBLEManager::getInstance()->storage->get(key);
 
         BLESysAttributeStore attribStore;
         BLESysAttribute attrib;
@@ -202,8 +194,8 @@ static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::
 
 	ManagedString passKey((const char *)passkey, SecurityManager::PASSKEY_LEN);
 
-    if (manager)
-	    manager->pairingRequested(passKey);
+    if (MicroBitBLEManager::getInstance())
+	    MicroBitBLEManager::getInstance()->pairingRequested(passKey);
 }
 
 static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager::SecurityCompletionStatus_t status)
@@ -216,10 +208,10 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
     if (ret == 0)
         deviceID = dm_handle.device_id;
 
-    if (manager)
+    if (MicroBitBLEManager::getInstance())
     {
         pairingHandle = handle;
-	    manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
+	    MicroBitBLEManager::getInstance()->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
     }
 }
 
@@ -255,6 +247,18 @@ MicroBitBLEManager::MicroBitBLEManager() :
     manager = this;
 	this->ble = NULL;
 	this->pairingStatus = 0;
+}
+
+/**
+ * When called, the micro:bit will begin advertising for a predefined period,
+ * MICROBIT_BLE_ADVERTISING_TIMEOUT seconds to bonded devices.
+ */
+MicroBitBLEManager* MicroBitBLEManager::getInstance()
+{
+    if (manager == 0) {
+        manager = new MicroBitBLEManager;
+    }
+    return manager;
 }
 
 /**
@@ -517,56 +521,15 @@ void MicroBitBLEManager::stopAdvertising()
 */
 void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
-    int urlDataLength = 0;
-    char urlData[EDDYSTONE_URL_MAX_LENGTH];
-    memset(urlData, 0, EDDYSTONE_URL_MAX_LENGTH);
-
-    if ((url == NULL) || (strlen(url) == 0)) { return; }
-
-    // Prefix
-    for (size_t i = 0; i < EDDYSTONE_URL_PREFIXES_LENGTH; i++) {
-        size_t prefixLen = strlen(EDDYSTONE_URL_PREFIXES[i]);
-        if (strncmp(url, EDDYSTONE_URL_PREFIXES[i], prefixLen) == 0) {
-            urlData[urlDataLength++] = i;
-            url+= prefixLen;
-            break;
-        }
-    }
-
-    // Suffix
-    while (*url && (urlDataLength < EDDYSTONE_URL_MAX_LENGTH)) {
-        size_t i;
-        for (i = 0; i < EDDYSTONE_URL_SUFFIXES_LENGTH; i++) {
-            size_t suffixLen = strlen(EDDYSTONE_URL_SUFFIXES[i]);
-            if (strncmp(url, EDDYSTONE_URL_SUFFIXES[i], suffixLen) == 0) {
-                urlData[urlDataLength++] = i;
-                url+= suffixLen;
-                break;
-            }
-        }
-
-        // Catch the default case where the suffix doesn't match a preset ones
-        if (i == EDDYSTONE_URL_SUFFIXES_LENGTH) {
-            urlData[urlDataLength++] = *url;
-            ++url;
-        }
-    }
- 
-    uint8_t rawFrame[EDDYSTONE_URL_MAX_LENGTH+4];
-    size_t index = 0;
-    rawFrame[index++] = EDDYSTONE_UUID[0];
-    rawFrame[index++] = EDDYSTONE_UUID[1];
-    rawFrame[index++] = EDDYSTONE_URL_FRAME_TYPE;
-    rawFrame[index++] = calibratedPower;
-    memcpy(rawFrame + index, urlData, urlDataLength);
-
     ble->gap().stopAdvertising();
     ble->clearAdvertisingPayload();
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index+urlDataLength);
+
     ble->setAdvertisingType(connectable ? GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED : GapAdvertisingParams::ADV_NON_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(interval);
+
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
+
+    MicroBitEddystone::getInstance()->setEddystoneUrl(ble,url,calibratedPower);    
   
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
     ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
