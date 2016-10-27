@@ -71,7 +71,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_MAXIMUM_BONDS              4
 #define MICROBIT_BLE_ENABLE_BONDING 	        true
 
-#define MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL            400
+#define MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL            400
 
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
@@ -216,7 +216,7 @@ class MicroBitBLEManager : MicroBitComponent
 	void stopAdvertising();
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 	/**
-	* Transmits an Eddystone url
+	* Starts Bluetooth advertising of Eddystone URL frames
 	* @param url: the url to transmit. Must be no longer than the supported eddystone url length
 	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
         * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
@@ -224,13 +224,35 @@ class MicroBitBLEManager : MicroBitComponent
         * @param connectable: true to keep bluetooth connectable for other services, false otherwise
         * @param interval: the advertising interval of the beacon
 	*/
-    	void advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
+    	void advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 
         /**
-        * Transmits a eddystone url, but accepts a ManagedString as a url. For more info see
+        * Starts Bluetooth advertising of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
         * advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
         */
-    	void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL);
+    	void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_UID)
+	/**
+	* Starts Bluetooth advertising of Eddystone UID frames
+    * (from the Eddystone spec) the namespace portion of the ID may be used to group a particular set of beacons, while the instance ID 
+    * identifies individual devices in the group.
+	* @param uid_namespace: the uid namespace. Must 10 bytes long.
+	* @param uid_instance:  the uid instance value. Must 6 bytes long.
+	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
+        * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+        * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+        * @param connectable: true to keep bluetooth connectable for other services, false otherwise
+        * @param interval: the advertising interval of the beacon
+	*/
+    	void advertiseEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
+
+        /**
+        * Starts Bluetooth advertising of Eddystone URL frames, but accepts ManagedStrings as the uid parts. For more info see
+        * advertiseEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
+        */
+    	void advertiseEddystoneUid(ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
     private:

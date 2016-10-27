@@ -46,13 +46,24 @@ DEALINGS IN THE SOFTWARE.
 #endif
 
 MicroBitEddystone* MicroBitEddystone::_instance;
+
+const uint8_t EDDYSTONE_UUID[] = {0xAA, 0xFE};
+
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 const char* EDDYSTONE_URL_PREFIXES[] = { "http://www.", "https://www.", "http://", "https://" };
 const size_t EDDYSTONE_URL_PREFIXES_LENGTH = sizeof(EDDYSTONE_URL_PREFIXES) / sizeof(char*);
 const char* EDDYSTONE_URL_SUFFIXES[] = { ".com/", ".org/", ".edu/", ".net/", ".info/", ".biz/", ".gov/", ".com", ".org", ".edu", ".net", ".info", ".biz", ".gov" };
 const size_t EDDYSTONE_URL_SUFFIXES_LENGTH = sizeof(EDDYSTONE_URL_SUFFIXES) / sizeof(char*);
 const int EDDYSTONE_URL_MAX_LENGTH = 18;
-const uint8_t EDDYSTONE_UUID[] = {0xAA, 0xFE};
 const uint8_t EDDYSTONE_URL_FRAME_TYPE = 0x10;
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_UID)
+const int EDDYSTONE_UID_NAMESPACE_MAX_LENGTH = 10;
+const int EDDYSTONE_UID_INSTANCE_MAX_LENGTH = 6;
+const uint8_t EDDYSTONE_UID_FRAME_TYPE = 0x00;
+const uint8_t EDDYSTONE_UID[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+#endif
 
 /**
  * Constructor.
@@ -75,8 +86,9 @@ MicroBitEddystone* MicroBitEddystone::getInstance() {
 	return _instance;
 }
 
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 /**
-* Transmits an Eddystone url
+* Set the content of Eddystone URL frames
 * @param url: the url to transmit. Must be no longer than the supported eddystone url length
 * @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
 * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
@@ -132,11 +144,53 @@ void MicroBitEddystone::setEddystoneUrl(BLEDevice *ble, char* url, int8_t calibr
 }
 
 /**
-* Transmits a eddystone url, but accepts a ManagedString as a url. For more info see
-* advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
+* Set the content of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
+* setEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
 */
 void setEddystoneUrl(BLEDevice *ble, ManagedString url, int8_t calibratedPower)
 {
     setEddystoneUrl(ble, (char *)url.toCharArray(), calibratedPower);
 }
+#endif
 
+#if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_UID)
+/**
+* Set the content of Eddystone UID frames
+* @param uid_namespace: the uid namespace. Must 10 bytes long.
+* @param uid_instance:  the uid instance value. Must 6 bytes long.
+* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
+* The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+* More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+*/
+void MicroBitEddystone::setEddystoneUid(BLEDevice *ble, char* uid_namespace, char* uid_instance, int8_t calibratedPower)
+{
+    char uidData[EDDYSTONE_UID_NAMESPACE_MAX_LENGTH+EDDYSTONE_UID_INSTANCE_MAX_LENGTH];
+
+    // UID namespace
+    memcpy(uidData, uid_namespace, EDDYSTONE_UID_NAMESPACE_MAX_LENGTH);
+
+    // UID instance
+    memcpy(uidData+EDDYSTONE_UID_NAMESPACE_MAX_LENGTH, uid_instance, EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
+
+    uint8_t rawFrame[EDDYSTONE_UID_NAMESPACE_MAX_LENGTH+EDDYSTONE_UID_INSTANCE_MAX_LENGTH+4];
+    size_t index = 0;
+    rawFrame[index++] = EDDYSTONE_UUID[0];
+    rawFrame[index++] = EDDYSTONE_UUID[1];
+    rawFrame[index++] = EDDYSTONE_UID_FRAME_TYPE;
+    rawFrame[index++] = calibratedPower;
+    memcpy(rawFrame + index, uidData, EDDYSTONE_UID_NAMESPACE_MAX_LENGTH+EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
+
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index+EDDYSTONE_UID_NAMESPACE_MAX_LENGTH+EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
+}
+
+/**
+* Set the content of Eddystone UID frames, but accepts ManagedStrings as a uid args. For more info see
+* setEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
+*/
+void MicroBitEddystone::setEddystoneUid(BLEDevice *ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower)
+{
+    setEddystoneUid(ble, (char *)uid_namespace.toCharArray(), (char *)uid_instance.toCharArray(), calibratedPower);
+}
+
+#endif
