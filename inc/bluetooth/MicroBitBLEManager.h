@@ -218,10 +218,10 @@ class MicroBitBLEManager : MicroBitComponent
 	* Starts Bluetooth advertising of Eddystone URL frames
 	* @param url: the url to transmit. Must be no longer than the supported eddystone url length
 	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-        * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-        * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
-        * @param connectable: true to keep bluetooth connectable for other services, false otherwise
-        * @param interval: the advertising interval of the beacon
+    * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+    * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
+    * @param connectable: true to keep bluetooth connectable for other services, false otherwise
+    * @param interval: the advertising interval of the beacon
 	*/
     void advertiseEddystoneUrl(char *url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 
@@ -240,26 +240,26 @@ class MicroBitBLEManager : MicroBitComponent
 	* @param uid_namespace: the uid namespace. Must 10 bytes long.
 	* @param uid_instance:  the uid instance value. Must 6 bytes long.
 	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-        * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-        * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
-        * @param connectable: true to keep bluetooth connectable for other services, false otherwise
-        * @param interval: the advertising interval of the beacon
+    * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+    * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+    * @param connectable: true to keep bluetooth connectable for other services, false otherwise
+    * @param interval: the advertising interval of the beacon
 	*/
     void advertiseEddystoneUid(char *uid_namespace, char *uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 
     /**
-        * Starts Bluetooth advertising of Eddystone URL frames, but accepts ManagedStrings as the uid parts. For more info see
-        * advertiseEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
-        */
+    * Starts Bluetooth advertising of Eddystone URL frames, but accepts ManagedStrings as the uid parts. For more info see
+    * advertiseEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
+    */
     void advertiseEddystoneUid(ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
   private:
     /**
-	 * Displays the device's ID code as a histogram on the provided MicroBitDisplay instance.
-     *
-     * @param display The display instance used for displaying the histogram.
-	 */
+	* Displays the device's ID code as a histogram on the provided MicroBitDisplay instance.
+    *
+    * @param display The display instance used for displaying the histogram.
+	*/
     void showNameHistogram(MicroBitDisplay &display);
 
     int pairingStatus;
