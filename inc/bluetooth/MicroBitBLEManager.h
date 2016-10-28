@@ -35,7 +35,7 @@ DEALINGS IN THE SOFTWARE.
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
  * as a compatability option, but does not support the options used...
  */
-#if !defined (__arm)
+#if !defined(__arm)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
@@ -44,7 +44,7 @@ DEALINGS IN THE SOFTWARE.
 /*
  * Return to our predefined compiler settings.
  */
-#if !defined (__arm)
+#if !defined(__arm)
 #pragma GCC diagnostic pop
 #endif
 
@@ -61,23 +61,23 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitButton.h"
 #include "MicroBitStorage.h"
 
-#define MICROBIT_BLE_PAIR_REQUEST               0x01
-#define MICROBIT_BLE_PAIR_COMPLETE              0x02
-#define MICROBIT_BLE_PAIR_PASSCODE              0x04
-#define MICROBIT_BLE_PAIR_SUCCESSFUL            0x08
+#define MICROBIT_BLE_PAIR_REQUEST 0x01
+#define MICROBIT_BLE_PAIR_COMPLETE 0x02
+#define MICROBIT_BLE_PAIR_PASSCODE 0x04
+#define MICROBIT_BLE_PAIR_SUCCESSFUL 0x08
 
-#define MICROBIT_BLE_PAIRING_TIMEOUT	        90
-#define MICROBIT_BLE_POWER_LEVELS               8
-#define MICROBIT_BLE_MAXIMUM_BONDS              4
-#define MICROBIT_BLE_ENABLE_BONDING 	        true
+#define MICROBIT_BLE_PAIRING_TIMEOUT 90
+#define MICROBIT_BLE_POWER_LEVELS 8
+#define MICROBIT_BLE_MAXIMUM_BONDS 4
+#define MICROBIT_BLE_ENABLE_BONDING true
 
-#define MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL            400
+#define MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL 400
 
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
 struct BLESysAttribute
 {
-    uint8_t         sys_attr[8];
+    uint8_t sys_attr[8];
 };
 
 struct BLESysAttributeStore
@@ -91,15 +91,14 @@ struct BLESysAttributeStore
   */
 class MicroBitBLEManager : MicroBitComponent
 {
-    public:
-
+  public:
     static MicroBitBLEManager *manager;
 
-	// The mbed abstraction of the BlueTooth Low Energy (BLE) hardware
-    BLEDevice                       *ble;
+    // The mbed abstraction of the BlueTooth Low Energy (BLE) hardware
+    BLEDevice *ble;
 
     //an instance of MicroBitStorage used to store sysAttrs from softdevice
-    MicroBitStorage* storage;
+    MicroBitStorage *storage;
 
     /**
      * Constructor.
@@ -111,7 +110,7 @@ class MicroBitBLEManager : MicroBitComponent
      * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
      * Hence, the init() member function should be used to initialise the BLE stack.
      */
-    MicroBitBLEManager(MicroBitStorage& _storage);
+    MicroBitBLEManager(MicroBitStorage &_storage);
 
     /**
      * Constructor.
@@ -122,7 +121,7 @@ class MicroBitBLEManager : MicroBitComponent
      * Hence, the init() member function should be used to initialise the BLE stack.
      */
     MicroBitBLEManager();
-    
+
     /**
      * getInstance
      *
@@ -130,7 +129,7 @@ class MicroBitBLEManager : MicroBitComponent
      * private to properly implement the singleton pattern.
      *
      */
-	static MicroBitBLEManager* getInstance(); 
+    static MicroBitBLEManager *getInstance();
 
     /**
       * Post constructor initialisation method as the BLE stack cannot be brought
@@ -145,7 +144,7 @@ class MicroBitBLEManager : MicroBitComponent
       * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
       * @endcode
       */
-    void init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding);
+    void init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding);
 
     /**
      * Change the output power level of the transmitter to the given value.
@@ -187,35 +186,35 @@ class MicroBitBLEManager : MicroBitComponent
      */
     int getBondCount();
 
-	/**
+    /**
 	 * A request to pair has been received from a BLE device.
      * If we're in pairing mode, display the passkey to the user.
      * Also, purge the bonding table if it has reached capacity.
      *
      * @note for internal use only.
 	 */
-	void pairingRequested(ManagedString passKey);
+    void pairingRequested(ManagedString passKey);
 
-	/**
+    /**
 	 * A pairing request has been sucessfully completed.
 	 * If we're in pairing mode, display a success or failure message.
      *
      * @note for internal use only.
 	 */
-	void pairingComplete(bool success);
+    void pairingComplete(bool success);
 
-	/**
+    /**
      * Periodic callback in thread context.
      * We use this here purely to safely issue a disconnect operation after a pairing operation is complete.
 	 */
-	void idleTick();
+    void idleTick();
 
-	/**
+    /**
 	* Stops any currently running BLE advertisements
 	*/
-	void stopAdvertising();
+    void stopAdvertising();
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
-	/**
+    /**
 	* Starts Bluetooth advertising of Eddystone URL frames
 	* @param url: the url to transmit. Must be no longer than the supported eddystone url length
 	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
@@ -224,17 +223,17 @@ class MicroBitBLEManager : MicroBitComponent
         * @param connectable: true to keep bluetooth connectable for other services, false otherwise
         * @param interval: the advertising interval of the beacon
 	*/
-    	void advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
+    void advertiseEddystoneUrl(char *url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 
-        /**
+    /**
         * Starts Bluetooth advertising of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
         * advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
         */
-    	void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
+    void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_UID)
-	/**
+    /**
 	* Starts Bluetooth advertising of Eddystone UID frames
     * (from the Eddystone spec) the namespace portion of the ID may be used to group a particular set of beacons, while the instance ID 
     * identifies individual devices in the group.
@@ -246,28 +245,26 @@ class MicroBitBLEManager : MicroBitComponent
         * @param connectable: true to keep bluetooth connectable for other services, false otherwise
         * @param interval: the advertising interval of the beacon
 	*/
-    	void advertiseEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
+    void advertiseEddystoneUid(char *uid_namespace, char *uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 
-        /**
+    /**
         * Starts Bluetooth advertising of Eddystone URL frames, but accepts ManagedStrings as the uid parts. For more info see
         * advertiseEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
         */
-    	void advertiseEddystoneUid(ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
+    void advertiseEddystoneUid(ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
-    private:
-
-	/**
+  private:
+    /**
 	 * Displays the device's ID code as a histogram on the provided MicroBitDisplay instance.
      *
      * @param display The display instance used for displaying the histogram.
 	 */
-	void showNameHistogram(MicroBitDisplay &display);
+    void showNameHistogram(MicroBitDisplay &display);
 
-	int				pairingStatus;
-	ManagedString	passKey;
-	ManagedString	deviceName;
-
+    int pairingStatus;
+    ManagedString passKey;
+    ManagedString deviceName;
 };
 
 #endif

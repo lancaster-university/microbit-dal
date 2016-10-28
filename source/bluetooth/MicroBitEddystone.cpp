@@ -26,7 +26,6 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitEddystone.h"
 
-
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
@@ -45,15 +44,15 @@ DEALINGS IN THE SOFTWARE.
 #pragma GCC diagnostic pop
 #endif
 
-MicroBitEddystone* MicroBitEddystone::_instance;
+MicroBitEddystone *MicroBitEddystone::_instance;
 
 const uint8_t EDDYSTONE_UUID[] = {0xAA, 0xFE};
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
-const char* EDDYSTONE_URL_PREFIXES[] = { "http://www.", "https://www.", "http://", "https://" };
-const size_t EDDYSTONE_URL_PREFIXES_LENGTH = sizeof(EDDYSTONE_URL_PREFIXES) / sizeof(char*);
-const char* EDDYSTONE_URL_SUFFIXES[] = { ".com/", ".org/", ".edu/", ".net/", ".info/", ".biz/", ".gov/", ".com", ".org", ".edu", ".net", ".info", ".biz", ".gov" };
-const size_t EDDYSTONE_URL_SUFFIXES_LENGTH = sizeof(EDDYSTONE_URL_SUFFIXES) / sizeof(char*);
+const char *EDDYSTONE_URL_PREFIXES[] = {"http://www.", "https://www.", "http://", "https://"};
+const size_t EDDYSTONE_URL_PREFIXES_LENGTH = sizeof(EDDYSTONE_URL_PREFIXES) / sizeof(char *);
+const char *EDDYSTONE_URL_SUFFIXES[] = {".com/", ".org/", ".edu/", ".net/", ".info/", ".biz/", ".gov/", ".com", ".org", ".edu", ".net", ".info", ".biz", ".gov"};
+const size_t EDDYSTONE_URL_SUFFIXES_LENGTH = sizeof(EDDYSTONE_URL_SUFFIXES) / sizeof(char *);
 const int EDDYSTONE_URL_MAX_LENGTH = 18;
 const uint8_t EDDYSTONE_URL_FRAME_TYPE = 0x10;
 #endif
@@ -62,7 +61,6 @@ const uint8_t EDDYSTONE_URL_FRAME_TYPE = 0x10;
 const int EDDYSTONE_UID_NAMESPACE_MAX_LENGTH = 10;
 const int EDDYSTONE_UID_INSTANCE_MAX_LENGTH = 6;
 const uint8_t EDDYSTONE_UID_FRAME_TYPE = 0x00;
-const uint8_t EDDYSTONE_UID[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 #endif
 
 /**
@@ -79,11 +77,13 @@ MicroBitEddystone::MicroBitEddystone()
 {
 }
 
-MicroBitEddystone* MicroBitEddystone::getInstance() {
-	if (_instance == 0) {
-		_instance = new MicroBitEddystone;
-	}
-	return _instance;
+MicroBitEddystone *MicroBitEddystone::getInstance()
+{
+    if (_instance == 0)
+    {
+        _instance = new MicroBitEddystone;
+    }
+    return _instance;
 }
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
@@ -94,44 +94,53 @@ MicroBitEddystone* MicroBitEddystone::getInstance() {
 * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
 * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
 */
-void MicroBitEddystone::setEddystoneUrl(BLEDevice *ble, char* url, int8_t calibratedPower)
+void MicroBitEddystone::setEddystoneUrl(BLEDevice *ble, char *url, int8_t calibratedPower)
 {
     int urlDataLength = 0;
     char urlData[EDDYSTONE_URL_MAX_LENGTH];
     memset(urlData, 0, EDDYSTONE_URL_MAX_LENGTH);
 
-    if ((url == NULL) || (strlen(url) == 0)) { return; }
+    if ((url == NULL) || (strlen(url) == 0))
+    {
+        return;
+    }
 
     // Prefix
-    for (size_t i = 0; i < EDDYSTONE_URL_PREFIXES_LENGTH; i++) {
+    for (size_t i = 0; i < EDDYSTONE_URL_PREFIXES_LENGTH; i++)
+    {
         size_t prefixLen = strlen(EDDYSTONE_URL_PREFIXES[i]);
-        if (strncmp(url, EDDYSTONE_URL_PREFIXES[i], prefixLen) == 0) {
+        if (strncmp(url, EDDYSTONE_URL_PREFIXES[i], prefixLen) == 0)
+        {
             urlData[urlDataLength++] = i;
-            url+= prefixLen;
+            url += prefixLen;
             break;
         }
     }
 
     // Suffix
-    while (*url && (urlDataLength < EDDYSTONE_URL_MAX_LENGTH)) {
+    while (*url && (urlDataLength < EDDYSTONE_URL_MAX_LENGTH))
+    {
         size_t i;
-        for (i = 0; i < EDDYSTONE_URL_SUFFIXES_LENGTH; i++) {
+        for (i = 0; i < EDDYSTONE_URL_SUFFIXES_LENGTH; i++)
+        {
             size_t suffixLen = strlen(EDDYSTONE_URL_SUFFIXES[i]);
-            if (strncmp(url, EDDYSTONE_URL_SUFFIXES[i], suffixLen) == 0) {
+            if (strncmp(url, EDDYSTONE_URL_SUFFIXES[i], suffixLen) == 0)
+            {
                 urlData[urlDataLength++] = i;
-                url+= suffixLen;
+                url += suffixLen;
                 break;
             }
         }
 
         // Catch the default case where the suffix doesn't match a preset ones
-        if (i == EDDYSTONE_URL_SUFFIXES_LENGTH) {
+        if (i == EDDYSTONE_URL_SUFFIXES_LENGTH)
+        {
             urlData[urlDataLength++] = *url;
             ++url;
         }
     }
- 
-    uint8_t rawFrame[EDDYSTONE_URL_MAX_LENGTH+4];
+
+    uint8_t rawFrame[EDDYSTONE_URL_MAX_LENGTH + 4];
     size_t index = 0;
     rawFrame[index++] = EDDYSTONE_UUID[0];
     rawFrame[index++] = EDDYSTONE_UUID[1];
@@ -140,7 +149,7 @@ void MicroBitEddystone::setEddystoneUrl(BLEDevice *ble, char* url, int8_t calibr
     memcpy(rawFrame + index, urlData, urlDataLength);
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index+urlDataLength);
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index + urlDataLength);
 }
 
 /**
@@ -162,26 +171,26 @@ void setEddystoneUrl(BLEDevice *ble, ManagedString url, int8_t calibratedPower)
 * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
 * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
 */
-void MicroBitEddystone::setEddystoneUid(BLEDevice *ble, char* uid_namespace, char* uid_instance, int8_t calibratedPower)
+void MicroBitEddystone::setEddystoneUid(BLEDevice *ble, char *uid_namespace, char *uid_instance, int8_t calibratedPower)
 {
-    char uidData[EDDYSTONE_UID_NAMESPACE_MAX_LENGTH+EDDYSTONE_UID_INSTANCE_MAX_LENGTH];
+    char uidData[EDDYSTONE_UID_NAMESPACE_MAX_LENGTH + EDDYSTONE_UID_INSTANCE_MAX_LENGTH];
 
     // UID namespace
     memcpy(uidData, uid_namespace, EDDYSTONE_UID_NAMESPACE_MAX_LENGTH);
 
     // UID instance
-    memcpy(uidData+EDDYSTONE_UID_NAMESPACE_MAX_LENGTH, uid_instance, EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
+    memcpy(uidData + EDDYSTONE_UID_NAMESPACE_MAX_LENGTH, uid_instance, EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
 
-    uint8_t rawFrame[EDDYSTONE_UID_NAMESPACE_MAX_LENGTH+EDDYSTONE_UID_INSTANCE_MAX_LENGTH+4];
+    uint8_t rawFrame[EDDYSTONE_UID_NAMESPACE_MAX_LENGTH + EDDYSTONE_UID_INSTANCE_MAX_LENGTH + 4];
     size_t index = 0;
     rawFrame[index++] = EDDYSTONE_UUID[0];
     rawFrame[index++] = EDDYSTONE_UUID[1];
     rawFrame[index++] = EDDYSTONE_UID_FRAME_TYPE;
     rawFrame[index++] = calibratedPower;
-    memcpy(rawFrame + index, uidData, EDDYSTONE_UID_NAMESPACE_MAX_LENGTH+EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
+    memcpy(rawFrame + index, uidData, EDDYSTONE_UID_NAMESPACE_MAX_LENGTH + EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
-    ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index+EDDYSTONE_UID_NAMESPACE_MAX_LENGTH+EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
+    ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index + EDDYSTONE_UID_NAMESPACE_MAX_LENGTH + EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
 }
 
 /**

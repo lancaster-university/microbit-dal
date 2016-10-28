@@ -29,7 +29,6 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
 
-
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
@@ -43,8 +42,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "ble.h"
 
-extern "C"
-{
+extern "C" {
 #include "device_manager.h"
 uint32_t btle_set_gatt_table_size(uint32_t size);
 }
@@ -56,7 +54,7 @@ uint32_t btle_set_gatt_table_size(uint32_t size);
 #pragma GCC diagnostic pop
 #endif
 
-#define MICROBIT_PAIRING_FADE_SPEED		4
+#define MICROBIT_PAIRING_FADE_SPEED 4
 
 //
 // Local enumeration of valid security modes. Used only to optimise pre‐processor comparisons.
@@ -69,15 +67,15 @@ uint32_t btle_set_gatt_table_size(uint32_t size);
 // Required as the MicroBitConfig option is actually an mbed enum, that is not normally comparable at compile time.
 //
 
-#define __CAT(a, ...) a ## __VA_ARGS__
-#define SECURITY_MODE(x) __CAT(__,x)
+#define __CAT(a, ...) a##__VA_ARGS__
+#define SECURITY_MODE(x) __CAT(__, x)
 #define SECURITY_MODE_IS(x) (SECURITY_MODE(MICROBIT_BLE_SECURITY_LEVEL) == SECURITY_MODE(x))
 
-const char* MICROBIT_BLE_MANUFACTURER = NULL;
-const char* MICROBIT_BLE_MODEL = "BBC micro:bit";
-const char* MICROBIT_BLE_HARDWARE_VERSION = NULL;
-const char* MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
-const char* MICROBIT_BLE_SOFTWARE_VERSION = NULL;
+const char *MICROBIT_BLE_MANUFACTURER = NULL;
+const char *MICROBIT_BLE_MODEL = "BBC micro:bit";
+const char *MICROBIT_BLE_HARDWARE_VERSION = NULL;
+const char *MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
+const char *MICROBIT_BLE_SOFTWARE_VERSION = NULL;
 const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
 
 /*
@@ -85,18 +83,18 @@ const int8_t MICROBIT_BLE_POWER_LEVEL[] = {-30, -20, -16, -12, -8, -4, 0, 4};
  * So, we maintain a pointer to the MicroBitBLEManager that's in use. Ths way, we can still access resources on the micro:bit
  * whilst keeping the code modular.
  */
-MicroBitBLEManager* MicroBitBLEManager::manager = NULL; // Singleton reference to the BLE manager. many mbed BLE API callbacks still do not support member funcions yet. :-(
+MicroBitBLEManager *MicroBitBLEManager::manager = NULL; // Singleton reference to the BLE manager. many mbed BLE API callbacks still do not support member funcions yet. :-(
 
-static uint8_t deviceID = 255;                                  // Unique ID for the peer that has connected to us.
-static Gap::Handle_t pairingHandle = 0;                         // The connection handle used during a pairing process. Used to ensure that connections are dropped elegantly.
+static uint8_t deviceID = 255;          // Unique ID for the peer that has connected to us.
+static Gap::Handle_t pairingHandle = 0; // The connection handle used during a pairing process. Used to ensure that connections are dropped elegantly.
 
 static void storeSystemAttributes(Gap::Handle_t handle)
 {
-    if(MicroBitBLEManager::manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    if (MicroBitBLEManager::manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
         ManagedString key("bleSysAttrs");
 
-        KeyValuePair* bleSysAttrs = MicroBitBLEManager::manager->storage->get(key);
+        KeyValuePair *bleSysAttrs = MicroBitBLEManager::manager->storage->get(key);
 
         BLESysAttribute attrib;
         BLESysAttributeStore attribStore;
@@ -106,14 +104,14 @@ static void storeSystemAttributes(Gap::Handle_t handle)
         sd_ble_gatts_sys_attr_get(handle, attrib.sys_attr, &len, BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS);
 
         //copy our stored sysAttrs
-        if(bleSysAttrs != NULL)
+        if (bleSysAttrs != NULL)
         {
             memcpy(&attribStore, bleSysAttrs->value, sizeof(BLESysAttributeStore));
             delete bleSysAttrs;
         }
 
         //check if we need to update
-        if(memcmp(attribStore.sys_attrs[deviceID].sys_attr, attrib.sys_attr, len) != 0)
+        if (memcmp(attribStore.sys_attrs[deviceID].sys_attr, attrib.sys_attr, len) != 0)
         {
             attribStore.sys_attrs[deviceID] = attrib;
             MicroBitBLEManager::manager->storage->put(key, (uint8_t *)&attribStore, sizeof(attribStore));
@@ -126,20 +124,20 @@ static void storeSystemAttributes(Gap::Handle_t handle)
   */
 static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
-    MicroBitEvent(MICROBIT_ID_BLE,MICROBIT_BLE_EVT_DISCONNECTED);
+    MicroBitEvent(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED);
 
     storeSystemAttributes(reason->handle);
 
     if (MicroBitBLEManager::manager)
-	    MicroBitBLEManager::manager->advertise();
+        MicroBitBLEManager::manager->advertise();
 }
 
 /**
   * Callback when a BLE connection is established.
   */
-static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t*)
+static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *)
 {
-    MicroBitEvent(MICROBIT_ID_BLE,MICROBIT_BLE_EVT_CONNECTED);
+    MicroBitEvent(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED);
 }
 
 /**
@@ -150,23 +148,23 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
     int complete = 0;
     deviceID = 255;
 
-    dm_handle_t dm_handle = {0,0,0,0};
+    dm_handle_t dm_handle = {0, 0, 0, 0};
 
     int ret = dm_handle_get(params->connHandle, &dm_handle);
 
     if (ret == 0)
         deviceID = dm_handle.device_id;
 
-    if(MicroBitBLEManager::manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
+    if (MicroBitBLEManager::manager->storage != NULL && deviceID < MICROBIT_BLE_MAXIMUM_BONDS)
     {
         ManagedString key("bleSysAttrs");
 
-        KeyValuePair* bleSysAttrs = MicroBitBLEManager::manager->storage->get(key);
+        KeyValuePair *bleSysAttrs = MicroBitBLEManager::manager->storage->get(key);
 
         BLESysAttributeStore attribStore;
         BLESysAttribute attrib;
 
-        if(bleSysAttrs != NULL)
+        if (bleSysAttrs != NULL)
         {
             //restore our sysAttrStore
             memcpy(&attribStore, bleSysAttrs->value, sizeof(BLESysAttributeStore));
@@ -178,31 +176,30 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
 
             complete = 1;
 
-            if(ret == 0)
+            if (ret == 0)
                 ret = sd_ble_gatts_service_changed(params->connHandle, 0x000c, 0xffff);
         }
     }
 
     if (!complete)
         sd_ble_gatts_sys_attr_set(params->connHandle, NULL, 0, 0);
-
 }
 
 static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::Passkey_t passkey)
 {
-    (void) handle; /* -Wunused-param */
+    (void)handle; /* -Wunused-param */
 
-	ManagedString passKey((const char *)passkey, SecurityManager::PASSKEY_LEN);
+    ManagedString passKey((const char *)passkey, SecurityManager::PASSKEY_LEN);
 
     if (MicroBitBLEManager::manager)
-	    MicroBitBLEManager::manager->pairingRequested(passKey);
+        MicroBitBLEManager::manager->pairingRequested(passKey);
 }
 
 static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager::SecurityCompletionStatus_t status)
 {
-    (void) handle; /* -Wunused-param */
+    (void)handle; /* -Wunused-param */
 
-    dm_handle_t dm_handle = {0,0,0,0};
+    dm_handle_t dm_handle = {0, 0, 0, 0};
     int ret = dm_handle_get(handle, &dm_handle);
 
     if (ret == 0)
@@ -211,7 +208,7 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
     if (MicroBitBLEManager::manager)
     {
         pairingHandle = handle;
-	    MicroBitBLEManager::manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
+        MicroBitBLEManager::manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
     }
 }
 
@@ -225,12 +222,11 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
  * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
  * Hence, the init() member function should be used to initialise the BLE stack.
  */
-MicroBitBLEManager::MicroBitBLEManager(MicroBitStorage& _storage) :
-    storage(&_storage)
+MicroBitBLEManager::MicroBitBLEManager(MicroBitStorage &_storage) : storage(&_storage)
 {
     manager = this;
-	this->ble = NULL;
-	this->pairingStatus = 0;
+    this->ble = NULL;
+    this->pairingStatus = 0;
 }
 
 /**
@@ -241,21 +237,21 @@ MicroBitBLEManager::MicroBitBLEManager(MicroBitStorage& _storage) :
  * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
  * Hence, the init() member function should be used to initialise the BLE stack.
  */
-MicroBitBLEManager::MicroBitBLEManager() :
-    storage(NULL)
+MicroBitBLEManager::MicroBitBLEManager() : storage(NULL)
 {
     manager = this;
-	this->ble = NULL;
-	this->pairingStatus = 0;
+    this->ble = NULL;
+    this->pairingStatus = 0;
 }
 
 /**
  * When called, the micro:bit will begin advertising for a predefined period,
  * MICROBIT_BLE_ADVERTISING_TIMEOUT seconds to bonded devices.
  */
-MicroBitBLEManager* MicroBitBLEManager::getInstance()
+MicroBitBLEManager *MicroBitBLEManager::getInstance()
 {
-    if (manager == 0) {
+    if (manager == 0)
+    {
         manager = new MicroBitBLEManager;
     }
     return manager;
@@ -267,7 +263,7 @@ MicroBitBLEManager* MicroBitBLEManager::getInstance()
  */
 void MicroBitBLEManager::advertise()
 {
-    if(ble)
+    if (ble)
         ble->gap().startAdvertising();
 }
 
@@ -284,18 +280,18 @@ void MicroBitBLEManager::advertise()
   * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
   * @endcode
   */
-void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel& messageBus, bool enableBonding)
+void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding)
 {
-	ManagedString BLEName("BBC micro:bit");
-	this->deviceName = deviceName;
+    ManagedString BLEName("BBC micro:bit");
+    this->deviceName = deviceName;
 
 #if !(CONFIG_ENABLED(MICROBIT_BLE_WHITELIST))
-	ManagedString namePrefix(" [");
-	ManagedString namePostfix("]");
-	BLEName = BLEName + namePrefix + deviceName + namePostfix;
+    ManagedString namePrefix(" [");
+    ManagedString namePostfix("]");
+    BLEName = BLEName + namePrefix + deviceName + namePostfix;
 #endif
 
-    // Start the BLE stack.
+// Start the BLE stack.
 #if CONFIG_ENABLED(MICROBIT_HEAP_REUSE_SD)
     btle_set_gatt_table_size(MICROBIT_SD_GATT_TABLE_SIZE);
 #endif
@@ -318,16 +314,16 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     sd_ble_opt_set(BLE_COMMON_OPT_RADIO_CPU_MUTEX, (const ble_opt_t *)&opt);
 
 #if CONFIG_ENABLED(MICROBIT_BLE_PRIVATE_ADDRESSES)
-	// Configure for private addresses, so kids' behaviour can't be easily tracked.
-	ble->gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
+    // Configure for private addresses, so kids' behaviour can't be easily tracked.
+    ble->gap().setAddress(BLEProtocol::AddressType::RANDOM_PRIVATE_RESOLVABLE, {0});
 #endif
 
     // Setup our security requirements.
     ble->securityManager().onPasskeyDisplay(passkeyDisplayCallback);
     ble->securityManager().onSecuritySetupCompleted(securitySetupCompletedCallback);
-    // @bluetooth_mdw: select either passkey pairing (more secure), "just works" pairing (less secure but nice and simple for the user)
-    // or no security
-    // Default to passkey pairing with MITM protection
+// @bluetooth_mdw: select either passkey pairing (more secure), "just works" pairing (less secure but nice and simple for the user)
+// or no security
+// Default to passkey pairing with MITM protection
 #if (SECURITY_MODE_IS(SECURITY_MODE_ENCRYPTION_NO_MITM))
     // Just Works
     ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE);
@@ -370,13 +366,13 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Configure the radio at our default power level
     setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER);
 
-    // Bring up core BLE services.
+// Bring up core BLE services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service (*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    DeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 #else
     (void)serialNumber;
 #endif
@@ -387,16 +383,15 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     (void)messageBus;
 #endif
 
-
     // Configure for high speed mode where possible.
     Gap::ConnectionParams_t fast;
     ble->getPreferredConnectionParams(&fast);
-    fast.minConnectionInterval = 8; // 10 ms
+    fast.minConnectionInterval = 8;  // 10 ms
     fast.maxConnectionInterval = 16; // 20 ms
     fast.slaveLatency = 0;
     ble->setPreferredConnectionParams(&fast);
 
-    // Setup advertising.
+// Setup advertising.
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED);
 #else
@@ -411,9 +406,9 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
 #endif
 
-    // If we have whitelisting enabled, then prevent only enable advertising of we have any binded devices...
-    // This is to further protect kids' privacy. If no-one initiates BLE, then the device is unreachable.
-    // If whiltelisting is disabled, then we always advertise.
+// If we have whitelisting enabled, then prevent only enable advertising of we have any binded devices...
+// This is to further protect kids' privacy. If no-one initiates BLE, then the device is unreachable.
+// If whiltelisting is disabled, then we always advertise.
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     if (whitelist.size > 0)
 #endif
@@ -468,8 +463,8 @@ int MicroBitBLEManager::getBondCount()
 void MicroBitBLEManager::pairingRequested(ManagedString passKey)
 {
     // Update our mode to display the passkey.
-	this->passKey = passKey;
-	this->pairingStatus = MICROBIT_BLE_PAIR_REQUEST;
+    this->passKey = passKey;
+    this->pairingStatus = MICROBIT_BLE_PAIR_REQUEST;
 }
 
 /**
@@ -480,11 +475,11 @@ void MicroBitBLEManager::pairingRequested(ManagedString passKey)
  */
 void MicroBitBLEManager::pairingComplete(bool success)
 {
-	this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
+    this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
-	if(success)
+    if (success)
     {
-		this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
+        this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
         fiber_add_idle_component(this);
     }
 }
@@ -519,7 +514,7 @@ void MicroBitBLEManager::stopAdvertising()
 * @param connectable: true to keep bluetooth connectable for other services, false otherwise
 * @param interval: the advertising interval of the beacon
 */
-void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
+void MicroBitBLEManager::advertiseEddystoneUrl(char *url, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
     ble->gap().stopAdvertising();
     ble->clearAdvertisingPayload();
@@ -529,8 +524,8 @@ void MicroBitBLEManager::advertiseEddystoneUrl(char* url, int8_t calibratedPower
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
 
-    MicroBitEddystone::getInstance()->setEddystoneUrl(ble,url,calibratedPower);    
-  
+    MicroBitEddystone::getInstance()->setEddystoneUrl(ble, url, calibratedPower);
+
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
     ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
 #endif
@@ -560,7 +555,7 @@ void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool conne
 * @param connectable: true to keep bluetooth connectable for other services, false otherwise
 * @param interval: the advertising interval of the beacon
 */
-void MicroBitBLEManager::advertiseEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
+void MicroBitBLEManager::advertiseEddystoneUid(char *uid_namespace, char *uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
     ble->gap().stopAdvertising();
     ble->clearAdvertisingPayload();
@@ -570,7 +565,7 @@ void MicroBitBLEManager::advertiseEddystoneUid(char* uid_namespace, char* uid_in
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
 
-    MicroBitEddystone::getInstance()->setEddystoneUid(ble,uid_namespace, uid_instance,calibratedPower);    
+    MicroBitEddystone::getInstance()->setEddystoneUid(ble, uid_namespace, uid_instance, calibratedPower);
 
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
     ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
@@ -601,21 +596,21 @@ void advertiseEddystoneUid(ManagedString uid_namespace, ManagedString uid_instan
  * bleManager.pairingMode(uBit.display, uBit.buttonA);
  * @endcode
  */
-void MicroBitBLEManager::pairingMode(MicroBitDisplay& display, MicroBitButton& authorisationButton)
+void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &authorisationButton)
 {
-	ManagedString namePrefix("BBC micro:bit [");
-	ManagedString namePostfix("]");
-	ManagedString BLEName = namePrefix + deviceName + namePostfix;
+    ManagedString namePrefix("BBC micro:bit [");
+    ManagedString namePostfix("]");
+    ManagedString BLEName = namePrefix + deviceName + namePostfix;
 
-	ManagedString msg("PAIRING MODE!");
+    ManagedString msg("PAIRING MODE!");
 
-	int timeInPairingMode = 0;
-	int brightness = 255;
-	int fadeDirection = 0;
+    int timeInPairingMode = 0;
+    int brightness = 255;
+    int fadeDirection = 0;
 
     ble->gap().stopAdvertising();
 
-    // Clear the whitelist (if we have one), so that we're discoverable by all BLE devices.
+// Clear the whitelist (if we have one), so that we're discoverable by all BLE devices.
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     BLEProtocol::Address_t addresses[MICROBIT_BLE_MAXIMUM_BONDS];
     Gap::Whitelist_t whitelist;
@@ -626,7 +621,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay& display, MicroBitButton& a
     ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_IGNORE_WHITELIST);
 #endif
 
-	// Update the advertised name of this micro:bit to include the device name
+    // Update the advertised name of this micro:bit to include the device name
     ble->clearAdvertisingPayload();
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
@@ -637,68 +632,68 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay& display, MicroBitButton& a
     ble->gap().setAdvertisingTimeout(0);
     ble->gap().startAdvertising();
 
-	// Stop any running animations on the display
-	display.stopAnimation();
-	display.scroll(msg);
+    // Stop any running animations on the display
+    display.stopAnimation();
+    display.scroll(msg);
 
-	// Display our name, visualised as a histogram in the display to aid identification.
-	showNameHistogram(display);
+    // Display our name, visualised as a histogram in the display to aid identification.
+    showNameHistogram(display);
 
-	while(1)
-	{
-		if (pairingStatus & MICROBIT_BLE_PAIR_REQUEST)
-		{
-			timeInPairingMode = 0;
-			MicroBitImage arrow("0,0,255,0,0\n0,255,0,0,0\n255,255,255,255,255\n0,255,0,0,0\n0,0,255,0,0\n");
-			display.print(arrow,0,0,0);
+    while (1)
+    {
+        if (pairingStatus & MICROBIT_BLE_PAIR_REQUEST)
+        {
+            timeInPairingMode = 0;
+            MicroBitImage arrow("0,0,255,0,0\n0,255,0,0,0\n255,255,255,255,255\n0,255,0,0,0\n0,0,255,0,0\n");
+            display.print(arrow, 0, 0, 0);
 
-			if (fadeDirection == 0)
-				brightness -= MICROBIT_PAIRING_FADE_SPEED;
-			else
-				brightness += MICROBIT_PAIRING_FADE_SPEED;
+            if (fadeDirection == 0)
+                brightness -= MICROBIT_PAIRING_FADE_SPEED;
+            else
+                brightness += MICROBIT_PAIRING_FADE_SPEED;
 
-			if (brightness <= 40)
-				display.clear();
+            if (brightness <= 40)
+                display.clear();
 
-			if (brightness <= 0)
-				fadeDirection = 1;
+            if (brightness <= 0)
+                fadeDirection = 1;
 
-			if (brightness >= 255)
-				fadeDirection = 0;
+            if (brightness >= 255)
+                fadeDirection = 0;
 
-			if (authorisationButton.isPressed())
-			{
-				pairingStatus &= ~MICROBIT_BLE_PAIR_REQUEST;
-				pairingStatus |= MICROBIT_BLE_PAIR_PASSCODE;
-			}
-		}
+            if (authorisationButton.isPressed())
+            {
+                pairingStatus &= ~MICROBIT_BLE_PAIR_REQUEST;
+                pairingStatus |= MICROBIT_BLE_PAIR_PASSCODE;
+            }
+        }
 
-		if (pairingStatus & MICROBIT_BLE_PAIR_PASSCODE)
-		{
-			timeInPairingMode = 0;
-			display.setBrightness(255);
-			for (int i=0; i<passKey.length(); i++)
-			{
-				display.image.print(passKey.charAt(i),0,0);
-				fiber_sleep(800);
-				display.clear();
-				fiber_sleep(200);
+        if (pairingStatus & MICROBIT_BLE_PAIR_PASSCODE)
+        {
+            timeInPairingMode = 0;
+            display.setBrightness(255);
+            for (int i = 0; i < passKey.length(); i++)
+            {
+                display.image.print(passKey.charAt(i), 0, 0);
+                fiber_sleep(800);
+                display.clear();
+                fiber_sleep(200);
 
-				if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
-					break;
-			}
+                if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
+                    break;
+            }
 
-			fiber_sleep(1000);
-		}
+            fiber_sleep(1000);
+        }
 
-		if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
-		{
-			if (pairingStatus & MICROBIT_BLE_PAIR_SUCCESSFUL)
-			{
-				MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
-				display.print(tick,0,0,0);
+        if (pairingStatus & MICROBIT_BLE_PAIR_COMPLETE)
+        {
+            if (pairingStatus & MICROBIT_BLE_PAIR_SUCCESSFUL)
+            {
+                MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
+                display.print(tick, 0, 0, 0);
                 fiber_sleep(15000);
-		        timeInPairingMode = MICROBIT_BLE_PAIRING_TIMEOUT * 30;
+                timeInPairingMode = MICROBIT_BLE_PAIRING_TIMEOUT * 30;
 
                 /*
                  * Disabled, as the API to return the number of active bonds is not reliable at present...
@@ -713,20 +708,20 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay& display, MicroBitButton& a
                 *
                 *
                 */
-			}
-			else
-			{
-				MicroBitImage cross("255,0,0,0,255\n0,255,0,255,0\n0,0,255,0,0\n0,255,0,255,0\n255,0,0,0,255\n");
-				display.print(cross,0,0,0);
-			}
-		}
+            }
+            else
+            {
+                MicroBitImage cross("255,0,0,0,255\n0,255,0,255,0\n0,0,255,0,0\n0,255,0,255,0\n255,0,0,0,255\n");
+                display.print(cross, 0, 0, 0);
+            }
+        }
 
-		fiber_sleep(100);
-		timeInPairingMode++;
+        fiber_sleep(100);
+        timeInPairingMode++;
 
-		if (timeInPairingMode >= MICROBIT_BLE_PAIRING_TIMEOUT * 30)
-			microbit_reset();
-	}
+        if (timeInPairingMode >= MICROBIT_BLE_PAIRING_TIMEOUT * 30)
+            microbit_reset();
+    }
 }
 
 /**
@@ -742,7 +737,7 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
     int h;
 
     display.clear();
-    for (int i=0; i<MICROBIT_DFU_HISTOGRAM_WIDTH;i++)
+    for (int i = 0; i < MICROBIT_DFU_HISTOGRAM_WIDTH; i++)
     {
         h = (n % d) / ld;
 
@@ -750,7 +745,7 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
         d *= MICROBIT_DFU_HISTOGRAM_HEIGHT;
         ld *= MICROBIT_DFU_HISTOGRAM_HEIGHT;
 
-        for (int j=0; j<h+1; j++)
-            display.image.setPixelValue(MICROBIT_DFU_HISTOGRAM_WIDTH-i-1, MICROBIT_DFU_HISTOGRAM_HEIGHT-j-1, 255);
+        for (int j = 0; j < h + 1; j++)
+            display.image.setPixelValue(MICROBIT_DFU_HISTOGRAM_WIDTH - i - 1, MICROBIT_DFU_HISTOGRAM_HEIGHT - j - 1, 255);
     }
 }

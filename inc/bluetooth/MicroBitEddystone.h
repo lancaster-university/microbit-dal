@@ -31,13 +31,13 @@ DEALINGS IN THE SOFTWARE.
 /*
  * Return to our predefined compiler settings.
  */
-#if !defined (__arm)
+#if !defined(__arm)
 #pragma GCC diagnostic pop
 #endif
 
 #include "MicroBitBLEManager.h"
 
-#define MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL            400
+#define MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL 400
 
 /**
   * Class definition for the MicroBitEddystone.
@@ -45,13 +45,12 @@ DEALINGS IN THE SOFTWARE.
   */
 class MicroBitEddystone
 {
-    public:
-    
-	static MicroBitEddystone* getInstance();     
+  public:
+    static MicroBitEddystone *getInstance();
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 
-	/**
+    /**
     * Set the content of Eddystone URL frames
 	* @param url: the url to transmit. Must be no longer than the supported eddystone url length
 	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
@@ -60,18 +59,18 @@ class MicroBitEddystone
         * @param connectable: true to keep bluetooth connectable for other services, false otherwise
         * @param interval: the advertising interval of the beacon
 	*/
-    	void setEddystoneUrl(BLEDevice *ble, char* url, int8_t calibratedPower);
+    void setEddystoneUrl(BLEDevice *ble, char *url, int8_t calibratedPower);
 
-        /**
+    /**
         * Set the content of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
         * setEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
         */
-    	void setEddystoneUrl(BLEDevice *ble, ManagedString url, int8_t calibratedPower);
+    void setEddystoneUrl(BLEDevice *ble, ManagedString url, int8_t calibratedPower);
 
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_UID)
-	/**
+    /**
     * Set the content of Eddystone UID frames
 	* @param uid_namespace: the uid namespace. Must 10 bytes long.
 	* @param uid_instance:  the uid instance value. Must 6 bytes long.
@@ -81,18 +80,18 @@ class MicroBitEddystone
     * @param connectable: true to keep bluetooth connectable for other services, false otherwise
     * @param interval: the advertising interval of the beacon
 	*/
-    	void setEddystoneUid(BLEDevice *ble, char* uid_namespace, char* uid_instance, int8_t calibratedPower);
+    void setEddystoneUid(BLEDevice *ble, char *uid_namespace, char *uid_instance, int8_t calibratedPower);
 
-        /**
+    /**
         * Set the content of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
         * setEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
         */
-    	void setEddystoneUid(BLEDevice *ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower);
+    void setEddystoneUid(BLEDevice *ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower);
 
 #endif
 
-     private:
-            /**
+  private:
+    /**
      * Constructor.
      *
      * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
@@ -103,7 +102,7 @@ class MicroBitEddystone
      * Hence, the init() member function should be used to initialise the BLE stack.
      */
     MicroBitEddystone();
-	static MicroBitEddystone* _instance;
+    static MicroBitEddystone *_instance;
 };
 
 #endif
