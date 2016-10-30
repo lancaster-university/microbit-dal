@@ -141,7 +141,7 @@ void CalliopeSoundMotor::PWM_init()
 
 //NOTE: the use of a motor control function will turn the sound off      
 //functions to control the motor
-void CalliopeSoundMotor::Motor_On(int8_t duty_percent)
+void CalliopeSoundMotor::motorOn(int8_t duty_percent)
 { 
     //if value is out of bounds, do nothing
     if((duty_percent > 100) || (duty_percent < -100)) return;   
@@ -222,7 +222,7 @@ void CalliopeSoundMotor::Motor_On(int8_t duty_percent)
 
 
 //function stops motor input -> motor will eventually stop, but is not actively braked
-void CalliopeSoundMotor::Motor_Coast()
+void CalliopeSoundMotor::motorCoast()
 {   
     //use function only for single motor use
     if (mode != 1) return;
@@ -242,7 +242,7 @@ void CalliopeSoundMotor::Motor_Coast()
 
 
 //function brakes motor
-void CalliopeSoundMotor::Motor_Break()
+void CalliopeSoundMotor::motorBreak()
 {
     //use function only for single motor use
     if (mode != 1) return;
@@ -262,7 +262,7 @@ void CalliopeSoundMotor::Motor_Break()
 
 
 //function clears sleep pin -> motor behaves just like calling the coat function
-void CalliopeSoundMotor::Motor_Sleep()
+void CalliopeSoundMotor::motorSleep()
 {
     //use function only for single motor use
     if (mode != 1) return;
@@ -289,7 +289,7 @@ void CalliopeSoundMotor::Motor_Sleep()
 //MOTOR CONTROL FUNCTIONS - DUAL MOTOR USE
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CalliopeSoundMotor::MotorA_On(uint8_t duty_percent)
+void CalliopeSoundMotor::motorAOn(uint8_t duty_percent)
 {
     //if value is out of bounds, do nothing
     if(duty_percent > 100) return;
@@ -352,7 +352,7 @@ void CalliopeSoundMotor::MotorA_On(uint8_t duty_percent)
 }
 
 
-void CalliopeSoundMotor::MotorB_On(uint8_t duty_percent)
+void CalliopeSoundMotor::motorBOn(uint8_t duty_percent)
 {
     //if value is out of bounds, do nothing
     if(duty_percent > 100) return;
@@ -415,7 +415,7 @@ void CalliopeSoundMotor::MotorB_On(uint8_t duty_percent)
 }
 
 
-void CalliopeSoundMotor::MotorA_Off()
+void CalliopeSoundMotor::motorAOff()
 {
     //use function only for dual motor use
     if (mode != 2) return;
@@ -460,7 +460,7 @@ void CalliopeSoundMotor::MotorA_Off()
 }
 
 
-void CalliopeSoundMotor::MotorB_Off()
+void CalliopeSoundMotor::motorBOff()
 {
     //use function only for dual motor use
     if (mode != 2) return;
@@ -510,7 +510,7 @@ void CalliopeSoundMotor::MotorB_Off()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //functions to control the sound - NOTE: this will also effect the motor pins!
-void CalliopeSoundMotor::Sound_On(uint16_t frequency_hz)
+void CalliopeSoundMotor::soundOn(uint16_t frequency_hz)
 {
     //if value is out of bounds, do nothing
     if((frequency_hz > CALLIOPE_MAX_FREQUENCY_HZ_S) || (frequency_hz < CALLIOPE_MIN_FREQUENCY_HZ_S)) return; 
@@ -566,7 +566,7 @@ void CalliopeSoundMotor::Sound_On(uint16_t frequency_hz)
 }
 
 
-void CalliopeSoundMotor::Sound_Set_Silent_Mode(bool on_off)
+void CalliopeSoundMotor::setSoundSilentMode(bool on_off)
 {
     //set mode
     silent_mode = on_off;
@@ -594,7 +594,7 @@ void CalliopeSoundMotor::Sound_Set_Silent_Mode(bool on_off)
 
 
 
-void CalliopeSoundMotor::Sound_Off()
+void CalliopeSoundMotor::soundOff()
 {
     //use function only for sound use
     if (mode != 3) return;
@@ -622,13 +622,13 @@ void CalliopeSoundMotor::Sound_Off()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //check fucntions
-bool CalliopeSoundMotor::Motor_Is_On()
+bool CalliopeSoundMotor::motorIsOn()
 {
     if((mode == 1) || (mode == 2)) return true;
     else return false;
 }
 
-bool CalliopeSoundMotor::Sound_Is_On()
+bool CalliopeSoundMotor::soundIsOn()
 {
     if(mode == 3) return true;
     else return false;
@@ -636,17 +636,17 @@ bool CalliopeSoundMotor::Sound_Is_On()
 
 
 //getter functions
-uint8_t CalliopeSoundMotor::Get_Mode()
+uint8_t CalliopeSoundMotor::getMode()
 {
     return mode;
 }
 
-int8_t CalliopeSoundMotor::Get_Duty_Motor()
+int8_t CalliopeSoundMotor::motorGetDuty()
 {
     return duty_motor_percent;
 }
 
-uint16_t CalliopeSoundMotor::Get_Frequency_Sound()
+uint16_t CalliopeSoundMotor::soundGetFrequency()
 {
     return frequency_sound_hz;
 }        

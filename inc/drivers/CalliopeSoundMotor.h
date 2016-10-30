@@ -79,30 +79,30 @@ class CalliopeSoundMotor : public MicroBitComponent
         
         //functions to control the motor in single motor use
         //negative input for Motor_On() function -> go backwards
-        void Motor_On(int8_t duty_percent = duty_motor_percent);
-        void Motor_Coast();
-        void Motor_Break();
-        void Motor_Sleep();
+        void motorOn(int8_t duty_percent = duty_motor_percent);
+        void motorCoast();
+        void motorBreak();
+        void motorSleep();
         
         //functions to control the motors in dual motor use
-        void MotorA_On(uint8_t duty_percent = duty_motor_A_percent);
-        void MotorB_On(uint8_t duty_percent = duty_motor_B_percent);
-        void MotorA_Off();
-        void MotorB_Off();
+        void motorAOn(uint8_t duty_percent = duty_motor_A_percent);
+        void motorBOn(uint8_t duty_percent = duty_motor_B_percent);
+        void motorAOff();
+        void motorBOff();
         
         //functions to control the sound
-        void Sound_On(uint16_t frequency_hz = frequency_sound_hz);
-        void Sound_Set_Silent_Mode(bool on_off);
-        void Sound_Off();
+        void soundOn(uint16_t frequency_hz = frequency_sound_hz);
+        void setSoundSilentMode(bool on_off);
+        void soundOff();
         
         //check fucntions
-        bool Motor_Is_On();
-        bool Sound_Is_On();
+        bool motorIsOn();
+        bool soundIsOn();
         
         //getter functions -> will return current settings even if motor/sound is off
-        uint8_t Get_Mode();
-        int8_t Get_Duty_Motor();
-        uint16_t Get_Frequency_Sound();
+        uint8_t getMode();
+        int8_t motorGetDuty();
+        uint16_t soundGetFrequency();
         
         //periodic callback from MicroBit system timer.
         virtual void systemTick();

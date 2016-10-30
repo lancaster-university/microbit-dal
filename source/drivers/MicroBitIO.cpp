@@ -50,8 +50,9 @@ MicroBitIO::MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
                        int ID_P10,int ID_P11,int ID_P19,
                        int ID_P20, int ID_CAL_P3, int ID_CAL_P7,
                        int ID_CAL_P8, int ID_CAL_P9, int ID_CAL_P13, 
-                       int ID_CAL_P14, int ID_CAL_P15, int ID_CAL_P22) :
-    P0 (ID_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_ALL),            //P0 is the left most pad (ANALOG/DIGITAL/TOUCH)
+                       int ID_CAL_P14, int ID_CAL_P15, int ID_CAL_P22,
+                       int ID_CAL_P28, int ID_CAL_P29, int ID_CAL_P30) :
+    P0 (ID_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_DIGITAL),            //P0 is the left most pad (ANALOG/DIGITAL/TOUCH)
     P1 (ID_P1, MICROBIT_PIN_P1, PIN_CAPABILITY_ALL),            //P1 is the middle pad (ANALOG/DIGITAL/TOUCH)
     P2 (ID_P2, MICROBIT_PIN_P2, PIN_CAPABILITY_ALL),            //P2 is the right most pad (ANALOG/DIGITAL/TOUCH)
     P3 (ID_P3, MICROBIT_PIN_P3, PIN_CAPABILITY_ALL),            //COL1 (ANALOG/DIGITAL)
@@ -71,6 +72,9 @@ MicroBitIO::MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
     CAL_P13(ID_CAL_P13,CALLIOPE_PIN_P13,PIN_CAPABILITY_DIGITAL),//led control
     CAL_P14(ID_CAL_P14,CALLIOPE_PIN_P14,PIN_CAPABILITY_DIGITAL),//led control
     CAL_P15(ID_CAL_P15,CALLIOPE_PIN_P15,PIN_CAPABILITY_DIGITAL),//led control
-    CAL_P22(ID_CAL_P22,CALLIOPE_PIN_P22,PIN_CAPABILITY_ALL)     //right touch pad -- TODO: TOUCH PAD 3 in rev 0.3
+    CAL_P22(ID_CAL_P22,CALLIOPE_PIN_P22,PIN_CAPABILITY_ALL),    //right touch pad -- TODO: TOUCH PAD 3 in rev 0.3
+    CAL_P28(ID_CAL_P28,CALLIOPE_PIN_P28,PIN_CAPABILITY_DIGITAL),//motor driver sleep pin
+    CAL_P29(ID_CAL_P29,CALLIOPE_PIN_P29,PIN_CAPABILITY_AD),     //motor driver pin 1
+    CAL_P30(ID_CAL_P30,CALLIOPE_PIN_P30,PIN_CAPABILITY_AD)      //motor driver pin 2 / sound
 {
 }

@@ -74,6 +74,9 @@ DEALINGS IN THE SOFTWARE.
 #define CALLIOPE_ID_IO_P14				38
 #define CALLIOPE_ID_IO_P15				39
 #define CALLIOPE_ID_IO_P22				40
+#define CALLIOPE_ID_IO_P28				41
+#define CALLIOPE_ID_IO_P29				42
+#define CALLIOPE_ID_IO_P30				43
 
 #define MICROBIT_ID_MESSAGE_BUS_LISTENER            1021          // Message bus indication that a handler for a given ID has been registered.
 #define MICROBIT_ID_NOTIFY_ONE                      1022          // Notfication channel, for general purpose synchronisation
