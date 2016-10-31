@@ -266,11 +266,16 @@ extern uint32_t __etext;
 #define MICROBIT_BLE_DFU_SERVICE                1
 #endif
 
-// Enable/Disable BLE Service: PhysicalWeb
-// This enables the physical web apis
+// Enable/Disable availability of Eddystone URL APIs
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_EDDYSTONE_URL
 #define MICROBIT_BLE_EDDYSTONE_URL               0
+#endif
+
+// Enable/Disable availability of Eddystone UID APIs
+// Set '1' to enable.
+#ifndef MICROBIT_BLE_EDDYSTONE_UID
+#define MICROBIT_BLE_EDDYSTONE_UID               0
 #endif
 
 // Enable/Disable BLE Service: MicroBitEventService
