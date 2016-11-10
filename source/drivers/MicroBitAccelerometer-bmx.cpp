@@ -523,19 +523,25 @@ void MicroBitAccelerometer::updateGesture()
 
     if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD)
     {
-// TODO correctly support 2G
+// TODO correctly support 2G - fake 3G using the 2G threshold
 #if defined(MICROBIT_ACCELEROMETER_2G_THRESHOLD) && defined(MICROBIT_ACCELEROMETER_EVT_2G)
         if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD && !shake.impulse_2)
         {
             MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_2G);
             shake.impulse_2 = 1;
         }
-#endif
         if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD && !shake.impulse_3)
         {
             MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_3G);
             shake.impulse_3 = 1;
         }
+#else
+        if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD && !shake.impulse_3)
+        {
+            MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_3G);
+            shake.impulse_3 = 1;
+        }
+#endif
         if (force > MICROBIT_ACCELEROMETER_6G_THRESHOLD && !shake.impulse_6)
         {
             MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_6G);
@@ -554,7 +560,7 @@ void MicroBitAccelerometer::updateGesture()
     if (impulseSigma < MICROBIT_ACCELEROMETER_GESTURE_DAMPING)
         impulseSigma++;
     else
-        shake.impulse_3 = shake.impulse_6 = shake.impulse_8 = 0;
+        shake.impulse_2 = shake.impulse_3 = shake.impulse_6 = shake.impulse_8 = 0;
 
 
     // Determine what it looks like we're doing based on the latest sample...
