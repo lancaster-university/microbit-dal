@@ -1,6 +1,6 @@
 {
   "name": "microbit-dal",
-  "version": "1.0.1-calliope",
+  "version": "1.0.2-calliope",
   "license": "MIT",
   "description": "The runtime library for the BBC micro:bit, developed by Lancaster University",
   "keywords": [
