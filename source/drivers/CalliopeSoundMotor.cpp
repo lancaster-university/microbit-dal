@@ -387,8 +387,11 @@ void CalliopeSoundMotor::motorBOn(uint8_t duty_percent)
         NRF_TIMER2->CC[1] = uint16_t((CALLIOPE_SM_PERIOD_M * duty_percent) / 100) - 1;
     }
 
+    //set current use -> B in use
+    motor_AB_current_use |= 0x02;
+
     //values for duty cycle 0
-    if(uint8_t(duty_motor_B_percent/2) == 0) {
+    if(uint8_t(duty_motor_B_percent/2) == 0 || (motor_AB_current_use == 0x02)) {
         nrf_gpio_pin_clear(CALLIOPE_SM_PIN_IN1);
         nrf_gpio_pin_clear(CALLIOPE_SM_PIN_IN2);
     }
@@ -397,9 +400,6 @@ void CalliopeSoundMotor::motorBOn(uint8_t duty_percent)
         nrf_gpio_pin_clear(CALLIOPE_SM_PIN_IN1);
         nrf_gpio_pin_set(CALLIOPE_SM_PIN_IN2);
     }
-
-    //set current use -> B in use
-    motor_AB_current_use |= 0x02;
 
     //enable task for controlling motor A via PWM if motor A is in use
     if((uint8_t(duty_motor_A_percent/2) != 0)&& (motor_AB_current_use == 3)) nrf_gpiote_task_enable(0);
