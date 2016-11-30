@@ -176,9 +176,9 @@ int MicroBitEddystone::setURL(BLEDevice* ble, ManagedString url, int8_t calibrat
 /**
   * Set the content of Eddystone UID frames
   *
-  * @param uid_namespace: the uid namespace. Must 10 bytes long.
+  * @param uid_namespace the uid namespace. Must 10 bytes long.
   *
-  * @param uid_instance:  the uid instance value. Must 6 bytes long.
+  * @param uid_instance  the uid instance value. Must 6 bytes long.
   *
   * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
   *
@@ -187,7 +187,7 @@ int MicroBitEddystone::setURL(BLEDevice* ble, ManagedString url, int8_t calibrat
   */
 int MicroBitEddystone::setUID(BLEDevice* ble, const char* uid_namespace, const char* uid_instance, int8_t calibratedPower)
 {
-    if (uid_namespace == NULL || strlen(uid_namespace) == 0 || uid_instance == NULL || strlen(uid_instance) == 0)
+    if (uid_namespace == NULL || uid_instance == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
     char uidData[EDDYSTONE_UID_NAMESPACE_MAX_LENGTH + EDDYSTONE_UID_INSTANCE_MAX_LENGTH];
@@ -210,23 +210,6 @@ int MicroBitEddystone::setUID(BLEDevice* ble, const char* uid_namespace, const c
     ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index + EDDYSTONE_UID_NAMESPACE_MAX_LENGTH + EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
 
     return MICROBIT_OK;
-}
-
-/**
-  * Set the content of Eddystone UID frames, but accepts a ManagedString as a namespace and instance.
-  *
-  * @param uid_namespace The namespace of the UID.
-  *
-  * @param uid_instance The value within the namespace.
-  *
-  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
-  *
-  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
-  */
-int MicroBitEddystone::setUID(BLEDevice* ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower)
-{
-    return setUID(ble, (char *)uid_namespace.toCharArray(), (char *)uid_instance.toCharArray(), calibratedPower);
 }
 
 #endif

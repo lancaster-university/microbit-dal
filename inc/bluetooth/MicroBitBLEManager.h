@@ -267,24 +267,6 @@ class MicroBitBLEManager : MicroBitComponent
       * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
       */
     int advertiseEddystoneUid(const char* uid_namespace, const char* uid_instance, int8_t calibratedPower = MICROBIT_BLE_EDDYSTONE_DEFAULT_POWER, bool connectable = true, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
-
-    /**
-      * Set the content of Eddystone UID frames, but accepts a ManagedString as a namespace and instance.
-      *
-      * @param uid_namespace The namespace of the UID.
-      *
-      * @param uid_instance The value within the namespace.
-      *
-      * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
-      *
-      * @param connectable true to keep bluetooth connectable for other services, false otherwise. (Defaults to true)
-      *
-      * @param interval the rate at which the micro:bit will advertise url frames. (Defaults to MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL)
-      *
-      * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-      * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
-      */
-    int advertiseEddystoneUid(ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower = MICROBIT_BLE_EDDYSTONE_DEFAULT_POWER, bool connectable = true, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
   private:

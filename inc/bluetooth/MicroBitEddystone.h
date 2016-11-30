@@ -79,9 +79,9 @@ class MicroBitEddystone
     /**
       * Set the content of Eddystone UID frames
       *
-      * @param uid_namespace: the uid namespace. Must 10 bytes long.
+      * @param uid_namespace the uid namespace. Must 10 bytes long.
       *
-      * @param uid_instance:  the uid instance value. Must 6 bytes long.
+      * @param uid_instance  the uid instance value. Must 6 bytes long.
       *
       * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
       *
@@ -89,21 +89,6 @@ class MicroBitEddystone
       * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
       */
     int setUID(BLEDevice* ble, const char* uid_namespace, const char* uid_instance, int8_t calibratedPower = 0xF0);
-
-    /**
-      * Set the content of Eddystone UID frames, but accepts a ManagedString as a namespace and instance.
-      *
-      * @param uid_namespace The namespace of the UID.
-      *
-      * @param uid_instance The value within the namespace.
-      *
-      * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
-      *
-      * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-      * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
-      */
-    int setUID(BLEDevice* ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower = 0xF0);
-
 #endif
 
   private:
