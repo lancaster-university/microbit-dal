@@ -49,6 +49,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "bluetooth/MicroBitBLEManager.cpp"
     "bluetooth/MicroBitButtonService.cpp"
     "bluetooth/MicroBitDFUService.cpp"
+    "bluetooth/MicroBitEddystone.cpp"
     "bluetooth/MicroBitEventService.cpp"
     "bluetooth/MicroBitIOPinService.cpp"
     "bluetooth/MicroBitLEDService.cpp"

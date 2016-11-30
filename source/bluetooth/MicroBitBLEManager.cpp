@@ -506,15 +506,20 @@ void MicroBitBLEManager::stopAdvertising()
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 /**
-* Starts Bluetooth advertising of Eddystone URL frames
-* @param url: the url to transmit. Must be no longer than the supported eddystone url length
-* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-* The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-* More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
-* @param connectable: true to keep bluetooth connectable for other services, false otherwise
-* @param interval: the advertising interval of the beacon
-*/
-void MicroBitBLEManager::advertiseEddystoneUrl(char *url, int8_t calibratedPower, bool connectable, uint16_t interval)
+  * Set the content of Eddystone URL frames
+  *
+  * @param url The url to broadcast
+  *
+  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+  *
+  * @param connectable true to keep bluetooth connectable for other services, false otherwise. (Defaults to true)
+  *
+  * @param interval the rate at which the micro:bit will advertise url frames. (Defaults to MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL)
+  *
+  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+  */
+int MicroBitBLEManager::advertiseEddystoneUrl(const char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
     ble->gap().stopAdvertising();
     ble->clearAdvertisingPayload();
@@ -524,38 +529,54 @@ void MicroBitBLEManager::advertiseEddystoneUrl(char *url, int8_t calibratedPower
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
 
-    MicroBitEddystone::getInstance()->setEddystoneUrl(ble, url, calibratedPower);
+    int ret = MicroBitEddystone::getInstance()->setURL(ble, url, calibratedPower);
 
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
     ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
 #endif
     ble->gap().startAdvertising();
+
+    return ret;
 }
 
 /**
-* Starts Bluetooth advertising of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
-* advertiseEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
-*/
-void advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval)
+  * Set the content of Eddystone URL frames, but accepts a ManagedString as a url.
+  *
+  * @param url The url to broadcast
+  *
+  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+  *
+  * @param connectable true to keep bluetooth connectable for other services, false otherwise. (Defaults to true)
+  *
+  * @param interval the rate at which the micro:bit will advertise url frames. (Defaults to MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL)
+  *
+  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+  */
+int MicroBitBLEManager::advertiseEddystoneUrl(ManagedString url, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
-    advertiseEddystoneUrl((char *)url.toCharArray(), calibratedPower, connectable, interval);
+    return advertiseEddystoneUrl((char *)url.toCharArray(), calibratedPower, connectable, interval);
 }
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_UID)
 /**
-* Starts Bluetooth advertising of Eddystone UID frames
-* (from the Eddystone spec) the namespace portion of the ID may be used to group a particular set of beacons, while the instance ID 
-* identifies individual devices in the group.
-* @param uid_namespace: the uid namespace. Must 10 bytes long.
-* @param uid_instance:  the uid instance value. Must 6 bytes long.
-* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-* The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-* More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
-* @param connectable: true to keep bluetooth connectable for other services, false otherwise
-* @param interval: the advertising interval of the beacon
-*/
-void MicroBitBLEManager::advertiseEddystoneUid(char *uid_namespace, char *uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
+  * Set the content of Eddystone UID frames
+  *
+  * @param uid_namespace: the uid namespace. Must 10 bytes long.
+  *
+  * @param uid_instance:  the uid instance value. Must 6 bytes long.
+  *
+  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+  *
+  * @param connectable true to keep bluetooth connectable for other services, false otherwise. (Defaults to true)
+  *
+  * @param interval the rate at which the micro:bit will advertise url frames. (Defaults to MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL)
+  *
+  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+  */
+int MicroBitBLEManager::advertiseEddystoneUid(const char* uid_namespace, const char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
     ble->gap().stopAdvertising();
     ble->clearAdvertisingPayload();
@@ -565,22 +586,35 @@ void MicroBitBLEManager::advertiseEddystoneUid(char *uid_namespace, char *uid_in
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
 
-    MicroBitEddystone::getInstance()->setEddystoneUid(ble, uid_namespace, uid_instance, calibratedPower);
+    int ret = MicroBitEddystone::getInstance()->setUID(ble, uid_namespace, uid_instance, calibratedPower);
 
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
     ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
 #endif
     ble->gap().startAdvertising();
+
+    return ret;
 }
 
 /**
-* Starts Bluetooth advertising of Eddystone UID frames, but accepts a ManagedStrings as a uid args. For more info see
-* advertiseEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
-* @return 0 for success or MICROBIT_INVALID_PARAMETER if parameters are not valid
-*/
-void advertiseEddystoneUid(ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
+  * Set the content of Eddystone UID frames, but accepts a ManagedString as a namespace and instance.
+  *
+  * @param uid_namespace The namespace of the UID.
+  *
+  * @param uid_instance The value within the namespace.
+  *
+  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+  *
+  * @param connectable true to keep bluetooth connectable for other services, false otherwise. (Defaults to true)
+  *
+  * @param interval the rate at which the micro:bit will advertise url frames. (Defaults to MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL)
+  *
+  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+  */
+int MicroBitBLEManager::advertiseEddystoneUid(ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
 {
-    advertiseEddystoneUid((char *)uid_namespace.toCharArray(), (char *)uid_instance.toCharArray(), calibratedPower, connectable, interval);
+    return advertiseEddystoneUid((char *)uid_namespace.toCharArray(), (char *)uid_instance.toCharArray(), calibratedPower, connectable, interval);
 }
 #endif
 

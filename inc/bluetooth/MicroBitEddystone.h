@@ -37,8 +37,6 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitBLEManager.h"
 
-#define MICROBIT_BLE_EDDYSTONE_URL_ADV_INTERVAL 400
-
 /**
   * Class definition for the MicroBitEddystone.
   *
@@ -46,62 +44,75 @@ DEALINGS IN THE SOFTWARE.
 class MicroBitEddystone
 {
   public:
-    static MicroBitEddystone *getInstance();
+
+    static MicroBitEddystone* getInstance();
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 
     /**
-    * Set the content of Eddystone URL frames
-	* @param url: the url to transmit. Must be no longer than the supported eddystone url length
-	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-        * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-        * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
-        * @param connectable: true to keep bluetooth connectable for other services, false otherwise
-        * @param interval: the advertising interval of the beacon
-	*/
-    void setEddystoneUrl(BLEDevice *ble, char *url, int8_t calibratedPower);
+      * Set the content of Eddystone URL frames
+      *
+      * @param url The url to broadcast
+      *
+      * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+      *
+      * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+      * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+      */
+    int setURL(BLEDevice* ble, const char *url, int8_t calibratedPower = 0xF0);
 
     /**
-        * Set the content of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
-        * setEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
-        */
-    void setEddystoneUrl(BLEDevice *ble, ManagedString url, int8_t calibratedPower);
+      * Set the content of Eddystone URL frames, but accepts a ManagedString as a url.
+      *
+      * @param url The url to broadcast
+      *
+      * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+      *
+      * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+      * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+      */
+    int setURL(BLEDevice* ble, ManagedString url, int8_t calibratedPower = 0xF0);
 
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_UID)
     /**
-    * Set the content of Eddystone UID frames
-	* @param uid_namespace: the uid namespace. Must 10 bytes long.
-	* @param uid_instance:  the uid instance value. Must 6 bytes long.
-	* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-    * The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-    * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
-    * @param connectable: true to keep bluetooth connectable for other services, false otherwise
-    * @param interval: the advertising interval of the beacon
-	*/
-    void setEddystoneUid(BLEDevice *ble, char *uid_namespace, char *uid_instance, int8_t calibratedPower);
+      * Set the content of Eddystone UID frames
+      *
+      * @param uid_namespace: the uid namespace. Must 10 bytes long.
+      *
+      * @param uid_instance:  the uid instance value. Must 6 bytes long.
+      *
+      * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+      *
+      * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+      * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+      */
+    int setUID(BLEDevice* ble, const char* uid_namespace, const char* uid_instance, int8_t calibratedPower = 0xF0);
 
     /**
-        * Set the content of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
-        * setEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
-        */
-    void setEddystoneUid(BLEDevice *ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower);
+      * Set the content of Eddystone UID frames, but accepts a ManagedString as a namespace and instance.
+      *
+      * @param uid_namespace The namespace of the UID.
+      *
+      * @param uid_instance The value within the namespace.
+      *
+      * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+      *
+      * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+      * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+      */
+    int setUID(BLEDevice* ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower = 0xF0);
 
 #endif
 
   private:
+
     /**
-     * Constructor.
-     *
-     * Configure and manage the micro:bit's Bluetooth Low Energy (BLE) stack.
-     *
-     * @param _storage an instance of MicroBitStorage used to persist sys attribute information. (This is required for compatability with iOS).
-     *
-     * @note The BLE stack *cannot*  be brought up in a static context (the software simply hangs or corrupts itself).
-     * Hence, the init() member function should be used to initialise the BLE stack.
-     */
+      * Private constructor.
+      */
     MicroBitEddystone();
+
     static MicroBitEddystone *_instance;
 };
 

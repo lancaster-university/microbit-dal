@@ -26,6 +26,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitEddystone.h"
 
+MicroBitEddystone *MicroBitEddystone::_instance = NULL;
+
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
  * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
@@ -43,8 +45,6 @@ DEALINGS IN THE SOFTWARE.
 #if !defined(__arm)
 #pragma GCC diagnostic pop
 #endif
-
-MicroBitEddystone *MicroBitEddystone::_instance;
 
 const uint8_t EDDYSTONE_UUID[] = {0xAA, 0xFE};
 
@@ -77,33 +77,34 @@ MicroBitEddystone::MicroBitEddystone()
 {
 }
 
-MicroBitEddystone *MicroBitEddystone::getInstance()
+MicroBitEddystone* MicroBitEddystone::getInstance()
 {
     if (_instance == 0)
-    {
         _instance = new MicroBitEddystone;
-    }
+
     return _instance;
 }
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
+
 /**
-* Set the content of Eddystone URL frames
-* @param url: the url to transmit. Must be no longer than the supported eddystone url length
-* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-* The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-* More information can be found at https://github.com/google/eddystone/tree/master/eddystone-url#tx-power-level
-*/
-void MicroBitEddystone::setEddystoneUrl(BLEDevice *ble, char *url, int8_t calibratedPower)
+  * Set the content of Eddystone URL frames
+  *
+  * @param url The url to broadcast
+  *
+  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+  *
+  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+  */
+int MicroBitEddystone::setURL(BLEDevice* ble, const char* url, int8_t calibratedPower)
 {
     int urlDataLength = 0;
     char urlData[EDDYSTONE_URL_MAX_LENGTH];
     memset(urlData, 0, EDDYSTONE_URL_MAX_LENGTH);
 
-    if ((url == NULL) || (strlen(url) == 0))
-    {
-        return;
-    }
+    if (url == NULL || strlen(url) == 0)
+        return MICROBIT_INVALID_PARAMETER;
 
     // Prefix
     for (size_t i = 0; i < EDDYSTONE_URL_PREFIXES_LENGTH; i++)
@@ -150,29 +151,45 @@ void MicroBitEddystone::setEddystoneUrl(BLEDevice *ble, char *url, int8_t calibr
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
     ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index + urlDataLength);
+
+    return MICROBIT_OK;
 }
 
 /**
-* Set the content of Eddystone URL frames, but accepts a ManagedString as a url. For more info see
-* setEddystoneUrl(char* url, int8_t calibratedPower, bool connectable, uint16_t interval)
-*/
-void setEddystoneUrl(BLEDevice *ble, ManagedString url, int8_t calibratedPower)
+  * Set the content of Eddystone URL frames, but accepts a ManagedString as a url.
+  *
+  * @param url The url to broadcast
+  *
+  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+  *
+  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+  */
+int MicroBitEddystone::setURL(BLEDevice* ble, ManagedString url, int8_t calibratedPower)
 {
-    setEddystoneUrl(ble, (char *)url.toCharArray(), calibratedPower);
+    return setURL(ble, (char *)url.toCharArray(), calibratedPower);
 }
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_UID)
+
 /**
-* Set the content of Eddystone UID frames
-* @param uid_namespace: the uid namespace. Must 10 bytes long.
-* @param uid_instance:  the uid instance value. Must 6 bytes long.
-* @param calibratedPower: the calibrated to transmit at. This is the received power at 0 meters in dBm.
-* The value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
-* More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
-*/
-void MicroBitEddystone::setEddystoneUid(BLEDevice *ble, char *uid_namespace, char *uid_instance, int8_t calibratedPower)
+  * Set the content of Eddystone UID frames
+  *
+  * @param uid_namespace: the uid namespace. Must 10 bytes long.
+  *
+  * @param uid_instance:  the uid instance value. Must 6 bytes long.
+  *
+  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+  *
+  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+  */
+int MicroBitEddystone::setUID(BLEDevice* ble, const char* uid_namespace, const char* uid_instance, int8_t calibratedPower)
 {
+    if (uid_namespace == NULL || strlen(uid_namespace) == 0 || uid_instance == NULL || strlen(uid_instance) == 0)
+        return MICROBIT_INVALID_PARAMETER;
+
     char uidData[EDDYSTONE_UID_NAMESPACE_MAX_LENGTH + EDDYSTONE_UID_INSTANCE_MAX_LENGTH];
 
     // UID namespace
@@ -191,15 +208,25 @@ void MicroBitEddystone::setEddystoneUid(BLEDevice *ble, char *uid_namespace, cha
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_UUID, sizeof(EDDYSTONE_UUID));
     ble->accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, rawFrame, index + EDDYSTONE_UID_NAMESPACE_MAX_LENGTH + EDDYSTONE_UID_INSTANCE_MAX_LENGTH);
+
+    return MICROBIT_OK;
 }
 
 /**
-* Set the content of Eddystone UID frames, but accepts ManagedStrings as a uid args. For more info see
-* setEddystoneUid(char* uid_namespace, char* uid_instance, int8_t calibratedPower, bool connectable, uint16_t interval)
-*/
-void MicroBitEddystone::setEddystoneUid(BLEDevice *ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower)
+  * Set the content of Eddystone UID frames, but accepts a ManagedString as a namespace and instance.
+  *
+  * @param uid_namespace The namespace of the UID.
+  *
+  * @param uid_instance The value within the namespace.
+  *
+  * @param calibratedPower the transmission range of the beacon (Defaults to: 0xF0 ~10m).
+  *
+  * @note The calibratedPower value ranges from -100 to +20 to a resolution of 1. The calibrated power should be binary encoded.
+  * More information can be found at https://github.com/google/eddystone/tree/master/eddystone-uid#tx-power
+  */
+int MicroBitEddystone::setUID(BLEDevice* ble, ManagedString uid_namespace, ManagedString uid_instance, int8_t calibratedPower)
 {
-    setEddystoneUid(ble, (char *)uid_namespace.toCharArray(), (char *)uid_instance.toCharArray(), calibratedPower);
+    return setUID(ble, (char *)uid_namespace.toCharArray(), (char *)uid_instance.toCharArray(), calibratedPower);
 }
 
 #endif
