@@ -4,6 +4,7 @@
 #include "MicroBitEvent.h"
 #include "MicroBitFiber.h"
 #include "MicroBitSystemTimer.h"
+#include "NotifyEvents.h"
 
 struct HIDReportReference{
     uint8_t id;
@@ -88,7 +89,6 @@ static uint8_t outputReportData[] = { 0 };
 
 static const uint16_t uuid16_list[] = {GattService::UUID_HUMAN_INTERFACE_DEVICE_SERVICE};
 
-
 /**
   * A simple helper function that "returns" our most recently "pressed" key to
   * the up position.
@@ -96,8 +96,25 @@ static const uint16_t uuid16_list[] = {GattService::UUID_HUMAN_INTERFACE_DEVICE_
 void MicroBitKeyboardService::keyUp()
 {
     ble.gattServer().write(keyboardInCharacteristic->getValueAttribute().getHandle(), emptyInputReportData, sizeof(emptyInputReportData));
-    fiber_wait_for_event(MICROBIT_ID_NOTIFY, MICROBIT_HID_S_EVT_TX_EMPTY);
-    schedule();
+    fiber_sleep(MICROBIT_HID_ADVERTISING_INT);
+}
+
+/**
+  * Places and translates a single ascii character into a keyboard
+  * value, placing it in our input buffer.
+  */
+int MicroBitKeyboardService::putc(const char c)
+{
+    if(!ble.getGapState().connected)
+        return MICROBIT_NOT_SUPPORTED;
+
+    inputReportData[0] = keymap[(uint8_t)c].modifier;
+    inputReportData[2] = keymap[(uint8_t)c].usage;
+
+    ble.gattServer().write(keyboardInCharacteristic->getValueAttribute().getHandle(), inputReportData, sizeof(inputReportData));
+    fiber_sleep(MICROBIT_HID_ADVERTISING_INT);
+
+    return 1;
 }
 
 /**
@@ -157,26 +174,6 @@ MicroBitKeyboardService::MicroBitKeyboardService(BLEDevice& _ble)
 }
 
 /**
-  * System tick is used to time the visibility of characters from the HID device.
-  *
-  * Our HID advertising interval is 24 ms, which means there will be a character
-  * swap every 24 ms. Our system tick timer interrupt occures every 6ms...
-  *
-  * After we swap characters, we reset our counter, and emit an event to wake any
-  * waiting fibers.
-  */
-void MicroBitKeyboardService::systemTick()
-{
-    status += 1;
-
-    if(status == MICROBIT_HID_ADVERTISING_INT / SYSTEM_TICK_PERIOD_MS)
-    {
-        status = 0;
-        MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_HID_S_EVT_TX_EMPTY);
-    }
-}
-
-/**
   * Send a single character to our host.
   *
   * @param c the character to send
@@ -185,22 +182,26 @@ void MicroBitKeyboardService::systemTick()
   */
 int MicroBitKeyboardService::send(const char c)
 {
-    if(!ble.getGapState().connected)
-        return MICROBIT_NOT_SUPPORTED;
+    if(status & MICROBIT_HID_STATE_IN_USE)
+        fiber_wait_for_event(MICROBIT_ID_NOTIFY_ONE, MICROBIT_HID_SERVICE_FREE);
 
-    system_timer_add_component(this);
+    status |= MICROBIT_HID_STATE_IN_USE;
 
-    inputReportData[0] = keymap[(uint8_t)c].modifier;
-    inputReportData[2] = keymap[(uint8_t)c].usage;
-
-    ble.gattServer().write(keyboardInCharacteristic->getValueAttribute().getHandle(), inputReportData, sizeof(inputReportData));
-    fiber_wait_for_event(MICROBIT_ID_NOTIFY, MICROBIT_HID_S_EVT_TX_EMPTY);
-    schedule();
+    int ret = putc(c);
     keyUp();
 
-    system_timer_remove_component(this);
+    status &= ~MICROBIT_HID_STATE_IN_USE;
+    MicroBitEvent(MICROBIT_ID_NOTIFY_ONE, MICROBIT_HID_SERVICE_FREE);
 
-    return 1;
+    return ret;
+}
+
+/**
+  * Send a "Special" non-ascii keyboard key, defined in BluetoothHIDKeys.h
+  */
+int MicroBitKeyboardService::send(SpecialKey key)
+{
+    return send((char)key);
 }
 
 /**
@@ -214,16 +215,31 @@ int MicroBitKeyboardService::send(const char c)
   */
 int MicroBitKeyboardService::send(const char* c, int len)
 {
+    if(status & MICROBIT_HID_STATE_IN_USE)
+        fiber_wait_for_event(MICROBIT_ID_NOTIFY_ONE, MICROBIT_HID_SERVICE_FREE);
+
+    status |= MICROBIT_HID_STATE_IN_USE;
+
     int sent = 0;
     int ret = 0;
+    uint8_t previous = 0;
 
     for(int i = 0; i < len; i++)
     {
-        if((ret = send(c[i])) == MICROBIT_NOT_SUPPORTED)
-            return MICROBIT_NOT_SUPPORTED;
+        // if our current key is the same as our previous key, we need to send an
+        // up.
+        if(previous == c[i])
+            keyUp();
 
+        if((ret = send(c[i])) == MICROBIT_NOT_SUPPORTED)
+            break;
+
+        previous = c[i];
         sent += ret;
     }
+
+    status &= ~MICROBIT_HID_STATE_IN_USE;
+    MicroBitEvent(MICROBIT_ID_NOTIFY_ONE, MICROBIT_HID_SERVICE_FREE);
 
     return sent;
 }
@@ -250,5 +266,4 @@ MicroBitKeyboardService::~MicroBitKeyboardService()
 {
     free(batteryService);
     free(keyboardInCharacteristic);
-    system_timer_remove_component(this);
 }

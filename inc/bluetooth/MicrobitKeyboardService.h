@@ -9,8 +9,8 @@
 
 #include "MicroBitComponent.h"
 
-#define MICROBIT_HID_S_EVT_TX_EMPTY     1
 #define MICROBIT_HID_ADVERTISING_INT    24
+#define MICROBIT_HID_STATE_IN_USE       0x02
 
 /**
   * This class represents a Bluetooth HID device, specifically, a keyboard instance.
@@ -37,6 +37,12 @@ class MicroBitKeyboardService : public MicroBitComponent
       */
     void keyUp();
 
+    /**
+      * Places and translates a single ascii character into a keyboard
+      * value, placing it in our input buffer.
+      */
+    int putc(const char c);
+
     public:
 
     /**
@@ -48,15 +54,9 @@ class MicroBitKeyboardService : public MicroBitComponent
     MicroBitKeyboardService(BLEDevice& _ble);
 
     /**
-      * System tick is used to time the visibility of characters from the HID device.
-      *
-      * Our HID advertising interval is 24 ms, which means there will be a character
-      * swap every 24 ms. Our system tick timer interrupt occures every 6ms...
-      *
-      * After we swap characters, we reset our counter, and emit an event to wake any
-      * waiting fibers.
+      * Send a "Special" non-ascii keyboard key, defined in BluetoothHIDKeys.h
       */
-    virtual void systemTick();
+    int send(SpecialKey key);
 
     /**
       * Send a single character to our host.

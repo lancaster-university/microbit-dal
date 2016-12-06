@@ -42,7 +42,11 @@ enum MediaKey {
     KEY_VOLUME_DOWN,    /*!< Volume Down Button */
 };
 
-enum FunctionKey {
+enum SpecialKey {
+    KEY_DELETE = 8,
+    KEY_TAB,
+    KEY_RETURN,
+
     KEY_F1 = 128,   /* F1 key */
     KEY_F2,         /* F2 key */
     KEY_F3,         /* F3 key */
