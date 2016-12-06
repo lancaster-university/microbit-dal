@@ -28,6 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitEddystone.h"
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
+#include "MicroBitDeviceInformationService.h"
 
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
@@ -87,6 +88,10 @@ MicroBitBLEManager *MicroBitBLEManager::manager = NULL; // Singleton reference t
 
 static uint8_t deviceID = 255;          // Unique ID for the peer that has connected to us.
 static Gap::Handle_t pairingHandle = 0; // The connection handle used during a pairing process. Used to ensure that connections are dropped elegantly.
+
+static const PnPID_t pnp = {
+    0x2, 0x0d28, 0x204, 0x0100
+};
 
 static void storeSystemAttributes(Gap::Handle_t handle)
 {
@@ -280,6 +285,8 @@ void MicroBitBLEManager::advertise()
   * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
   * @endcode
   */
+
+static const uint16_t uuid16_list[] = {GattService::UUID_HUMAN_INTERFACE_DEVICE_SERVICE};
 void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding)
 {
     ManagedString BLEName("BBC micro:bit");
@@ -372,7 +379,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    HIDDeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION, (PnPID_t *)&pnp);
 #else
     (void)serialNumber;
 #endif
