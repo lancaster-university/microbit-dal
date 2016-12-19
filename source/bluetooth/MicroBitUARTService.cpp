@@ -356,7 +356,7 @@ int MicroBitUARTService::read(uint8_t *buf, int len, MicroBitSerialMode mode)
     {
         int c;
 
-        while((c = getc(mode)) > 0 && i < len)
+        while((c = getc(mode)) >= 0 && i < len)
         {
             buf[i] = c;
             i++;
