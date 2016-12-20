@@ -496,10 +496,11 @@ void MicroBitBLEManager::idleTick()
     if((system_timer_current_time() - pairing_completed_at_time) >= MICROBIT_BLE_DISCONNECT_AFTER_PAIRING_DELAY) {
         if (ble)
             ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+        fiber_remove_idle_component(this);
     }
 
-    fiber_remove_idle_component(this);
 }
+
 
 /**
 * Stops any currently running BLE advertisements
