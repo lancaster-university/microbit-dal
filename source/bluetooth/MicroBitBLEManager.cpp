@@ -28,6 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitEddystone.h"
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
+#include "MicroBitSystemTimer.h"
 
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
@@ -477,6 +478,8 @@ void MicroBitBLEManager::pairingComplete(bool success)
 {
     this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
+    pairing_completed_at_time = system_timer_current_time();
+
     if (success)
     {
         this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
@@ -490,11 +493,14 @@ void MicroBitBLEManager::pairingComplete(bool success)
  */
 void MicroBitBLEManager::idleTick()
 {
-    if (ble)
-        ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+    if((system_timer_current_time() - pairing_completed_at_time) >= MICROBIT_BLE_DISCONNECT_AFTER_PAIRING_DELAY) {
+        if (ble)
+            ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+        fiber_remove_idle_component(this);
+    }
 
-    fiber_remove_idle_component(this);
 }
+
 
 /**
 * Stops any currently running BLE advertisements

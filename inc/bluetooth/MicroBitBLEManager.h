@@ -277,6 +277,9 @@ class MicroBitBLEManager : MicroBitComponent
 	*/
     void showNameHistogram(MicroBitDisplay &display);
 
+    #define MICROBIT_BLE_DISCONNECT_AFTER_PAIRING_DELAY  500
+    unsigned long pairing_completed_at_time;   
+
     int pairingStatus;
     ManagedString passKey;
     ManagedString deviceName;
