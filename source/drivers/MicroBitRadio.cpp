@@ -72,11 +72,11 @@ extern "C" void RADIO_IRQHandler(void)
         NRF_RADIO->EVENTS_END = 0;
         if(NRF_RADIO->CRCSTATUS == 1)
         {
-            uint8_t sample = NRF_RADIO->RSSISAMPLE;
+            int sample = (int)NRF_RADIO->RSSISAMPLE;
 
             // Associate this packet's rssi value with the data just
             // transferred by DMA receive
-            MicroBitRadio::instance->setRSSI(sample);
+            MicroBitRadio::instance->setRSSI(-sample);
 
             // Now move on to the next buffer, if possible.
             // The queued packet will get the rssi value set above.
@@ -215,12 +215,14 @@ int MicroBitRadio::queueRxBuf()
 
 /**
   * Sets the RSSI for the most recent packet.
+  * The value is measured in -dbm. The higher the value, the stronger the signal.
+  * Typical values are in the range -42 to -128.
   *
   * @param rssi the new rssi value.
   *
   * @note should only be called from RADIO_IRQHandler...
   */
-int MicroBitRadio::setRSSI(uint8_t rssi)
+int MicroBitRadio::setRSSI(int rssi)
 {
     if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
         return MICROBIT_NOT_SUPPORTED;
@@ -232,6 +234,8 @@ int MicroBitRadio::setRSSI(uint8_t rssi)
 
 /**
   * Retrieves the current RSSI for the most recent packet.
+  * The return value is measured in -dbm. The higher the value, the stronger the signal.
+  * Typical values are in the range -42 to -128.
   *
   * @return the most recent RSSI value or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */

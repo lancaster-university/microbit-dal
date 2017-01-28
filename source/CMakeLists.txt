@@ -41,6 +41,9 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitStorage.cpp"
     "drivers/MicroBitThermometer.cpp"
     "drivers/TimedInterruptIn.cpp"
+    "drivers/MicroBitFlash.cpp"
+    "drivers/MicroBitFile.cpp"
+    "drivers/MicroBitFileSystem.cpp"
     "drivers/CalliopeSoundMotor.cpp"
     "drivers/CalliopeRGB.cpp"
 
@@ -48,6 +51,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "bluetooth/MicroBitBLEManager.cpp"
     "bluetooth/MicroBitButtonService.cpp"
     "bluetooth/MicroBitDFUService.cpp"
+    "bluetooth/MicroBitEddystone.cpp"
     "bluetooth/MicroBitEventService.cpp"
     "bluetooth/MicroBitIOPinService.cpp"
     "bluetooth/MicroBitLEDService.cpp"

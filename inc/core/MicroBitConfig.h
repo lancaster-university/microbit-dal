@@ -72,6 +72,35 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_HEAP_END                       (CORTEX_M0_STACK_BASE - MICROBIT_STACK_SIZE)
 #endif
 
+// Defines the size of a physical FLASH page in RAM.
+#ifndef PAGE_SIZE
+#define PAGE_SIZE                               1024
+#endif
+
+// Defines where in memory persistent data is stored.
+#ifndef KEY_VALUE_STORE_PAGE
+#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))	
+#endif
+
+#ifndef BLE_BOND_DATA_PAGE 
+#define BLE_BOND_DATA_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
+#endif
+
+#ifndef DEFAULT_SCRATCH_PAGE
+#define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
+#endif
+
+// Address of the end of the current program in FLASH memory.
+// This is recorded by the C/C++ linker, but the symbol name varies depending on which compiler is used.
+#if defined(__arm)
+extern uint32_t Image$$ER_IROM1$$RO$$Limit;
+#define FLASH_PROGRAM_END (uint32_t) (&Image$$ER_IROM1$$RO$$Limit)
+#else
+extern uint32_t __etext;
+#define FLASH_PROGRAM_END (uint32_t) (&__etext)
+#endif
+
+
 // Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
 // reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
 // i.e. panic() will no longer be triggered on memory full conditions.
@@ -237,11 +266,16 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_DFU_SERVICE                1
 #endif
 
-// Enable/Disable BLE Service: PhysicalWeb
-// This enables the physical web apis
+// Enable/Disable availability of Eddystone URL APIs
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_EDDYSTONE_URL
 #define MICROBIT_BLE_EDDYSTONE_URL               0
+#endif
+
+// Enable/Disable availability of Eddystone UID APIs
+// Set '1' to enable.
+#ifndef MICROBIT_BLE_EDDYSTONE_UID
+#define MICROBIT_BLE_EDDYSTONE_UID               0
 #endif
 
 // Enable/Disable BLE Service: MicroBitEventService
@@ -325,6 +359,26 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_DEFAULT_SERIAL_MODE            SYNC_SLEEP
 #endif
 
+//
+// File System configuration defaults
+//
+
+//
+// Defines the logical block size for the file system.
+// Must be a factor of the physical PAGE_SIZE (ideally a power of two less).
+//
+#ifndef MBFS_BLOCK_SIZE		
+#define MBFS_BLOCK_SIZE		256
+#endif
+
+//
+// FileSystem writeback cache size, in bytes. Defines how many bytes will be stored
+// in RAM before being written back to FLASH. Set to zero to disable this feature.
+// Should be <= MBFS_BLOCK_SIZE.
+//
+#ifndef MBFS_CACHE_SIZE
+#define MBFS_CACHE_SIZE		16
+#endif
 
 //
 // I/O Options
