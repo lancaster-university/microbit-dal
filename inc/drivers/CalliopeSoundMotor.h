@@ -29,13 +29,9 @@ DEALINGS IN THE SOFTWARE.
 #define CALLIOPE_SOUND_MOTOR_H
 
 #include "mbed.h"
+#include "MicroBitIO.h"
 #include "MicroBitComponent.h"
 #include "DynamicPwm.h"
-
-//pin definitions
-#define CALLIOPE_SM_PIN_NSLEEP                          P0_28
-#define CALLIOPE_SM_PIN_IN1                             P0_29
-#define CALLIOPE_SM_PIN_IN2                             P0_30
 
 //default values
 #define CALLIOPE_SM_DEFAULT_DUTY_M                      50

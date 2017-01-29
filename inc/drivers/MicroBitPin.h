@@ -4,10 +4,6 @@ The MIT License (MIT)
 Copyright (c) 2016 British Broadcasting Corporation.
 This software is provided by Lancaster University by arrangement with the BBC.
 
-Modifications Copyright (c) 2016 Calliope GbR
-Modifications are provided by DELTA Systems (Georg Sommer) - Thomas Kern
-und Björn Eberhardt GbR by arrangement with Calliope GbR. 
-
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation
@@ -25,6 +21,11 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+============================
+Modifications Copyright (c) 2016 Calliope GbR
+Modifications are provided by DELTA Systems (Georg Sommer) - Thomas Kern
+und Björn Eberhardt GbR by arrangement with Calliope GbR.
 */
 
 #ifndef MICROBIT_PIN_H
@@ -43,32 +44,66 @@ DEALINGS IN THE SOFTWARE.
 #define IO_STATUS_EVENT_PULSE_ON_EDGE       0x40        // Pin will generate events on pin change
 #define IO_STATUS_EVENTBUS_ENABLED          0x80        // Pin is will generate events on change
 
-//#defines for each edge connector pin - changed!
-#define MICROBIT_PIN_P0                     P0_0        //touch pin 0
-#define MICROBIT_PIN_P1                     P0_1        //touch pin 1
-#define MICROBIT_PIN_P2                     P0_2        //touch pin 2
+#ifdef CALLIOPE_MINI
+
+// micro:bit compatibility pin settings for Calliope mini
+#define MICROBIT_PIN_P0                     P0_1        // CM: touch/analog pin P1
+#define MICROBIT_PIN_P1                     P0_2        // CM: touch/analog pin P2
+// TODO P0_26 in revision 0.4
+#define MICROBIT_PIN_P2                     P0_16       // CM: analog/rx pin (UART Grove)
+#define MICROBIT_PIN_P3                     P0_4        //COL1 (ANALOG/DIGITAL)
+#define MICROBIT_PIN_P4                     P0_5        //COL2 (ANALOG/DIGITAL)
+// TODO P0_17 in revsion 0.4
+#define MICROBIT_PIN_P5                     P0_26       //BTN_A
+#define MICROBIT_PIN_P6                     P0_12       //COL9
+#define MICROBIT_PIN_P7                     P0_11       //COL8
+// TODO P0_27 in revision 0.4
+#define MICROBIT_PIN_P8                     P0_21       // CM: analog/tx pin (UART Grove)
+#define MICROBIT_PIN_P9                     P0_10       //COL7
+#define MICROBIT_PIN_P10                    P0_6        //COL3 (ANALOG/DIGITAL)
+// TODO P0_16 in revision 0.4
+#define MICROBIT_PIN_P11                    P0_17       //BTN_B
+#define MICROBIT_PIN_P12                    P0_0        // CM: touch pin P0
+#define MICROBIT_PIN_P13                    P0_7        // CM: COL4/SCK
+#define MICROBIT_PIN_P14                    P0_8        // CM: COL5/MISO
+#define MICROBIT_PIN_P15                    P0_9        // CM: COL6/MOSI
+#define MICROBIT_PIN_P16                    P0_22       // CM: touch pin P3
+#define MICROBIT_PIN_P19                    P0_19       //SCL
+#define MICROBIT_PIN_P20                    P0_20       //SDA
+#define MICROBIT_PIN_P21                    P0_3        // CM: analog microphone
+
+// special pins for Calliope mini (only used internally for drivers)
+#define CALLIOPE_PIN_MOTOR_SLEEP            P0_28       // motor driver sleep pin
+#define CALLIOPE_PIN_MOTOR_IN1              P0_29       // motor driver pin 1 / sound
+#define CALLIOPE_PIN_MOTOR_IN2              P0_30       // motor driver pin 2 / sound
+#define CALLIOPE_PIN_RGB_LED                P0_18       // WS2812b RGB data pin
+// TODO P0_21 in revision 0.4
+#define CALLIOPE_PIN_ACCEL_INT              P0_27       // accelerometer interrupt pin
+
+#else
+
+//#defines for each edge connector pin
+#define MICROBIT_PIN_P0                     P0_3        //P0 is the left most pad (ANALOG/DIGITAL) used to be P0_3 on green board
+#define MICROBIT_PIN_P1                     P0_2        //P1 is the middle pad (ANALOG/DIGITAL)
+#define MICROBIT_PIN_P2                     P0_1        //P2 is the right most pad (ANALOG/DIGITAL) used to be P0_1 on green board
 #define MICROBIT_PIN_P3                     P0_4        //COL1 (ANALOG/DIGITAL)
 #define MICROBIT_PIN_P4                     P0_5        //COL2 (ANALOG/DIGITAL)
 #define MICROBIT_PIN_P5                     P0_17       //BTN_A
 #define MICROBIT_PIN_P6                     P0_12       //COL9
 #define MICROBIT_PIN_P7                     P0_11       //COL8
+#define MICROBIT_PIN_P8                     P0_18       //PIN 18
 #define MICROBIT_PIN_P9                     P0_10       //COL7
 #define MICROBIT_PIN_P10                    P0_6        //COL3 (ANALOG/DIGITAL)
 #define MICROBIT_PIN_P11                    P0_26       //BTN_B
-#define MICROBIT_PIN_P19                    P0_19       //SCL
-#define MICROBIT_PIN_P20                    P0_20       //SDA
-//CALLIOPE MINI pins added here
-#define CALLIOPE_PIN_P3                     P0_3        //touch pin (TODO: microphone in rev 0.3)
-#define CALLIOPE_PIN_P7                     P0_7        //LED control / IO pin
-#define CALLIOPE_PIN_P8                     P0_8        //LED control / IO pin
-#define CALLIOPE_PIN_P9                     P0_9        //LED control / IO pin
-#define CALLIOPE_PIN_P13                    P0_13       //LED control / IO pin
-#define CALLIOPE_PIN_P14                    P0_14       //LED control / IO pin
-#define CALLIOPE_PIN_P15                    P0_15       //LED control / IO pin
-#define CALLIOPE_PIN_P22                    P0_22       //unused (TODO: touch 3 in rev 0.2)
-#define CALLIOPE_PIN_P28                    P0_28       //motor driver sleep pin
-#define CALLIOPE_PIN_P29                    P0_29       //motor driver pin 1 / sound
-#define CALLIOPE_PIN_P30                    P0_30       //motor driver pin 2 / sound
+#define MICROBIT_PIN_P12                    P0_20       //PIN 20
+#define MICROBIT_PIN_P13                    P0_23       //SCK
+#define MICROBIT_PIN_P14                    P0_22       //MISO
+#define MICROBIT_PIN_P15                    P0_21       //MOSI
+#define MICROBIT_PIN_P16                    P0_16       //PIN 16
+#define MICROBIT_PIN_P19                    P0_0        //SCL
+#define MICROBIT_PIN_P20                    P0_30       //SDA
+
+#endif
 
 #define MICROBIT_PIN_MAX_OUTPUT             1023
 
@@ -93,9 +128,8 @@ DEALINGS IN THE SOFTWARE.
 enum PinCapability{
     PIN_CAPABILITY_DIGITAL = 0x01,
     PIN_CAPABILITY_ANALOG = 0x02,
-    PIN_CAPABILITY_TOUCH = 0x04,
     PIN_CAPABILITY_AD = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG,
-    PIN_CAPABILITY_ALL = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG | PIN_CAPABILITY_TOUCH
+    PIN_CAPABILITY_ALL = PIN_CAPABILITY_DIGITAL | PIN_CAPABILITY_ANALOG
 };
 
 /**

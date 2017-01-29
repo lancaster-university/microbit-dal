@@ -31,7 +31,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitComponent.h"
 #include "MicroBitCoordinateSystem.h"
 #include "MicroBitI2C.h"
-
+#include "MicroBitPin.h"
 
 #define BMX055_ACC_WHOAMI        0x00   // should return 0xFA
 //#define BMX055_ACC_Reserved    0x01
@@ -270,7 +270,7 @@ enum Mmode {
 /**
   * Relevant pin assignments
   */
-#define MICROBIT_PIN_ACCEL_DATA_READY          P0_27
+#define MICROBIT_PIN_ACCEL_DATA_READY          CALLIOPE_PIN_ACCEL_INT
 
 /**
   * Status flags

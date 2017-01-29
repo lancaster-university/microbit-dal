@@ -46,35 +46,41 @@ DEALINGS IN THE SOFTWARE.
   */
 MicroBitIO::MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
                        int ID_P3, int ID_P4, int ID_P5,
-                       int ID_P6, int ID_P7, int ID_P9, 
-                       int ID_P10,int ID_P11,int ID_P19,
-                       int ID_P20, int ID_CAL_P3, int ID_CAL_P7,
-                       int ID_CAL_P8, int ID_CAL_P9, int ID_CAL_P13, 
-                       int ID_CAL_P14, int ID_CAL_P15, int ID_CAL_P22,
-                       int ID_CAL_P28, int ID_CAL_P29, int ID_CAL_P30) :
-    P0 (ID_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_DIGITAL),            //P0 is the left most pad (ANALOG/DIGITAL/TOUCH)
-    P1 (ID_P1, MICROBIT_PIN_P1, PIN_CAPABILITY_ALL),            //P1 is the middle pad (ANALOG/DIGITAL/TOUCH)
-    P2 (ID_P2, MICROBIT_PIN_P2, PIN_CAPABILITY_ALL),            //P2 is the right most pad (ANALOG/DIGITAL/TOUCH)
-    P3 (ID_P3, MICROBIT_PIN_P3, PIN_CAPABILITY_ALL),            //COL1 (ANALOG/DIGITAL)
+                       int ID_P6, int ID_P7, int ID_P8,
+                       int ID_P9, int ID_P10,int ID_P11,
+                       int ID_P12,int ID_P13,int ID_P14,
+                       int ID_P15,int ID_P16,int ID_P19,
+                       int ID_P20
+#ifdef CALLIOPE_MINI
+                       , int ID_P21
+#endif
+    ) :
+    P0 (ID_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_ALL),            //P0 is the left most pad (ANALOG/DIGITAL/TOUCH) (CM: P1)
+    P1 (ID_P1, MICROBIT_PIN_P1, PIN_CAPABILITY_ALL),            //P1 is the middle pad (ANALOG/DIGITAL/TOUCH)    (CM: P2)
+    P2 (ID_P2, MICROBIT_PIN_P2, PIN_CAPABILITY_ALL),            //P2 is the right most pad (ANALOG/DIGITAL/TOUCH)(CM: RX)
+    P3 (ID_P3, MICROBIT_PIN_P3, PIN_CAPABILITY_AD),             //COL1 (ANALOG/DIGITAL)
     P4 (ID_P4, MICROBIT_PIN_P4, PIN_CAPABILITY_AD),             //COL2 (ANALOG/DIGITAL)
     P5 (ID_P5, MICROBIT_PIN_P5, PIN_CAPABILITY_DIGITAL),        //BTN_A
     P6 (ID_P6, MICROBIT_PIN_P6, PIN_CAPABILITY_DIGITAL),        //ROW2
     P7 (ID_P7, MICROBIT_PIN_P7, PIN_CAPABILITY_DIGITAL),        //ROW1
+#ifdef CALLIOPE_MINI
+    P8 (ID_P8, MICROBIT_PIN_P8, PIN_CAPABILITY_AD),             // (CM: TX/Analog)
+#else
+    P8 (ID_P8, MICROBIT_PIN_P8, PIN_CAPABILITY_DIGITAL),        //PIN 18
+#endif
     P9 (ID_P9, MICROBIT_PIN_P9, PIN_CAPABILITY_DIGITAL),        //ROW3
     P10(ID_P10,MICROBIT_PIN_P10,PIN_CAPABILITY_AD),             //COL3 (ANALOG/DIGITAL)
     P11(ID_P11,MICROBIT_PIN_P11,PIN_CAPABILITY_DIGITAL),        //BTN_B
+    P12(ID_P12,MICROBIT_PIN_P12,PIN_CAPABILITY_DIGITAL),        //PIN 20 (CM: P0)
+    P13(ID_P13,MICROBIT_PIN_P13,PIN_CAPABILITY_DIGITAL),        //SCK
+    P14(ID_P14,MICROBIT_PIN_P14,PIN_CAPABILITY_DIGITAL),        //MISO
+    P15(ID_P15,MICROBIT_PIN_P15,PIN_CAPABILITY_DIGITAL),        //MOSI
+    P16(ID_P16,MICROBIT_PIN_P16,PIN_CAPABILITY_DIGITAL),        //PIN 16 (CM: P3)
     P19(ID_P19,MICROBIT_PIN_P19,PIN_CAPABILITY_DIGITAL),        //SCL
-    P20(ID_P20,MICROBIT_PIN_P20,PIN_CAPABILITY_DIGITAL),        //SDA
-    CAL_P3(ID_CAL_P3, CALLIOPE_PIN_P3, PIN_CAPABILITY_ALL),     // touch pin -- TODO: microphone in rev 0.3
-    CAL_P7(ID_CAL_P7, CALLIOPE_PIN_P7, PIN_CAPABILITY_DIGITAL), //led control
-    CAL_P8(ID_CAL_P8, CALLIOPE_PIN_P8, PIN_CAPABILITY_DIGITAL), //led control
-    CAL_P9(ID_CAL_P9, CALLIOPE_PIN_P9, PIN_CAPABILITY_DIGITAL), //led control
-    CAL_P13(ID_CAL_P13,CALLIOPE_PIN_P13,PIN_CAPABILITY_DIGITAL),//led control
-    CAL_P14(ID_CAL_P14,CALLIOPE_PIN_P14,PIN_CAPABILITY_DIGITAL),//led control
-    CAL_P15(ID_CAL_P15,CALLIOPE_PIN_P15,PIN_CAPABILITY_DIGITAL),//led control
-    CAL_P22(ID_CAL_P22,CALLIOPE_PIN_P22,PIN_CAPABILITY_ALL),    //right touch pad -- TODO: TOUCH PAD 3 in rev 0.3
-    CAL_P28(ID_CAL_P28,CALLIOPE_PIN_P28,PIN_CAPABILITY_DIGITAL),//motor driver sleep pin
-    CAL_P29(ID_CAL_P29,CALLIOPE_PIN_P29,PIN_CAPABILITY_AD),     //motor driver pin 1
-    CAL_P30(ID_CAL_P30,CALLIOPE_PIN_P30,PIN_CAPABILITY_AD)      //motor driver pin 2 / sound
+    P20(ID_P20,MICROBIT_PIN_P20,PIN_CAPABILITY_DIGITAL)         //SDA
+#ifdef CALLIOPE_MINI
+    ,
+    P21(ID_P21,MICROBIT_PIN_P21,PIN_CAPABILITY_AD)              // (CM: Microphone)
+#endif
 {
 }

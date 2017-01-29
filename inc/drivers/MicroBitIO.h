@@ -4,10 +4,6 @@ The MIT License (MIT)
 Copyright (c) 2016 British Broadcasting Corporation.
 This software is provided by Lancaster University by arrangement with the BBC.
 
-Modifications Copyright (c) 2016 Calliope GbR
-Modifications are provided by DELTA Systems (Georg Sommer) - Thomas Kern 
-und Björn Eberhardt GbR by arrangement with Calliope GbR. 
-
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation
@@ -25,6 +21,11 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+========================
+Modifications Copyright (c) 2016 Calliope GbR
+Modifications are provided by DELTA Systems (Georg Sommer) - Thomas Kern
+und Björn Eberhardt GbR by arrangement with Calliope GbR.
 */
 
 #ifndef MICROBIT_IO_H
@@ -53,22 +54,20 @@ class MicroBitIO
     MicroBitPin          P5;
     MicroBitPin          P6;
     MicroBitPin          P7;
+    MicroBitPin          P8;
     MicroBitPin          P9;
     MicroBitPin          P10;
     MicroBitPin          P11;
+    MicroBitPin          P12;
+    MicroBitPin          P13;
+    MicroBitPin          P14;
+    MicroBitPin          P15;
+    MicroBitPin          P16;
     MicroBitPin          P19;
     MicroBitPin          P20;
-	MicroBitPin			 CAL_P3;
-	MicroBitPin			 CAL_P7;
-	MicroBitPin			 CAL_P8;
-	MicroBitPin			 CAL_P9;
-	MicroBitPin			 CAL_P13;
-	MicroBitPin			 CAL_P14;
-	MicroBitPin			 CAL_P15;
-	MicroBitPin			 CAL_P22;
-    MicroBitPin			 CAL_P28;
-    MicroBitPin			 CAL_P29;
-    MicroBitPin			 CAL_P30;
+#ifdef CALLIOPE_MINI
+    MicroBitPin          P21;
+#endif
 
     /**
       * Constructor.
@@ -80,12 +79,15 @@ class MicroBitIO
       */
     MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
                int ID_P3, int ID_P4, int ID_P5,
-               int ID_P6, int ID_P7, int ID_P9,
-               int ID_P10,int ID_P11,int ID_P19,
-               int ID_P20, int ID_CAL_P3, int ID_CAL_P7,
-               int ID_CAL_P8, int ID_CAL_P9, int ID_CAL_P13,
-               int ID_CAL_P14, int ID_CAL_P15, int ID_CAL_P22,
-               int ID_CAL_P28, int ID_CAL_P29, int ID_CAL_30);
+               int ID_P6, int ID_P7, int ID_P8,
+               int ID_P9, int ID_P10,int ID_P11,
+               int ID_P12,int ID_P13,int ID_P14,
+               int ID_P15,int ID_P16,int ID_P19,
+               int ID_P20
+#ifdef CALLIOPE_MINI
+               , int ID_P21
+#endif
+	 );
 };
 
 #endif

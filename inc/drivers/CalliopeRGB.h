@@ -30,13 +30,11 @@ DEALINGS IN THE SOFTWARE.
 
 #include "mbed.h"
 #include "MicroBitComponent.h"
-
-//Pin of RGB LED on the MicroBit
-#define CALLIOPE_PIN_RGB                    P0_18
+#include "MicrobitPin.h"
 
 class CalliopeRGB : public MicroBitComponent
 {   
-    uint8_t PIN = CALLIOPE_PIN_RGB;
+    uint8_t PIN = CALLIOPE_PIN_RGB_LED;
 
     //values for the displayed color
     uint8_t GRBW[4];
