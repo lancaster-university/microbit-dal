@@ -87,10 +87,7 @@ void MicroBitPin::disconnect()
     }
 
     if (status & IO_STATUS_ANALOG_OUT)
-    {
-        if(((DynamicPwm *)pin)->getPinName() == name)
-            ((DynamicPwm *)pin)->release();
-    }
+        delete ((DynamicPwm *)pin);
 
     if (status & IO_STATUS_TOUCH_IN)
         delete ((MicroBitButton *)pin);
@@ -194,7 +191,7 @@ int MicroBitPin::obtainAnalogChannel()
     // Move into an analogue input state if necessary, if we are no longer the focus of a DynamicPWM instance, allocate ourselves again!
     if (!(status & IO_STATUS_ANALOG_OUT) || !(((DynamicPwm *)pin)->getPinName() == name)){
         disconnect();
-        pin = (void *)DynamicPwm::allocate(name);
+        pin = (void *)new DynamicPwm(name);
         status |= IO_STATUS_ANALOG_OUT;
     }
 
