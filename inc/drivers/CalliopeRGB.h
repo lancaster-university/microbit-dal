@@ -30,7 +30,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "mbed.h"
 #include "MicroBitComponent.h"
-#include "MicrobitPin.h"
+#include "MicroBitPin.h"
 
 class CalliopeRGB : public MicroBitComponent
 {   
