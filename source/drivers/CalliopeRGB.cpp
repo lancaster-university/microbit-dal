@@ -252,8 +252,7 @@ uint8_t CalliopeRGB::getWhite()
 //check function
 bool CalliopeRGB::isOn()
 {
-    if(state) return true;
-    else return false;  
+    return state != 0;
 }
             
 void CalliopeRGB::systemTick()
