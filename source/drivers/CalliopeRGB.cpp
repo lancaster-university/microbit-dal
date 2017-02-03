@@ -82,7 +82,7 @@ CalliopeRGB::CalliopeRGB()
     
     //check intensity
     for(uint8_t i=0; i<4; i++) {
-        if(GRBW[i] > RGB_LED_MAX_INTENSITY) GRBW[i] = RGB_LED_MAX_INTENSITY;
+        GRBW[i] = (uint8_t) (GRBW[i] * RGB_LED_MAX_INTENSITY / 255.0);
     }
 
     NRF_GPIO->OUTCLR = (1UL << PIN);
@@ -113,7 +113,10 @@ void CalliopeRGB::setColour(uint8_t red, uint8_t green, uint8_t blue, uint8_t wh
 #endif
     //check intensity
     for(uint8_t i=0; i<4; i++) {
-        GRBW[i] = ((float)RGB_LED_MAX_INTENSITY/255.0) * GRBW[i];
+        printf("%d == ", GRBW[i]);
+        GRBW[i] = (uint8_t) (GRBW[i] * RGB_LED_MAX_INTENSITY / 255.0);
+        printf("%d\r\n", GRBW[i]);
+
         // if(GRBW[i] > RGB_LED_MAX_INTENSITY) GRBW[i] = RGB_LED_MAX_INTENSITY;
     }
 #if CONFIG_ENABLED(MICROBIT_DBG)
