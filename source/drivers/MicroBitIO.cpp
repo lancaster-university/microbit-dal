@@ -51,7 +51,7 @@ MicroBitIO::MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
                        int ID_P12,int ID_P13,int ID_P14,
                        int ID_P15,int ID_P16,int ID_P19,
                        int ID_P20
-#ifdef CALLIOPE_MINI
+#ifdef TARGET_NRF51_CALLIOPE
                        , int ID_P21
 #endif
     ) :
@@ -63,7 +63,7 @@ MicroBitIO::MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
     P5 (ID_P5, MICROBIT_PIN_P5, PIN_CAPABILITY_DIGITAL),        //BTN_A
     P6 (ID_P6, MICROBIT_PIN_P6, PIN_CAPABILITY_DIGITAL),        //ROW2
     P7 (ID_P7, MICROBIT_PIN_P7, PIN_CAPABILITY_DIGITAL),        //ROW1
-#ifdef CALLIOPE_MINI
+#ifdef TARGET_NRF51_CALLIOPE
     P8 (ID_P8, MICROBIT_PIN_P8, PIN_CAPABILITY_AD),             // (CM: TX/Analog)
 #else
     P8 (ID_P8, MICROBIT_PIN_P8, PIN_CAPABILITY_DIGITAL),        //PIN 18
@@ -78,7 +78,7 @@ MicroBitIO::MicroBitIO(int ID_P0, int ID_P1, int ID_P2,
     P16(ID_P16,MICROBIT_PIN_P16,PIN_CAPABILITY_DIGITAL),        //PIN 16 (CM: P3)
     P19(ID_P19,MICROBIT_PIN_P19,PIN_CAPABILITY_DIGITAL),        //SCL
     P20(ID_P20,MICROBIT_PIN_P20,PIN_CAPABILITY_DIGITAL)         //SDA
-#ifdef CALLIOPE_MINI
+#ifdef TARGET_NRF51_CALLIOPE
     ,
     P21(ID_P21,MICROBIT_PIN_P21,PIN_CAPABILITY_AD)              // (CM: Microphone)
 #endif

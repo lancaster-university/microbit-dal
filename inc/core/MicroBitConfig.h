@@ -33,9 +33,6 @@ DEALINGS IN THE SOFTWARE.
 #include "mbed.h"
 #include "yotta_cfg_mappings.h"
 
-// TODO this needs to be replaced by a definition in the yotta target
-#define CALLIOPE_MINI
-
 //
 // Memory configuration
 //

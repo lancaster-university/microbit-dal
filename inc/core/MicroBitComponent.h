@@ -42,7 +42,7 @@ und Björn Eberhardt GbR by arrangement with Calliope GbR.
 #define MICROBIT_ID_DISPLAY             6
 
 //EDGE connector events
-#ifdef CALLIOPE_MINI
+#ifdef TARGET_NRF51_CALLIOPE
 #define MICROBIT_IO_PINS                21
 #else
 #define MICROBIT_IO_PINS                20
@@ -67,7 +67,7 @@ und Björn Eberhardt GbR by arrangement with Calliope GbR.
 #define MICROBIT_ID_IO_P16              23          //PIN 16 (CM: P3)
 #define MICROBIT_ID_IO_P19              24          //SCL
 #define MICROBIT_ID_IO_P20              25          //SDA
-#ifdef CALLIOPE_MINI
+#ifdef TARGET_NRF51_CALLIOPE
 #define MICROBIT_ID_IO_P21              50          // CM: analog microphone
 #endif
 

@@ -65,7 +65,7 @@ class MicroBitIO
     MicroBitPin          P16;
     MicroBitPin          P19;
     MicroBitPin          P20;
-#ifdef CALLIOPE_MINI
+#ifdef TARGET_NRF51_CALLIOPE
     MicroBitPin          P21;
 #endif
 
@@ -84,7 +84,7 @@ class MicroBitIO
                int ID_P12,int ID_P13,int ID_P14,
                int ID_P15,int ID_P16,int ID_P19,
                int ID_P20
-#ifdef CALLIOPE_MINI
+#ifdef TARGET_NRF51_CALLIOPE
                , int ID_P21
 #endif
 	 );
