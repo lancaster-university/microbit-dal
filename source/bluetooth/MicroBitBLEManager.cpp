@@ -283,7 +283,12 @@ void MicroBitBLEManager::advertise()
   */
 void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding)
 {
+    // TODO make this configuration dependent
+#ifdef TARGET_NRF51_CALLIOPE
+    ManagedString BLEName("Calliope mini");
+#else
     ManagedString BLEName("BBC micro:bit");
+#endif
     this->deviceName = deviceName;
 
 #if !(CONFIG_ENABLED(MICROBIT_BLE_WHITELIST))
@@ -617,11 +622,20 @@ int MicroBitBLEManager::advertiseEddystoneUid(const char* uid_namespace, const c
  */
 void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &authorisationButton)
 {
+    // TODO make this configuration dependent
+#ifdef TARGET_NRF51_CALLIOPE
+    ManagedString namePrefix("Calliope mini [");
+#else
     ManagedString namePrefix("BBC micro:bit [");
+#endif
     ManagedString namePostfix("]");
     ManagedString BLEName = namePrefix + deviceName + namePostfix;
 
+#ifdef TARGET_NRF51_CALLIOPE
+    ManagedString msg("Verbindungsmodus!");
+#else
     ManagedString msg("PAIRING MODE!");
+#endif
 
     int timeInPairingMode = 0;
     int brightness = 255;
