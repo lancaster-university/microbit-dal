@@ -73,7 +73,11 @@ uint32_t btle_set_gatt_table_size(uint32_t size);
 #define SECURITY_MODE_IS(x) (SECURITY_MODE(MICROBIT_BLE_SECURITY_LEVEL) == SECURITY_MODE(x))
 
 const char *MICROBIT_BLE_MANUFACTURER = NULL;
+#ifdef TARGET_NRF51_CALLIOPE
+const char *MICROBIT_BLE_MODEL = "Calliope mini";
+#else
 const char *MICROBIT_BLE_MODEL = "BBC micro:bit";
+#endif
 const char *MICROBIT_BLE_HARDWARE_VERSION = NULL;
 const char *MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char *MICROBIT_BLE_SOFTWARE_VERSION = NULL;
