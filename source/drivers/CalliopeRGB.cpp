@@ -35,9 +35,6 @@ DEALINGS IN THE SOFTWARE.
 #define RGB_LED_DEFAULT_BLUE                0
 #define RGB_LED_DEFAULT_WHITE               0
 
-//max light intensity
-#define RGB_LED_MAX_INTENSITY               40
-
 // a more accurate delay function, just to make sure
 static void inline
 __attribute__((__gnu_inline__,__always_inline__))
@@ -66,11 +63,14 @@ nrf_delay_us(uint32_t volatile number_of_us)
 //logical '0': time HIGH: 0.35 us ±150 ns   time LOW: 0.9 us ±150 ns
 //logical '1': time HIGH: 0.9 us ±150 ns    time LOW: 0.35 us ±150 ns
 
-CalliopeRGB::CalliopeRGB()
+CalliopeRGB::CalliopeRGB(uint32_t pin, uint8_t maxBrightness)
 {
+    outputPin = pin;
+    maxIntensity = maxBrightness;
+
     //init pin
-    nrf_gpio_cfg_output(PIN);
-    nrf_gpio_pin_clear(PIN);
+    nrf_gpio_cfg_output(outputPin);
+    nrf_gpio_pin_clear(outputPin);
     
     state = 0;
     
@@ -82,10 +82,10 @@ CalliopeRGB::CalliopeRGB()
     
     //check intensity
     for(uint8_t i=0; i<4; i++) {
-        GRBW[i] = (uint8_t) (GRBW[i] * RGB_LED_MAX_INTENSITY / 255.0);
+        GRBW[i] = (uint8_t) (GRBW[i] * maxIntensity / 255.0);
     }
 
-    NRF_GPIO->OUTCLR = (1UL << PIN);
+    NRF_GPIO->OUTCLR = (1UL << outputPin);
     nrf_delay_us(50);
 
     off();
@@ -113,7 +113,7 @@ void CalliopeRGB::setColour(uint8_t red, uint8_t green, uint8_t blue, uint8_t wh
 #endif
     //check intensity
     for(uint8_t i=0; i<4; i++) {
-        GRBW[i] = (uint8_t) (GRBW[i] * RGB_LED_MAX_INTENSITY / 255.0);
+        GRBW[i] = (uint8_t) (GRBW[i] * maxIntensity / 255.0);
     }
 #if CONFIG_ENABLED(MICROBIT_DBG)
     SERIAL_DEBUG->printf("RGB(%d,%d,%d,%d)\r\n", GRBW[1], GRBW[0],GRBW[2],GRBW[3]);
@@ -146,8 +146,8 @@ void CalliopeRGB::off()
 //sends current color settings to the RGB LED
 void CalliopeRGB::send()
 {
-    //set PIN to LOW for 50 us
-    NRF_GPIO->OUTCLR = (1UL << PIN);
+    //set outputPin to LOW for 50 us
+    NRF_GPIO->OUTCLR = (1UL << outputPin);
     nrf_delay_us(50);
     
     //send bytes
@@ -161,7 +161,7 @@ void CalliopeRGB::send()
                 //  code.
                 // 
                 //  THE FIX:
-                //  Originally all instances of CONST_BIT uses where macro usages of (1UL<<PIN)
+                //  Originally all instances of CONST_BIT uses where macro usages of (1UL<<outputPin)
                 //  to set or clear the output on that pin. This produced correct timing using
                 //  ARMCC, but signals were too long on GCC. James Devine found that introducing
                 //  a variable and using it fixed that issue. However, only if used in our main()
@@ -176,7 +176,7 @@ void CalliopeRGB::send()
                 // 
                 //  I am sure there must be a better solution, but for now it works. A big obstacle
                 //  was the use of different compilers for local development and cloud ... 
-                register uint32_t CONST_BIT = 1UL << PIN;
+                register uint32_t CONST_BIT = 1UL << outputPin;
                 NRF_GPIO->OUTSET = CONST_BIT;
                 __ASM volatile (
                     "NOP\n\t" 
@@ -194,7 +194,7 @@ void CalliopeRGB::send()
             else
             {
                 // put here to force use of a register (see above)
-                register uint32_t CONST_BIT = 1UL << PIN;
+                register uint32_t CONST_BIT = 1UL << outputPin;
                 NRF_GPIO->OUTSET = CONST_BIT;
                 __ASM volatile ( 
                     "NOP\n\t"
@@ -213,8 +213,8 @@ void CalliopeRGB::send()
             }
         }
     }
-    // set PIN to LOW for 50 us to latch LEDs
-    NRF_GPIO->OUTCLR = (1UL << PIN);
+    // set outputPin to LOW for 50 us to latch LEDs
+    NRF_GPIO->OUTCLR = (1UL << outputPin);
     nrf_delay_us(50);
     
     //set state
