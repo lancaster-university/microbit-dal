@@ -98,6 +98,10 @@ CalliopeRGB::~CalliopeRGB()
 {
     system_timer_remove_component(this);
 }
+
+void CalliopeRGB::setMaxBrightness(uint8_t max) {
+    maxIntensity = max;
+}
  
 //sets all 4 color settings to the given values        
 void CalliopeRGB::setColour(uint8_t red, uint8_t green, uint8_t blue, uint8_t white)

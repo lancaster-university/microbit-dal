@@ -52,7 +52,9 @@ class CalliopeRGB : public MicroBitComponent
         
         //destructor
         ~CalliopeRGB(); 
-        
+
+        void setMaxBrightness(uint8_t max);
+
         //functions to control the the LED
         //sets all 4 color settings to the given values  
         void setColour(uint8_t red, uint8_t green, uint8_t blue, uint8_t white);
