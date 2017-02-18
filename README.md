@@ -1,5 +1,5 @@
 > This is a fork of the original microbit-dal adapted for the [Calliope](http://calliope.cc) board.
-> The master branch tracks the latest changes (board rev. 1.0+), for code covering the 2016 board (rev 0.3 and lower)
+> The master branch tracks the __latest changes__ (board rev. 1.0+), for code covering the 2016 board (rev 0.3 and lower)
 > see the [calliope-mini-2016 branch](../../tree/calliope-mini-2016).
 
 # microbit-dal
