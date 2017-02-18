@@ -33,7 +33,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitPin.h"
 
 //max light intensity
-#define RGB_LED_MAX_INTENSITY               255
+#define RGB_LED_MAX_INTENSITY               40
 
 class CalliopeRGB : public MicroBitComponent
 {   
