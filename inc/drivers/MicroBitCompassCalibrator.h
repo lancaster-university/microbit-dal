@@ -28,7 +28,11 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitConfig.h"
 #include "MicroBitCompass.h"
+#ifdef TARGET_NRF51_CALLIOPE
 #include "MicroBitAccelerometer-bmx.h"
+#else
+#include "MicroBitAccelerometer.h"
+#endif
 #include "MicroBitDisplay.h"
 
 

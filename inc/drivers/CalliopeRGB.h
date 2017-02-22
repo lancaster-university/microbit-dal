@@ -34,6 +34,11 @@ DEALINGS IN THE SOFTWARE.
 
 //max light intensity
 #define RGB_LED_MAX_INTENSITY               40
+#ifdef TARGET_NRF51_CALLIOPE
+#define RGB_DEFAULT_PIN CALLIOPE_PIN_RGB_LED
+#else
+#define RGB_DEFAULT_PIN PAD1
+#endif
 
 class CalliopeRGB : public MicroBitComponent
 {   
@@ -48,7 +53,7 @@ class CalliopeRGB : public MicroBitComponent
         
     public:
         //constructor
-        CalliopeRGB(uint32_t pin = CALLIOPE_PIN_RGB_LED, uint8_t maxBrightness = RGB_LED_MAX_INTENSITY);
+        CalliopeRGB(uint32_t pin = RGB_DEFAULT_PIN, uint8_t maxBrightness = RGB_LED_MAX_INTENSITY);
         
         //destructor
         ~CalliopeRGB(); 

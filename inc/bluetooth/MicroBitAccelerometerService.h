@@ -28,7 +28,11 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitConfig.h"
 #include "ble/BLE.h"
+#ifdef TARGET_NRF51_CALLIOPE
 #include "MicroBitAccelerometer-bmx.h"
+#else
+#include "MicroBitAccelerometer.h"
+#endif
 #include "EventModel.h"
 
 // UUIDs for our service and characteristics

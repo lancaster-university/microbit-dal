@@ -23,6 +23,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+#ifdef TARGET_NRF51_CALLIOPE
+
 /**
  * Class definition for MicroBit Accelerometer.
  *
@@ -868,3 +870,4 @@ const MMA8653SampleRateConfig MMA8653SampleRate[MMA8653_SAMPLE_RATES] = {
     {160000,    0x30},
     {640000,    0x38}
 };
+#endif // TARGET_NRF51_CALLIOPE

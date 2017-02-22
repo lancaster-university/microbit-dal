@@ -23,6 +23,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+#ifdef TARGET_NRF51_MICROBIT
+
 #ifndef MICROBIT_ACCELEROMETER_H
 #define MICROBIT_ACCELEROMETER_H
 
@@ -46,7 +48,7 @@ DEALINGS IN THE SOFTWARE.
 /**
   * I2C constants
   */
-//#define MMA8653_DEFAULT_ADDR    0x3A
+#define MMA8653_DEFAULT_ADDR    0x3A
 
 /**
   * MMA8653 Register map (partial)
@@ -450,3 +452,4 @@ class MicroBitAccelerometer : public MicroBitComponent
 };
 
 #endif
+#endif // TARGET_NRF51_MICROBIT

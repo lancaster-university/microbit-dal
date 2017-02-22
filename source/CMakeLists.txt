@@ -23,6 +23,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "types/RefCounted.cpp"
 
     "drivers/DynamicPwm.cpp"
+    "drivers/MicroBitAccelerometer.cpp"
     "drivers/MicroBitAccelerometer-bmx.cpp"
     "drivers/MicroBitButton.cpp"
     "drivers/MicroBitCompass.cpp"

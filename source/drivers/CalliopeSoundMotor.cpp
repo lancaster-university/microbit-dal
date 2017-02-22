@@ -25,6 +25,8 @@ DEALINGS IN THE SOFTWARE.
 */
 
 
+#ifdef TARGET_NRF51_CALLIOPE
+
 #include "CalliopeSoundMotor.h"
 #include "MicroBitSystemTimer.h"
 #include "nrf_gpiote.h"
@@ -657,3 +659,4 @@ void CalliopeSoundMotor::systemTick()
 {
     //currently not in use
 }
+#endif
