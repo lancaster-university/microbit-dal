@@ -35,6 +35,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitPin.h"
 #include "ErrorNo.h"
 
+uint32_t DynamicPwm::period = MICROBIT_DEFAULT_PWM_PERIOD;
+
 /**
   * An internal constructor used when allocating a new DynamicPwm instance.
   *
@@ -45,7 +47,6 @@ DEALINGS IN THE SOFTWARE.
   */
 DynamicPwm::DynamicPwm(PinName pin) : PwmOut(pin)
 {
-    this->period = 0;
 }
 
 /**
@@ -131,7 +132,7 @@ int DynamicPwm::getValue()
   */
 uint32_t DynamicPwm::getPeriodUs()
 {
-    return period;
+    return this->period;
 }
 
 /**

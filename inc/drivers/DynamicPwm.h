@@ -40,7 +40,7 @@ DEALINGS IN THE SOFTWARE.
 class DynamicPwm : public PwmOut
 {
     private:
-    uint32_t period;
+    static uint32_t period;
     float lastValue;
 
     public:
