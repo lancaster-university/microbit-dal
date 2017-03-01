@@ -377,7 +377,7 @@ extern uint32_t __etext;
 // Should be <= MBFS_BLOCK_SIZE.
 //
 #ifndef MBFS_CACHE_SIZE
-#define MBFS_CACHE_SIZE		16
+#define MBFS_CACHE_SIZE	    0	
 #endif
 
 //
