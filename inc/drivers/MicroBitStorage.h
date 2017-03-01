@@ -125,19 +125,6 @@ class MicroBitStorage
     MicroBitStorage();
 
     /**
-      * Writes the given number of bytes to the address specified.
-      *
-      * @param buffer the data to write.
-      *
-      * @param address the location in memory to write to.
-      *
-      * @param length the number of bytes to write.
-      *
-      * @note currently not implemented.
-      */
-    int writeBytes(uint8_t *buffer, uint32_t address, int length);
-
-    /**
       * Method for erasing a page in flash.
       *
       * @param page_address Address of the first word in the page to be erased.

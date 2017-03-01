@@ -1,11 +1,34 @@
 #include "MicroBitConfig.h"
 #include "MicroBitFlash.h"
+#include "MicroBitDevice.h"
 #include "ErrorNo.h"
 #include "mbed.h"                   // NVIC
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
 #define WORD_ADDR(x) (((uint32_t)x) & 0xFFFFFFFC)
+
+/*
+ * The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ
+ * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
+ * The ARM cc compiler is more tolerant. We don't test __GNUC__ here to detect GCC as ARMCC also typically sets this
+ * as a compatability option, but does not support the options used...
+ */
+#if !defined(__arm)
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
+#include "nrf_soc.h"
+
+/*
+ * Return to our predefined compiler settings.
+ */
+#if !defined(__arm)
+#pragma GCC diagnostic pop
+#endif
+
 
 /**
   * Default Constructor
@@ -44,17 +67,41 @@ int MicroBitFlash::need_erase(uint8_t* source, uint8_t* flash_addr, int len)
   */
 void MicroBitFlash::erase_page(uint32_t* pg_addr) 
 {
-    // Turn on flash erase enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Een);
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
+    if (ble_running())
+    {
+        // Schedule SoftDevice to erase the page for us, and wait for it to complete.
+        // This happens ASYNCHRONOUSLY when SD is enabled (and synchronously if disabled!!)
+        if (sd_flash_page_erase(((uint32_t)pg_addr)/PAGE_SIZE) == NRF_SUCCESS)
+        {
+            uint32_t *p = pg_addr;
+            int i = 0;
 
-    // Erase page:
-    NRF_NVMC->ERASEPAGE = (uint32_t)pg_addr;
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
+            while (i < PAGE_SIZE / 4)
+            {
+                if (*p != 0xffffffff)
+                {
+                    p = pg_addr;
+                    i=0;
+                }
 
-    // Turn off flash erase enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
+                p++; i++;
+            }
+        }
+    }
+    else
+    {
+        // Turn on flash erase enable and wait until the NVMC is ready:
+        NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Een);
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
+
+        // Erase page:
+        NRF_NVMC->ERASEPAGE = (uint32_t)pg_addr;
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
+
+        // Turn off flash erase enable and wait until the NVMC is ready:
+        NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
+    }
 }
  
 /**
@@ -67,21 +114,45 @@ void MicroBitFlash::erase_page(uint32_t* pg_addr)
   * @param len number of uint32_t words to write.
   */
 void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size) 
-{
- 
-    // Turn on flash write enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos);
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
- 
-    for(int i=0;i<size;i++) 
+{ 
+    if (ble_running())
     {
-        *(addr+i) = *(buffer+i);
+        // Schedule SoftDevice to write this memory for us, and wait for it to complete.
+        // This happens ASYNCHRONOUSLY when SD is enabled (and synchronously if disabled!!)
+        sd_flash_write(addr, buffer, size);
+
+        uint32_t *p = addr;
+        uint32_t *p2 = buffer;
+        int i = 0;
+
+        while (i < size)
+        {
+            if (*p != *p2)
+            {
+                p = addr;
+                p2 = buffer;
+                i=0;
+            }
+
+            p++; p2++; i++;
+        }
+    }
+    else
+    {
+        // Turn on flash write enable and wait until the NVMC is ready:
+        NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos);
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
+
+        for(int i=0;i<size;i++) 
+        {
+            *(addr+i) = *(buffer+i);
+            while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
+        }
+
+        // Turn off flash write enable and wait until the NVMC is ready:
+        NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
         while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
     }
- 
-    // Turn off flash write enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
 }
  
 /**
