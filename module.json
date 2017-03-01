@@ -14,9 +14,9 @@
   "author": "Joe Finney <j.finney@lancaster.ac.uk (mailto:j.finney@lancaster.ac.uk) >",
   "homepage": "https://github.com/lancaster-university/microbit-dal/",
   "dependencies": {
-    "mbed-classic": "lancaster-university/mbed-classic#microbit_hfclk+mb5",
+    "mbed-classic": "lancaster-university/mbed-classic#microbit_hfclk+mb6",
     "ble": "lancaster-university/BLE_API#v2.5.0+mb3",
-    "ble-nrf51822": "lancaster-university/nrf51822#v2.5.0+mb6",
+    "ble-nrf51822": "lancaster-university/nrf51822#v2.5.0+mb7",
     "nrf51-sdk": "lancaster-university/nrf51-sdk#v2.2.0+mb4"
   },
   "extraIncludes": [
