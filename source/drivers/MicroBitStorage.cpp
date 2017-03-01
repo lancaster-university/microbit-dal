@@ -30,7 +30,9 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitConfig.h"
 #include "MicroBitStorage.h"
+#include "MicroBitFlash.h"
 #include "MicroBitCompat.h"
+
 
 /**
   * Default constructor.
@@ -45,46 +47,14 @@ MicroBitStorage::MicroBitStorage()
 }
 
 /**
-  * Writes the given number of bytes to the address specified.
-  *
-  * @param buffer the data to write.
-  *
-  * @param address the location in memory to write to.
-  *
-  * @param length the number of bytes to write.
-  *
-  * @note currently not implemented.
-  */
-int MicroBitStorage::writeBytes(uint8_t *buffer, uint32_t address, int length)
-{
-    (void) buffer;
-    (void) address;
-    (void) length;
-
-    return MICROBIT_OK;
-}
-
-/**
   * Method for erasing a page in flash.
   *
   * @param page_address Address of the first word in the page to be erased.
   */
 void MicroBitStorage::flashPageErase(uint32_t * page_address)
 {
-    // Turn on flash erase enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Een << NVMC_CONFIG_WEN_Pos);
-
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
-
-    // Erase page:
-    NRF_NVMC->ERASEPAGE = (uint32_t)page_address;
-
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
-
-    // Turn off flash erase enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
-
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
+    MicroBitFlash flash;
+    flash.erase_page(page_address);
 }
 
 /**
@@ -98,20 +68,8 @@ void MicroBitStorage::flashPageErase(uint32_t * page_address)
   */
 void MicroBitStorage::flashCopy(uint32_t* from, uint32_t* to, int sizeInWords)
 {
-    // Turn on flash write enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos);
-
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
-
-    for(int i = 0; i < sizeInWords; i++)
-    {
-        *(to + i) = *(from + i);
-        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
-    }
-
-    // Turn off flash write enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
+    MicroBitFlash flash;
+    flash.flash_burn(to, from, sizeInWords);
 }
 
 /**
@@ -123,19 +81,7 @@ void MicroBitStorage::flashCopy(uint32_t* from, uint32_t* to, int sizeInWords)
   */
 void MicroBitStorage::flashWordWrite(uint32_t * address, uint32_t value)
 {
-    // Turn on flash write enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos);
-
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
-
-    *address = value;
-
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
-
-    // Turn off flash write enable and wait until the NVMC is ready:
-    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
-
-    while (NRF_NVMC->READY == NVMC_READY_READY_Busy);
+    flashCopy(&value, address, 1);
 }
 
 /**
@@ -148,19 +94,10 @@ void MicroBitStorage::scratchKeyValueStore(KeyValueStore store)
     //calculate our various offsets
     uint32_t *s = (uint32_t *) &store;
     uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
-
     uint32_t *scratchPointer = (uint32_t *)(pg_size * (NRF_FICR->CODESIZE - MICROBIT_STORAGE_SCRATCH_PAGE_OFFSET));
-
-    //KeyValueStore is word aligned.
     int wordsToWrite = sizeof(KeyValueStore) / 4;
 
-    //write the given KeyValueStore
-    for (int i = 0; i < wordsToWrite; i++)
-    {
-        flashWordWrite(scratchPointer, *s);
-        scratchPointer++;
-        s++;
-    }
+    flashCopy(s, scratchPointer, wordsToWrite);
 }
 
 /**
@@ -191,13 +128,7 @@ void MicroBitStorage::scratchKeyValuePair(KeyValuePair pair, uint32_t* flashPoin
     //KeyValuePair is word aligned...
     int wordsToWrite = sizeof(KeyValuePair) / 4;
 
-    //write
-    for (int i = 0; i < wordsToWrite; i++)
-    {
-        flashWordWrite(scratchPointer, *p);
-        scratchPointer++;
-        p++;
-    }
+    flashCopy(p, scratchPointer, wordsToWrite);
 }
 
 /**

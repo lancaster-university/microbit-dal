@@ -9,19 +9,6 @@ class MicroBitFlash
 {
     private:
 
-
-    /**
-      * Write to flash memory, assuming that a write is valid
-      * (using need_erase).
-      * 
-      * @param page_address address of memory to write to. 
-      * 	Must be word aligned.
-      * @param buffer address to write from, must be word-aligned.
-      * @param len number of uint32_t words to write.
-      */
-    void flash_burn(uint32_t* page_address, uint32_t* buffer, int len);
-
-
     /**
       * Check if an erase is required to write to a region in flash memory.
       * This is determined if, for any byte:
@@ -66,6 +53,18 @@ class MicroBitFlash
       * @param page_address address of first word of page.
       */
     void erase_page(uint32_t* page_address);
+
+    /**
+      * Write to flash memory, assuming that a write is valid
+      * (using need_erase).
+      * 
+      * @param page_address address of memory to write to. 
+      * 	Must be word aligned.
+      * @param buffer address to write from, must be word-aligned.
+      * @param len number of uint32_t words to write.
+      */
+    void flash_burn(uint32_t* page_address, uint32_t* buffer, int len);
+
 };
 
 #endif
