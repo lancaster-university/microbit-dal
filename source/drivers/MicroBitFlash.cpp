@@ -4,6 +4,7 @@
 #include "ErrorNo.h"
 #include "mbed.h"                   // NVIC
 
+
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
 #define WORD_ADDR(x) (((uint32_t)x) & 0xFFFFFFFC)
@@ -21,6 +22,7 @@
 #endif
 
 #include "nrf_soc.h"
+extern "C" void btle_set_user_evt_handler(void (*func)(uint32_t));
 
 /*
  * Return to our predefined compiler settings.
@@ -29,12 +31,25 @@
 #pragma GCC diagnostic pop
 #endif
 
+static bool evt_handler_registered = false;
+static volatile bool flash_op_complete = false;
+
+static void nvmc_event_handler(uint32_t evt)
+{
+    if(evt == NRF_EVT_FLASH_OPERATION_SUCCESS)
+        flash_op_complete = true;
+}
 
 /**
   * Default Constructor
   */
 MicroBitFlash::MicroBitFlash() 
 {
+    if (!evt_handler_registered)
+    {
+        btle_set_user_evt_handler(nvmc_event_handler);
+        evt_handler_registered = true;
+    }
 }
 
 /**
@@ -69,24 +84,16 @@ void MicroBitFlash::erase_page(uint32_t* pg_addr)
 {
     if (ble_running())
     {
-        // Schedule SoftDevice to erase the page for us, and wait for it to complete.
-        // This happens ASYNCHRONOUSLY when SD is enabled (and synchronously if disabled!!)
-        if (sd_flash_page_erase(((uint32_t)pg_addr)/PAGE_SIZE) == NRF_SUCCESS)
+        flash_op_complete = false;
+        while(1)
         {
-            uint32_t *p = pg_addr;
-            int i = 0;
+            if (sd_flash_page_erase(((uint32_t)pg_addr)/PAGE_SIZE) == NRF_SUCCESS)
+                break;
 
-            while (i < PAGE_SIZE / 4)
-            {
-                if (*p != 0xffffffff)
-                {
-                    p = pg_addr;
-                    i=0;
-                }
-
-                p++; i++;
-            }
+            wait_ms(10);
         }
+        // Wait for SoftDevice to diable the write operation when it completes...
+        while(!flash_op_complete);
     }
     else
     {
@@ -119,23 +126,18 @@ void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size)
     {
         // Schedule SoftDevice to write this memory for us, and wait for it to complete.
         // This happens ASYNCHRONOUSLY when SD is enabled (and synchronously if disabled!!)
-        sd_flash_write(addr, buffer, size);
+        flash_op_complete = false;
 
-        uint32_t *p = addr;
-        uint32_t *p2 = buffer;
-        int i = 0;
-
-        while (i < size)
+        while(1)
         {
-            if (*p != *p2)
-            {
-                p = addr;
-                p2 = buffer;
-                i=0;
-            }
+            if (sd_flash_write(addr, buffer, size) == NRF_SUCCESS)
+                break;
 
-            p++; p2++; i++;
+            wait_ms(10);
         }
+
+        // Wait for SoftDevice to diable the write operation when it completes...
+        while(!flash_op_complete);
     }
     else
     {
@@ -175,7 +177,6 @@ void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size)
 int MicroBitFlash::flash_write(void* address, void* from_buffer, 
                                int length, void* scratch_addr)
 {
-
     // Ensure that scratch_addr is aligned on a page boundary.
     if((uint32_t)scratch_addr & 0x3FF) 
         return MICROBIT_INVALID_PARAMETER;
