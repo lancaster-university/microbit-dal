@@ -87,10 +87,7 @@ void MicroBitPin::disconnect()
     }
 
     if (status & IO_STATUS_ANALOG_OUT)
-    {
-        if(((DynamicPwm *)pin)->getPinName() == name)
-            ((DynamicPwm *)pin)->release();
-    }
+        delete ((DynamicPwm *)pin);
 
     if (status & IO_STATUS_TOUCH_IN)
         delete ((MicroBitButton *)pin);
@@ -118,7 +115,7 @@ void MicroBitPin::disconnect()
 int MicroBitPin::setDigitalValue(int value)
 {
     // Check if this pin has a digital mode...
-    if(!(PIN_CAPABILITY_DIGITAL & capability))
+    if(!(PIN_CAPABILITY_DIGITAL_OUT & capability))
         return MICROBIT_NOT_SUPPORTED;
 
     // Ensure we have a valid value.
@@ -153,7 +150,7 @@ int MicroBitPin::setDigitalValue(int value)
 int MicroBitPin::getDigitalValue()
 {
     //check if this pin has a digital mode...
-    if(!(PIN_CAPABILITY_DIGITAL & capability))
+    if(!(PIN_CAPABILITY_DIGITAL_IN & capability))
         return MICROBIT_NOT_SUPPORTED;
 
     // Move into a Digital input state if necessary.
@@ -194,7 +191,7 @@ int MicroBitPin::obtainAnalogChannel()
     // Move into an analogue input state if necessary, if we are no longer the focus of a DynamicPWM instance, allocate ourselves again!
     if (!(status & IO_STATUS_ANALOG_OUT) || !(((DynamicPwm *)pin)->getPinName() == name)){
         disconnect();
-        pin = (void *)DynamicPwm::allocate(name);
+        pin = (void *)new DynamicPwm(name);
         status |= IO_STATUS_ANALOG_OUT;
     }
 
@@ -212,7 +209,7 @@ int MicroBitPin::obtainAnalogChannel()
 int MicroBitPin::setAnalogValue(int value)
 {
     //check if this pin has an analogue mode...
-    if(!(PIN_CAPABILITY_ANALOG & capability))
+    if(!(PIN_CAPABILITY_ANALOG_OUT & capability))
         return MICROBIT_NOT_SUPPORTED;
 
     //sanitise the level value
@@ -248,7 +245,7 @@ int MicroBitPin::setAnalogValue(int value)
 int MicroBitPin::setServoValue(int value, int range, int center)
 {
     //check if this pin has an analogue mode...
-    if(!(PIN_CAPABILITY_ANALOG & capability))
+    if(!(PIN_CAPABILITY_ANALOG_OUT & capability))
         return MICROBIT_NOT_SUPPORTED;
 
     //sanitise the servo level
@@ -284,7 +281,7 @@ int MicroBitPin::setServoValue(int value, int range, int center)
 int MicroBitPin::getAnalogValue()
 {
     //check if this pin has an analogue mode...
-    if(!(PIN_CAPABILITY_ANALOG & capability))
+    if(!(PIN_CAPABILITY_ANALOG_IN & capability))
         return MICROBIT_NOT_SUPPORTED;
 
     // Move into an analogue input state if necessary.
@@ -362,7 +359,7 @@ int MicroBitPin::isAnalog()
 int MicroBitPin::isTouched()
 {
     //check if this pin has a touch mode...
-    if(!(PIN_CAPABILITY_DIGITAL & capability))
+    if(!(PIN_CAPABILITY_DIGITAL_IN & capability))
         return MICROBIT_NOT_SUPPORTED;
 
     // Move into a touch input state if necessary.
@@ -387,7 +384,7 @@ int MicroBitPin::isTouched()
 int MicroBitPin::setServoPulseUs(int pulseWidth)
 {
     //check if this pin has an analogue mode...
-    if(!(PIN_CAPABILITY_ANALOG & capability))
+    if(!(PIN_CAPABILITY_ANALOG_OUT & capability))
         return MICROBIT_NOT_SUPPORTED;
 
     //sanitise the pulse width
