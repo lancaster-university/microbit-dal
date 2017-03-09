@@ -323,10 +323,11 @@ enum Mmode {
 #define MICROBIT_ACCELEROMETER_EVT_FACE_UP                  5
 #define MICROBIT_ACCELEROMETER_EVT_FACE_DOWN                6
 #define MICROBIT_ACCELEROMETER_EVT_FREEFALL                 7
-#define MICROBIT_ACCELEROMETER_EVT_3G                       8
-#define MICROBIT_ACCELEROMETER_EVT_6G                       9
-#define MICROBIT_ACCELEROMETER_EVT_8G                       10
-#define MICROBIT_ACCELEROMETER_EVT_SHAKE                    11
+#define MICROBIT_ACCELEROMETER_EVT_2G                       8
+#define MICROBIT_ACCELEROMETER_EVT_3G                       9
+#define MICROBIT_ACCELEROMETER_EVT_6G                       10
+#define MICROBIT_ACCELEROMETER_EVT_8G                       11
+#define MICROBIT_ACCELEROMETER_EVT_SHAKE                    12
 
 /**
   * Gesture recogniser constants

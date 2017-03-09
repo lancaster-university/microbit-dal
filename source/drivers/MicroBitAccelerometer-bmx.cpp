@@ -64,15 +64,15 @@ int MicroBitAccelerometer::configure()
     i2c.start();
     //        BMX_DEBUG("id = %x\r\n",v);
     //        BMX_DEBUG("address = %x\r\n",address);
-   
-    
+
+
     //    BMX_DEBUG("RUN BMX055 id found\r\n");
     // start with all sensors in default mode with all registers reset
     writeByte(BMX055_ACC_ADDRESS,  BMX055_ACC_BGW_SOFTRESET, 0xB6);  // reset accelerometer
     wait_ms(1000); // Wait for all registers to reset
 
     //    BMX_DEBUG("RUN BMX055 after reset\r\n");
-    
+
     // Configure accelerometer
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_PMU_RANGE, Ascale & 0x0F); // Set accelerometer full range
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_PMU_BW, ACCBW & 0x0F);     // Set accelerometer bandwidth
@@ -155,7 +155,7 @@ int MicroBitAccelerometer::configure()
             writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_Z,  0x51);  // 83 repetitions (oversampling)
             break;
     }
-    */    
+    */
     i2c.stop();
 
     status |= MICROBIT_COMPONENT_RUNNING;
@@ -363,9 +363,9 @@ int MicroBitAccelerometer::updateSample()
         // Normalize the data in the 0..1024 range.
 	/*	sample.x *= 8;
         sample.y *= 8;
-        sample.z *= 8; 
+        sample.z *= 8;
 	*/
-	 BMX_DEBUG("x=%d y=%d z=%d\r\n",sample.x, sample.y, sample.z);
+//	 BMX_DEBUG("x=%d y=%d z=%d\r\n",sample.x, sample.y, sample.z);
 #if CONFIG_ENABLED(USE_ACCEL_LSB)
         // Add in LSB values.
         sample.x += (data[1] / 64);
@@ -451,7 +451,7 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
     if (shakeDetected && shake.count < MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD)
     {
         shake.count++;
-  
+
         if (shake.count == 1)
             shake.timer = 0;
 
@@ -522,11 +522,8 @@ void MicroBitAccelerometer::updateGesture()
     int force = instantaneousAccelerationSquared();
     //BMX_DEBUG("force=%d\r\n",force);
 
-
     if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD)
     {
-// TODO correctly support 2G - fake 3G using the 2G threshold
-#if defined(MICROBIT_ACCELEROMETER_2G_THRESHOLD) && defined(MICROBIT_ACCELEROMETER_EVT_2G)
         if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD && !shake.impulse_2)
         {
             MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_2G);
@@ -537,13 +534,6 @@ void MicroBitAccelerometer::updateGesture()
             MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_3G);
             shake.impulse_3 = 1;
         }
-#else
-        if (force > MICROBIT_ACCELEROMETER_2G_THRESHOLD && !shake.impulse_3)
-        {
-            MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_3G);
-            shake.impulse_3 = 1;
-        }
-#endif
         if (force > MICROBIT_ACCELEROMETER_6G_THRESHOLD && !shake.impulse_6)
         {
             MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_6G);
@@ -570,6 +560,7 @@ void MicroBitAccelerometer::updateGesture()
 
     if (g == MICROBIT_ACCELEROMETER_EVT_SHAKE)
     {
+        currentGesture = lastGesture = g;
         MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_SHAKE);
         return;
     }
