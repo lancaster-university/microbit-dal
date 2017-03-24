@@ -158,13 +158,21 @@ int MicroBitFileSystem::init(uint32_t flashStart, int flashPages)
     // If we have a zero length, then dynamically determine our geometry.
     if (flashStart == 0)
     {
-        // Flash start is on the first page after the programmed ROM contents.
-        // This is: __etext (program code) for GCC and Image$$RO$$Limit for ARMCC.
-        flashStart = FLASH_PROGRAM_END;
 
-        // Round up to the nearest free page.
+        // Start at the highest unused memory locaiton, and work backwards,
+        // word by word until a non-blank page is found.
+        uint32_t *p = (uint32_t *) (DEFAULT_SCRATCH_PAGE);
+        p--;
+
+        while(*p == 0xffffffff)
+          p--;
+
+        flashStart = (uint32_t) p;
+
         if (flashStart % PAGE_SIZE != 0)
             flashStart = ((uint32_t)flashStart & ~(PAGE_SIZE-1)) + PAGE_SIZE;
+
+        //SERIAL_DEBUG->printf("AUTO_FLASH_START: 0x%x\n", flashStart);
     }
 
     if (flashPages == 0)
