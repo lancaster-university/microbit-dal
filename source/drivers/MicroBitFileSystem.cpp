@@ -10,6 +10,15 @@ static uint32_t *defaultScratchPage = (uint32_t *)DEFAULT_SCRATCH_PAGE;
 MicroBitFileSystem* MicroBitFileSystem::defaultFileSystem = NULL;
 
 /**
+ * Key/Value storage structure to hold file system geometery.
+ */
+struct MicroBitFileSystemGeometry
+{
+    uint32_t    start;
+    int         pages;
+};
+
+/**
   * Allocate a free logical block.
   * This is chosen at random from the blocks available, to even out the wear on the physical device.
   * @return a valid, unused block address on success, or zero if no space is available.
@@ -158,25 +167,41 @@ int MicroBitFileSystem::init(uint32_t flashStart, int flashPages)
     // If we have a zero length, then dynamically determine our geometry.
     if (flashStart == 0)
     {
+        // If we have a setting previously stored, use that.
+        MicroBitStorage store;
+        KeyValuePair *data = store.get("mbfs-geometry");
 
-        // Start at the highest unused memory locaiton, and work backwards,
-        // word by word until a non-blank page is found.
-        uint32_t *p = (uint32_t *) (DEFAULT_SCRATCH_PAGE);
-        p--;
+        if (data)
+        {
+            MicroBitFileSystemGeometry *geom = (MicroBitFileSystemGeometry *) data->value;
+            flashStart = geom->start;
+            flashPages = geom->pages;
+            free(data);
+            //SERIAL_DEBUG->printf("MBFS: Loaded start address of 0x%.8x\n", flashStart);
+        }
+        else
+        {
+            // Start at the highest unused memory locaiton, and work backwards,
+            // word by word until a non-blank page is found.
+            uint32_t *p = (uint32_t *) (DEFAULT_SCRATCH_PAGE);
+            p--;
 
-        while(*p == 0xffffffff)
-          p--;
+            while(*p == 0xffffffff)
+                p--;
 
-        flashStart = (uint32_t) p;
+            flashStart = (uint32_t) p;
 
-        if (flashStart % PAGE_SIZE != 0)
-            flashStart = ((uint32_t)flashStart & ~(PAGE_SIZE-1)) + PAGE_SIZE;
+            if (flashStart % PAGE_SIZE != 0)
+                flashStart = ((uint32_t)flashStart & ~(PAGE_SIZE-1)) + PAGE_SIZE;
 
-        //SERIAL_DEBUG->printf("AUTO_FLASH_START: 0x%x\n", flashStart);
+            //SERIAL_DEBUG->printf("MBFS: Scanned start address of 0x%.8x\n", flashStart);
+        }
     }
 
     if (flashPages == 0)
         flashPages = (DEFAULT_SCRATCH_PAGE - flashStart) / PAGE_SIZE;
+
+    //SERIAL_DEBUG->printf("MBFS: FS length of %d pages\n", flashPages);
 
     // The FileTable alays resides at the start of the file system.
     fileSystemTable = (uint16_t *)flashStart;
@@ -189,7 +214,18 @@ int MicroBitFileSystem::init(uint32_t flashStart, int flashPages)
         fileSystemSize = flashPages * (PAGE_SIZE / MBFS_BLOCK_SIZE);
         fileSystemTableSize = calculateFileTableSize();
 
+        // Initialise an empty File Table and root directory 
         format();
+
+        // If we have a setting previously stored, use that.
+        MicroBitStorage store;
+        MicroBitFileSystemGeometry geom;
+
+        geom.start = flashStart;
+        geom.pages = flashPages;
+
+        store.put(ManagedString("mbfs-geometry"), (uint8_t *)&geom, sizeof(MicroBitFileSystemGeometry));
+        //SERIAL_DEBUG->printf("MBFS: STORED GEOM start=0x%.8x, pages=%d\n", geom.start, geom.pages);
     }
 
     // indicate that we have a valid FileSystem
