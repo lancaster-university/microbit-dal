@@ -30,8 +30,6 @@ DEALINGS IN THE SOFTWARE.
 #include "ErrorNo.h"
 #include "MicroBitQuadratureDecoder.h"
 
-MicroBitPin MicroBitQuadratureDecoder::pinNC(0, NC, PIN_CAPABILITY_DIGITAL);
-
 /**
   * Constructor.
   * Create a software abstraction of the quadrature decoder.
@@ -46,12 +44,12 @@ MicroBitPin MicroBitQuadratureDecoder::pinNC(0, NC, PIN_CAPABILITY_DIGITAL);
   * @endcode
   */
 MicroBitQuadratureDecoder::MicroBitQuadratureDecoder(MicroBitPin& phaseA_, MicroBitPin& phaseB_, MicroBitPin& LED_, uint8_t LEDDelay_, uint8_t flags_)
-    : phaseA(phaseA_), phaseB(phaseB_), LED(LED_), LEDDelay(LEDDelay_), flags(flags_)
+    : phaseA(phaseA_), phaseB(phaseB_), LED(&LED_), LEDDelay(LEDDelay_), flags(flags_)
 {
 }
 
 MicroBitQuadratureDecoder::MicroBitQuadratureDecoder(MicroBitPin& phaseA_, MicroBitPin& phaseB_, uint8_t flags_)
-    : phaseA(phaseA_), phaseB(phaseB_), LED(pinNC), flags(flags_)
+    : phaseA(phaseA_), phaseB(phaseB_), LED(NULL), flags(flags_)
 {
 }
 
@@ -149,7 +147,7 @@ int MicroBitQuadratureDecoder::start()
     NRF_QDEC->LEDPOL = (flags & QDEC_LED_ACTIVE_LOW) != 0 ? 0 : 1;
     NRF_QDEC->SAMPLEPER = sampleper;
     NRF_QDEC->REPORTPER = 7;        // Slowest possible reporting (not used)
-    NRF_QDEC->PSELLED = LED.name;
+    NRF_QDEC->PSELLED = LED != NULL ? LED->name : NC;
     NRF_QDEC->PSELA = phaseA.name;
     NRF_QDEC->PSELB = phaseB.name;
     NRF_QDEC->DBFEN = (flags & QDEC_USE_DEBOUNCE) != 0 ? 1 : 0;
@@ -157,8 +155,8 @@ int MicroBitQuadratureDecoder::start()
 
     // If these pins were previously triggering events (eg., when emulating
     // quadrature decoder using transition events) then put a stop to that.
-    if (LED.name != NC)
-        LED.eventOn(MICROBIT_PIN_EVENT_NONE);
+    if (LED != NULL)
+        LED->eventOn(MICROBIT_PIN_EVENT_NONE);
     phaseA.eventOn(MICROBIT_PIN_EVENT_NONE);
     phaseB.eventOn(MICROBIT_PIN_EVENT_NONE);
 

@@ -42,11 +42,10 @@ DEALINGS IN THE SOFTWARE.
 class MicroBitQuadratureDecoder : public MicroBitComponent
 {
     protected:
-    static MicroBitPin pinNC;           // A no-connect pin -- the default for unused LED arguments.
     int64_t         position = 0;       // Absolute position
     MicroBitPin&    phaseA,             // Phase A input for decoding
-                    phaseB,             // Phase B input for decoding
-                    LED;                // LED output to assert while decoding
+                    phaseB;             // Phase B input for decoding
+    MicroBitPin*    LED;                // LED output to assert while decoding
     uint32_t        samplePeriod = 128; // Minimum sampling period allowed
     uint16_t        faults = 0;         // Double-transition counter
     uint8_t         LEDDelay = 0;       // power-up time for LED, in microseconds
