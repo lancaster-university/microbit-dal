@@ -31,8 +31,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitPin.h"
 
                                                         // Configuration flags...
-#define QDEC_USING_SYSTEM_TICK              0x01        // Use systemTick() to keep position up to date.
-#define QDEC_USING_DEBOUNCE                 0x02        // Use input debounce feature.
+#define QDEC_USE_SYSTEM_TICK                0x01        // Use systemTick() to keep position up to date.
+#define QDEC_USE_DEBOUNCE                   0x02        // Use input debounce feature.
 #define QDEC_LED_ACTIVE_LOW                 0x04        // Drive LED pin low to activate.
 
 /**
@@ -74,8 +74,10 @@ class MicroBitQuadratureDecoder : public MicroBitComponent
       * Automatically call poll() from the systemTick() event.
       *
       * This has the effect of keeping the position up to date to within
-      * SYSTEM_TICK_PERIOD_MS milliseconds.  The event is enabled after a call
-      * to start() or immediately, if start() has already been called.
+      * SYSTEM_TICK_PERIOD_MS milliseconds.  The system tick hook is registered
+      * during a call to start(), or if start() has already been called then
+      * it's registered during this call and automatic polling will begin
+      * immediately.
       *
       * This should not be used if poll() is being called in response to
       * another regular event.
@@ -84,6 +86,11 @@ class MicroBitQuadratureDecoder : public MicroBitComponent
 
     /**
       * Do not automatically call poll() from the systemTick() event (this is the default).
+      *
+      * If start() has already been called then the driver's system tick hook
+      * will be unregistered during this call and automatic polling will stop
+      * immediately.  In either case the setting is recorded for the next time
+      * the driver is started.
       */
     void disableSystemTick();
 

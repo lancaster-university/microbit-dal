@@ -59,17 +59,18 @@ MicroBitQuadratureDecoder::MicroBitQuadratureDecoder(MicroBitPin& phaseA_, Micro
   * Automatically call poll() from the systemTick() event.
   *
   * This has the effect of keeping position up to date to within
-  * SYSTEM_TICK_PERIOD_MS milliseconds.  The event is enabled after a call
-  * to start() or immediately, if start() has already been called.
+  * SYSTEM_TICK_PERIOD_MS milliseconds.  The system tick hook is registered
+  * during a call to start(), or if start() has already been called then it's
+  * registered during this call and automatic polling will begin immediately.
   *
   * This should not be used if poll() is being called in response to
   * another regular event.
   */
 void MicroBitQuadratureDecoder::enableSystemTick()
 {
-    if (!(flags & QDEC_USING_SYSTEM_TICK))
+    if (!(flags & QDEC_USE_SYSTEM_TICK))
     {
-        flags |= QDEC_USING_SYSTEM_TICK;
+        flags |= QDEC_USE_SYSTEM_TICK;
         if ((status & MICROBIT_COMPONENT_RUNNING) != 0)
             system_timer_add_component(this);
     }
@@ -77,10 +78,15 @@ void MicroBitQuadratureDecoder::enableSystemTick()
 
 /**
   * Do not automatically call poll() from the systemTick() event.
+  *
+  * If start() has already been called then the driver's system tick hook
+  * will be unregistered during this call and automatic polling will stop
+  * immediately.  In either case the setting is recorded for the next time
+  * the driver is started.
   */
 void MicroBitQuadratureDecoder::disableSystemTick()
 {
-    flags &= ~QDEC_USING_SYSTEM_TICK;
+    flags &= ~QDEC_USE_SYSTEM_TICK;
     if ((status & MICROBIT_COMPONENT_RUNNING) != 0)
         system_timer_remove_component(this);
 }
@@ -146,7 +152,7 @@ int MicroBitQuadratureDecoder::start()
     NRF_QDEC->PSELLED = LED.name;
     NRF_QDEC->PSELA = phaseA.name;
     NRF_QDEC->PSELB = phaseB.name;
-    NRF_QDEC->DBFEN = (flags & QDEC_USING_DEBOUNCE) != 0 ? 1 : 0;
+    NRF_QDEC->DBFEN = (flags & QDEC_USE_DEBOUNCE) != 0 ? 1 : 0;
     NRF_QDEC->LEDPRE = LEDDelay;
 
     // If these pins were previously triggering events (eg., when emulating
@@ -167,8 +173,8 @@ int MicroBitQuadratureDecoder::start()
     NRF_QDEC->TASKS_START = 1;
     status |= MICROBIT_COMPONENT_RUNNING;
 
-    if ((flags & QDEC_USING_SYSTEM_TICK) != 0)
-        system_timer_remove_component(this);
+    if ((flags & QDEC_USE_SYSTEM_TICK) != 0)
+        system_timer_add_component(this);
 
     return MICROBIT_OK;
 }
@@ -178,7 +184,7 @@ int MicroBitQuadratureDecoder::start()
   */
 void MicroBitQuadratureDecoder::stop()
 {
-    if ((flags & QDEC_USING_SYSTEM_TICK) != 0)
+    if ((flags & QDEC_USE_SYSTEM_TICK) != 0)
         system_timer_remove_component(this);
 
     if ((status & MICROBIT_COMPONENT_RUNNING) != 0)
