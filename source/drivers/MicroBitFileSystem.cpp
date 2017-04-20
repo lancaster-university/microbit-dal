@@ -119,6 +119,9 @@ uint32_t* MicroBitFileSystem::getFreePage()
   */
 MicroBitFileSystem::MicroBitFileSystem(uint32_t flashStart, int flashPages)
 {
+    // Initialise status flags to default value
+    this->status = 0;
+
     // Attempt tp load an existing filesystem, if it exisits
     init(flashStart, flashPages);
 
