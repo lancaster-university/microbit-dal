@@ -207,6 +207,12 @@ MicroBitImage::MicroBitImage(const char *s)
   */
 MicroBitImage::MicroBitImage(ImageData *p)
 {
+    if(p == NULL)
+    {
+        init_empty();
+        return;
+    }
+
     ptr = p;
     ptr->incr();
 }
