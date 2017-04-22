@@ -428,9 +428,9 @@ int MicroBitImage::getPixelValue(int16_t x , int16_t y)
   * Replaces the content of this image with that of a given 2D array representing
   * the image.
   *
-  * @param x the width of the image. Must be within the dimensions of the image.
+  * @param width the width of the image. Must be within the dimensions of the image.
   *
-  * @param y the width of the image. Must be within the dimensions of the image.
+  * @param height the height of the image. Must be within the dimensions of the image.
   *
   * @param bitmap a 2D array representing the image.
   *
@@ -438,8 +438,8 @@ int MicroBitImage::getPixelValue(int16_t x , int16_t y)
   *
   * @code
   * const uint8_t heart[] = { 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
-  * MicroBitImage i();
-  * i.printImage(0,0,heart);
+  * MicroBitImage i(10, 5);
+  * i.printImage(10,5,heart);
   * @endcode
   *
   * @note all coordinates originate from the top left of an image.
@@ -451,10 +451,10 @@ int MicroBitImage::printImage(int16_t width, int16_t height, const uint8_t *bitm
     int pixelsToCopyX, pixelsToCopyY;
 
     // Sanity check.
-    if (width <= 0 || width <= 0 || bitmap == NULL)
+    if (width <= 0 || height <= 0 || bitmap == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    // Calcualte sane start pointer.
+    // Calculate sane start pointer.
     pixelsToCopyX = min(width,this->getWidth());
     pixelsToCopyY = min(height,this->getHeight());
 
