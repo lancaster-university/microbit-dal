@@ -35,6 +35,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitMessageBus.cpp"
     "drivers/MicroBitMultiButton.cpp"
     "drivers/MicroBitPin.cpp"
+    "drivers/MicroBitQuadratureDecoder.cpp"
     "drivers/MicroBitRadio.cpp"
     "drivers/MicroBitRadioDatagram.cpp"
     "drivers/MicroBitRadioEvent.cpp"
