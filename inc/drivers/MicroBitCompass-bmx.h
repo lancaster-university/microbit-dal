@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef TARGET_NRF51_MICROBIT
+#ifdef TARGET_NRF51_CALLIOPE
 
 #ifndef MICROBIT_COMPASS_H
 #define MICROBIT_COMPASS_H
@@ -32,13 +32,13 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
 #include "MicroBitCoordinateSystem.h"
-#include "MicroBitAccelerometer.h"
+#include "MicroBitAccelerometer-bmx.h"
 #include "MicroBitStorage.h"
 
 /**
   * Relevant pin assignments
   */
-#define MICROBIT_PIN_COMPASS_DATA_READY          P0_29
+#define MICROBIT_PIN_COMPASS_DATA_READY          ACCEL_INT
 
 /**
   * I2C constants
@@ -153,11 +153,29 @@ class MicroBitCompass : public MicroBitComponent
 
     CompassSample           average;                  // Centre point of sample data.
     CompassSample           sample;                   // The latest sample data recorded.
-    DigitalIn               int1;                     // Data ready interrupt.
+//    DigitalIn               int1;                     // Data ready interrupt.
     MicroBitI2C&		    i2c;                      // The I2C interface the sensor is connected to.
     MicroBitAccelerometer*  accelerometer;            // The accelerometer to use for tilt compensation.
     MicroBitStorage*        storage;                  // An instance of MicroBitStorage used for persistence.
 
+    uint8_t Mmode  = Regular;          // Choose magnetometer operation mode
+    uint8_t MODR   = MODR_10Hz;        // set magnetometer data rate
+
+    signed char   dig_x1;
+    signed char   dig_y1;
+    signed char   dig_x2;
+    signed char   dig_y2;
+    uint16_t      dig_z1;
+    int16_t       dig_z2;
+    int16_t       dig_z3;
+    int16_t       dig_z4;
+    unsigned char dig_xy1;
+    signed char   dig_xy2;
+    uint16_t      dig_xyz1;
+
+    void writeByte(char id, char addr, char value);
+    char readByte(char id, char addr);
+    void readBytes(char id, char addr, int len, uint8_t* buffer);
     public:
 
     /**
@@ -510,8 +528,10 @@ class MicroBitCompass : public MicroBitComponent
       * @param address the base address of the magnetometer on the i2c bus.
       */
     void init(uint16_t id, uint16_t address);
+    int readMagData(int16_t * magData);
+    int16_t readACCTempData();
+    void trimBMX055();
 };
 
 #endif
-
-#endif
+#endif // TARGET_NRF51_CALLIOPE

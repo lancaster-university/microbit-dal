@@ -23,6 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+#include <MicroBitFiber.h>
 #include "MicroBitConfig.h"
 #include "MicroBitCompassCalibrator.h"
 #include "EventModel.h"
@@ -91,6 +92,7 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
     display.stopAnimation();
     display.clear();
 
+    int c = 0;
     while(samples < PERIMETER_POINTS)
     {
         // update our model of the flash status of the user controlled pixel.
@@ -100,8 +102,10 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
         int x = accelerometer.getX();
         int y = accelerometer.getY();
 
+        //printf("%d [%d,%d]\r\n", c++, x, y);
+
         // Wait a little whie for the button state to stabilise (one scheduler tick).
-        wait_ms(10);
+        fiber_sleep(10);
 
         // Deterine the position of the user controlled pixel on the screen.
         if (x < -PIXEL2_THRESHOLD)
@@ -156,7 +160,7 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
             }
         }
 
-        wait_ms(100);
+        fiber_sleep(100);
     }
 
     // We have enough sample data to make a fairly accurate calibration.

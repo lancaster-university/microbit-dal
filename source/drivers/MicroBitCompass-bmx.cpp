@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef TARGET_NRF51_MICROBIT
+#ifdef TARGET_NRF51_CALLIOPE
 
 /**
   * Class definition for MicroBit Compass.
@@ -32,9 +32,32 @@ DEALINGS IN THE SOFTWARE.
   * Also includes basic caching, calibration and on demand activation.
   */
 #include "MicroBitConfig.h"
-#include "MicroBitCompass.h"
+#include "MicroBitAccelerometer-bmx.h"
+#include "MicroBitCompass-bmx.h"
 #include "MicroBitFiber.h"
 #include "ErrorNo.h"
+
+void MicroBitCompass::writeByte(char id, char addr, char value)
+{
+    char cmd[2];
+    cmd[0] = addr;
+    cmd[1] = value;
+    i2c.write(id<<1, cmd, 2);
+}
+
+char MicroBitCompass::readByte(char id, char addr)
+{
+    char res;
+    i2c.write( id<<1, &addr, 1 );
+    i2c.read( id<<1, &res, 1 );
+    return res;
+}
+
+void MicroBitCompass::readBytes(char id, char addr, int len, uint8_t* buffer)
+{
+    i2c.write( id<<1, &addr, 1 );
+    i2c.read( id<<1, (char *)buffer, len );
+}
 
 /**
   * An initialisation member function used by the many constructors of MicroBitCompass.
@@ -43,10 +66,12 @@ DEALINGS IN THE SOFTWARE.
   *
   * @param address the base address of the magnetometer on the i2c bus.
   */
+
 void MicroBitCompass::init(uint16_t id, uint16_t address)
 {
     this->id = id;
     this->address = address;
+
 
     // Select 10Hz update rate, with oversampling, and enable the device.
     this->samplePeriod = 100;
@@ -55,6 +80,7 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
     // Assume that we have no calibration information.
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 
+    trimBMX055();
     if(this->storage != NULL)
     {
         KeyValuePair *calibrationData =  storage->get("compassCal");
@@ -102,7 +128,7 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
 MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address,  uint16_t id) :
     average(),
     sample(),
-    int1(MICROBIT_PIN_COMPASS_DATA_READY),
+//    int1(MICROBIT_PIN_COMPASS_DATA_READY),
     i2c(_i2c),
     accelerometer(&_accelerometer),
     storage(&_storage)
@@ -133,7 +159,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _acce
 MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, uint16_t address, uint16_t id) :
     average(),
     sample(),
-    int1(MICROBIT_PIN_COMPASS_DATA_READY),
+//    int1(MICROBIT_PIN_COMPASS_DATA_READY),
     i2c(_i2c),
     accelerometer(&_accelerometer),
     storage(NULL)
@@ -164,7 +190,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _acce
 MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address, uint16_t id) :
     average(),
     sample(),
-    int1(MICROBIT_PIN_COMPASS_DATA_READY),
+//    int1(MICROBIT_PIN_COMPASS_DATA_READY),
     i2c(_i2c),
     accelerometer(NULL),
     storage(&_storage)
@@ -191,7 +217,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, u
 MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, uint16_t address, uint16_t id) :
     average(),
     sample(),
-    int1(MICROBIT_PIN_COMPASS_DATA_READY),
+//    int1(MICROBIT_PIN_COMPASS_DATA_READY),
     i2c(_i2c),
     accelerometer(NULL),
     storage(NULL)
@@ -311,8 +337,8 @@ int MicroBitCompass::tiltCompensatedBearing()
     float phi = accelerometer->getRollRadians();
     float theta = accelerometer->getPitchRadians();
 
-    float x = (float) getX(NORTH_EAST_DOWN);
-    float y = (float) getY(NORTH_EAST_DOWN);
+    float x = -1.0 * (float) getX(NORTH_EAST_DOWN);
+    float y = -1.0 * (float) getY(NORTH_EAST_DOWN);
     float z = (float) getZ(NORTH_EAST_DOWN);
 
     // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
@@ -368,7 +394,7 @@ int MicroBitCompass::heading()
         calibrate();
 
     if(accelerometer != NULL)
-        return tiltCompensatedBearing();
+     return tiltCompensatedBearing();
 
     return basicBearing();
 }
@@ -392,20 +418,79 @@ int MicroBitCompass::updateSample()
         status |= MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE;
     }
 
-    // Poll interrupt line from compass (Active HI).
-    // Interrupt is cleared on data read of MAG_OUT_X_MSB.
-    if(int1)
-    {
-        sample.x = MAG3110_NORMALIZE_SAMPLE((int) read16(MAG_OUT_X_MSB));
-        sample.y = MAG3110_NORMALIZE_SAMPLE((int) read16(MAG_OUT_Y_MSB));
-        sample.z = MAG3110_NORMALIZE_SAMPLE((int) read16(MAG_OUT_Z_MSB));
-
-        // Indicate that a new sample is available
-        MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
+    int16_t magData[3];
+    if (readMagData(magData) == 1) { //valid result received
+	    sample.x = magData[0];
+	    sample.y = magData[1];
+	    sample.z = magData[2];
+	    MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
     }
-
+  
     return MICROBIT_OK;
 }
+
+
+int  MicroBitCompass::readMagData(int16_t * magData)
+{
+  int16_t mdata_x = 0, mdata_y = 0, mdata_z = 0, temp = 0;
+  uint16_t data_r = 0;
+  uint8_t rawData[8];  // x/y/z hall magnetic field data, and Hall resistance data
+  //  readBytes(BMX055_MAG_ADDRESS, BMX055_MAG_XOUT_LSB, 8, rawData);  // Read the eight raw data registers sequentially into data array
+  readBytes(BMX055_MAG_ADDRESS, 0x42, 8, rawData);  // Read the eight raw data registers sequentially into data array
+  if(rawData[6] & 0x01) { // Check if data ready status bit is set
+	  mdata_x = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]) >> 3;  // 13-bit signed integer for x-axis field
+	  mdata_y = (int16_t) (((int16_t)rawData[3] << 8) | rawData[2]) >> 3;  // 13-bit signed integer for y-axis field
+	  mdata_z = (int16_t) (((int16_t)rawData[5] << 8) | rawData[4]) >> 1;  // 15-bit signed integer for z-axis field
+	  data_r = (uint16_t) (((uint16_t)rawData[7] << 8) | rawData[6]) >> 2;  // 14-bit unsigned integer for Hall resistance
+	  
+	  // calculate temperature compensated 16-bit magnetic fields
+	  temp = ((int16_t)(((uint16_t)((((int32_t)dig_xyz1) << 14)/(data_r != 0 ? data_r : dig_xyz1))) - ((uint16_t)0x4000)));
+	  magData[0] = ((int16_t)((((int32_t)mdata_x) *
+				   ((((((((int32_t)dig_xy2) * ((((int32_t)temp) * ((int32_t)temp)) >> 7)) +
+					(((int32_t)temp) * ((int32_t)(((int16_t)dig_xy1) << 7)))) >> 9) +
+				      ((int32_t)0x100000)) * ((int32_t)(((int16_t)dig_x2) + ((int16_t)0xA0)))) >> 12)) >> 13)) +
+		  (((int16_t)dig_x1) << 3);
+	  
+	  temp = ((int16_t)(((uint16_t)((((int32_t)dig_xyz1) << 14)/(data_r != 0 ? data_r : dig_xyz1))) - ((uint16_t)0x4000)));
+	  magData[1] = ((int16_t)((((int32_t)mdata_y) *
+				   ((((((((int32_t)dig_xy2) * ((((int32_t)temp) * ((int32_t)temp)) >> 7)) + 
+					(((int32_t)temp) * ((int32_t)(((int16_t)dig_xy1) << 7)))) >> 9) +
+				      ((int32_t)0x100000)) * ((int32_t)(((int16_t)dig_y2) + ((int16_t)0xA0)))) >> 12)) >> 13)) +
+		  (((int16_t)dig_y1) << 3);
+	  magData[2] = (((((int32_t)(mdata_z - dig_z4)) << 15) - ((((int32_t)dig_z3) * ((int32_t)(((int16_t)data_r) -
+												  ((int16_t)dig_xyz1))))>>2))/(dig_z2 + ((int16_t)(((((int32_t)dig_z1) * ((((int16_t)data_r) << 1)))+(1<<15))>>16))));
+	  return 1;
+  }
+  return 0;
+}
+
+int16_t MicroBitCompass::readACCTempData()
+{
+  uint8_t c =  readByte(BMX055_ACC_ADDRESS, BMX055_ACC_D_TEMP);  // Read the raw data register 
+  return ((int16_t)((int16_t)c << 8)) >> 8 ;  // Turn the byte into a signed 8-bit integer
+}
+
+void MicroBitCompass::trimBMX055()  // get trim values for magnetometer sensitivity
+{ 
+  uint8_t rawData[2];  //placeholder for 2-byte trim data
+  dig_x1 = readByte(BMX055_MAG_ADDRESS, BMM050_DIG_X1);
+  dig_x2 = readByte(BMX055_MAG_ADDRESS, BMM050_DIG_X2);
+  dig_y1 = readByte(BMX055_MAG_ADDRESS, BMM050_DIG_Y1);
+  dig_y2 = readByte(BMX055_MAG_ADDRESS, BMM050_DIG_Y2);
+  dig_xy1 = readByte(BMX055_MAG_ADDRESS, BMM050_DIG_XY1);
+  dig_xy2 = readByte(BMX055_MAG_ADDRESS, BMM050_DIG_XY2);
+  readBytes(BMX055_MAG_ADDRESS, BMM050_DIG_Z1_LSB, 2, &rawData[0]);   
+  dig_z1 = (uint16_t) (((uint16_t)rawData[1] << 8) | rawData[0]);  
+  readBytes(BMX055_MAG_ADDRESS, BMM050_DIG_Z2_LSB, 2, &rawData[0]);   
+  dig_z2 = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]);  
+  readBytes(BMX055_MAG_ADDRESS, BMM050_DIG_Z3_LSB, 2, &rawData[0]);   
+  dig_z3 = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]);  
+  readBytes(BMX055_MAG_ADDRESS, BMM050_DIG_Z4_LSB, 2, &rawData[0]);   
+  dig_z4 = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]);  
+  readBytes(BMX055_MAG_ADDRESS, BMM050_DIG_XYZ1_LSB, 2, &rawData[0]);   
+  dig_xyz1 = (uint16_t) (((uint16_t)rawData[1] << 8) | rawData[0]);  
+}
+
 
 /**
   * Periodic callback from MicroBit idle thread.
@@ -529,44 +614,44 @@ int MicroBitCompass::getFieldStrength()
   */
 int MicroBitCompass::configure()
 {
-    const MAG3110SampleRateConfig  *actualSampleRate;
-    int result;
 
-    // First, take the device offline, so it can be configured.
-    result = writeCommand(MAG_CTRL_REG1, 0x00);
-    if (result != MICROBIT_OK)
-        return MICROBIT_I2C_ERROR;
+    writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_PWR_CNTL1, 0x82);  // Softreset magnetometer, ends up in sleep mode
+    wait_ms(100);
+    writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_PWR_CNTL1, 0x01); // Wake up magnetometer
+    wait_ms(100);
 
-    // Wait for the part to enter standby mode...
-    while(1)
-    {
-        // Read the status of the part...
-        // If we can't communicate with it over I2C, pass on the error.
-        result = this->read8(MAG_SYSMOD);
-        if (result == MICROBIT_I2C_ERROR)
-            return MICROBIT_I2C_ERROR;
+    writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_PWR_CNTL2, MODR << 3); // Normal mode
+//writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_PWR_CNTL2, MODR << 3 | 0x02); // Forced mode
 
-        // if the part in in standby, we're good to carry on.
-        if((result & 0x03) == 0)
+    writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_INT_EN_2, 0x84); // Enable data ready pin interrupt, active high
+
+// Set up four standard configurations for the magnetometer
+    switch (Mmode) {
+        case lowPower:
+            // Low-power
+            writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_XY, 0x01);  // 3 repetitions (oversampling)
+            writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_Z,  0x02);  // 3 repetitions (oversampling)
             break;
-
-        // Perform a power efficient sleep...
-		fiber_sleep(100);
-    }
-
-    // Find the nearest sample rate to that specified.
-    actualSampleRate = &MAG3110SampleRate[MAG3110_SAMPLE_RATES-1];
-    for (int i=MAG3110_SAMPLE_RATES-1; i>=0; i--)
-    {
-        if(MAG3110SampleRate[i].sample_period < this->samplePeriod * 1000)
+        case Regular:
+            // Regular
+            writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_XY, 0x04);  //  9 repetitions (oversampling)
+            writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_Z,  0x16);  // 15 repetitions (oversampling)
             break;
-
-        actualSampleRate = &MAG3110SampleRate[i];
+        case enhancedRegular:
+            // Enhanced Regular
+            writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_XY, 0x07);  // 15 repetitions (oversampling)
+            writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_Z,  0x22);  // 27 repetitions (oversampling)
+            break;
+        case highAccuracy:
+            // High Accuracy
+            writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_XY, 0x17);  // 47 repetitions (oversampling)
+            writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_REP_Z,  0x51);  // 83 repetitions (oversampling)
+            break;
     }
-
+    return MICROBIT_OK;
     // OK, we have the correct data. Update our local state.
-    this->samplePeriod = actualSampleRate->sample_period / 1000;
-
+//    this->samplePeriod = actualSampleRate->sample_period / 1000;
+/*
     // Enable automatic reset after each sample;
     result = writeCommand(MAG_CTRL_REG2, 0xA0);
     if (result != MICROBIT_OK)
@@ -577,7 +662,7 @@ int MicroBitCompass::configure()
     result = writeCommand(MAG_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
     if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
-
+*/
     return MICROBIT_OK;
 }
 
@@ -625,11 +710,13 @@ int MicroBitCompass::getPeriod()
 int MicroBitCompass::whoAmI()
 {
     uint8_t data;
-    int result;
 
-    result = readCommand(MAG_WHOAMI, &data, 1);
-    if (result != MICROBIT_OK)
+    /*    result = readCommand(BMX055_ACC_WHOAMI, &data, 1);
+    if (result !=0)
         return MICROBIT_I2C_ERROR;
+    */
+
+    data = readByte(BMX055_MAG_ADDRESS, BMX055_MAG_WHOAMI);
 
     return (int)data;
 }
@@ -678,7 +765,6 @@ int MicroBitCompass::calibrate()
 
     // Record that we've started calibrating.
     status |= MICROBIT_COMPASS_STATUS_CALIBRATING;
-
     // Launch any registred calibration alogrithm visialisation
     MicroBitEvent(id, MICROBIT_COMPASS_EVT_CALIBRATE);
 
@@ -686,9 +772,10 @@ int MicroBitCompass::calibrate()
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATING;
 
     // If there are no changes to our sample data, we either have no calibration algorithm, or it couldn't complete succesfully.
-    if(!(status & MICROBIT_COMPASS_STATUS_CALIBRATED))
-        return MICROBIT_CALIBRATION_REQUIRED;
-
+    if(!(status & MICROBIT_COMPASS_STATUS_CALIBRATED)) {
+	    return MICROBIT_CALIBRATION_REQUIRED;
+    }
+	
     return MICROBIT_OK;
 }
 
@@ -769,4 +856,4 @@ const MAG3110SampleRateConfig MAG3110SampleRate[MAG3110_SAMPLE_RATES] = {
     {12800000,   0xf8}         // 0.08 hz
 };
 
-#endif // TARGET_NRF51_MICROBIT
+#endif // TARGET_NRF51_CALLIOPE

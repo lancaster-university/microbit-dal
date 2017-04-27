@@ -73,24 +73,33 @@ int MicroBitAccelerometer::configure()
 
     //    BMX_DEBUG("RUN BMX055 after reset\r\n");
 
-    // Configure accelerometer
+    // configure accelerometer
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_PMU_RANGE, Ascale & 0x0F); // Set accelerometer full range
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_PMU_BW, ACCBW & 0x0F);     // Set accelerometer bandwidth
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_D_HBW, 0x00);              // Use filtered data
-
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_0, 0x70);           // Enable ACC data ready interrupt
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_1, 0x7F);           // Enable ACC data ready interrupt
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_2, 0x02);           // Enable ACC data ready interrupt
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_OUT_CTRL, 0x02);       // open drain, active low
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_MAP_0, 0x00);        // Define INT1 (intACC1) as ACC data ready interrupt
-    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_MAP_1, 0x01);          // Define INT2 (intACC2) as ACC data ready interrupt
-
-    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_0, 0x80);  // enable data ready interrupt
     writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_BGW_SPI3_WDT, 0x06);       // Set watchdog timer for 50 ms
-    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_1, 0x04);  // select push-pull, active high interrupts
 
-    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_MAP_1, 0x01); // select INT3 (intGYRO1) as GYRO data ready interrupt, somehow requirement for acc data ready
-    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_SRC_3, 0x07);
+    // accelerometer
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_0,     0b01110111); // Controls which interrupt engines in group 0 are enabled.
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_1,     0b00011111); // Controls which interrupt engines in group 1 are enabled.
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_EN_2,     0b00001111); // Controls which interrupt engines in group 2 are enabled.
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_MAP_0,    0b00000000); // Controls which interrupt signals are mapped to the INT1 pin.
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_MAP_1,    0b00000001); // Controls which interrupt signals are mapped to the INT1 and INT2 pins.
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_MAP_2,    0b00000000); // Controls which interrupt signals are mapped to the INT2 pin.
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_SRC,      0b00000000); // Contains the data source definition for interrupts with selectable data source.
+    writeByte(BMX055_ACC_ADDRESS, BMX055_ACC_INT_OUT_CTRL, 0b00000010); // Contains the behavioural configuration (electrical behavior) of the interrupt pins.
+
+    // gyroscope
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_0,   0b10000000); // Controls which interrupts are enabled.
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_1,   0b00000010); // Contains interrupt pin configurations.
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_MAP_0,  0b00000000); // Controls which interrupt signals are mapped to the INT3 pin.
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_MAP_1,  0b00000001); // Controls which interrupt signals are mapped to the INT3 pin and INT4 pin.
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_MAP_2,  0b00000000); // Controls which interrupt signals are mapped to the INT4 pin.
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_SRC_3,  0b00000111); // data source definitions for the interrupt pin
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_RANGE, Gscale);  // set GYRO FS range
+    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_BW, GODRBW);     // set GYRO ODR and Bandwidth
+
+    writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_INT_EN_2,     0b0000000);  // disable INT5 as its a digital out pin only
 
 // Configure Gyro
 // start by resetting gyro, better not since it ends up in sleep mode?!
@@ -111,8 +120,6 @@ int MicroBitAccelerometer::configure()
 // and collect data for an effective ODR of 50 Hz, other duty cycles are possible but there
 // is a minimum wake duration determined by the bandwidth duration, e.g.,  > 10 ms for 23Hz gyro bandwidth
 //  writeByte(BMX055_ACC_ADDRESS, BMX055_GYRO_LPM2, 0x87);
-    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_RANGE, Gscale);  // set GYRO FS range
-    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_BW, GODRBW);     // set GYRO ODR and Bandwidth
 
 /*    writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_0, 0x80);  // enable data ready interrupt
     writeByte(BMX055_GYRO_ADDRESS, BMX055_GYRO_INT_EN_1, 0x04);  // select push-pull, active high interrupts
@@ -348,7 +355,7 @@ int MicroBitAccelerometer::updateSample()
     // n.b. Default is Active LO. Interrupt is cleared in data read.
     if(!int1)
     {
-	    //	    BMX_DEBUG("data ready\r\n");
+//	    	    BMX_DEBUG("data ready\r\n");
 	int16_t ndata[3];
 	readAccelData((int16_t *) ndata);  // Read the x/y/z adc values
 
