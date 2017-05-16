@@ -3,7 +3,8 @@ The MIT License (MIT)
 
 Copyright (c) 2016 Calliope GbR
 This software is provided by DELTA Systems (Georg Sommer) - Thomas Kern 
-und Björn Eberhardt GbR by arrangement with Calliope GbR. 
+und Björn Eberhardt GbR by arrangement with Calliope GbR. Modifications
+and additional PWM sample driver by Michael Neidel.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -51,6 +52,12 @@ DEALINGS IN THE SOFTWARE.
 #define CALLIOPE_MAX_FREQUENCY_HZ_S                     20000       //max human audible frequency 
 #define CALLIOPE_BOARD_FREQUENCY                        16000000
 
+//constants for sound sampling
+#define CALLIOPE_DEFAULT_SAMPLE_RATE                    8000        //default sample rate for PWM samples
+#define CALLIOPE_MAX_SAMPLE_RATE                        11025       //max sample rate (limited by sampling loop exec time)
+#define CALLIOPE_MIN_SAMPLE_RATE                        1           //min sample rate
+
+
 class CalliopeSoundMotor : public MicroBitComponent
 {   
     //current settings
@@ -62,8 +69,16 @@ class CalliopeSoundMotor : public MicroBitComponent
     static uint16_t frequency_sound_hz;
     static bool silent_mode;
     
-    //current use of the controller -> 0: off, 1: motor use, 2: dual motor use, 3: sound use
+    //current use of the controller -> 0: off, 1: motor use, 2: dual motor use, 3: sound use, 4: pwm sample playback
     static uint8_t mode;
+    
+    //sample playback settings
+    static uint8_t* sample_buffer;
+    static uint16_t sample_len;
+    static uint16_t sample_pos;
+    static uint8_t sample_period_tick;
+    static bool sample_playing;
+    static mbed::Ticker sample_ticker;
     
     public:
         //constructor
@@ -92,6 +107,11 @@ class CalliopeSoundMotor : public MicroBitComponent
         void soundOn(uint16_t frequency_hz = frequency_sound_hz);
         void setSoundSilentMode(bool on_off);
         void soundOff();
+	
+	//functions for sample playback
+	static void playSample(uint8_t* buffer, uint16_t len, int16_t sample_rate = CALLIOPE_DEFAULT_SAMPLE_RATE);
+	static void stopSamplePlayback();
+	static void updateSampleOutput();
         
         //check fucntions
         bool motorIsOn();

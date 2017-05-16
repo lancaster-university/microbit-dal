@@ -3,7 +3,8 @@ The MIT License (MIT)
 
 Copyright (c) 2016 Calliope GbR
 This software is provided by DELTA Systems (Georg Sommer) - Thomas Kern 
-und Björn Eberhardt GbR by arrangement with Calliope GbR. 
+und Björn Eberhardt GbR by arrangement with Calliope GbR. Modifications
+and additional PWM sample driver by Michael Neidel.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -41,6 +42,12 @@ uint8_t CalliopeSoundMotor::motor_AB_current_use;
 uint16_t CalliopeSoundMotor::frequency_sound_hz;
 bool CalliopeSoundMotor::silent_mode;
 uint8_t CalliopeSoundMotor::mode;
+uint8_t* CalliopeSoundMotor::sample_buffer;
+uint16_t CalliopeSoundMotor::sample_len;
+uint16_t CalliopeSoundMotor::sample_pos;
+uint8_t CalliopeSoundMotor::sample_period_tick;
+bool CalliopeSoundMotor::sample_playing = false;
+mbed::Ticker CalliopeSoundMotor::sample_ticker;
 
 
 //constructor
@@ -594,8 +601,6 @@ void CalliopeSoundMotor::setSoundSilentMode(bool on_off)
     NRF_TIMER2->TASKS_START = 1;
 }
 
-
-
 void CalliopeSoundMotor::soundOff()
 {
     //use function only for sound use
@@ -616,6 +621,100 @@ void CalliopeSoundMotor::soundOff()
     //deactivate controller & set mode to off
     nrf_gpio_pin_clear(CALLIOPE_PIN_MOTOR_SLEEP);
     mode = 0;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//SAMPLE PLAYBACK FUNCTIONS
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CalliopeSoundMotor::playSample(uint8_t* buffer, uint16_t len, int16_t sample_rate)
+{
+
+    //refuse to run if motor is currently in use
+    if (mode != 0) return;
+
+    //validate sampling rate
+    if (sample_rate > CALLIOPE_MAX_SAMPLE_RATE || sample_rate < CALLIOPE_MIN_SAMPLE_RATE) return;
+    
+    //set controller mode
+    mode = 4;
+
+    //disable GPIOTE control of the pins
+    nrf_gpiote_task_disable(0);
+    nrf_gpiote_task_disable(1);
+    
+    //initialize playback parameters
+    sample_buffer = buffer;
+    sample_len = len;
+    sample_pos = 0;
+    sample_period_tick = 1;
+    sample_playing = true;
+    
+    //activate controller and init pins
+    nrf_gpio_pin_set(CALLIOPE_PIN_MOTOR_SLEEP);
+
+    //set up interrupt service
+    sample_ticker.attach_us(&updateSampleOutput, static_cast<timestamp_t>(1000000 / sample_rate));
+}
+
+
+//interrupt service routine for sample playback - do not call directly!
+void CalliopeSoundMotor::updateSampleOutput()
+{
+
+    //stop playback if end of sample buffer reached
+    if (sample_pos >= sample_len) {
+	stopSamplePlayback();
+	return;
+    }
+
+    //update pwm period counter
+    --sample_period_tick;
+    
+    if (!sample_period_tick) {
+        //update pwm period counter and buffer position
+	sample_period_tick = sample_buffer[sample_pos];
+	++sample_pos;
+	
+	//skip toggling output if current sample = 0
+	if (sample_period_tick)
+	{
+	    //manuall toggle motor pins (faster than nrf_gpio_pin_toggle(), and can use correct toggling order)
+	    if (sample_pos & 1)
+	    {     
+	        nrf_gpio_pin_clear(CALLIOPE_PIN_MOTOR_IN1);
+	        nrf_gpio_pin_set(CALLIOPE_PIN_MOTOR_IN2);
+	    }
+	    else
+	    {
+	        //toggle motor pins in reverse order to reduce transition noise
+	        nrf_gpio_pin_clear(CALLIOPE_PIN_MOTOR_IN2);
+	        nrf_gpio_pin_set(CALLIOPE_PIN_MOTOR_IN1);    
+	    }
+	}
+    }
+}
+
+
+void CalliopeSoundMotor::stopSamplePlayback()
+{
+    //refuse to run if not in sample playback mode
+    if (mode != 4) return;
+    
+    //disable interrupt service
+    if (sample_playing) {
+	sample_ticker.detach();
+	sample_playing = false;
+    }
+    
+    //clear pins
+    nrf_gpio_pin_clear(CALLIOPE_PIN_MOTOR_IN1);
+    nrf_gpio_pin_clear(CALLIOPE_PIN_MOTOR_IN2);
+
+    //deactivate controller & set mode to off
+    nrf_gpio_pin_clear(CALLIOPE_PIN_MOTOR_SLEEP);
+    mode = 0;   
 }
 
 

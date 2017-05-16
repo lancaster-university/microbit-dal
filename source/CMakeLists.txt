@@ -27,7 +27,6 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitAccelerometer-bmx.cpp"
     "drivers/MicroBitButton.cpp"
     "drivers/MicroBitCompass.cpp"
-    "drivers/MicroBitCompass-bmx.cpp"
     "drivers/MicroBitCompassCalibrator.cpp"
     "drivers/MicroBitDisplay.cpp"
     "drivers/MicroBitI2C.cpp"
@@ -36,7 +35,6 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitMessageBus.cpp"
     "drivers/MicroBitMultiButton.cpp"
     "drivers/MicroBitPin.cpp"
-    "drivers/MicroBitQuadratureDecoder.cpp"
     "drivers/MicroBitRadio.cpp"
     "drivers/MicroBitRadioDatagram.cpp"
     "drivers/MicroBitRadioEvent.cpp"
@@ -47,6 +45,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitFlash.cpp"
     "drivers/MicroBitFile.cpp"
     "drivers/MicroBitFileSystem.cpp"
+    "drivers/CalliopeMicrophone.cpp"
     "drivers/CalliopeSoundMotor.cpp"
     "drivers/CalliopeRGB.cpp"
 
