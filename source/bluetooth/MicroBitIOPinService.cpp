@@ -146,7 +146,7 @@ void MicroBitIOPinService::updateBLEInputs(bool updateAll)
             if (isDigital(i))
                	value = io.pin[i].getDigitalValue();
             else
-               	value = io.pin[i].getAnalogValue();
+               	value = io.pin[i].getAnalogValue() >> 2;
 
             // If the data has changed, send an update.
             if (updateAll || value != ioPinServiceIOData[i])
@@ -163,6 +163,10 @@ void MicroBitIOPinService::updateBLEInputs(bool updateAll)
             }
         }
     }
+
+    // If there's any data, issue a BLE notification.
+    if (pairs > 0)
+        ble.gattServer().notify(ioPinServiceDataCharacteristic->getValueHandle(), (uint8_t *)ioPinServiceDataCharacteristicBuffer, pairs * sizeof(IOData));
 }
 
 /**
@@ -183,10 +187,10 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
         {
             if(isDigital(i) && isInput(i))
-               io.pin[i].getDigitalValue();
+                io.pin[i].getDigitalValue();
 
             if(isAnalog(i) && isInput(i))
-               io.pin[i].getAnalogValue();
+                io.pin[i].getAnalogValue();
         }
     }
 
@@ -251,7 +255,7 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
                 if (isDigital(data->pin))
                		io.pin[data->pin].setDigitalValue(data->value);
                 else
-               		io.pin[data->pin].setAnalogValue(data->value*4);
+               		io.pin[data->pin].setAnalogValue(data->value == 255 ? 1023 : data->value << 2);
             }
 
             data++;
