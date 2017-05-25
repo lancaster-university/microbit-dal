@@ -132,6 +132,14 @@ class MicroBitIOPinService : public MicroBitComponent
       */
     int isOutput(int i);
 
+    /**
+     * Scans through all pins that our BLE client have registered an interest in. 
+     * For each pin that has changed value, update the BLE characteristic, and NOTIFY our client.
+     * @param updateAll if true, a notification will be sent for all registered inputs. Otherwise, 
+     * a notification will only be sent for inputs that have changed value.
+     */
+    void updateBLEInputs(bool updateAll = false);
+
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
