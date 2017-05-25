@@ -113,20 +113,9 @@ int MicroBitIOPinService::isAnalog(int i)
   * @param i the enumeration of the pin to test
   * @return 1 if this pin is configured as an input, 0 otherwise
   */
-int MicroBitIOPinService::isInput(int i)
+int MicroBitIOPinService::isActiveInput(int i)
 {
     return ((ioPinServiceIOCharacteristicBuffer & (1 << i)) != 0);
-}
-
-/**
-  * Determines if the given pin was configured as output by the BLE IOPinConfigurationCharacterisitic.
-  *
-  * @param i the enumeration of the pin to test
-  * @return 1 if this pin is configured as an output, 0 otherwise
-  */
-int MicroBitIOPinService::isOutput(int i)
-{
-    return ((ioPinServiceIOCharacteristicBuffer & (1 << i)) == 0);
 }
 
 /**
@@ -139,7 +128,7 @@ void MicroBitIOPinService::updateBLEInputs(bool updateAll)
 
     for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
     {
-        if (isInput(i))
+        if (isActiveInput(i))
         {
             uint8_t value;
 
@@ -186,10 +175,10 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         // Also, drop any selected pins into input mode, so we can pick up changes later
         for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
         {
-            if(isDigital(i) && isInput(i))
+            if(isDigital(i) && isActiveInput(i))
                 io.pin[i].getDigitalValue();
 
-            if(isAnalog(i) && isInput(i))
+            if(isAnalog(i) && isActiveInput(i))
                 io.pin[i].getAnalogValue();
         }
     }
@@ -206,10 +195,10 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         // Also, drop any selected pins into input mode, so we can pick up changes later
         for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
         {
-            if(isDigital(i) && isInput(i))
+            if(isDigital(i) && isActiveInput(i))
                io.pin[i].getDigitalValue();
 
-            if(isAnalog(i) && isInput(i))
+            if(isAnalog(i) && isActiveInput(i))
                io.pin[i].getAnalogValue();
         }
     }
@@ -250,7 +239,7 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         // There may be multiple write operations... take each in turn and update the pin values
         while (len >= sizeof(IOData))
         {
-            if (isOutput(data->pin))
+            if (!isActiveInput(data->pin))
             {
                 if (isDigital(data->pin))
                		io.pin[data->pin].setDigitalValue(data->value);

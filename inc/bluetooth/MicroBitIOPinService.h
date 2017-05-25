@@ -122,15 +122,7 @@ class MicroBitIOPinService : public MicroBitComponent
       * @param i the enumeration of the pin to test
       * @return 1 if this pin is configured as an input, 0 otherwise
       */
-    int isInput(int i);
-
-    /**
-      * Determines if the given pin was configured as output by the BLE IOPinConfigurationCharacterisitic.
-      *
-      * @param i the enumeration of the pin to test
-      * @return 1 if this pin is configured as an output, 0 otherwise
-      */
-    int isOutput(int i);
+    int isActiveInput(int i);
 
     /**
      * Scans through all pins that our BLE client have registered an interest in. 
