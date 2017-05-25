@@ -99,7 +99,8 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
 /**
   * Term to convert sample data into SI units
   */
-#define MAG3110_NORMALIZE_SAMPLE(x) (100*x)
+//#define MAG3110_NORMALIZE_SAMPLE(x) (100*x)
+#define MAG3110_NORMALIZE_SAMPLE(x) (x)
 
 /**
   * MAG3110 MAGIC ID value
@@ -136,6 +137,23 @@ struct CompassSample
     {
         return !(x == other.x && y == other.y && z == other.z);
     }
+
+    int dSquared(CompassSample &s)
+	{
+		return (x - s.x)*(x - s.x) + (y - s.y)*(y - s.y) + (z - s.z)*(z - s.z);
+	}
+};
+
+struct CompassCalibration
+{
+    CompassSample           centre;                  // Zero offset of the compass.
+    CompassSample           scale;                   // Scale factor to apply in each axis to accomodate 1st order directional fields.
+    int                     radius;                  // Indicatoin of field strength - the "distance" from the centre to outmost sample.
+
+    CompassCalibration() : centre(), scale()
+    {
+        radius = 0;
+    }
 };
 
 /**
@@ -149,7 +167,7 @@ class MicroBitCompass : public MicroBitComponent
     uint16_t                address;                  // I2C address of the magnetmometer.
     uint16_t                samplePeriod;             // The time between samples, in millseconds.
 
-    CompassSample           average;                  // Centre point of sample data.
+    CompassCalibration      calibration;              // 
     CompassSample           sample;                   // The latest sample data recorded.
     DigitalIn               int1;                     // Data ready interrupt.
     MicroBitI2C&		    i2c;                      // The I2C interface the sensor is connected to.
@@ -391,7 +409,7 @@ class MicroBitCompass : public MicroBitComponent
       *
       * @param calibration A CompassSample containing the offsets for the x, y and z axis.
       */
-    void setCalibration(CompassSample calibration);
+    void setCalibration(CompassCalibration calibration);
 
     /**
       * Provides the calibration data currently in use by the compass.
@@ -400,7 +418,7 @@ class MicroBitCompass : public MicroBitComponent
       *
       * @return calibration A CompassSample containing the offsets for the x, y and z axis.
       */
-    CompassSample getCalibration();
+    CompassCalibration getCalibration();
 
     /**
       * Updates the local sample, only if the compass indicates that

@@ -79,6 +79,43 @@ class MicroBitCompassCalibrator
       * This function is, by design, synchronous and only returns once calibration is complete.
       */
     void calibrate(MicroBitEvent);
+
+    private:
+
+    /**
+     * Scoring function for a hill climb algorithm.
+     *
+     * @param c An approximated centre point
+     * @param data a collection of data points
+     * @param samples the number of samples in the 'data' array
+     *
+     * @return The deviation between the closest and further point in the data array from the point given. 
+     */
+    int measureScore(CompassSample &c, CompassSample *data, int samples);
+
+    /*
+     * Performs an interative approximation (hill descent) algorithm to determine an
+     * estimated centre point of a sphere upon which the given data points reside.
+     *
+     * @param data an array containing sample points
+     * @param samples the number of sample points in the 'data' array.
+     *
+     * @return the approximated centre point of the points in the 'data' array.
+     */
+    CompassSample approximateCentre(CompassSample *data, int samples);
+
+    /**
+     * Calculates an independent scale factor for X,Y and Z axes that places the given data points on a bounding sphere
+     *
+     * @param centre A proviously calculated centre point of all data.
+     * @param data An array of all data points
+     * @param samples The number of samples in the 'data' array.
+     *
+     * @return A calibration structure containing the centre point provided, the radius of the minimum
+     * enclosing spere of points and a scaling factor for each axis that places those points as close as possible
+     * to the surface of the containing sphere.
+     */
+    CompassCalibration spherify(CompassSample centre, CompassSample *data, int samples);
 };
 
 #endif
