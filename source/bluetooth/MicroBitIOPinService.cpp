@@ -148,11 +148,9 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         {
             if(isDigital(i) && isInput(i))
                io.pin[i].getDigitalValue();
-               //MicroBitIOPins[i]->getDigitalValue();
 
             if(isAnalog(i) && isInput(i))
                io.pin[i].getAnalogValue();
-               //MicroBitIOPins[i]->getAnalogValue();
         }
     }
 
@@ -170,11 +168,9 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         {
             if(isDigital(i) && isInput(i))
                io.pin[i].getDigitalValue();
-               //MicroBitIOPins[i]->getDigitalValue();
 
             if(isAnalog(i) && isInput(i))
                io.pin[i].getAnalogValue();
-               //MicroBitIOPins[i]->getAnalogValue();
         }
     }
 
@@ -218,10 +214,8 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
             {
                 if (isDigital(data->pin))
                		io.pin[data->pin].setDigitalValue(data->value);
-                    //MicroBitIOPins[data->pin]->setDigitalValue(data->value);
                 else
                		io.pin[data->pin].setAnalogValue(data->value*4);
-                    //MicroBitIOPins[data->pin]->setAnalogValue(data->value*4);
             }
 
             data++;
@@ -251,10 +245,8 @@ void MicroBitIOPinService::onDataRead(GattReadAuthCallbackParams *params)
 
                 if (isDigital(i))
                		value = io.pin[i].getDigitalValue();
-                    //value = MicroBitIOPins[i]->getDigitalValue();
                 else
                		value = io.pin[i].getAnalogValue();
-                    //value = MicroBitIOPins[i]->getAnalogValue();
 
                 ioPinServiceIOData[i] = value;
                 ioPinServiceDataCharacteristicBuffer[pairs].pin = i;
@@ -297,10 +289,8 @@ void MicroBitIOPinService::idleTick()
 
             if (isDigital(i))
                	value = io.pin[i].getDigitalValue();
-                //value = MicroBitIOPins[i]->getDigitalValue();
             else
                	value = io.pin[i].getAnalogValue();
-                //value = MicroBitIOPins[i]->getAnalogValue();
 
             // If the data has changed, send an update.
             if (value != ioPinServiceIOData[i])
@@ -343,26 +333,3 @@ const uint8_t MicroBitIOPinServiceDataUUID[] = {
     0xe9,0x5d,0x8d,0x00,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
 
-/*
-MicroBitPin * const MicroBitIOPins[] = {
-    &uBit.io.P0,
-    &uBit.io.P1,
-    &uBit.io.P2,
-    &uBit.io.P3,
-    &uBit.io.P4,
-    &uBit.io.P5,
-    &uBit.io.P6,
-    &uBit.io.P7,
-    &uBit.io.P8,
-    &uBit.io.P9,
-    &uBit.io.P10,
-    &uBit.io.P11,
-    &uBit.io.P12,
-    &uBit.io.P13,
-    &uBit.io.P14,
-    &uBit.io.P15,
-    &uBit.io.P16,
-    &uBit.io.P19,
-    &uBit.io.P20
-};
-*/
