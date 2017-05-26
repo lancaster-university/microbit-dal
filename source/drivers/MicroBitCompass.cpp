@@ -306,6 +306,7 @@ int MicroBitCompass::read8(uint8_t reg)
   */
 int MicroBitCompass::tiltCompensatedBearing()
 {
+#ifdef OLD
     // Precompute the tilt compensation parameters to improve readability.
     float phi = accelerometer->getRollRadians();
     float theta = accelerometer->getPitchRadians();
@@ -321,11 +322,34 @@ int MicroBitCompass::tiltCompensatedBearing()
     float cosTheta = cos(theta);
 
     float bearing = (360*atan2(z*sinPhi - y*cosPhi, x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi)) / (2*PI);
+#endif
+
+    float x = (float) getX(NORTH_EAST_DOWN);
+    float y = (float) getY(NORTH_EAST_DOWN);
+    float z = (float) getZ(NORTH_EAST_DOWN);
+
+    float ax = (float) accelerometer->getX(NORTH_EAST_DOWN);
+    float ay = (float) accelerometer->getY(NORTH_EAST_DOWN);
+    float az = (float) accelerometer->getZ(NORTH_EAST_DOWN);
+
+    // normalize the readings
+    float amag = sqrt(ax*ax + ay*ay + az*az);
+    ax = ax/amag;
+    ay = ay/amag;
+    az = az/amag;
+
+    float ax2 = ax*ax;
+    float ay2 = ay*ay;
+
+    float resultx = x*(1.0f - ax2) - y*ax*ay - z*ax*sqrt(1.0f-ax2-ay2);
+    float resulty = y*sqrt(1.0f-ax2-ay2) - z*ay;
+
+    float bearing = (360*atan2(resulty,resultx)) / (2*PI);
 
     if (bearing < 0)
         bearing += 360.0;
 
-    return (int) bearing;
+    return (int) (360.0 - bearing);
 }
 
 /**
