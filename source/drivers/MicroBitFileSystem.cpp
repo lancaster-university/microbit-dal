@@ -499,6 +499,7 @@ int MicroBitFileSystem::recycleBlock(uint16_t block, int type)
     // Now refresh the page originally holding the block.
     flash.erase_page(page);
     flash.flash_write(page, scratch, PAGE_SIZE);
+    flash.erase_page(scratch);
 
     return MICROBIT_OK;
 }
