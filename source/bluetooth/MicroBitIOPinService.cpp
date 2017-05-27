@@ -46,7 +46,7 @@ MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io) :
     // Create the AD characteristic, that defines whether each pin is treated as analogue or digital
     GattCharacteristic ioPinServiceADCharacteristic(MicroBitIOPinServiceADConfigurationUUID, (uint8_t *)&ioPinServiceADCharacteristicBuffer, 0, sizeof(ioPinServiceADCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
-    // Create the IO characteristic, that defines whether each pin is treated as input or output
+    // Create the IO characteristic, that allows the user to define one or more pins as inputs. These will then be monitored by this service and reported via the ioPinSeriveData characterisitic. 
     GattCharacteristic ioPinServiceIOCharacteristic(MicroBitIOPinServiceIOConfigurationUUID, (uint8_t *)&ioPinServiceIOCharacteristicBuffer, 0, sizeof(ioPinServiceIOCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Create the PWM characteristic, that allows up to 3 compatible pins to be used for PWM
