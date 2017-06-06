@@ -78,6 +78,11 @@ class MicroBitMagnetometerService
      */
     void samplePeriodUpdateNeeded(MicroBitEvent e);
 
+    /**
+     * Initiate compass calibration procedure
+     */
+    void calibrateCompass(MicroBitEvent e);
+
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
     MicroBitCompass     &compass;

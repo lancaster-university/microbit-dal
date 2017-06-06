@@ -90,8 +90,19 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroB
     {
         EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
         EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
+        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED, this, &MicroBitMagnetometerService::calibrateCompass);
     }
 }
+
+void MicroBitMagnetometerService::calibrateCompass(MicroBitEvent) {
+    int rc = compass.calibrate();
+    if (rc == MICROBIT_OK) {
+        magnetometerCalibrationCharacteristicBuffer = COMPASS_CALIBRATION_COMPLETED_OK;
+    } else {
+        magnetometerCalibrationCharacteristicBuffer = COMPASS_CALIBRATION_COMPLETED_ERR;
+    }
+    ble.gattServer().notify(magnetometerCalibrationCharacteristicHandle,(uint8_t *)&magnetometerCalibrationCharacteristicBuffer, sizeof(magnetometerCalibrationCharacteristicBuffer));
+}    
 
 /**
   * Callback. Invoked when any of our attributes are written via BLE.
@@ -109,15 +120,8 @@ void MicroBitMagnetometerService::onDataWritten(const GattWriteCallbackParams *p
     {
         magnetometerCalibrationCharacteristicBuffer = *((uint8_t *)params->data);
         if (magnetometerCalibrationCharacteristicBuffer == COMPASS_CALIBRATION_REQUESTED) {
-           int rc = compass.calibrate();
-           if (rc == MICROBIT_OK) {
-             magnetometerCalibrationCharacteristicBuffer = COMPASS_CALIBRATION_COMPLETED_OK;
-           } else {
-             magnetometerCalibrationCharacteristicBuffer = COMPASS_CALIBRATION_COMPLETED_ERR;
-           }
-           ble.gattServer().notify(magnetometerCalibrationCharacteristicHandle,(uint8_t *)&magnetometerCalibrationCharacteristicBuffer, sizeof(magnetometerCalibrationCharacteristicBuffer));
+            MicroBitEvent evt(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED);
         }
-
         return;
     }
 }
