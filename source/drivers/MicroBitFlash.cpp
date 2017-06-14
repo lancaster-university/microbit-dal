@@ -19,6 +19,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+/**
+ * Class definition for MicroBit Flash.
+ *
+ * Contains the functionality for flashing a MicroBit with a desired program.
+ * Also includes some error handling.
+ */
 #include "MicroBitConfig.h"
 #include "MicroBitFlash.h"
 #include "MicroBitDevice.h"

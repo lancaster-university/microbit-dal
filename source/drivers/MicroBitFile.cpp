@@ -19,6 +19,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+/**
+ * Class definition for MicroBit File.
+ *
+ * Represents an implementation of MicroBit File.
+ * Including creating, removing, opening, closing, moving, finding, writing, reading, appending and flushing.
+ */
 #include "MicroBitFile.h"
 #include "ErrorNo.h"
 

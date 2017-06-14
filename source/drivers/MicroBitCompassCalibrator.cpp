@@ -23,6 +23,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+/**
+ * Class definition for MicroBit Compass Calibrator.
+ *
+ * Contains functionality for calibrating the compass, including led interface and feedback for the user.
+ */
 #include "MicroBitConfig.h"
 #include "MicroBitCompassCalibrator.h"
 #include "EventModel.h"

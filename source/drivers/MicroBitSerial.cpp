@@ -23,6 +23,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+/**
+ * Class definition for MicroBit Serial.
+ *
+ * Represents an implementation of a Serial connection.
+ * Also includes implementation for various methods of configuration, sending, receiving and Serial Interrupt handling.
+ */
 #include "mbed.h"
 #include "MicroBitSerial.h"
 #include "ErrorNo.h"

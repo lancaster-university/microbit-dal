@@ -23,6 +23,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+/**
+ * Class definition for MicroBit Button.
+ *
+ * Represents an implementation of a button.
+ * Also includes implementation for button state changes.
+ */
 #include "MicroBitConfig.h"
 #include "MicroBitButton.h"
 #include "MicroBitSystemTimer.h"

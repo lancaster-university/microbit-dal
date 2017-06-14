@@ -23,6 +23,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+/**
+ * Class definition for MicroBit I2C.
+ *
+ * Represents an I2C communication line, containing error handling for reading and writing over I2C.
+ */
 #include "MicroBitConfig.h"
 #include "MicroBitI2C.h"
 #include "ErrorNo.h"

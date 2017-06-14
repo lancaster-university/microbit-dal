@@ -23,6 +23,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+/**
+ * Class definition for MicroBit Thermometer.
+ *
+ * Represents an implementation of a Thermometer.
+ */
 #include "MicroBitConfig.h"
 #include "MicroBitThermometer.h"
 #include "MicroBitSystemTimer.h"
