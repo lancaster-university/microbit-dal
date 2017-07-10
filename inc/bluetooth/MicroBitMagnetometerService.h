@@ -69,19 +69,24 @@ class MicroBitMagnetometerService
     /**
      * Magnetometer update callback
      */
-    void magnetometerUpdate(MicroBitEvent e);
+    void magnetometerUpdate();
 
     /**
      * Sample Period Change Needed callback.
      * Reconfiguring the magnetometer can to a REALLY long time (sometimes even seconds to complete)
      * So we do this in the background when necessary, through this event handler.
      */
-    void samplePeriodUpdateNeeded(MicroBitEvent e);
+    void samplePeriodUpdateNeeded();
 
     /**
-     * Initiate compass calibration procedure
+     *calibrate compass
      */
-    void calibrateCompass(MicroBitEvent e);
+    void calibrateCompass();
+
+    /**
+     * Handle compass events such as calibration requests
+     */
+    void compassEvents(MicroBitEvent e);
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;

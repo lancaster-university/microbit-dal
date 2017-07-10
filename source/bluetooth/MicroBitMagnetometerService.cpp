@@ -88,13 +88,17 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroB
     ble.onDataWritten(this, &MicroBitMagnetometerService::onDataWritten);
     if (EventModel::defaultEventBus)
     {
-        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
-        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
-        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED, this, &MicroBitMagnetometerService::calibrateCompass);
+//        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+//        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
+//        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED, this, &MicroBitMagnetometerService::calibrateCompass);
+
+        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::compassEvents, MESSAGE_BUS_LISTENER_IMMEDIATE);
+        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::compassEvents);
+        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED, this, &MicroBitMagnetometerService::compassEvents);
     }
 }
 
-void MicroBitMagnetometerService::calibrateCompass(MicroBitEvent) {
+void MicroBitMagnetometerService::calibrateCompass() {
     int rc = compass.calibrate();
     if (rc == MICROBIT_OK) {
         magnetometerCalibrationCharacteristicBuffer = COMPASS_CALIBRATION_COMPLETED_OK;
@@ -102,6 +106,21 @@ void MicroBitMagnetometerService::calibrateCompass(MicroBitEvent) {
         magnetometerCalibrationCharacteristicBuffer = COMPASS_CALIBRATION_COMPLETED_ERR;
     }
     ble.gattServer().notify(magnetometerCalibrationCharacteristicHandle,(uint8_t *)&magnetometerCalibrationCharacteristicBuffer, sizeof(magnetometerCalibrationCharacteristicBuffer));
+}
+
+void MicroBitMagnetometerService::compassEvents(MicroBitEvent e) {
+    if (e.value == MICROBIT_COMPASS_EVT_DATA_UPDATE) {
+        magnetometerUpdate();
+        return;
+    }
+    if (e.value == MICROBIT_COMPASS_EVT_CONFIG_NEEDED) {
+        samplePeriodUpdateNeeded();
+        return;
+    }
+    if (e.value == MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED) {
+        calibrateCompass();
+        return;
+    }
 }    
 
 /**
@@ -129,7 +148,7 @@ void MicroBitMagnetometerService::onDataWritten(const GattWriteCallbackParams *p
 /**
   * Magnetometer update callback
   */
-void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent)
+void MicroBitMagnetometerService::magnetometerUpdate()
 {
     if (ble.getGapState().connected)
     {
@@ -154,7 +173,7 @@ void MicroBitMagnetometerService::magnetometerUpdate(MicroBitEvent)
  * Reconfiguring the magnetometer can to a REALLY long time (sometimes even seconds to complete)
  * So we do this in the background when necessary, through this event handler.
  */
-void MicroBitMagnetometerService::samplePeriodUpdateNeeded(MicroBitEvent)
+void MicroBitMagnetometerService::samplePeriodUpdateNeeded()
 {
     // Reconfigure the compass. This might take a while...
     compass.setPeriod(magnetometerPeriodCharacteristicBuffer);
