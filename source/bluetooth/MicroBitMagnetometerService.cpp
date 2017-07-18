@@ -88,10 +88,6 @@ MicroBitMagnetometerService::MicroBitMagnetometerService(BLEDevice &_ble, MicroB
     ble.onDataWritten(this, &MicroBitMagnetometerService::onDataWritten);
     if (EventModel::defaultEventBus)
     {
-//        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::magnetometerUpdate, MESSAGE_BUS_LISTENER_IMMEDIATE);
-//        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::samplePeriodUpdateNeeded);
-//        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED, this, &MicroBitMagnetometerService::calibrateCompass);
-
         EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_DATA_UPDATE, this, &MicroBitMagnetometerService::compassEvents, MESSAGE_BUS_LISTENER_IMMEDIATE);
         EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CONFIG_NEEDED, this, &MicroBitMagnetometerService::compassEvents);
         EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED, this, &MicroBitMagnetometerService::compassEvents);
