@@ -31,12 +31,17 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitCompass.h"
 #include "EventModel.h"
 
+#define COMPASS_CALIBRATION_STATUS_UNKNOWN 0
+#define COMPASS_CALIBRATION_REQUESTED      1
+#define COMPASS_CALIBRATION_COMPLETED_OK   2
+#define COMPASS_CALIBRATION_COMPLETED_ERR  3
+
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitMagnetometerServiceUUID[];
 extern const uint8_t  MicroBitMagnetometerServiceDataUUID[];
 extern const uint8_t  MicroBitMagnetometerServiceBearingUUID[];
 extern const uint8_t  MicroBitMagnetometerServicePeriodUUID[];
-
+extern const uint8_t  MicroBitMagnetometerServiceCalibrationUUID[];
 
 /**
   * Class definition for the MicroBit BLE Magnetometer Service.
@@ -64,14 +69,24 @@ class MicroBitMagnetometerService
     /**
      * Magnetometer update callback
      */
-    void magnetometerUpdate(MicroBitEvent e);
+    void magnetometerUpdate();
 
     /**
      * Sample Period Change Needed callback.
      * Reconfiguring the magnetometer can to a REALLY long time (sometimes even seconds to complete)
      * So we do this in the background when necessary, through this event handler.
      */
-    void samplePeriodUpdateNeeded(MicroBitEvent e);
+    void samplePeriodUpdateNeeded();
+
+    /**
+     *calibrate compass
+     */
+    void calibrateCompass();
+
+    /**
+     * Handle compass events such as calibration requests
+     */
+    void compassEvents(MicroBitEvent e);
 
     // Bluetooth stack we're running on.
     BLEDevice           &ble;
@@ -81,11 +96,13 @@ class MicroBitMagnetometerService
     int16_t             magnetometerDataCharacteristicBuffer[3];
     uint16_t            magnetometerBearingCharacteristicBuffer;
     uint16_t            magnetometerPeriodCharacteristicBuffer;
+    uint8_t             magnetometerCalibrationCharacteristicBuffer;
 
     // Handles to access each characteristic when they are held by Soft Device.
     GattAttribute::Handle_t magnetometerDataCharacteristicHandle;
     GattAttribute::Handle_t magnetometerBearingCharacteristicHandle;
     GattAttribute::Handle_t magnetometerPeriodCharacteristicHandle;
+    GattAttribute::Handle_t magnetometerCalibrationCharacteristicHandle;
 };
 
 #endif

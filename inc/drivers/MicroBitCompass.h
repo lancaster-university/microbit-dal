@@ -88,7 +88,7 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
 #define MICROBIT_COMPASS_EVT_DATA_UPDATE        4
 #define MICROBIT_COMPASS_EVT_CONFIG_NEEDED      5
 #define MICROBIT_COMPASS_EVT_CALIBRATE          6
-
+#define MICROBIT_COMPASS_EVT_CALIBRATION_NEEDED 7
 /**
   * Status Bits
   */
