@@ -92,7 +92,6 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
     display.stopAnimation();
     display.clear();
 
-    int c = 0;
     while(samples < PERIMETER_POINTS)
     {
         // update our model of the flash status of the user controlled pixel.
