@@ -414,7 +414,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    uint16_t adv_interval = 200;
+    uint16_t adv_interval = 50;
     #ifdef MICROBIT_BLE_ADVERTISING_INTERVAL
         adv_interval = MICROBIT_BLE_ADVERTISING_INTERVAL;
     #endif
