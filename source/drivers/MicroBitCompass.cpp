@@ -306,24 +306,6 @@ int MicroBitCompass::read8(uint8_t reg)
   */
 int MicroBitCompass::tiltCompensatedBearing()
 {
-#ifdef OLD
-    // Precompute the tilt compensation parameters to improve readability.
-    float phi = accelerometer->getRollRadians();
-    float theta = accelerometer->getPitchRadians();
-
-    float x = (float) getX(NORTH_EAST_DOWN);
-    float y = (float) getY(NORTH_EAST_DOWN);
-    float z = (float) getZ(NORTH_EAST_DOWN);
-
-    // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
-    float sinPhi = sin(phi);
-    float cosPhi = cos(phi);
-    float sinTheta = sin(theta);
-    float cosTheta = cos(theta);
-
-    float bearing = (360*atan2(z*sinPhi - y*cosPhi, x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi)) / (2*PI);
-#endif
-
     float x = (float) getX(NORTH_EAST_DOWN);
     float y = (float) getY(NORTH_EAST_DOWN);
     float z = (float) getZ(NORTH_EAST_DOWN);
@@ -723,7 +705,7 @@ int MicroBitCompass::calibrate()
   * After calibration this should now take into account trimming errors in the magnetometer,
   * and any "hard iron" offsets on the device.
   *
-  * @param calibration A CompassCalibration containing the offsets for the x, y and z axis and scaling data.
+  * @param calibration A CompassCalibration object containing centre, scale and radius in x, y and z.
   */
 void MicroBitCompass::setCalibration(CompassCalibration calibration)
 {
@@ -739,7 +721,7 @@ void MicroBitCompass::setCalibration(CompassCalibration calibration)
   *
   * More specifically, the x, y and z zero offsets of the compass.
   *
-  * @return calibration A CompassCalibration containing the offsets for the x, y and z axis and per axis scaling data.
+  * @return calibration A CompassCalibration object containing centre, scale and radius in x, y and z.
   */
 CompassCalibration MicroBitCompass::getCalibration()
 {

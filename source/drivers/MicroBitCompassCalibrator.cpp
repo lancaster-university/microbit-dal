@@ -196,11 +196,11 @@ CompassSample MicroBitCompassCalibrator::approximateCentre(CompassSample *data, 
     // iteratively attempt to improve position...
     while (1)
     {
-        for (int x = -1; x <= 1; x++)
+        for (int x = -MAG3110_UNIT_SCALE; x <= MAG3110_UNIT_SCALE; x=x+MAG3110_UNIT_SCALE)
         {
-            for (int y = -1; y <= 1; y++)
+            for (int y = -MAG3110_UNIT_SCALE; y <= MAG3110_UNIT_SCALE; y=y+MAG3110_UNIT_SCALE)
             {
-                for (int z = -1; z <= 1; z++)
+                for (int z = -MAG3110_UNIT_SCALE; z <= MAG3110_UNIT_SCALE; z=z+MAG3110_UNIT_SCALE)
                 {
                     t = c;
                     t.x += x;
@@ -242,16 +242,14 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
         uint8_t on;
     };
 
-    //const int PERIMETER_POINTS = 21;
-    const int PERIMETER_POINTS = 12;
+    const int PERIMETER_POINTS = 25;
 
     const int PIXEL1_THRESHOLD = 200;
-    const int PIXEL2_THRESHOLD = 800;
+    const int PIXEL2_THRESHOLD = 680;
 
     wait_ms(100);
 
-    //Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {0,1,0}, {1,1,0}, {2,1,0}, {3,1,0}, {4,1,0}, {0,2,0}, {1,2,0}, {2,2,0}, {3,2,0}, {4,2,0}, {0,3,0}, {1,3,0}, {2,3,0}, {3,3,0}, {4,3,0}, {1,4,0}, {2,4,0}, {3,4,0}};
-    Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {4,1,0}, {4,2,0}, {4,3,0}, {3,4,0}, {2,4,0}, {1,4,0}, {0,3,0}, {0,2,0}, {0,1,0}};
+    Point perimeter[PERIMETER_POINTS] = {{0,0,0}, {1,0,0}, {2,0,0}, {3,0,0}, {4,0,0}, {0,1,0}, {1,1,0}, {2,1,0}, {3,1,0}, {4,1,0}, {0,2,0}, {1,2,0}, {2,2,0}, {3,2,0}, {4,2,0}, {0,3,0}, {1,3,0}, {2,3,0}, {3,3,0}, {4,3,0}, {0,4,0}, {1,4,0}, {2,4,0}, {3,4,0}, {4,4,0}};
     Point cursor = {2,2,0};
 
     MicroBitImage img(5,5);
@@ -262,9 +260,9 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
 
     // Firstly, we need to take over the display. Ensure all active animations are paused.
     display.stopAnimation();
-    display.scrollAsync("TILT A CIRCLE");
+    display.scrollAsync("TILT TO FILL SCREEN");
 
-    for (int i=0; i<110; i++)
+    for (int i=0; i<160; i++)
         wait_ms(100);
 
     display.stopAnimation();
@@ -313,7 +311,7 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
                 img.setPixelValue(perimeter[i].x, perimeter[i].y, 255);
 
         // Update the pixel at the users position.
-        img.setPixelValue(cursor.x, cursor.y, 255);
+        img.setPixelValue(cursor.x, cursor.y, cursor.on);
 
         // Update the buffer to the screen.
         display.image.paste(img,0,0,0);
@@ -347,145 +345,3 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
     wait_ms(1000);
     display.clear();
 }
-
-
-
-
-#ifdef OLD_CALIBRATION
-/**
-  * Performs a simple game that in parallel, calibrates the compass.
-  *
-  * This function is executed automatically when the user requests a compass bearing, and compass calibration is required.
-  *
-  * This function is, by design, synchronous and only returns once calibration is complete.
-  */
-void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
-{
-    struct Point
-    {
-        uint8_t x;
-        uint8_t y;
-        uint8_t on;
-    };
-
-    const int PERIMETER_POINTS = 12;
-    const int PIXEL1_THRESHOLD = 200;
-    const int PIXEL2_THRESHOLD = 800;
-
-    wait_ms(100);
-
-	Matrix4 X(PERIMETER_POINTS, 4);
-    Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {4,1,0}, {4,2,0}, {4,3,0}, {3,4,0}, {2,4,0}, {1,4,0}, {0,3,0}, {0,2,0}, {0,1,0}};
-    Point cursor = {2,2,0};
-
-    MicroBitImage img(5,5);
-    MicroBitImage smiley("0,255,0,255,0\n0,255,0,255,0\n0,0,0,0,0\n255,0,0,0,255\n0,255,255,255,0\n");
-    int samples = 0;
-
-    // Firstly, we need to take over the display. Ensure all active animations are paused.
-    display.stopAnimation();
-    display.scrollAsync("DRAW A CIRCLE");
-
-    for (int i=0; i<110; i++)
-        wait_ms(100);
-
-    display.stopAnimation();
-    display.clear();
-
-    while(samples < PERIMETER_POINTS)
-    {
-        // update our model of the flash status of the user controlled pixel.
-        cursor.on = (cursor.on + 1) % 4;
-
-        // take a snapshot of the current accelerometer data.
-        int x = accelerometer.getX();
-        int y = accelerometer.getY();
-
-        // Wait a little whie for the button state to stabilise (one scheduler tick).
-        wait_ms(10);
-
-        // Deterine the position of the user controlled pixel on the screen.
-        if (x < -PIXEL2_THRESHOLD)
-            cursor.x = 0;
-        else if (x < -PIXEL1_THRESHOLD)
-            cursor.x = 1;
-        else if (x > PIXEL2_THRESHOLD)
-            cursor.x = 4;
-        else if (x > PIXEL1_THRESHOLD)
-            cursor.x = 3;
-        else
-            cursor.x = 2;
-
-        if (y < -PIXEL2_THRESHOLD)
-            cursor.y = 0;
-        else if (y < -PIXEL1_THRESHOLD)
-            cursor.y = 1;
-        else if (y > PIXEL2_THRESHOLD)
-            cursor.y = 4;
-        else if (y > PIXEL1_THRESHOLD)
-            cursor.y = 3;
-        else
-            cursor.y = 2;
-
-        img.clear();
-
-        // Turn on any pixels that have been visited.
-        for (int i=0; i<PERIMETER_POINTS; i++)
-            if (perimeter[i].on)
-                img.setPixelValue(perimeter[i].x, perimeter[i].y, 255);
-
-        // Update the pixel at the users position.
-        img.setPixelValue(cursor.x, cursor.y, 255);
-
-        // Update the buffer to the screen.
-        display.image.paste(img,0,0,0);
-
-        // test if we need to update the state at the users position.
-        for (int i=0; i<PERIMETER_POINTS; i++)
-        {
-            if (cursor.x == perimeter[i].x && cursor.y == perimeter[i].y && !perimeter[i].on)
-            {
-                // Record the sample data for later processing...
-                X.set(samples, 0, compass.getX(RAW));
-                X.set(samples, 1, compass.getY(RAW));
-                X.set(samples, 2, compass.getZ(RAW));
-                X.set(samples, 3, 1);
-
-                // Record that this pixel has been visited.
-                perimeter[i].on = 1;
-                samples++;
-            }
-        }
-
-        wait_ms(100);
-    }
-
-    // We have enough sample data to make a fairly accurate calibration.
-    // We use a Least Mean Squares approximation, as detailed in Freescale application note AN2426.
-
-    // Firstly, calculate the square of each sample.
-	Matrix4 Y(X.height(), 1);
-	for (int i = 0; i < X.height(); i++)
-	{
-		float v = X.get(i, 0)*X.get(i, 0) + X.get(i, 1)*X.get(i, 1) + X.get(i, 2)*X.get(i, 2);
-		Y.set(i, 0, v);
-	}
-
-    // Now perform a Least Squares Approximation.
-	Matrix4 Alpha = X.multiplyT(X).invert();
-	Matrix4 Gamma = X.multiplyT(Y);
-	Matrix4 Beta = Alpha.multiply(Gamma);
-
-    // The result contains the approximate zero point of each axis, but doubled.
-    // Halve each sample, and record this as the compass calibration data.
-    CompassSample cal ((int)(Beta.get(0,0) / 2), (int)(Beta.get(1,0) / 2), (int)(Beta.get(2,0) / 2));
-    compass.setCalibration(cal);
-
-    // Show a smiley to indicate that we're done, and continue on with the user program.
-    display.clear();
-    display.printAsync(smiley, 0, 0, 0, 1500);
-    wait_ms(1000);
-    display.clear();
-}
-
-#endif

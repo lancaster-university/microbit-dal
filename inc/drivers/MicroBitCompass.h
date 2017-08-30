@@ -99,8 +99,8 @@ extern const MAG3110SampleRateConfig MAG3110SampleRate[];
 /**
   * Term to convert sample data into SI units
   */
-//#define MAG3110_NORMALIZE_SAMPLE(x) (100*x)
-#define MAG3110_NORMALIZE_SAMPLE(x) (x)
+#define MAG3110_UNIT_SCALE 100
+#define MAG3110_NORMALIZE_SAMPLE(x) (MAG3110_UNIT_SCALE*x)
 
 /**
   * MAG3110 MAGIC ID value
@@ -167,7 +167,7 @@ class MicroBitCompass : public MicroBitComponent
     uint16_t                address;                  // I2C address of the magnetmometer.
     uint16_t                samplePeriod;             // The time between samples, in millseconds.
 
-    CompassCalibration      calibration;              // 
+    CompassCalibration      calibration;              // Calibration model of geometry of compass readings
     CompassSample           sample;                   // The latest sample data recorded.
     DigitalIn               int1;                     // Data ready interrupt.
     MicroBitI2C&		    i2c;                      // The I2C interface the sensor is connected to.
@@ -407,7 +407,7 @@ class MicroBitCompass : public MicroBitComponent
       * After calibration this should now take into account trimming errors in the magnetometer,
       * and any "hard iron" offsets on the device.
       *
-      * @param calibration A CompassSample containing the offsets for the x, y and z axis.
+      * @param calibration A CompassCalibration object containing centre, scale and radius in x, y and z.
       */
     void setCalibration(CompassCalibration calibration);
 
@@ -416,7 +416,7 @@ class MicroBitCompass : public MicroBitComponent
       *
       * More specifically, the x, y and z zero offsets of the compass.
       *
-      * @return calibration A CompassSample containing the offsets for the x, y and z axis.
+      * @return calibration A CompassCalibration object containing centre, scale and radius in x, y and z.
       */
     CompassCalibration getCalibration();
 
