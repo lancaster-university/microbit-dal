@@ -242,16 +242,18 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
         uint8_t on;
     };
 
+    const int PERIMETER_POINTS = 25;
     //const int PERIMETER_POINTS = 21;
-    const int PERIMETER_POINTS = 12;
+    //const int PERIMETER_POINTS = 12;
 
     const int PIXEL1_THRESHOLD = 200;
-    const int PIXEL2_THRESHOLD = 800;
+    const int PIXEL2_THRESHOLD = 700;
 
     wait_ms(100);
 
+    Point perimeter[PERIMETER_POINTS] = {{0,0,0}, {1,0,0}, {2,0,0}, {3,0,0}, {4,0,0}, {0,1,0}, {1,1,0}, {2,1,0}, {3,1,0}, {4,1,0}, {0,2,0}, {1,2,0}, {2,2,0}, {3,2,0}, {4,2,0}, {0,3,0}, {1,3,0}, {2,3,0}, {3,3,0}, {4,3,0}, {0,4,0}, {1,4,0}, {2,4,0}, {3,4,0}, {4,4,0}};
     //Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {0,1,0}, {1,1,0}, {2,1,0}, {3,1,0}, {4,1,0}, {0,2,0}, {1,2,0}, {2,2,0}, {3,2,0}, {4,2,0}, {0,3,0}, {1,3,0}, {2,3,0}, {3,3,0}, {4,3,0}, {1,4,0}, {2,4,0}, {3,4,0}};
-    Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {4,1,0}, {4,2,0}, {4,3,0}, {3,4,0}, {2,4,0}, {1,4,0}, {0,3,0}, {0,2,0}, {0,1,0}};
+    //Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {4,1,0}, {4,2,0}, {4,3,0}, {3,4,0}, {2,4,0}, {1,4,0}, {0,3,0}, {0,2,0}, {0,1,0}};
     Point cursor = {2,2,0};
 
     MicroBitImage img(5,5);
@@ -262,9 +264,9 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
 
     // Firstly, we need to take over the display. Ensure all active animations are paused.
     display.stopAnimation();
-    display.scrollAsync("TILT A CIRCLE");
+    display.scrollAsync("TILT TO FILL SCREEN");
 
-    for (int i=0; i<110; i++)
+    for (int i=0; i<160; i++)
         wait_ms(100);
 
     display.stopAnimation();
@@ -313,7 +315,7 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
                 img.setPixelValue(perimeter[i].x, perimeter[i].y, 255);
 
         // Update the pixel at the users position.
-        img.setPixelValue(cursor.x, cursor.y, 255);
+        img.setPixelValue(cursor.x, cursor.y, cursor.on);
 
         // Update the buffer to the screen.
         display.image.paste(img,0,0,0);
