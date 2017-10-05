@@ -48,7 +48,7 @@ DEALINGS IN THE SOFTWARE.
 MicroBitCompassCalibrator::MicroBitCompassCalibrator(MicroBitCompass& _compass, MicroBitAccelerometer& _accelerometer, MicroBitDisplay& _display) : compass(_compass), accelerometer(_accelerometer), display(_display)
 {
     if (EventModel::defaultEventBus)
-        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBitCompassCalibrator::calibrate, MESSAGE_BUS_LISTENER_IMMEDIATE);
+        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBitCompassCalibrator::calibrateUX, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 /**
@@ -80,6 +80,25 @@ int MicroBitCompassCalibrator::measureScore(CompassSample &c, CompassSample *dat
     return (maxD - minD);
 }
 
+/**
+ * Calculates an independent X, Y, Z scale factor and centre for a given set of data points, assumed to be on
+ * a bounding sphere
+ *
+ * @param data An array of all data points
+ * @param samples The number of samples in the 'data' array.
+ *
+ * This algorithm should be called with no fewer than 12 points, but testing has indicated >21 points provides
+ * a more robust calculation.
+ *
+ * @return A calibration structure containing the a calculated centre point, the radius of the minimum
+ * enclosing spere of points and a scaling factor for each axis that places those points as close as possible
+ * to the surface of the containing sphere.
+ */
+CompassCalibration MicroBitCompassCalibrator::calibrate(CompassSample *data, int samples)
+{
+    CompassSample centre = approximateCentre(data, samples);
+    return spherify(centre, data, samples);
+}
 /**
  * Calculates an independent scale factor for X,Y and Z axes that places the given data points on a bounding sphere
  *
@@ -233,7 +252,7 @@ CompassSample MicroBitCompassCalibrator::approximateCentre(CompassSample *data, 
  *
  * This function is, by design, synchronous and only returns once calibration is complete.
  */
-void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
+void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
 {
     struct Point
     {
@@ -335,9 +354,7 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
         wait_ms(100);
     }
 
-    CompassSample centre = approximateCentre(data, samples);
-    CompassCalibration cal = spherify(centre, data, samples);
-    compass.setCalibration(cal);
+    compass.setCalibration(calibrate(data, samples));
 
     // Show a smiley to indicate that we're done, and continue on with the user program.
     display.clear();

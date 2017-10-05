@@ -78,7 +78,22 @@ class MicroBitCompassCalibrator
       *
       * This function is, by design, synchronous and only returns once calibration is complete.
       */
-    void calibrate(MicroBitEvent);
+    void calibrateUX(MicroBitEvent);
+     /**
+      * Calculates an independent X, Y, Z scale factor and centre for a given set of data points,
+      * assumed to be on a bounding sphere
+      *
+      * @param data An array of all data points
+      * @param samples The number of samples in the 'data' array.
+      *
+      * This algorithm should be called with no fewer than 12 points, but testing has indicated >21
+      * points provides a more robust calculation.
+      *
+      * @return A calibration structure containing the a calculated centre point, the radius of the
+      * minimum enclosing spere of points and a scaling factor for each axis that places those
+      * points as close as possible to the surface of the containing sphere.
+      */
+     static CompassCalibration calibrate(CompassSample *data, int samples);
 
     private:
 
@@ -91,7 +106,7 @@ class MicroBitCompassCalibrator
      *
      * @return The deviation between the closest and further point in the data array from the point given. 
      */
-    int measureScore(CompassSample &c, CompassSample *data, int samples);
+    static int measureScore(CompassSample &c, CompassSample *data, int samples);
 
     /*
      * Performs an interative approximation (hill descent) algorithm to determine an
@@ -102,7 +117,7 @@ class MicroBitCompassCalibrator
      *
      * @return the approximated centre point of the points in the 'data' array.
      */
-    CompassSample approximateCentre(CompassSample *data, int samples);
+    static CompassSample approximateCentre(CompassSample *data, int samples);
 
     /**
      * Calculates an independent scale factor for X,Y and Z axes that places the given data points on a bounding sphere
@@ -115,7 +130,7 @@ class MicroBitCompassCalibrator
      * enclosing spere of points and a scaling factor for each axis that places those points as close as possible
      * to the surface of the containing sphere.
      */
-    CompassCalibration spherify(CompassSample centre, CompassSample *data, int samples);
+    static CompassCalibration spherify(CompassSample centre, CompassSample *data, int samples);
 };
 
 #endif
