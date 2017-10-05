@@ -258,7 +258,6 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
     {
         uint8_t x;
         uint8_t y;
-        uint8_t on;
     };
 
     const int PERIMETER_POINTS = 25;
@@ -268,13 +267,15 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
 
     wait_ms(100);
 
-    Point perimeter[PERIMETER_POINTS] = {{0,0,0}, {1,0,0}, {2,0,0}, {3,0,0}, {4,0,0}, {0,1,0}, {1,1,0}, {2,1,0}, {3,1,0}, {4,1,0}, {0,2,0}, {1,2,0}, {2,2,0}, {3,2,0}, {4,2,0}, {0,3,0}, {1,3,0}, {2,3,0}, {3,3,0}, {4,3,0}, {0,4,0}, {1,4,0}, {2,4,0}, {3,4,0}, {4,4,0}};
-    Point cursor = {2,2,0};
+    static const Point perimeter[PERIMETER_POINTS] = {{0,0}, {1,0}, {2,0}, {3,0}, {4,0}, {0,1}, {1,1}, {2,1}, {3,1}, {4,1}, {0,2}, {1,2}, {2,2}, {3,2}, {4,2}, {0,3}, {1,3}, {2,3}, {3,3}, {4,3}, {0,4}, {1,4}, {2,4}, {3,4}, {4,4}};
+    Point cursor = {2,2};
 
     MicroBitImage img(5,5);
     MicroBitImage smiley("0,255,0,255,0\n0,255,0,255,0\n0,0,0,0,0\n255,0,0,0,255\n0,255,255,255,0\n");
 
     CompassSample data[PERIMETER_POINTS];
+    uint8_t visited[PERIMETER_POINTS] = { 0 };
+    uint8_t cursor_on = 0;
     int samples = 0;
 
     // Firstly, we need to take over the display. Ensure all active animations are paused.
@@ -290,7 +291,7 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
     while(samples < PERIMETER_POINTS)
     {
         // update our model of the flash status of the user controlled pixel.
-        cursor.on = (cursor.on + 1) % 4;
+        cursor_on = (cursor_on + 1) % 4;
 
         // take a snapshot of the current accelerometer data.
         int x = accelerometer.getX();
@@ -326,11 +327,11 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
 
         // Turn on any pixels that have been visited.
         for (int i=0; i<PERIMETER_POINTS; i++)
-            if (perimeter[i].on)
+            if (visited[i] == 1)
                 img.setPixelValue(perimeter[i].x, perimeter[i].y, 255);
 
         // Update the pixel at the users position.
-        img.setPixelValue(cursor.x, cursor.y, cursor.on);
+        img.setPixelValue(cursor.x, cursor.y, cursor_on);
 
         // Update the buffer to the screen.
         display.image.paste(img,0,0,0);
@@ -338,7 +339,7 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
         // test if we need to update the state at the users position.
         for (int i=0; i<PERIMETER_POINTS; i++)
         {
-            if (cursor.x == perimeter[i].x && cursor.y == perimeter[i].y && !perimeter[i].on)
+            if (cursor.x == perimeter[i].x && cursor.y == perimeter[i].y && !(visited[i] == 1))
             {
                 // Record the sample data for later processing...
                 data[samples].x = compass.getX(RAW);
@@ -346,7 +347,7 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
                 data[samples].z = compass.getZ(RAW);
 
                 // Record that this pixel has been visited.
-                perimeter[i].on = 1;
+                visited[i] = 1;
                 samples++;
             }
         }
