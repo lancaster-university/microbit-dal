@@ -73,11 +73,11 @@ uint32_t btle_set_gatt_table_size(uint32_t size);
 #define SECURITY_MODE_IS(x) (SECURITY_MODE(MICROBIT_BLE_SECURITY_LEVEL) == SECURITY_MODE(x))
 
 const char *MICROBIT_BLE_MANUFACTURER = NULL;
-//#ifdef TARGET_NRF51_CALLIOPE
-//const char *MICROBIT_BLE_MODEL = "Calliope mini";
-//#else
+#ifdef TARGET_NRF51_CALLIOPE
+const char *MICROBIT_BLE_MODEL = "Calliope mini";
+#else
 const char *MICROBIT_BLE_MODEL = "BBC micro:bit";
-//#endif
+#endif
 const char *MICROBIT_BLE_HARDWARE_VERSION = NULL;
 const char *MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char *MICROBIT_BLE_SOFTWARE_VERSION = NULL;
@@ -301,11 +301,11 @@ void MicroBitBLEManager::deferredSysAttrWrite(Gap::Handle_t handle)
 void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding)
 {
     // TODO make this configuration dependent
-//#ifdef TARGET_NRF51_CALLIOPE
-//    ManagedString BLEName("Calliope mini");
-//#else
+#ifdef TARGET_NRF51_CALLIOPE
+    ManagedString BLEName("Calliope mini");
+#else
     ManagedString BLEName("BBC micro:bit");
-//#endif
+#endif
     this->deviceName = deviceName;
 
 #if !(CONFIG_ENABLED(MICROBIT_BLE_WHITELIST))
@@ -392,6 +392,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 // Bring up core BLE services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
+    ble->gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_128BIT_SERVICE_IDS, MicroBitDFUServiceUUID, 16);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
@@ -648,19 +649,19 @@ int MicroBitBLEManager::advertiseEddystoneUid(const char* uid_namespace, const c
 void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &authorisationButton)
 {
     // TODO make this configuration dependent
-//#ifdef TARGET_NRF51_CALLIOPE
-//    ManagedString namePrefix("Calliope mini [");
-//#else
+#ifdef TARGET_NRF51_CALLIOPE
+    ManagedString namePrefix("Calliope mini [");
+#else
     ManagedString namePrefix("BBC micro:bit [");
-//#endif
+#endif
     ManagedString namePostfix("]");
     ManagedString BLEName = namePrefix + deviceName + namePostfix;
 
-//#ifdef TARGET_NRF51_CALLIOPE
-//    ManagedString msg("Verbindungsmodus!");
-//#else
+#ifdef TARGET_NRF51_CALLIOPE
+    ManagedString msg("Verbindungsmodus!");
+#else
     ManagedString msg("PAIRING MODE!");
-//#endif
+#endif
 
     int timeInPairingMode = 0;
     int brightness = 255;
