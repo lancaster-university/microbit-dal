@@ -200,9 +200,7 @@ int MicroBitFlash::flash_write(void* address, void* from_buffer,
 {
     // If no scratch_addr has been supplied use the default
     if(scratch_addr == NULL)
-    {
         scratch_addr = (uint32_t *)DEFAULT_SCRATCH_PAGE;
-    }
 
 
     // Ensure that scratch_addr is aligned on a page boundary.
