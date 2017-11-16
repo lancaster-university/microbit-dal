@@ -225,6 +225,8 @@ int MicroBitFlash::flash_write(void* address, void* from_buffer,
         if (!scratch_addr)
             return MICROBIT_INVALID_PARAMETER;
 
+        this->erase_page((uint32_t *)scratch_addr);
+
         this->flash_burn((uint32_t*)scratch_addr, pgAddr, PAGE_SIZE/4);
         this->erase_page(pgAddr);
         writeFrom = (uint8_t*)scratch_addr;
