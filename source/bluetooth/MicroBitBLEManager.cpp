@@ -667,6 +667,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble->setAdvertisingInterval(200);
+    ble->gap().setDeviceName((uint8_t *)(BLEName + "*").toCharArray());
 
     ble->gap().setAdvertisingTimeout(0);
     ble->gap().startAdvertising();
