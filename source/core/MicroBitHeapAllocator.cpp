@@ -344,6 +344,12 @@ void *microbit_malloc(size_t size)
         }
     }
 
+#if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
+    // Native malloc has issues, so skip the desperate fall back.
+    if (heap_count > 0)
+	    microbit_panic(MICROBIT_OOM);
+#endif
+
     // If we reach here, then either we have no memory available, or our heap spaces
     // haven't been initialised. Either way, we try the native allocator.
 
