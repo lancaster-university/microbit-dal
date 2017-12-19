@@ -198,6 +198,11 @@ void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size)
 int MicroBitFlash::flash_write(void* address, void* from_buffer, 
                                int length, void* scratch_addr)
 {
+    // If no scratch_addr has been supplied use the default
+    if(scratch_addr == NULL)
+        scratch_addr = (uint32_t *)DEFAULT_SCRATCH_PAGE;
+
+
     // Ensure that scratch_addr is aligned on a page boundary.
     if((uint32_t)scratch_addr & 0x3FF) 
         return MICROBIT_INVALID_PARAMETER;
@@ -219,6 +224,8 @@ int MicroBitFlash::flash_write(void* address, void* from_buffer,
     {
         if (!scratch_addr)
             return MICROBIT_INVALID_PARAMETER;
+
+        this->erase_page((uint32_t *)scratch_addr);
 
         this->flash_burn((uint32_t*)scratch_addr, pgAddr, PAGE_SIZE/4);
         this->erase_page(pgAddr);
