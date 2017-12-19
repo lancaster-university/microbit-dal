@@ -117,10 +117,8 @@ MicroBitImage::MicroBitImage(const char *s)
     int count = 0;
     int digit = 0;
 
-    char parseBuf[10];
-
     const char *parseReadPtr;
-    char *parseWritePtr;
+    int parseValue;
     uint8_t *bitmapPtr;
 
     if (s == NULL)
@@ -169,24 +167,26 @@ MicroBitImage::MicroBitImage(const char *s)
 
     // Second pass: collect the data.
     parseReadPtr = s;
-    parseWritePtr = parseBuf;
+    parseValue = -1;
     bitmapPtr = this->getBitmap();
 
     while (*parseReadPtr)
     {
         if (isdigit(*parseReadPtr))
         {
-            *parseWritePtr = *parseReadPtr;
-            parseWritePtr++;
+            if (parseValue < 0)
+            {
+                parseValue = 0;
+            }
+            parseValue = parseValue * 10 + *parseReadPtr - '0';
         }
         else
         {
-            *parseWritePtr = 0;
-            if (parseWritePtr > parseBuf)
+            if (parseValue >= 0)
             {
-                *bitmapPtr = atoi(parseBuf);
+                *bitmapPtr = parseValue;
                 bitmapPtr++;
-                parseWritePtr = parseBuf;
+                parseValue = -1;
             }
         }
 
