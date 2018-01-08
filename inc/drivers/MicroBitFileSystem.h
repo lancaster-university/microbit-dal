@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE.
 
 
 // Configuration options.
-#define MBFS_FILENAME_LENGTH        16        
+#define MBFS_FILENAME_LENGTH        16
 #define MBFS_MAGIC                  "MICROBIT_FS_1_0"
 
 // open() flags.
@@ -100,10 +100,10 @@ struct FileDescriptor
     // the current file size. n.b. this may be different to that stored in the DirectoryEntry.
     uint32_t length;
 
-    // the directory entry of this file. 
+    // the directory entry of this file.
     DirectoryEntry *dirent;
 
-    // the directory entry of our parent directory. 
+    // the directory entry of our parent directory.
     DirectoryEntry *directory;
 
     // We maintain a chain of open file descriptors. Reference to the next FileDescriptor in the chain.
@@ -160,9 +160,9 @@ class MicroBitFileSystem
       *
       * The file system is located dynamically, based on where the program code
       * and code data finishes. This avoids having to allocate a fixed flash
-      * region for builds even without MicroBitFileSystem. 
-      *      
-      * This method checks if the file system already exists, and loads it. 
+      * region for builds even without MicroBitFileSystem.
+      *
+      * This method checks if the file system already exists, and loads it.
       * If not, it will determines the optimal size of the file system, if necessary, and format the space
       *
       * @return MICROBIT_OK on success, or an error code.
@@ -206,7 +206,7 @@ class MicroBitFileSystem
     * @return A pointer to the DirectoryEntry for the given file, or NULL if no entry is found.
     */
     DirectoryEntry* getDirectoryEntry(char const * filename, const DirectoryEntry *directory = NULL);
-    
+
     /**
     * Create a new DirectoryEntry with the given filename and flags.
     *
@@ -231,7 +231,7 @@ class MicroBitFileSystem
     * Any logical blocks marked for deletion on that page are recycled.
     *
     * @param block the block to recycle.
-    * @param type One of MBFS_BLOCK_TYPE_FILE, MBFS_BLOCK_TYPE_DIRECTORY, MBFS_BLOCK_TYPE_FILETABLE. 
+    * @param type One of MBFS_BLOCK_TYPE_FILE, MBFS_BLOCK_TYPE_DIRECTORY, MBFS_BLOCK_TYPE_FILETABLE.
     * Erases and regenerates the given block, recycling any data marked for deletion.
     * @return MICROBIT_OK on success.
     */
@@ -324,7 +324,7 @@ class MicroBitFileSystem
 
     /**
       * Write a given buffer to the file provided.
-      * 
+      *
       * @param file FileDescriptor of the file to write
       * @param buffer The start of the buffer to write
       * @param length The number of bytes to write
@@ -334,7 +334,7 @@ class MicroBitFileSystem
 
 
     /**
-     * Determines if the given filename is a valid filename for use in MicroBitFileSystem. 
+     * Determines if the given filename is a valid filename for use in MicroBitFileSystem.
      * valid filenames must be >0 characters in lenght, NULL temrinated and contain
      * only printable characters.
      *
@@ -363,7 +363,7 @@ class MicroBitFileSystem
       * an error is returned, otherwise the file is created.
       *
       * @param filename name of the file to open, must contain only printable characters.
-      * @param flags One or more of MB_READ, MB_WRITE or MB_CREAT. 
+      * @param flags One or more of MB_READ, MB_WRITE or MB_CREAT.
       * @return return the file handle,MICROBIT_NOT_SUPPORTED if the file system has
       *         not been initialised MICROBIT_INVALID_PARAMETER if the filename is
       *         too large, MICROBIT_NO_RESOURCES if the file system is full.
@@ -378,7 +378,7 @@ class MicroBitFileSystem
     int open(char const * filename, uint32_t flags);
 
     /**
-     * Writes back all state associated with the given file to FLASH memory, 
+     * Writes back all state associated with the given file to FLASH memory,
      * leaving the file open.
      *
      * @param fd file descriptor - obtained with open().
@@ -401,7 +401,7 @@ class MicroBitFileSystem
       * Close the specified file handle.
       * File handle resources are then made available for future open() calls.
       *
-      * close() must be called to ensure all pending data is written back to FLASH memory. 
+      * close() must be called to ensure all pending data is written back to FLASH memory.
       *
       * @param fd file descriptor - obtained with open().
       * @return non-zero on success, MICROBIT_NOT_SUPPORTED if the file system has not

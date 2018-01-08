@@ -30,7 +30,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitFiber.h"
 #include "NotifyEvents.h"
 
-uint8_t MicroBitSerial::status = 0;
+uint8_t MicroBitSerial::serial_status = 0;
 
 int MicroBitSerial::baudrate = 0;
 
@@ -88,7 +88,7 @@ MicroBitSerial::MicroBitSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uin
   */
 void MicroBitSerial::dataReceived()
 {
-    if(!(status & MICROBIT_SERIAL_RX_BUFF_INIT))
+    if(!(serial_status & MICROBIT_SERIAL_RX_BUFF_INIT))
         return;
 
     //get the received character
@@ -137,7 +137,7 @@ void MicroBitSerial::dataReceived()
   */
 void MicroBitSerial::dataWritten()
 {
-    if(txBuffTail == txBuffHead || !(status & MICROBIT_SERIAL_TX_BUFF_INIT))
+    if(txBuffTail == txBuffHead || !(serial_status & MICROBIT_SERIAL_TX_BUFF_INIT))
         return;
 
     //send our current char
@@ -201,7 +201,7 @@ int MicroBitSerial::setTxInterrupt(uint8_t *string, int len, MicroBitSerialMode 
   */
 void MicroBitSerial::lockRx()
 {
-    status |= MICROBIT_SERIAL_RX_IN_USE;
+    serial_status |= MICROBIT_SERIAL_RX_IN_USE;
 }
 
 /**
@@ -209,7 +209,7 @@ void MicroBitSerial::lockRx()
   */
 void MicroBitSerial::lockTx()
 {
-    status |= MICROBIT_SERIAL_TX_IN_USE;
+    serial_status |= MICROBIT_SERIAL_TX_IN_USE;
 }
 
 /**
@@ -217,7 +217,7 @@ void MicroBitSerial::lockTx()
   */
 void MicroBitSerial::unlockRx()
 {
-    status &= ~MICROBIT_SERIAL_RX_IN_USE;
+    serial_status &= ~MICROBIT_SERIAL_RX_IN_USE;
 }
 
 /**
@@ -225,7 +225,7 @@ void MicroBitSerial::unlockRx()
   */
 void MicroBitSerial::unlockTx()
 {
-    status &= ~MICROBIT_SERIAL_TX_IN_USE;
+    serial_status &= ~MICROBIT_SERIAL_TX_IN_USE;
 }
 
 /**
@@ -234,14 +234,14 @@ void MicroBitSerial::unlockTx()
   */
 int MicroBitSerial::initialiseRx()
 {
-    if((status & MICROBIT_SERIAL_RX_BUFF_INIT))
+    if((serial_status & MICROBIT_SERIAL_RX_BUFF_INIT))
     {
         //ensure that we receive no interrupts after freeing our buffer
         detach(Serial::RxIrq);
         free(this->rxBuff);
     }
 
-    status &= ~MICROBIT_SERIAL_RX_BUFF_INIT;
+    serial_status &= ~MICROBIT_SERIAL_RX_BUFF_INIT;
 
     if((this->rxBuff = (uint8_t *)malloc(rxBuffSize)) == NULL)
         return MICROBIT_NO_RESOURCES;
@@ -250,7 +250,7 @@ int MicroBitSerial::initialiseRx()
     this->rxBuffTail = 0;
 
     //set the receive interrupt
-    status |= MICROBIT_SERIAL_RX_BUFF_INIT;
+    serial_status |= MICROBIT_SERIAL_RX_BUFF_INIT;
     attach(this, &MicroBitSerial::dataReceived, Serial::RxIrq);
 
     return MICROBIT_OK;
@@ -262,14 +262,14 @@ int MicroBitSerial::initialiseRx()
   */
 int MicroBitSerial::initialiseTx()
 {
-    if((status & MICROBIT_SERIAL_TX_BUFF_INIT))
+    if((serial_status & MICROBIT_SERIAL_TX_BUFF_INIT))
     {
         //ensure that we receive no interrupts after freeing our buffer
         detach(Serial::TxIrq);
         free(this->txBuff);
     }
 
-    status &= ~MICROBIT_SERIAL_TX_BUFF_INIT;
+    serial_status &= ~MICROBIT_SERIAL_TX_BUFF_INIT;
 
     if((this->txBuff = (uint8_t *)malloc(txBuffSize)) == NULL)
         return MICROBIT_NO_RESOURCES;
@@ -277,7 +277,7 @@ int MicroBitSerial::initialiseTx()
     this->txBuffHead = 0;
     this->txBuffTail = 0;
 
-    status |= MICROBIT_SERIAL_TX_BUFF_INIT;
+    serial_status |= MICROBIT_SERIAL_TX_BUFF_INIT;
 
     return MICROBIT_OK;
 }
@@ -402,7 +402,7 @@ int MicroBitSerial::sendChar(char c, MicroBitSerialMode mode)
     lockTx();
 
     //lazy initialisation of our tx buffer
-    if(!(status & MICROBIT_SERIAL_TX_BUFF_INIT))
+    if(!(serial_status & MICROBIT_SERIAL_TX_BUFF_INIT))
     {
         int result = initialiseTx();
 
@@ -487,7 +487,7 @@ int MicroBitSerial::send(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode
     lockTx();
 
     //lazy initialisation of our tx buffer
-    if(!(status & MICROBIT_SERIAL_TX_BUFF_INIT))
+    if(!(serial_status & MICROBIT_SERIAL_TX_BUFF_INIT))
     {
         int result = initialiseTx();
 
@@ -543,7 +543,7 @@ int MicroBitSerial::read(MicroBitSerialMode mode)
     lockRx();
 
     //lazy initialisation of our buffers
-    if(!(status & MICROBIT_SERIAL_RX_BUFF_INIT))
+    if(!(serial_status & MICROBIT_SERIAL_RX_BUFF_INIT))
     {
         int result = initialiseRx();
 
@@ -631,7 +631,7 @@ int MicroBitSerial::read(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode
     lockRx();
 
     //lazy initialisation of our rx buffer
-    if(!(status & MICROBIT_SERIAL_RX_BUFF_INIT))
+    if(!(serial_status & MICROBIT_SERIAL_RX_BUFF_INIT))
     {
         int result = initialiseRx();
 
@@ -715,7 +715,7 @@ ManagedString MicroBitSerial::readUntil(ManagedString delimeters, MicroBitSerial
         return ManagedString();
 
     //lazy initialisation of our rx buffer
-    if(!(status & MICROBIT_SERIAL_RX_BUFF_INIT))
+    if(!(serial_status & MICROBIT_SERIAL_RX_BUFF_INIT))
     {
         int result = initialiseRx();
 
@@ -1100,7 +1100,7 @@ int MicroBitSerial::txBufferedSize()
   */
 int MicroBitSerial::rxInUse()
 {
-    return (status & MICROBIT_SERIAL_RX_IN_USE);
+    return (serial_status & MICROBIT_SERIAL_RX_IN_USE);
 }
 
 /**
@@ -1112,7 +1112,7 @@ int MicroBitSerial::rxInUse()
   */
 int MicroBitSerial::txInUse()
 {
-    return (status & MICROBIT_SERIAL_TX_IN_USE);
+    return (serial_status & MICROBIT_SERIAL_TX_IN_USE);
 }
 
 /**
