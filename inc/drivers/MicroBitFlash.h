@@ -1,3 +1,24 @@
+/*
+The MIT License (MIT)
+Copyright (c) 2016 British Broadcasting Corporation.
+This software is provided by Lancaster University by arrangement with the BBC.
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+*/
+
 #ifndef MICROBIT_FLASH_H_
 #define MICROBIT_FLASH_H_
 
@@ -8,19 +29,6 @@
 class MicroBitFlash
 {
     private:
-
-
-    /**
-      * Write to flash memory, assuming that a write is valid
-      * (using need_erase).
-      * 
-      * @param page_address address of memory to write to. 
-      * 	Must be word aligned.
-      * @param buffer address to write from, must be word-aligned.
-      * @param len number of uint32_t words to write.
-      */
-    void flash_burn(uint32_t* page_address, uint32_t* buffer, int len);
-
 
     /**
       * Check if an erase is required to write to a region in flash memory.
@@ -66,6 +74,18 @@ class MicroBitFlash
       * @param page_address address of first word of page.
       */
     void erase_page(uint32_t* page_address);
+
+    /**
+      * Write to flash memory, assuming that a write is valid
+      * (using need_erase).
+      * 
+      * @param page_address address of memory to write to. 
+      * 	Must be word aligned.
+      * @param buffer address to write from, must be word-aligned.
+      * @param len number of uint32_t words to write.
+      */
+    void flash_burn(uint32_t* page_address, uint32_t* buffer, int len);
+
 };
 
 #endif

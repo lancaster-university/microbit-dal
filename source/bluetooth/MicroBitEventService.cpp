@@ -47,7 +47,7 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_message
     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
     GattCharacteristic  clientEventCharacteristic(MicroBitEventServiceClientEventCharacteristicUUID, (uint8_t *)&clientEventBuffer, 0, sizeof(EventServiceEvent),
-    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
+    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
 
     GattCharacteristic  clientRequirementsCharacteristic(MicroBitEventServiceClientRequirementsCharacteristicUUID, (uint8_t *)&clientRequirementsBuffer, 0, sizeof(EventServiceEvent), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 

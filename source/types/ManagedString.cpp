@@ -91,6 +91,12 @@ void ManagedString::initString(const char *str)
   */
 ManagedString::ManagedString(StringData *p)
 {
+    if(p == NULL)
+    {
+        initEmpty();
+        return;
+    }
+
     ptr = p;
     ptr->incr();
 }

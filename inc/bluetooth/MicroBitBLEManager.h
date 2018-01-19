@@ -74,6 +74,10 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL     400
 #define MICROBIT_BLE_EDDYSTONE_DEFAULT_POWER    0xF0
 
+// MicroBitComponent status flags
+#define MICROBIT_BLE_STATUS_STORE_SYSATTR       0x02
+#define MICROBIT_BLE_STATUS_DISCONNECT          0x04
+
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
 struct BLESysAttribute
@@ -214,6 +218,14 @@ class MicroBitBLEManager : MicroBitComponent
 	* Stops any currently running BLE advertisements
 	*/
     void stopAdvertising();
+
+    /**
+     * A member function used to defer writes to flash, in order to prevent a write collision with 
+     * softdevice.
+     * @param handle The handle offered by soft device during pairing.
+     * */
+    void deferredSysAttrWrite(Gap::Handle_t handle);
+
 #if CONFIG_ENABLED(MICROBIT_BLE_EDDYSTONE_URL)
 
     /**
@@ -276,6 +288,9 @@ class MicroBitBLEManager : MicroBitComponent
     * @param display The display instance used for displaying the histogram.
 	*/
     void showNameHistogram(MicroBitDisplay &display);
+
+    #define MICROBIT_BLE_DISCONNECT_AFTER_PAIRING_DELAY  500
+    unsigned long pairing_completed_at_time;   
 
     int pairingStatus;
     ManagedString passKey;

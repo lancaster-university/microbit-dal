@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
 #include "MicroBitDeviceInformationService.h"
+#include "MicroBitSystemTimer.h"
 
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
@@ -131,10 +132,11 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 {
     MicroBitEvent(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED);
 
-    storeSystemAttributes(reason->handle);
-
     if (MicroBitBLEManager::manager)
+    {
         MicroBitBLEManager::manager->advertise();
+        MicroBitBLEManager::manager->deferredSysAttrWrite(reason->handle);
+    }
 }
 
 /**
@@ -232,6 +234,7 @@ MicroBitBLEManager::MicroBitBLEManager(MicroBitStorage &_storage) : storage(&_st
     manager = this;
     this->ble = NULL;
     this->pairingStatus = 0;
+    this->status = MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
@@ -270,6 +273,17 @@ void MicroBitBLEManager::advertise()
 {
     if (ble)
         ble->gap().startAdvertising();
+}
+
+/**
+ * A member function used to defer writes to flash, in order to prevent a write collision with 
+ * softdevice.
+ * @param handle The handle offered by soft device during pairing.
+ * */
+void MicroBitBLEManager::deferredSysAttrWrite(Gap::Handle_t handle)
+{
+    pairingHandle = handle;
+    this->status |= MICROBIT_BLE_STATUS_STORE_SYSATTR;
 }
 
 /**
@@ -407,8 +421,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 
     ble->accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)BLEName.toCharArray(), BLEName.length());
     ble->setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
-    ble->setAdvertisingInterval(200);
-
+    ble->setAdvertisingInterval(MICROBIT_BLE_ADVERTISING_INTERVAL);
 #if (MICROBIT_BLE_ADVERTISING_TIMEOUT > 0)
     ble->gap().setAdvertisingTimeout(MICROBIT_BLE_ADVERTISING_TIMEOUT);
 #endif
@@ -484,10 +497,12 @@ void MicroBitBLEManager::pairingComplete(bool success)
 {
     this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
+    pairing_completed_at_time = system_timer_current_time();
+
     if (success)
     {
         this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
-        fiber_add_idle_component(this);
+        this->status |= MICROBIT_BLE_STATUS_DISCONNECT;
     }
 }
 
@@ -497,11 +512,22 @@ void MicroBitBLEManager::pairingComplete(bool success)
  */
 void MicroBitBLEManager::idleTick()
 {
-    if (ble)
-        ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+    if (this->status & MICROBIT_BLE_STATUS_DISCONNECT)
+    {
+        if((system_timer_current_time() - pairing_completed_at_time) >= MICROBIT_BLE_DISCONNECT_AFTER_PAIRING_DELAY) {
+            if (ble)
+                ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
+            this->status &= ~MICROBIT_BLE_STATUS_DISCONNECT;
+        }
+    }
 
-    fiber_remove_idle_component(this);
+    if (this->status & MICROBIT_BLE_STATUS_STORE_SYSATTR)
+    {
+        storeSystemAttributes(pairingHandle);
+        this->status &= ~MICROBIT_BLE_STATUS_STORE_SYSATTR;
+    }
 }
+
 
 /**
 * Stops any currently running BLE advertisements
@@ -658,6 +684,8 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
 
     // Display our name, visualised as a histogram in the display to aid identification.
     showNameHistogram(display);
+
+    fiber_add_idle_component(this);
 
     while (1)
     {

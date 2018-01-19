@@ -46,7 +46,7 @@ MicroBitIOPinService::MicroBitIOPinService(BLEDevice &_ble, MicroBitIO &_io) :
     // Create the AD characteristic, that defines whether each pin is treated as analogue or digital
     GattCharacteristic ioPinServiceADCharacteristic(MicroBitIOPinServiceADConfigurationUUID, (uint8_t *)&ioPinServiceADCharacteristicBuffer, 0, sizeof(ioPinServiceADCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
-    // Create the IO characteristic, that defines whether each pin is treated as input or output
+    // Create the IO characteristic, that allows the user to define one or more pins as inputs. These will then be monitored by this service and reported via the ioPinSeriveData characterisitic. 
     GattCharacteristic ioPinServiceIOCharacteristic(MicroBitIOPinServiceIOConfigurationUUID, (uint8_t *)&ioPinServiceIOCharacteristicBuffer, 0, sizeof(ioPinServiceIOCharacteristicBuffer), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     // Create the PWM characteristic, that allows up to 3 compatible pins to be used for PWM
@@ -113,20 +113,49 @@ int MicroBitIOPinService::isAnalog(int i)
   * @param i the enumeration of the pin to test
   * @return 1 if this pin is configured as an input, 0 otherwise
   */
-int MicroBitIOPinService::isInput(int i)
+int MicroBitIOPinService::isActiveInput(int i)
 {
     return ((ioPinServiceIOCharacteristicBuffer & (1 << i)) != 0);
 }
 
 /**
-  * Determines if the given pin was configured as output by the BLE IOPinConfigurationCharacterisitic.
-  *
-  * @param i the enumeration of the pin to test
-  * @return 1 if this pin is configured as an output, 0 otherwise
-  */
-int MicroBitIOPinService::isOutput(int i)
+ * Scans through all pins that our BLE client have registered an interest in. 
+ * For each pin that has changed value, update the BLE characteristic, and NOTIFY our client.
+ */
+void MicroBitIOPinService::updateBLEInputs(bool updateAll)
 {
-    return ((ioPinServiceIOCharacteristicBuffer & (1 << i)) == 0);
+    int pairs = 0;
+
+    for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
+    {
+        if (isActiveInput(i))
+        {
+            uint8_t value;
+
+            if (isDigital(i))
+               	value = io.pin[i].getDigitalValue();
+            else
+               	value = io.pin[i].getAnalogValue() >> 2;
+
+            // If the data has changed, send an update.
+            if (updateAll || value != ioPinServiceIOData[i])
+            {
+                ioPinServiceIOData[i] = value;
+
+                ioPinServiceDataCharacteristicBuffer[pairs].pin = i;
+                ioPinServiceDataCharacteristicBuffer[pairs].value = value;
+
+                pairs++;
+
+                if (pairs >= MICROBIT_IO_PIN_SERVICE_DATA_SIZE)
+                    break;
+            }
+        }
+    }
+
+    // If there's any data, issue a BLE notification.
+    if (pairs > 0)
+        ble.gattServer().notify(ioPinServiceDataCharacteristic->getValueHandle(), (uint8_t *)ioPinServiceDataCharacteristicBuffer, pairs * sizeof(IOData));
 }
 
 /**
@@ -146,13 +175,11 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         // Also, drop any selected pins into input mode, so we can pick up changes later
         for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
         {
-            if(isDigital(i) && isInput(i))
-               io.pin[i].getDigitalValue();
-               //MicroBitIOPins[i]->getDigitalValue();
+            if(isDigital(i) && isActiveInput(i))
+                io.pin[i].getDigitalValue();
 
-            if(isAnalog(i) && isInput(i))
-               io.pin[i].getAnalogValue();
-               //MicroBitIOPins[i]->getAnalogValue();
+            if(isAnalog(i) && isActiveInput(i))
+                io.pin[i].getAnalogValue();
         }
     }
 
@@ -168,13 +195,11 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         // Also, drop any selected pins into input mode, so we can pick up changes later
         for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
         {
-            if(isDigital(i) && isInput(i))
+            if(isDigital(i) && isActiveInput(i))
                io.pin[i].getDigitalValue();
-               //MicroBitIOPins[i]->getDigitalValue();
 
-            if(isAnalog(i) && isInput(i))
+            if(isAnalog(i) && isActiveInput(i))
                io.pin[i].getAnalogValue();
-               //MicroBitIOPins[i]->getAnalogValue();
         }
     }
 
@@ -214,14 +239,12 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         // There may be multiple write operations... take each in turn and update the pin values
         while (len >= sizeof(IOData))
         {
-            if (isOutput(data->pin))
+            if (!isActiveInput(data->pin))
             {
                 if (isDigital(data->pin))
                		io.pin[data->pin].setDigitalValue(data->value);
-                    //MicroBitIOPins[data->pin]->setDigitalValue(data->value);
                 else
-               		io.pin[data->pin].setAnalogValue(data->value*4);
-                    //MicroBitIOPins[data->pin]->setAnalogValue(data->value*4);
+               		io.pin[data->pin].setAnalogValue(data->value == 255 ? 1023 : data->value << 2);
             }
 
             data++;
@@ -238,39 +261,7 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
 void MicroBitIOPinService::onDataRead(GattReadAuthCallbackParams *params)
 {
     if (params->handle == ioPinServiceDataCharacteristic->getValueHandle())
-    {
-
-        // Scan through all pins that our BLE client may be listening for. If any have changed value, update the BLE characterisitc, and NOTIFY our client.
-        int pairs = 0;
-
-        for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
-        {
-            if (isInput(i))
-            {
-                uint8_t value;
-
-                if (isDigital(i))
-               		value = io.pin[i].getDigitalValue();
-                    //value = MicroBitIOPins[i]->getDigitalValue();
-                else
-               		value = io.pin[i].getAnalogValue();
-                    //value = MicroBitIOPins[i]->getAnalogValue();
-
-                ioPinServiceIOData[i] = value;
-                ioPinServiceDataCharacteristicBuffer[pairs].pin = i;
-                ioPinServiceDataCharacteristicBuffer[pairs].value = value;
-
-                pairs++;
-
-                if (pairs >= MICROBIT_IO_PIN_SERVICE_DATA_SIZE)
-                    break;
-            }
-        }
-
-        // If there's any data, issue a BLE notification.
-        if (pairs > 0)
-            ble.gattServer().notify(ioPinServiceDataCharacteristic->getValueHandle(), (uint8_t *)ioPinServiceDataCharacteristicBuffer, pairs * sizeof(IOData));
-    }
+        updateBLEInputs(true);
 }
 
 
@@ -282,45 +273,8 @@ void MicroBitIOPinService::onDataRead(GattReadAuthCallbackParams *params)
  */
 void MicroBitIOPinService::idleTick()
 {
-    // If we're not we're connected, then there's nothing to do...
-    if (!ble.getGapState().connected)
-        return;
-
-    // Scan through all pins that our BLE client may be listening for. If any have changed value, update the BLE characterisitc, and NOTIFY our client.
-    int pairs = 0;
-
-    for (int i=0; i < MICROBIT_IO_PIN_SERVICE_PINCOUNT; i++)
-    {
-        if (isInput(i))
-        {
-            uint8_t value;
-
-            if (isDigital(i))
-               	value = io.pin[i].getDigitalValue();
-                //value = MicroBitIOPins[i]->getDigitalValue();
-            else
-               	value = io.pin[i].getAnalogValue();
-                //value = MicroBitIOPins[i]->getAnalogValue();
-
-            // If the data has changed, send an update.
-            if (value != ioPinServiceIOData[i])
-            {
-                ioPinServiceIOData[i] = value;
-
-                ioPinServiceDataCharacteristicBuffer[pairs].pin = i;
-                ioPinServiceDataCharacteristicBuffer[pairs].value = value;
-
-                pairs++;
-
-                if (pairs >= MICROBIT_IO_PIN_SERVICE_DATA_SIZE)
-                    break;
-            }
-        }
-    }
-
-    // If there were any changes, issue a BLE notification.
-    if (pairs > 0)
-        ble.gattServer().notify(ioPinServiceDataCharacteristic->getValueHandle(), (uint8_t *)ioPinServiceDataCharacteristicBuffer, pairs * sizeof(IOData));
+    if (ble.getGapState().connected)
+        updateBLEInputs();
 }
 
 const uint8_t  MicroBitIOPinServiceUUID[] = {
@@ -343,26 +297,3 @@ const uint8_t MicroBitIOPinServiceDataUUID[] = {
     0xe9,0x5d,0x8d,0x00,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
 };
 
-/*
-MicroBitPin * const MicroBitIOPins[] = {
-    &uBit.io.P0,
-    &uBit.io.P1,
-    &uBit.io.P2,
-    &uBit.io.P3,
-    &uBit.io.P4,
-    &uBit.io.P5,
-    &uBit.io.P6,
-    &uBit.io.P7,
-    &uBit.io.P8,
-    &uBit.io.P9,
-    &uBit.io.P10,
-    &uBit.io.P11,
-    &uBit.io.P12,
-    &uBit.io.P13,
-    &uBit.io.P14,
-    &uBit.io.P15,
-    &uBit.io.P16,
-    &uBit.io.P19,
-    &uBit.io.P20
-};
-*/

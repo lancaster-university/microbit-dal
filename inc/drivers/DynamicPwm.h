@@ -29,14 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef MICROBIT_DYNAMIC_PWM_H
 #define MICROBIT_DYNAMIC_PWM_H
 
-#define NO_PWMS 3
 #define MICROBIT_DEFAULT_PWM_PERIOD 20000
-
-enum PwmPersistence
-{
-    PWM_PERSISTENCE_TRANSIENT = 1,
-    PWM_PERSISTENCE_PERSISTENT = 2,
-};
 
 /**
   * Class definition for DynamicPwm.
@@ -47,13 +40,10 @@ enum PwmPersistence
 class DynamicPwm : public PwmOut
 {
     private:
-    static DynamicPwm* pwms[NO_PWMS];
-    static uint8_t lastUsed;
-    static uint16_t sharedPeriod;
-    uint8_t flags;
+    static uint32_t period;
     float lastValue;
 
-
+    public:
 
     /**
       * An internal constructor used when allocating a new DynamicPwm instance.
@@ -63,40 +53,7 @@ class DynamicPwm : public PwmOut
       * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
       *                    or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
       */
-    DynamicPwm(PinName pin, PwmPersistence persistence = PWM_PERSISTENCE_TRANSIENT);
-
-    public:
-
-    /**
-      * Redirects the pwm channel to point at a different pin.
-      *
-      * @param pin the desired pin to output a PWM wave.
-      *
-      * @code
-      * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-      * pwm->redirect(p0); // pwm is now produced on p0
-      * @endcode
-      */
-    void redirect(PinName pin);
-
-
-    /**
-      * Creates a new DynamicPwm instance, or reuses an existing instance that
-      * has a persistence level of PWM_PERSISTENCE_TRANSIENT.
-      *
-      * @param pin the name of the pin for the pwm to target
-      *
-      * @param persistance the level of persistence for this pin PWM_PERSISTENCE_PERSISTENT (can not be replaced until freed, should only be used for system services really.)
-      *                    or PWM_PERSISTENCE_TRANSIENT (can be replaced at any point if a channel is required.)
-      *
-      * @return a pointer to the first available free pwm channel - or the first one that can be reallocated. If
-      *         no channels are available, NULL is returned.
-      *
-      * @code
-      * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
-      * @endcode
-      */
-    static DynamicPwm* allocate(PinName pin, PwmPersistence persistence = PWM_PERSISTENCE_TRANSIENT);
+    DynamicPwm(PinName pin);
 
     /**
       * Frees this DynamicPwm instance for reuse.
@@ -123,7 +80,7 @@ class DynamicPwm : public PwmOut
     int write(float value);
 
     /**
-      * Retreives the PinName associated with this DynamicPwm instance.
+      * Retrieves the PinName associated with this DynamicPwm instance.
       *
       * @code
       * DynamicPwm* pwm = DynamicPwm::allocate(PinName n);
@@ -138,7 +95,7 @@ class DynamicPwm : public PwmOut
     PinName getPinName();
 
     /**
-      * Retreives the last value that has been written to this DynamicPwm instance.
+      * Retrieves the last value that has been written to this DynamicPwm instance.
       * in the range 0 - 1023 inclusive.
       *
       * @code
@@ -152,7 +109,7 @@ class DynamicPwm : public PwmOut
     int getValue();
 
     /**
-      * Retreives the current period in use by the entire PWM module in microseconds.
+      * Retrieves the current period in use by the entire PWM module in microseconds.
       *
       * Example:
       * @code
@@ -160,7 +117,7 @@ class DynamicPwm : public PwmOut
       * pwm->getPeriod();
       * @endcode
       */
-    int getPeriodUs();
+    uint32_t getPeriodUs();
 
     /**
       * Retreives the current period in use by the entire PWM module in milliseconds.
@@ -174,7 +131,7 @@ class DynamicPwm : public PwmOut
       * pwm->getPeriod();
       * @endcode
       */
-    int getPeriod();
+    uint32_t getPeriod();
 
     /**
       * Sets the period used by the WHOLE PWM module.
@@ -193,7 +150,7 @@ class DynamicPwm : public PwmOut
       *
       * @note Any changes to the period will AFFECT ALL CHANNELS.
       */
-    int setPeriodUs(int period);
+    int setPeriodUs(uint32_t period);
 
     /**
       * Sets the period used by the WHOLE PWM module. Any changes to the period will AFFECT ALL CHANNELS.
@@ -210,7 +167,9 @@ class DynamicPwm : public PwmOut
       * pwm->setPeriod(20);
       * @endcode
       */
-      int setPeriod(int period);
+      int setPeriod(uint32_t period);
+
+      ~DynamicPwm();
 };
 
 #endif
