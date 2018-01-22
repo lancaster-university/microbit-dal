@@ -231,12 +231,14 @@ int MicroBitKeyboardService::send(const char* c, int len)
         if(previous == c[i])
             keyUp();
 
-        if((ret = send(c[i])) == MICROBIT_NOT_SUPPORTED)
+        if((ret = putc(c[i])) == MICROBIT_NOT_SUPPORTED)
             break;
 
         previous = c[i];
         sent += ret;
     }
+
+    keyUp();
 
     status &= ~MICROBIT_HID_STATE_IN_USE;
     MicroBitEvent(MICROBIT_ID_NOTIFY_ONE, MICROBIT_HID_SERVICE_FREE);
