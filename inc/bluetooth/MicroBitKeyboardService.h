@@ -9,7 +9,7 @@
 
 #include "MicroBitComponent.h"
 
-#define MICROBIT_HID_ADVERTISING_INT    24
+#define MICROBIT_HID_ADVERTISING_INT    100
 #define MICROBIT_HID_STATE_IN_USE       0x02
 
 /**
@@ -56,7 +56,7 @@ class MicroBitKeyboardService : public MicroBitComponent
     /**
       * Send a "Special" non-ascii keyboard key, defined in BluetoothHIDKeys.h
       */
-    int send(SpecialKey key);
+    int send(MediaKey key);
 
     /**
       * Send a single character to our host.

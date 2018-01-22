@@ -32,48 +32,55 @@ enum InputModifier {
     KEY_ALT = 4,
 };
 
-enum MediaKey {
-    KEY_NEXT_TRACK,     /*!< next Track Button */
-    KEY_PREVIOUS_TRACK, /*!< Previous track Button */
-    KEY_STOP,           /*!< Stop Button */
-    KEY_PLAY_PAUSE,     /*!< Play/Pause Button */
-    KEY_MUTE,           /*!< Mute Button */
-    KEY_VOLUME_UP,      /*!< Volume Up Button */
-    KEY_VOLUME_DOWN,    /*!< Volume Down Button */
-};
+typedef enum
+{
+    Mute,
+    VolumeUp,
+    VolumeDown,
+    PlayPause,
+    Stop,
+    PreviousTrack,
+    NextTrack,
+    Mail,
+    Calculator,
+    WebSearch,
+    WebHome,
+    WebFavourites,
+    WebRefresh,
+    WebStop,
+    WebForward,
+    WebBack
+} MediaKey;
 
-enum SpecialKey {
-    KEY_DELETE = 8,
-    KEY_TAB,
-    KEY_RETURN,
+typedef enum
+{
+    F1Key = 0x3a,   /* F1 key */
+    F2Key,         /* F2 key */
+    F3Key,         /* F3 key */
+    F4Key,         /* F4 key */
+    F5Key,         /* F5 key */
+    F6Key,         /* F6 key */
+    F7Key,         /* F7 key */
+    F8Key,         /* F8 key */
+    F9Key,         /* F9 key */
+    F10Key,        /* F10 key */
+    F11Key,        /* F11 key */
+    F12Key,        /* F12 key */
 
-    KEY_F1 = 128,   /* F1 key */
-    KEY_F2,         /* F2 key */
-    KEY_F3,         /* F3 key */
-    KEY_F4,         /* F4 key */
-    KEY_F5,         /* F5 key */
-    KEY_F6,         /* F6 key */
-    KEY_F7,         /* F7 key */
-    KEY_F8,         /* F8 key */
-    KEY_F9,         /* F9 key */
-    KEY_F10,        /* F10 key */
-    KEY_F11,        /* F11 key */
-    KEY_F12,        /* F12 key */
+    PrintScreen,   /* Print Screen key */
+    ScrollLock,    /* Scroll lock */
+    CapsLock,      /* caps lock */
+    NumLock,       /* num lock */
+    Insert,         /* Insert key */
+    Home,           /* Home key */
+    PageUp,        /* Page Up key */
+    PageDown,      /* Page Down key */
 
-    KEY_PRINT_SCREEN,   /* Print Screen key */
-    KEY_SCROLL_LOCK,    /* Scroll lock */
-    KEY_CAPS_LOCK,      /* caps lock */
-    KEY_NUM_LOCK,       /* num lock */
-    KEY_INSERT,         /* Insert key */
-    KEY_HOME,           /* Home key */
-    KEY_PAGE_UP,        /* Page Up key */
-    KEY_PAGE_DOWN,      /* Page Down key */
-
-    RIGHT_ARROW,        /* Right arrow */
-    LEFT_ARROW,         /* Left arrow */
-    DOWN_ARROW,         /* Down arrow */
-    UP_ARROW,           /* Up arrow */
-};
+    RightArrow,        /* Right arrow */
+    LeftArrow,         /* Left arrow */
+    DownArrow,         /* Down arrow */
+    UpArrow,           /* Up arrow */
+} FunctionKey;
 
 typedef struct {
     unsigned char usage;
