@@ -199,9 +199,9 @@ int MicroBitKeyboardService::send(const char c)
 /**
   * Send a "Special" non-ascii keyboard key, defined in BluetoothHIDKeys.h
   */
-int MicroBitKeyboardService::send(SpecialKey key)
+int MicroBitKeyboardService::send(MediaKey)
 {
-    return send((char)key);
+    return MICROBIT_NOT_SUPPORTED;
 }
 
 /**
