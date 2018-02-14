@@ -413,8 +413,8 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->PCNF0 = 0x00000008;
     // NRF_RADIO->PCNF1 = 0x02040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
     // NRF_RADIO->PCNF1 = 0x00040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
-    // 10 bytes of frame plus 32 byte payload.
-    NRF_RADIO->PCNF1 = 0x000A0000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
+    // 14 bytes of frame plus 32 byte payload.
+    NRF_RADIO->PCNF1 = 0x000E0000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
 
 
     // Most communication channels contain some form of checksum - a mathematical calculation taken based on all the data
