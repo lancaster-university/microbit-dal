@@ -58,9 +58,10 @@ struct PeridoFrameBuffer;
  */
 
 // Default configuration values
-#define MICROBIT_PERIDO_HEADER_SIZE              10
+#define MICROBIT_PERIDO_HEADER_SIZE             10
 
 #define MICROBIT_RADIO_PROTOCOL_PERIDO          3
+#define MICROBIT_PERIDO_DEFAULT_SLEEP           60
 
 
 struct PeridoFrameBuffer
@@ -71,6 +72,7 @@ struct PeridoFrameBuffer
     uint16_t            protocol;                              // ID of the group to which this packet belongs.
     uint8_t             ttl;
     uint32_t            id;
+    uint32_t            sleep_period_ms;
     uint8_t             payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
     PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
     int                 rssi;                               // Received signal strength of this frame.
@@ -82,6 +84,7 @@ class MicroBitPeridoRadio : MicroBitComponent
     uint8_t                 group;      // The radio group to which this micro:bit belongs.
     uint8_t                 queueDepth; // The number of packets in the receiver queue.
     int                     rssi;
+    uint32_t                sleepPeriodMs;
 
     public:
 
@@ -176,6 +179,22 @@ class MicroBitPeridoRadio : MicroBitComponent
       * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
       */
     int setGroup(uint8_t group);
+
+    /**
+      * Set the current period in milliseconds broadcasted in the perido frame
+      *
+      * @param period_ms the new period, in milliseconds.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the period is too short.
+      */
+    int setPeriod(uint32_t period_ms);
+
+    /**
+      * Retrieve the current period in milliseconds broadcasted in the perido frame
+      *
+      * @return the current period in milliseconds
+      */
+    uint32_t getPeriod();
 
     /**
       * A background, low priority callback that is triggered whenever the processor is idle.

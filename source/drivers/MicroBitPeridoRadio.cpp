@@ -222,6 +222,8 @@ MicroBitPeridoRadio::MicroBitPeridoRadio(uint16_t id)
     this->rxQueue = NULL;
     this->rxBuf = NULL;
 
+    this->sleepPeriodMs = MICROBIT_PERIDO_DEFAULT_SLEEP;
+
     instance = this;
 }
 
@@ -511,6 +513,33 @@ int MicroBitPeridoRadio::setGroup(uint8_t group)
 }
 
 /**
+  * Set the current period in milliseconds broadcasted in the perido frame
+  *
+  * @param period_ms the new period, in milliseconds.
+  *
+  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the period is too short.
+  */
+int MicroBitPeridoRadio::setPeriod(uint32_t period_ms)
+{
+    if(period_ms < 10)
+        return MICROBIT_INVALID_PARAMETER;
+
+    sleepPeriodMs = period_ms;
+
+    return MICROBIT_OK;
+}
+
+/**
+  * Retrieve the current period in milliseconds broadcasted in the perido frame
+  *
+  * @return the current period in milliseconds
+  */
+uint32_t MicroBitPeridoRadio::getPeriod()
+{
+    return sleepPeriodMs;
+}
+
+/**
   * A background, low priority callback that is triggered whenever the processor is idle.
   * Here, we empty our queue of received packets, and pass them onto higher level protocol handlers.
   */
@@ -668,6 +697,7 @@ int MicroBitPeridoRadio::send(uint8_t *buffer, int len)
     buf.group = 0;
     buf.protocol = MICROBIT_RADIO_PROTOCOL_PERIDO;
     buf.ttl = 4;
+    buf.sleep_period_ms = getPeriod();
     microbit_seed_random();
     buf.id = microbit_random(0x7FFFFFFF);
     memcpy(buf.payload, buffer, len);
