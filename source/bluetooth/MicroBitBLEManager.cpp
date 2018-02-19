@@ -657,9 +657,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
     ManagedString namePostfix("]");
     ManagedString BLEName = namePrefix + deviceName + namePostfix;
 
-#ifdef TARGET_NRF51_CALLIOPE
-    ManagedString msg("Verbindungsmodus!");
-#else
+#ifndef TARGET_NRF51_CALLIOPE
     ManagedString msg("PAIRING MODE!");
 #endif
 
@@ -693,7 +691,9 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
 
     // Stop any running animations on the display
     display.stopAnimation();
+#ifndef TARGET_NRF51_CALLIOPE
     display.scroll(msg);
+#endif
 
     // Display our name, visualised as a histogram in the display to aid identification.
     showNameHistogram(display);
@@ -780,8 +780,10 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
         fiber_sleep(100);
         timeInPairingMode++;
 
+#ifndef TARGET_NRF51_CALLIOPE
         if (timeInPairingMode >= MICROBIT_BLE_PAIRING_TIMEOUT * 30)
             microbit_reset();
+#endif
     }
 }
 
