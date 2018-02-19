@@ -1,5 +1,4 @@
 build
-.yotta.json
 yotta_modules
 yotta_targets
 *.swp
