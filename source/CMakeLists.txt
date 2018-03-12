@@ -23,6 +23,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "types/RefCounted.cpp"
 
     "drivers/DynamicPwm.cpp"
+    "drivers/HigherLevelTimer.cpp"
     "drivers/MicroBitAccelerometer.cpp"
     "drivers/MicroBitButton.cpp"
     "drivers/MicroBitCompass.cpp"
@@ -45,6 +46,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitFlash.cpp"
     "drivers/MicroBitFile.cpp"
     "drivers/MicroBitFileSystem.cpp"
+    "drivers/NRF51Timer.cpp"
 
     "bluetooth/MicroBitAccelerometerService.cpp"
     "bluetooth/MicroBitBLEManager.cpp"

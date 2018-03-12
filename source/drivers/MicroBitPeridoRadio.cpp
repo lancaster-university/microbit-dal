@@ -85,6 +85,11 @@ uint32_t radio_status = 0;
 uint8_t last_seen_index = 0;
 uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
 
+void radio_state_machine()
+{
+
+}
+
 void retransmit()
 {
     set_gpio(1);
@@ -212,17 +217,34 @@ extern "C" void RADIO_IRQHandler(void)
   * @note This class is demand activated, as a result most resources are only
   *       committed if send/recv or event registrations calls are made.
   */
-MicroBitPeridoRadio::MicroBitPeridoRadio(uint16_t id)
+MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint32_t appId, uint32_t namespaceId, uint16_t id) : lowLevelTimer(timer), periodTimer(lowLevelTimer)
 {
     this->id = id;
+    this->appId = appId;
+    this->namespaceId = namespaceId;
     this->status = 0;
-	this->group = MICROBIT_RADIO_DEFAULT_GROUP;
 	this->queueDepth = 0;
     this->rssi = 0;
     this->rxQueue = NULL;
     this->rxBuf = NULL;
+    this->txQueue = NULL;
+
+    lowLevelTimer.disable();
+
+    // timer mode
+    lowLevelTimer.setMode(TimerModeTimer);
+
+    // 32-bit
+    lowLevelTimer.setBitMode(BitMode32);
+
+    // 16 Mhz / 2^4 = 1 Mhz
+    lowLevelTimer.setPrescaler(4);
+
+    lowLevelTimer.enable();
 
     this->sleepPeriodMs = MICROBIT_PERIDO_DEFAULT_SLEEP;
+
+    periodTimer.triggerIn(sleepPeriodMs * 1000, radio_state_machine);
 
     instance = this;
 }
@@ -324,6 +346,38 @@ int MicroBitPeridoRadio::queueRxBuf()
     return MICROBIT_OK;
 }
 
+int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer& tx)
+{
+    // if (queueDepth >= MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS)
+    //     return MICROBIT_NO_RESOURCES;
+
+    // Ensure that a replacement buffer is available before queuing.
+    PeridoFrameBuffer *newTx = new PeridoFrameBuffer();
+
+    if (newTx == NULL)
+        return MICROBIT_NO_RESOURCES;
+
+    memcpy(newTx, &tx, sizeof(PeridoFrameBuffer));
+
+    // We add to the tail of the queue to preserve causal ordering.
+    newTx->next = NULL;
+
+    if (txQueue == NULL)
+    {
+        txQueue = newTx;
+    }
+    else
+    {
+        PeridoFrameBuffer *p = txQueue;
+        while (p->next != NULL)
+            p = p->next;
+
+        p->next = newTx;
+    }
+
+    return MICROBIT_OK;
+}
+
 /**
   * Sets the RSSI for the most recent packet.
   * The value is measured in -dbm. The higher the value, the stronger the signal.
@@ -401,9 +455,6 @@ int MicroBitPeridoRadio::enable()
     // address matching for us, and only generate an interrupt when a packet matching our group is received.
     NRF_RADIO->BASE0 = MICROBIT_RADIO_BASE_ADDRESS;
 
-    // Join the default group. This will configure the remaining byte in the RADIO hardware module.
-    setGroup(this->group);
-
     // The RADIO hardware module supports the use of multiple addresses, but as we're running anonymously, we only need one.
     // Configure the RADIO module to use the default address (address 0) for both send and receive operations.
     NRF_RADIO->TXADDRESS = 0;
@@ -415,8 +466,8 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->PCNF0 = 0x00000008;
     // NRF_RADIO->PCNF1 = 0x02040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
     // NRF_RADIO->PCNF1 = 0x00040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
-    // 14 bytes of frame plus 32 byte payload.
-    NRF_RADIO->PCNF1 = 0x000E0000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
+    // 18 bytes of frame plus 32 byte payload.
+    NRF_RADIO->PCNF1 = 0x00120000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
 
 
     // Most communication channels contain some form of checksum - a mathematical calculation taken based on all the data
@@ -492,27 +543,6 @@ int MicroBitPeridoRadio::disable()
 }
 
 /**
-  * Sets the radio to listen to packets sent with the given group id.
-  *
-  * @param group The group to join. A micro:bit can only listen to one group ID at any time.
-  *
-  * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
-  */
-int MicroBitPeridoRadio::setGroup(uint8_t group)
-{
-    if (ble_running())
-        return MICROBIT_NOT_SUPPORTED;
-
-    // Record our group id locally
-    this->group = group;
-
-    // Also append it to the address of this device, to allow the RADIO module to filter for us.
-    NRF_RADIO->PREFIX0 = (uint32_t)group;
-
-    return MICROBIT_OK;
-}
-
-/**
   * Set the current period in milliseconds broadcasted in the perido frame
   *
   * @param period_ms the new period, in milliseconds.
@@ -550,7 +580,7 @@ void MicroBitPeridoRadio::idleTick()
     {
         PeridoFrameBuffer *p = rxQueue;
 
-        MicroBitEvent(MICROBIT_ID_RADIO_DATA_READY, p->protocol);
+        // MicroBitEvent(MICROBIT_ID_RADIO_DATA_READY, p->protocol);
 
         // If the packet was processed, it will have been recv'd, and taken from the queue.
         // If this was a packet for an unknown protocol, it will still be there, so simply free it.
@@ -693,9 +723,8 @@ int MicroBitPeridoRadio::send(uint8_t *buffer, int len)
     PeridoFrameBuffer buf;
 
     buf.length = len + MICROBIT_PERIDO_HEADER_SIZE - 1;
-    buf.version = 1;
-    buf.group = 0;
-    buf.protocol = MICROBIT_RADIO_PROTOCOL_PERIDO;
+    buf.app_id = appId;
+    buf.namespace_id = 0;
     buf.ttl = 4;
     buf.sleep_period_ms = getPeriod();
     microbit_seed_random();

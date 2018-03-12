@@ -33,6 +33,8 @@ struct PeridoFrameBuffer;
 #include "MicroBitConfig.h"
 #include "PacketBuffer.h"
 #include "MicroBitRadio.h"
+#include "LowLevelTimer.h"
+#include "HigherLevelTimer.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -58,20 +60,23 @@ struct PeridoFrameBuffer;
  */
 
 // Default configuration values
-#define MICROBIT_PERIDO_HEADER_SIZE             10
-
-#define MICROBIT_RADIO_PROTOCOL_PERIDO          3
+#define MICROBIT_PERIDO_HEADER_SIZE             18
 #define MICROBIT_PERIDO_DEFAULT_SLEEP           60
 
+#define MICROBIT_PERIDO_MAX_PACKET_SIZE         200
+
+#define MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS      10
+
+#define MICROBIT_PERIDO_DEFAULT_APP_ID          0
+#define MICROBIT_PERIDO_DEFAULT_NAMESPACE       0
 
 struct PeridoFrameBuffer
 {
-    uint8_t             length;                             // The length of the remaining bytes in the packet. includes protocol/version/group fields, excluding the length field itself.
-    uint8_t             version;                            // Protocol version code.
-    uint8_t             group;                              // ID of the group to which this packet belongs.
-    uint16_t            protocol;                              // ID of the group to which this packet belongs.
+    uint8_t             length;                             // The length of the remaining bytes in the packet.
     uint8_t             ttl;
     uint32_t            id;
+    uint32_t            app_id;
+    uint32_t            namespace_id;
     uint32_t            sleep_period_ms;
     uint8_t             payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
     PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
@@ -81,15 +86,24 @@ struct PeridoFrameBuffer
 
 class MicroBitPeridoRadio : MicroBitComponent
 {
-    uint8_t                 group;      // The radio group to which this micro:bit belongs.
     uint8_t                 queueDepth; // The number of packets in the receiver queue.
     int                     rssi;
     uint32_t                sleepPeriodMs;
+    uint32_t                appId;
+    uint32_t                namespaceId;
+
+    LowLevelTimer&          lowLevelTimer;
 
     public:
 
+    HigherLevelTimer        periodTimer;
+
+
     PeridoFrameBuffer       *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
     PeridoFrameBuffer       *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
+
+    PeridoFrameBuffer       *txQueue;   // A linear list of incoming packets, queued awaiting processing.
+
     static MicroBitPeridoRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.
 
     /**
@@ -100,7 +114,7 @@ class MicroBitPeridoRadio : MicroBitComponent
       * @note This class is demand activated, as a result most resources are only
       *       committed if send/recv or event registrations calls are made.
       */
-    MicroBitPeridoRadio(uint16_t id = MICROBIT_ID_RADIO);
+    MicroBitPeridoRadio(LowLevelTimer& timer, uint32_t appId = MICROBIT_PERIDO_DEFAULT_APP_ID, uint32_t namespaceId = MICROBIT_PERIDO_DEFAULT_NAMESPACE, uint16_t id = MICROBIT_ID_RADIO);
 
     /**
       * Change the output power level of the transmitter to the given value.
@@ -136,6 +150,8 @@ class MicroBitPeridoRadio : MicroBitComponent
       *         could not be allocated (either by policy or memory exhaustion).
       */
     int queueRxBuf();
+
+    int queueTxBuf(PeridoFrameBuffer& tx);
 
     /**
       * Sets the RSSI for the most recent packet.

@@ -46,6 +46,8 @@ class LowLevelTimer : public MicroBitComponent
 
     virtual uint32_t captureCounter(uint8_t channel) = 0;
 
+    // a better abstraction would be to set the timer tick granularity, us, ms, s etc.
+
     virtual int setPrescaler(uint16_t prescaleValue) = 0;
 
     virtual int setBitMode(TimerBitMode t) = 0;
