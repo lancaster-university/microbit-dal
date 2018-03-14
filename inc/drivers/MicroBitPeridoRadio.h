@@ -80,7 +80,6 @@ struct PeridoFrameBuffer
     uint32_t            sleep_period_ms;
     uint8_t             payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
     PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
-    int                 rssi;                               // Received signal strength of this frame.
 };
 
 
@@ -152,26 +151,6 @@ class MicroBitPeridoRadio : MicroBitComponent
     int queueRxBuf();
 
     int queueTxBuf(PeridoFrameBuffer& tx);
-
-    /**
-      * Sets the RSSI for the most recent packet.
-      * The value is measured in -dbm. The higher the value, the stronger the signal.
-      * Typical values are in the range -42 to -128.
-      *
-      * @param rssi the new rssi value.
-      *
-      * @note should only be called from RADIO_IRQHandler...
-      */
-    int setRSSI(int rssi);
-
-    /**
-      * Retrieves the current RSSI for the most recent packet.
-      * The return value is measured in -dbm. The higher the value, the stronger the signal.
-      * Typical values are in the range -42 to -128.
-      *
-      * @return the most recent RSSI value or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
-      */
-    int getRSSI();
 
     /**
       * Initialises the radio for use as a multipoint sender/receiver
