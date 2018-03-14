@@ -364,8 +364,8 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
                 samples_this_period++;
             }
         }
-        wait_ms(100);
-        remaining_scroll_time-=100;
+        wait_ms(TIME_STEP);
+        remaining_scroll_time-=TIME_STEP;
     }
 
     compass.setCalibration(calibrate(data, samples));
