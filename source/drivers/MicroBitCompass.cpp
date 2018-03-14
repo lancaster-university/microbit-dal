@@ -34,6 +34,11 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitFiber.h"
 #include "ErrorNo.h"
 
+//
+// Internal convenience macro to apply calibration to a given sample.
+//
+#define CALIBRATED_SAMPLE(sample, axis) (((sample.axis - calibration.centre.axis) * calibration.scale.axis) >> 10)
+
 /**
   * An initialisation member function used by the many constructors of MicroBitCompass.
   *
@@ -59,12 +64,8 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
 
         if(calibrationData != NULL)
         {
-            CompassSample storedSample = CompassSample();
-
-            memcpy(&storedSample, calibrationData->value, sizeof(CompassSample));
-
-            setCalibration(storedSample);
-
+            memcpy(&calibration, calibrationData->value, sizeof(CompassCalibration));
+            status |= MICROBIT_COMPASS_STATUS_CALIBRATED;
             delete calibrationData;
         }
     }
@@ -98,7 +99,7 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
   * @endcode
   */
 MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address,  uint16_t id) :
-    average(),
+    calibration(),
     sample(),
     int1(MICROBIT_PIN_COMPASS_DATA_READY),
     i2c(_i2c),
@@ -129,7 +130,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _acce
   * @endcode
   */
 MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, uint16_t address, uint16_t id) :
-    average(),
+    calibration(),
     sample(),
     int1(MICROBIT_PIN_COMPASS_DATA_READY),
     i2c(_i2c),
@@ -160,7 +161,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _acce
   * @endcode
   */
 MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address, uint16_t id) :
-    average(),
+    calibration(),
     sample(),
     int1(MICROBIT_PIN_COMPASS_DATA_READY),
     i2c(_i2c),
@@ -187,7 +188,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, u
   * @endcode
   */
 MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, uint16_t address, uint16_t id) :
-    average(),
+    calibration(),
     sample(),
     int1(MICROBIT_PIN_COMPASS_DATA_READY),
     i2c(_i2c),
@@ -305,26 +306,32 @@ int MicroBitCompass::read8(uint8_t reg)
   */
 int MicroBitCompass::tiltCompensatedBearing()
 {
-    // Precompute the tilt compensation parameters to improve readability.
-    float phi = accelerometer->getRollRadians();
-    float theta = accelerometer->getPitchRadians();
-
     float x = (float) getX(NORTH_EAST_DOWN);
     float y = (float) getY(NORTH_EAST_DOWN);
     float z = (float) getZ(NORTH_EAST_DOWN);
 
-    // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
-    float sinPhi = sin(phi);
-    float cosPhi = cos(phi);
-    float sinTheta = sin(theta);
-    float cosTheta = cos(theta);
+    float ax = (float) accelerometer->getX(NORTH_EAST_DOWN);
+    float ay = (float) accelerometer->getY(NORTH_EAST_DOWN);
+    float az = (float) accelerometer->getZ(NORTH_EAST_DOWN);
 
-    float bearing = (360*atan2(z*sinPhi - y*cosPhi, x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi)) / (2*PI);
+    // normalize the readings
+    float amag = sqrt(ax*ax + ay*ay + az*az);
+    ax = ax/amag;
+    ay = ay/amag;
+    az = az/amag;
+
+    float ax2 = ax*ax;
+    float ay2 = ay*ay;
+
+    float resultx = x*(1.0f - ax2) - y*ax*ay - z*ax*sqrt(1.0f-ax2-ay2);
+    float resulty = y*sqrt(1.0f-ax2-ay2) - z*ay;
+
+    float bearing = (360*atan2(resulty,resultx)) / (2*PI);
 
     if (bearing < 0)
         bearing += 360.0;
 
-    return (int) bearing;
+    return (int) (360.0 - bearing);
 }
 
 /**
@@ -334,7 +341,7 @@ int MicroBitCompass::basicBearing()
 {
     updateSample();
 
-    float bearing = (atan2((double)(sample.y - average.y),(double)(sample.x - average.x)))*180/PI;
+    float bearing = (atan2((double)getY(),(double)getX()))*180/PI;
 
     if (bearing < 0)
         bearing += 360.0;
@@ -433,10 +440,10 @@ int MicroBitCompass::getX(MicroBitCoordinateSystem system)
     switch (system)
     {
         case SIMPLE_CARTESIAN:
-            return sample.x - average.x;
+            return CALIBRATED_SAMPLE(sample, x);
 
         case NORTH_EAST_DOWN:
-            return -(sample.y - average.y);
+            return -CALIBRATED_SAMPLE(sample, y);
 
         case RAW:
         default:
@@ -462,10 +469,10 @@ int MicroBitCompass::getY(MicroBitCoordinateSystem system)
     switch (system)
     {
         case SIMPLE_CARTESIAN:
-            return -(sample.y - average.y);
+            return -CALIBRATED_SAMPLE(sample, y);
 
         case NORTH_EAST_DOWN:
-            return (sample.x - average.x);
+            return CALIBRATED_SAMPLE(sample, x);
 
         case RAW:
         default:
@@ -492,7 +499,7 @@ int MicroBitCompass::getZ(MicroBitCoordinateSystem system)
     {
         case SIMPLE_CARTESIAN:
         case NORTH_EAST_DOWN:
-            return -(sample.z - average.z);
+            return -CALIBRATED_SAMPLE(sample, z);
 
         case RAW:
         default:
@@ -698,14 +705,14 @@ int MicroBitCompass::calibrate()
   * After calibration this should now take into account trimming errors in the magnetometer,
   * and any "hard iron" offsets on the device.
   *
-  * @param calibration A CompassSample containing the offsets for the x, y and z axis.
+  * @param calibration A CompassCalibration object containing centre, scale and radius in x, y and z.
   */
-void MicroBitCompass::setCalibration(CompassSample calibration)
+void MicroBitCompass::setCalibration(CompassCalibration calibration)
 {
     if(this->storage != NULL)
-        this->storage->put(ManagedString("compassCal"), (uint8_t *)&calibration, sizeof(CompassSample));
+        this->storage->put(ManagedString("compassCal"), (uint8_t *)&calibration, sizeof(CompassCalibration));
 
-    average = calibration;
+    this->calibration = calibration;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
 
@@ -714,11 +721,11 @@ void MicroBitCompass::setCalibration(CompassSample calibration)
   *
   * More specifically, the x, y and z zero offsets of the compass.
   *
-  * @return calibration A CompassSample containing the offsets for the x, y and z axis.
+  * @return calibration A CompassCalibration object containing centre, scale and radius in x, y and z.
   */
-CompassSample MicroBitCompass::getCalibration()
+CompassCalibration MicroBitCompass::getCalibration()
 {
-    return average;
+    return calibration;
 }
 
 /**
