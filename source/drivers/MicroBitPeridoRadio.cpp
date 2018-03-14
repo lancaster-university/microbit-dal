@@ -432,8 +432,6 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer& tx)
     // if (queueDepth >= MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS)
     //     return MICROBIT_NO_RESOURCES;
 
-
-
     // Ensure that a replacement buffer is available before queuing.
     PeridoFrameBuffer *newTx = new PeridoFrameBuffer();
 
@@ -442,8 +440,8 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer& tx)
 
     memcpy(newTx, &tx, sizeof(PeridoFrameBuffer));
 
+    __enable_irq();
 
-    __disable_irq();
     // We add to the tail of the queue to preserve causal ordering.
     newTx->next = NULL;
 
@@ -459,8 +457,7 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer& tx)
 
         p->next = newTx;
     }
-
-    __enable_irq();
+    __disable_irq();
 
     return MICROBIT_OK;
 }
