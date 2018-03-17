@@ -49,12 +49,20 @@ DEALINGS IN THE SOFTWARE.
 
 // The end address of memory normally reserved for Soft Device.
 #ifndef MICROBIT_SD_LIMIT
+#ifdef TARGET_MCU_NRF51_16K_S130
+#define MICROBIT_SD_LIMIT                       0x20002800
+#else
 #define MICROBIT_SD_LIMIT                       0x20002000
+#endif
 #endif
 
 // The physical address in memory of the Soft Device GATT table.
 #ifndef MICROBIT_SD_GATT_TABLE_START
+#ifdef TARGET_MCU_NRF51_16K_S130
+#define MICROBIT_SD_GATT_TABLE_START            0x20002200
+#else
 #define MICROBIT_SD_GATT_TABLE_START            0x20001900
+#endif
 #endif
 
 // Physical address of the top of the system stack (on mbed-classic this is the top of SRAM)
