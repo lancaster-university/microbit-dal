@@ -142,7 +142,7 @@ inline void* operator new(size_t size)
 }
 
 /**
-  * Overrides the 'new' operator globally, and redirects calls to the micro:bit theap allocator.
+  * Overrides the 'new' operator globally, and redirects calls to the micro:bit heap allocator.
   */
 inline void* operator new[](size_t size)
 {
@@ -150,13 +150,20 @@ inline void* operator new[](size_t size)
 }
 
 /**
-  * Overrides the 'delete' operator globally, and redirects calls to the micro:bit theap allocator.
+  * Overrides the 'delete' operator globally, and redirects calls to the micro:bit heap allocator.
   */
 inline void operator delete(void *ptr)
 {
     microbit_free(ptr);
 }
 
+/**
+  * Overrides the 'delete[]' operator globally, and redirects calls to the micro:bit heap allocator.
+  */
+inline void operator delete[](void *ptr)
+{
+    microbit_free(ptr);
+}
 
 // Macros to override overrides the 'malloc' and 'delete' functions globally, and redirects calls
 // to the micro:bit theap allocator.
