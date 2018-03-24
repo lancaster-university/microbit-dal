@@ -61,7 +61,7 @@ struct PeridoFrameBuffer;
 
 // Default configuration values
 #define MICROBIT_PERIDO_HEADER_SIZE             18
-#define MICROBIT_PERIDO_DEFAULT_SLEEP           60
+#define MICROBIT_PERIDO_DEFAULT_SLEEP           600
 
 #define MICROBIT_PERIDO_MAX_PACKET_SIZE         200
 
@@ -85,23 +85,24 @@ struct PeridoFrameBuffer
 
 class MicroBitPeridoRadio : MicroBitComponent
 {
-    uint8_t                 queueDepth; // The number of packets in the receiver queue.
+
     int                     rssi;
     uint32_t                sleepPeriodMs;
     uint32_t                appId;
     uint32_t                namespaceId;
 
-    LowLevelTimer&          lowLevelTimer;
-
     public:
 
-    HigherLevelTimer        periodTimer;
+    uint8_t                 rxQueueDepth; // The number of packets in the receiver queue.
+    uint8_t                 txQueueDepth; // The number of packets in the tx queue.
 
+    LowLevelTimer&          timer;
 
     PeridoFrameBuffer       *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
     PeridoFrameBuffer       *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
 
     PeridoFrameBuffer       *txQueue;   // A linear list of incoming packets, queued awaiting processing.
+    PeridoFrameBuffer       *txBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
 
     static MicroBitPeridoRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.
 
@@ -141,6 +142,10 @@ class MicroBitPeridoRadio : MicroBitComponent
       * @return a pointer to the current receive buffer.
       */
     PeridoFrameBuffer * getRxBuf();
+
+    int popTxQueue();
+
+    PeridoFrameBuffer* getTxBuf();
 
     /**
       * Attempt to queue a buffer received by the radio hardware, if sufficient space is available.
@@ -224,7 +229,7 @@ class MicroBitPeridoRadio : MicroBitComponent
       *
       * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
       */
-    int send(PeridoFrameBuffer *buffer);
+    int send(PeridoFrameBuffer& buffer);
 
     int send(uint8_t *buffer, int len);
 

@@ -79,39 +79,55 @@ extern void increment_counter(int);
 #define RADIO_STATUS_TRANSMIT       0x00000200
 #define RADIO_STATUS_FORWARD        0x00000400
 #define RADIO_STATUS_RECEIVING      0x00000800
+#define RADIO_STATUS_STORE          0x00001000
 
 #define LAST_SEEN_BUFFER_SIZE       3
 
-#define TX_BACKOFF_TIME             100
-#define TX_TIME                     700
-#define RX_TX_ENABLE_TIME           100
-#define RX_TX_DISABLE_TIME          100
+#define TX_BACKOFF_TIME             10000000
+#define TX_TIME                     1000
+#define RX_TX_ENABLE_TIME           1000000
+#define RX_TX_DISABLE_TIME          10000
+
+#define WAKE_UP_CHANNEL             0
+#define CHECK_TX_CHANNEL            1
+#define STATE_MACHINE_CHANNEL       2
+
 
 uint32_t radio_status = 0;
+
+static uint32_t packet_received_count = 0;
 
 uint8_t last_seen_index = 0;
 uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
 
+extern void log_string(const char * s);
+extern void log_num(int num);
+
 void radio_state_machine()
 {
+    log_string("state: ");
+    log_num(NRF_RADIO->STATE);
+    log_string("\r\n");
     if(radio_status & RADIO_STATUS_DISABLED)
     {
         radio_status &= ~RADIO_STATUS_DISABLED;
 
         if(radio_status & RADIO_STATUS_TX_EN)
         {
+            log_string("ten\r\n");
             radio_status &= ~RADIO_STATUS_TX_EN;
             radio_status |= RADIO_STATUS_TX_RDY;
 
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_TXEN = 1;
-            MicroBitPeridoRadio::instance->periodTimer.triggerIn(RX_TX_ENABLE_TIME,radio_state_machine);
+            MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_TX_ENABLE_TIME);
             return;
         }
 
         if(radio_status & RADIO_STATUS_RX_EN)
         {
-            NRF_RADIO->PACKETPTR = MicroBitPeridoRadio::instance->rxBuf;
+            log_string("ren\r\n");
+            NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
 
             radio_status &= ~RADIO_STATUS_RX_EN;
             radio_status |= RADIO_STATUS_RX_RDY;
@@ -119,14 +135,16 @@ void radio_state_machine()
             // takes 7 us to complete, not much point in a timer.
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_RXEN = 1;
-            MicroBitPeridoRadio::instance->periodTimer.triggerIn(RX_TX_ENABLE_TIME,radio_state_machine);
+            MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_TX_ENABLE_TIME);
             return;
         }
     }
     if(radio_status & RADIO_STATUS_RX_RDY)
     {
+        log_string("rxen\r\n");
         if(NRF_RADIO->EVENTS_END)
         {
+            log_string("rxrec\r\n");
             radio_status &= ~RADIO_STATUS_RECEIVING;
 
             NRF_RADIO->EVENTS_END = 0;
@@ -157,7 +175,9 @@ void radio_state_machine()
     {
         if(radio_status & RADIO_STATUS_TX_RDY)
         {
-            PeridoFrameBuffer* p = MicroBitPeridoRadio::instance->getNextTx();
+            log_string("txst\r\n");
+            log_num(NRF_RADIO->STATE);
+            PeridoFrameBuffer* p = MicroBitPeridoRadio::instance->txQueue;
 
             radio_status &= ~RADIO_STATUS_TX_RDY;
             radio_status |= RADIO_STATUS_TX_END;
@@ -170,7 +190,7 @@ void radio_state_machine()
                 NRF_RADIO->TASKS_START = 1;
                 NRF_RADIO->EVENTS_END = 0;
 
-                MicroBitPeridoRadio::instance->periodTimer.triggerIn(TX_TIME, radio_state_machine);
+                // MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
                 return;
             }
         }
@@ -178,9 +198,11 @@ void radio_state_machine()
         if(radio_status & RADIO_STATUS_TX_END)
         {
             radio_status &= ~(RADIO_STATUS_TX_END | RADIO_STATUS_TRANSMIT);
-
-            PeridoFrameBuffer* p = MicroBitPeridoRadio::instance->popNextTx();
+            log_string("txend\r\n");
+            MicroBitPeridoRadio::instance->popTxQueue();
             radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN);
+
+            NRF_RADIO->EVENTS_END = 0;
         }
     }
 
@@ -188,29 +210,36 @@ void radio_state_machine()
     {
         if(radio_status & RADIO_STATUS_TX_RDY)
         {
+            log_string("ftxst\r\n");
             radio_status &= ~RADIO_STATUS_TX_RDY;
             radio_status |= RADIO_STATUS_TX_END;
 
-            NRF_RADIO->PACKETPTR = MicroBitPeridoRadio::instance->rxBuf;
+            NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
 
             NRF_RADIO->TASKS_START = 1;
             NRF_RADIO->EVENTS_END = 0;
 
-            MicroBitPeridoRadio::instance->periodTimer.triggerIn(TX_TIME, radio_state_machine);
+            MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
             return;
         }
 
         if(radio_status & RADIO_STATUS_TX_END)
         {
+            log_string("ftxend\r\n");
             radio_status &= ~RADIO_STATUS_TX_END;
             radio_status |= (RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN | RADIO_STATUS_STORE);
+
+            NRF_RADIO->EVENTS_END = 0;
         }
 
     }
 
     if(radio_status & RADIO_STATUS_STORE)
     {
+        log_string("stor\r\n");
         radio_status &= ~RADIO_STATUS_STORE;
+
+        packet_received_count++;
 
         PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
 
@@ -239,30 +268,27 @@ void radio_state_machine()
 
     if(radio_status & RADIO_STATUS_DISABLE)
     {
+        log_string("dis\r\n");
         // Turn off the transceiver.
         NRF_RADIO->EVENTS_DISABLED = 0;
         NRF_RADIO->TASKS_DISABLE = 1;
         radio_status &= ~RADIO_STATUS_DISABLE;
         radio_status |= RADIO_STATUS_DISABLED;
 
-        MicroBitPeridoRadio::instance->periodTimer.triggerIn(RX_TX_DISABLE_TIME,radio_state_machine);
+        MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_TX_DISABLE_TIME);
         return;
     }
 }
 
 extern "C" void RADIO_IRQHandler(void)
 {
+    log_string("irq\r\n");
     // used to indicate when a packets received / when RX or TX is enabled.
     if (NRF_RADIO->EVENTS_READY)
     {
+        log_string("rdy\r\n");
         NRF_RADIO->EVENTS_READY = 0;
         NRF_RADIO->TASKS_START = 1;
-        return;
-    }
-
-    if (NRF_RADIO->EVENTS_ADDRESS)
-    {
-        radio_status |= RADIO_STATUS_RECEIVING;
         return;
     }
 
@@ -272,25 +298,42 @@ extern "C" void RADIO_IRQHandler(void)
 // used to initiate transmission if the window is clear.
 void tx_callback()
 {
-    if(packet_received_count == 0)
+    log_string("tx cb: ");
+    log_num(NRF_RADIO->STATE);
+    log_string("\r\n");
+    if(packet_received_count == 0 && MicroBitPeridoRadio::instance->txQueueDepth > 0 && NRF_RADIO->STATE != 3)
     {
-        radio_status &= ~RADIO_STATUS_RETRANSMIT;
-        radio_status |= RADIO_STATUS_TRANSMIT | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
+        radio_status = RADIO_STATUS_TRANSMIT | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
         radio_state_machine();
+        return;
     }
 
     packet_received_count = 0;
-    timerPointer->triggerIn(TX_BACKOFF_TIME, tx_callback);
+    MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_TIME);
 }
 
 // used to begin a transmission window
 void wake_up()
 {
+    log_string("woke\r\n");
     // enable rx
-    radio_status |= RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN;
-    timerPointer->triggerIn(TX_BACKOFF_TIME, tx_callback);
+    radio_status |=  RADIO_STATUS_RX_EN;
+    MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_TIME);
 
     radio_state_machine();
+}
+
+void timer_callback(uint8_t state)
+{
+    log_string("tc\r\n");
+    if(state & (1 << WAKE_UP_CHANNEL))
+        wake_up();
+
+    if(state & (1 << CHECK_TX_CHANNEL))
+        tx_callback();
+
+    if(state & (1 << STATE_MACHINE_CHANNEL))
+        radio_state_machine();
 }
 
 /**
@@ -301,34 +344,35 @@ void wake_up()
   * @note This class is demand activated, as a result most resources are only
   *       committed if send/recv or event registrations calls are made.
   */
-MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint32_t appId, uint32_t namespaceId, uint16_t id) : lowLevelTimer(timer), periodTimer(lowLevelTimer)
+MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint32_t appId, uint32_t namespaceId, uint16_t id) : timer(timer)
 {
     this->id = id;
     this->appId = appId;
     this->namespaceId = namespaceId;
     this->status = 0;
-	this->queueDepth = 0;
+	this->rxQueueDepth = 0;
+    this->txQueueDepth = 0;
     this->rssi = 0;
     this->rxQueue = NULL;
     this->rxBuf = NULL;
     this->txQueue = NULL;
 
-    lowLevelTimer.disable();
+    timer.disable();
+
+    timer.setIRQ(timer_callback);
 
     // timer mode
-    lowLevelTimer.setMode(TimerModeTimer);
+    timer.setMode(TimerModeTimer);
 
     // 32-bit
-    lowLevelTimer.setBitMode(BitMode32);
+    timer.setBitMode(BitMode32);
 
     // 16 Mhz / 2^4 = 1 Mhz
-    lowLevelTimer.setPrescaler(4);
+    timer.setPrescaler(4);
 
-    lowLevelTimer.enable();
+    timer.enable();
 
     this->sleepPeriodMs = MICROBIT_PERIDO_DEFAULT_SLEEP;
-
-    periodTimer.triggerIn(sleepPeriodMs * 1000, wake_up);
 
     instance = this;
 }
@@ -383,6 +427,31 @@ PeridoFrameBuffer* MicroBitPeridoRadio::getRxBuf()
 }
 
 /**
+  * Retrieve a pointer to the currently allocated receive buffer. This is the area of memory
+  * actively being used by the radio hardware to store incoming data.
+  *
+  * @return a pointer to the current receive buffer.
+  */
+int MicroBitPeridoRadio::popTxQueue()
+{
+    PeridoFrameBuffer* p = txQueue;
+
+    if (p)
+    {
+         // Protect shared resource from ISR activity
+        NVIC_DisableIRQ(RADIO_IRQn);
+
+        txQueue = txQueue->next;
+        txQueueDepth--;
+
+        // Allow ISR access to shared resource
+        NVIC_EnableIRQ(RADIO_IRQn);
+    }
+
+    return MICROBIT_OK;
+}
+
+/**
   * Attempt to queue a buffer received by the radio hardware, if sufficient space is available.
   *
   * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if a replacement receiver buffer
@@ -393,7 +462,7 @@ int MicroBitPeridoRadio::queueRxBuf()
     if (rxBuf == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (queueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
+    if (rxQueueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
         return MICROBIT_NO_RESOURCES;
 
     // Ensure that a replacement buffer is available before queuing.
@@ -419,7 +488,7 @@ int MicroBitPeridoRadio::queueRxBuf()
     }
 
     // Increase our received packet count
-    queueDepth++;
+    rxQueueDepth++;
 
     // Allocate a new buffer for the receiver hardware to use. the old on will be passed on to higher layer protocols/apps.
     rxBuf = newRxBuf;
@@ -429,8 +498,8 @@ int MicroBitPeridoRadio::queueRxBuf()
 
 int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer& tx)
 {
-    // if (queueDepth >= MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS)
-    //     return MICROBIT_NO_RESOURCES;
+    if (txQueueDepth >= MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS)
+        return MICROBIT_NO_RESOURCES;
 
     // Ensure that a replacement buffer is available before queuing.
     PeridoFrameBuffer *newTx = new PeridoFrameBuffer();
@@ -440,7 +509,7 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer& tx)
 
     memcpy(newTx, &tx, sizeof(PeridoFrameBuffer));
 
-    __enable_irq();
+    __disable_irq();
 
     // We add to the tail of the queue to preserve causal ordering.
     newTx->next = NULL;
@@ -457,7 +526,10 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer& tx)
 
         p->next = newTx;
     }
-    __disable_irq();
+
+    txQueueDepth++;
+
+    __enable_irq();
 
     return MICROBIT_OK;
 }
@@ -498,6 +570,8 @@ int MicroBitPeridoRadio::enable()
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
     NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_1Mbit;
 
+    NRF_RADIO->PREFIX0 = 0;
+
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
     // Statistically, this provides assurance to avoid other similar 2.4GHz protocols that may be in the vicinity.
@@ -516,8 +590,8 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->PCNF0 = 0x00000008;
     // NRF_RADIO->PCNF1 = 0x02040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
     // NRF_RADIO->PCNF1 = 0x00040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
-    // 18 bytes of frame plus 32 byte payload.
-    NRF_RADIO->PCNF1 = 0x00120000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
+
+    NRF_RADIO->PCNF1 = 0x00040000 | MICROBIT_PERIDO_MAX_PACKET_SIZE;
 
     // Most communication channels contain some form of checksum - a mathematical calculation taken based on all the data
     // in a packet, that is also sent as part of the packet. When received, this calculation can be repeated, and the results
@@ -535,14 +609,20 @@ int MicroBitPeridoRadio::enable()
     // Set up the RADIO module to read and write from our internal buffer.
     NRF_RADIO->PACKETPTR = (uint32_t)rxBuf;
 
-    // Configure the hardware to issue an interrupt whenever a task is complete (e.g. send/receive) and also when ADDRESS is detected.
-    NRF_RADIO->INTENSET = 0x0000000A;
+    // Configure the hardware to issue an interrupt whenever a task is complete (e.g. send/receive)
+    NRF_RADIO->INTENSET = 0x00000008;
     NVIC_ClearPendingIRQ(RADIO_IRQn);
     NVIC_SetPriority(RADIO_IRQn, 1);
     NVIC_EnableIRQ(RADIO_IRQn);
 
     // register ourselves for a callback event, in order to empty the receive queue.
     fiber_add_idle_component(this);
+
+    log_num(NRF_RADIO->STATE);
+
+    radio_status = RADIO_STATUS_DISABLED;
+
+    timer.setCompare(WAKE_UP_CHANNEL, sleepPeriodMs * 1000);
 
     // Done. Record that our RADIO is configured.
     status |= MICROBIT_RADIO_STATUS_INITIALISED;
@@ -660,7 +740,7 @@ PeridoFrameBuffer* MicroBitPeridoRadio::recv()
         NVIC_DisableIRQ(RADIO_IRQn);
 
         rxQueue = rxQueue->next;
-        queueDepth--;
+        rxQueueDepth--;
 
         // Allow ISR access to shared resource
         NVIC_EnableIRQ(RADIO_IRQn);
@@ -669,34 +749,6 @@ PeridoFrameBuffer* MicroBitPeridoRadio::recv()
     return p;
 }
 
-/**
-  * Retrieves the next packet from the receive buffer.
-  * If a data packet is available, then it will be returned immediately to
-  * the caller. This call will also dequeue the buffer.
-  *
-  * @return The buffer containing the the packet. If no data is available, NULL is returned.
-  *
-  * @note Once recv() has been called, it is the callers responsibility to
-  *       delete the buffer when appropriate.
-  */
-PeridoFrameBuffer* MicroBitPeridoRadio::transmit()
-{
-    PeridoFrameBuffer *p = txQueue;
-
-    if (p)
-    {
-         // Protect shared resource from ISR activity
-        NVIC_DisableIRQ(RADIO_IRQn);
-
-        txQueue = txQueue->next;
-        txQueueDepth--;
-
-        // Allow ISR access to shared resource
-        NVIC_EnableIRQ(RADIO_IRQn);
-    }
-
-    return p;
-}
 
 /**
   * Transmits the given buffer onto the broadcast radio.
