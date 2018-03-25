@@ -57,11 +57,9 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
-#define MICROBIT_TRANSMITTER        0
-#define MICROBIT_RECEIVER        0
-
 extern void set_gpio(int);
 
+extern void packet_debug(PeridoFrameBuffer*);
 extern void valid_packet_received(PeridoFrameBuffer*);
 extern void increment_counter(int);
 
@@ -93,23 +91,27 @@ extern void increment_counter(int);
 #define STATE_MACHINE_CHANNEL       2
 
 
-uint32_t radio_status = 0;
+volatile uint32_t radio_status = 0;
 
-static uint32_t packet_received_count = 0;
+volatile static uint32_t packet_received_count = 0;
 
-uint8_t last_seen_index = 0;
-uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
+volatile uint8_t last_seen_index = 0;
+volatile uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
 
 extern void log_string(const char * s);
 extern void log_num(int num);
+
+PeridoFrameBuffer test = {0};
 
 void radio_state_machine()
 {
     log_string("state: ");
     log_num(NRF_RADIO->STATE);
     log_string("\r\n");
+
     if(radio_status & RADIO_STATUS_DISABLED)
     {
+        NRF_RADIO->EVENTS_DISABLED = 0;
         radio_status &= ~RADIO_STATUS_DISABLED;
 
         if(radio_status & RADIO_STATUS_TX_EN)
@@ -141,17 +143,27 @@ void radio_state_machine()
     }
     if(radio_status & RADIO_STATUS_RX_RDY)
     {
-        log_string("rxen\r\n");
+        if (NRF_RADIO->EVENTS_READY)
+        {
+            log_string("rdy\r\n");
+            NRF_RADIO->EVENTS_READY = 0;
+            NRF_RADIO->TASKS_START = 1;
+            return;
+        }
+
+        // log_string("rxen\r\n");
         if(NRF_RADIO->EVENTS_END)
         {
-            log_string("rxrec\r\n");
+            // log_string("rxend\r\n");
             radio_status &= ~RADIO_STATUS_RECEIVING;
 
             NRF_RADIO->EVENTS_END = 0;
+            NRF_RADIO->TASKS_START = 1;
             if(NRF_RADIO->CRCSTATUS == 1)
             {
                 PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
-
+                log_string("data: ");
+                packet_debug(p);
                 if (p)
                 {
                     if(p->ttl > 0)
@@ -160,14 +172,16 @@ void radio_state_machine()
                         radio_status &= ~RADIO_STATUS_RX_RDY;
                         radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN);
                     }
+                    // else
+                    //     radio_status |= RADIO_STATUS_STORE;
                 }
-
-                radio_status |= RADIO_STATUS_STORE;
             }
             else
             {
                 // add last packet to worry queue
             }
+
+            // NRF_RADIO->TASKS_START = 1;
         }
     }
 
@@ -176,7 +190,6 @@ void radio_state_machine()
         if(radio_status & RADIO_STATUS_TX_RDY)
         {
             log_string("txst\r\n");
-            log_num(NRF_RADIO->STATE);
             PeridoFrameBuffer* p = MicroBitPeridoRadio::instance->txQueue;
 
             radio_status &= ~RADIO_STATUS_TX_RDY;
@@ -185,6 +198,7 @@ void radio_state_machine()
             if(p)
             {
                 NRF_RADIO->PACKETPTR = (uint32_t)p;
+                packet_debug(p);
 
                 // grab next packet and set pointer
                 NRF_RADIO->TASKS_START = 1;
@@ -199,7 +213,7 @@ void radio_state_machine()
         {
             radio_status &= ~(RADIO_STATUS_TX_END | RADIO_STATUS_TRANSMIT);
             log_string("txend\r\n");
-            MicroBitPeridoRadio::instance->popTxQueue();
+            // MicroBitPeridoRadio::instance->popTxQueue();
             radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN);
 
             NRF_RADIO->EVENTS_END = 0;
@@ -219,7 +233,7 @@ void radio_state_machine()
             NRF_RADIO->TASKS_START = 1;
             NRF_RADIO->EVENTS_END = 0;
 
-            MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
+            // MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
             return;
         }
 
@@ -243,26 +257,31 @@ void radio_state_machine()
 
         PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
 
+        packet_debug(p);
+
         bool seen = false;
 
         // check if we've seen this ID before...
         for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
             if(last_seen[i] == p->id)
             {
+                log_string("seen\r\n");
                 seen = true;
                 increment_counter(i);
+                break;
             }
 
         // if seen, queue a new buffer, and mark it as seen
         if(!seen)
         {
+            log_string("fn\r\n");
             MicroBitPeridoRadio::instance->queueRxBuf();
             NRF_RADIO->PACKETPTR = (uint32_t) MicroBitPeridoRadio::instance->getRxBuf();
 
-            valid_packet_received(MicroBitPeridoRadio::instance->recv());
+            // valid_packet_received(MicroBitPeridoRadio::instance->recv());
 
-            last_seen[last_seen_index] = p->id;
-            last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
+            // last_seen[last_seen_index] = p->id;
+            // last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
         }
     }
 
@@ -283,15 +302,6 @@ void radio_state_machine()
 extern "C" void RADIO_IRQHandler(void)
 {
     log_string("irq\r\n");
-    // used to indicate when a packets received / when RX or TX is enabled.
-    if (NRF_RADIO->EVENTS_READY)
-    {
-        log_string("rdy\r\n");
-        NRF_RADIO->EVENTS_READY = 0;
-        NRF_RADIO->TASKS_START = 1;
-        return;
-    }
-
     radio_state_machine();
 }
 
@@ -301,7 +311,7 @@ void tx_callback()
     log_string("tx cb: ");
     log_num(NRF_RADIO->STATE);
     log_string("\r\n");
-    if(packet_received_count == 0 && MicroBitPeridoRadio::instance->txQueueDepth > 0 && NRF_RADIO->STATE != 3)
+    if(packet_received_count == 0 && MicroBitPeridoRadio::instance->txQueueDepth > 0)
     {
         radio_status = RADIO_STATUS_TRANSMIT | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
         radio_state_machine();
@@ -562,6 +572,10 @@ int MicroBitPeridoRadio::enable()
     NRF_CLOCK->TASKS_HFCLKSTART = 1;
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
 
+    // NRF_RADIO->EVENTS_DISABLED = 0;
+    // NRF_RADIO->TASKS_DISABLE = 1;
+    // while(NRF_RADIO->EVENTS_DISABLED == 0);
+
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
     setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
     setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
@@ -570,14 +584,14 @@ int MicroBitPeridoRadio::enable()
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
     NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_1Mbit;
 
-    NRF_RADIO->PREFIX0 = 0;
-
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
     // Statistically, this provides assurance to avoid other similar 2.4GHz protocols that may be in the vicinity.
     // We also map the assigned 8-bit GROUP id into the PREFIX field. This allows the RADIO hardware to perform
     // address matching for us, and only generate an interrupt when a packet matching our group is received.
     NRF_RADIO->BASE0 = MICROBIT_RADIO_BASE_ADDRESS;
+
+    NRF_RADIO->PREFIX0 = 0;
 
     // The RADIO hardware module supports the use of multiple addresses, but as we're running anonymously, we only need one.
     // Configure the RADIO module to use the default address (address 0) for both send and receive operations.
