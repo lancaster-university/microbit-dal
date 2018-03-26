@@ -172,16 +172,14 @@ void radio_state_machine()
                         radio_status &= ~RADIO_STATUS_RX_RDY;
                         radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN);
                     }
-                    // else
-                    //     radio_status |= RADIO_STATUS_STORE;
+                    else
+                        radio_status |= RADIO_STATUS_STORE;
                 }
             }
             else
             {
                 // add last packet to worry queue
             }
-
-            // NRF_RADIO->TASKS_START = 1;
         }
     }
 
@@ -204,7 +202,7 @@ void radio_state_machine()
                 NRF_RADIO->TASKS_START = 1;
                 NRF_RADIO->EVENTS_END = 0;
 
-                // MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
+                MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
                 return;
             }
         }
@@ -213,8 +211,10 @@ void radio_state_machine()
         {
             radio_status &= ~(RADIO_STATUS_TX_END | RADIO_STATUS_TRANSMIT);
             log_string("txend\r\n");
-            // MicroBitPeridoRadio::instance->popTxQueue();
+            MicroBitPeridoRadio::instance->popTxQueue();
             radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN);
+
+            MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_TIME);
 
             NRF_RADIO->EVENTS_END = 0;
         }
@@ -232,8 +232,6 @@ void radio_state_machine()
 
             NRF_RADIO->TASKS_START = 1;
             NRF_RADIO->EVENTS_END = 0;
-
-            // MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
             return;
         }
 
@@ -257,7 +255,7 @@ void radio_state_machine()
 
         PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
 
-        packet_debug(p);
+        // packet_debug(p);
 
         bool seen = false;
 
@@ -278,10 +276,10 @@ void radio_state_machine()
             MicroBitPeridoRadio::instance->queueRxBuf();
             NRF_RADIO->PACKETPTR = (uint32_t) MicroBitPeridoRadio::instance->getRxBuf();
 
-            // valid_packet_received(MicroBitPeridoRadio::instance->recv());
+            valid_packet_received(MicroBitPeridoRadio::instance->recv());
 
-            // last_seen[last_seen_index] = p->id;
-            // last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
+            last_seen[last_seen_index] = p->id;
+            last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
         }
     }
 
