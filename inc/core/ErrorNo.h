@@ -63,7 +63,10 @@ enum ErrorCode{
     MICROBIT_SERIAL_IN_USE = -1011,
 
     // The requested operation had no data to return.
-    MICROBIT_NO_DATA = -1012
+    MICROBIT_NO_DATA = -1012,
+
+    // The requested operation had no data to return.
+    MICROBIT_MIC_FAILED = -1013
 };
 
 /**

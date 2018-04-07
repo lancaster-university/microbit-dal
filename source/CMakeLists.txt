@@ -22,6 +22,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "types/PacketBuffer.cpp"
     "types/RefCounted.cpp"
 
+    "drivers/AES128.cpp"
     "drivers/DynamicPwm.cpp"
     "drivers/HigherLevelTimer.cpp"
     "drivers/MicroBitAccelerometer.cpp"
