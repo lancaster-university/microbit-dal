@@ -57,6 +57,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitButtonService.h"
 #include "MicroBitIOPinService.h"
 #include "MicroBitTemperatureService.h"
+#include "MicroBitPartialFlashingService.h"
 #include "ExternalEvents.h"
 #include "MicroBitButton.h"
 #include "MicroBitStorage.h"
@@ -77,6 +78,9 @@ DEALINGS IN THE SOFTWARE.
 // MicroBitComponent status flags
 #define MICROBIT_BLE_STATUS_STORE_SYSATTR       0x02
 #define MICROBIT_BLE_STATUS_DISCONNECT          0x04
+
+#define MICROBIT_BLE_MODE_PAIRING     0x00
+#define MICROBIT_BLE_MODE_APPLICATION 0x01
 
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
@@ -146,7 +150,7 @@ class MicroBitBLEManager : MicroBitComponent
       * @param enableBonding If true, the security manager enabled bonding.
       *
       * @code
-      * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
+      * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus);
       * @endcode
       */
     void init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding);
@@ -220,7 +224,7 @@ class MicroBitBLEManager : MicroBitComponent
     void stopAdvertising();
 
     /**
-     * A member function used to defer writes to flash, in order to prevent a write collision with 
+     * A member function used to defer writes to flash, in order to prevent a write collision with
      * softdevice.
      * @param handle The handle offered by soft device during pairing.
      * */
@@ -281,6 +285,19 @@ class MicroBitBLEManager : MicroBitComponent
     int advertiseEddystoneUid(const char* uid_namespace, const char* uid_instance, int8_t calibratedPower = MICROBIT_BLE_EDDYSTONE_DEFAULT_POWER, bool connectable = true, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
+  /**
+   * Restarts in BLE Mode
+   *
+   */
+   void restartInBLEMode();
+
+   /**
+    * Get current BLE mode; application, pairing
+    * #define MICROBIT_BLE_MODE_PAIRING     0x00
+    * #define MICROBIT_BLE_MODE_APPLICATION 0x01
+    */
+    uint8_t getBLEMode();
+
   private:
     /**
 	* Displays the device's ID code as a histogram on the provided MicroBitDisplay instance.
@@ -289,12 +306,21 @@ class MicroBitBLEManager : MicroBitComponent
 	*/
     void showNameHistogram(MicroBitDisplay &display);
 
+
+    /**
+    * Displays pairing mode animation
+    *
+    * @param display The display instance used for displaying the histogram.
+    */
+    void showManagementModeAnimation(MicroBitDisplay &display);
+
     #define MICROBIT_BLE_DISCONNECT_AFTER_PAIRING_DELAY  500
-    unsigned long pairing_completed_at_time;   
+    unsigned long pairing_completed_at_time;
 
     int pairingStatus;
     ManagedString passKey;
     ManagedString deviceName;
+    uint8_t bleMode = MICROBIT_BLE_MODE_APPLICATION;
 };
 
 #endif

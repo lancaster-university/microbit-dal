@@ -79,15 +79,21 @@ DEALINGS IN THE SOFTWARE.
 
 // Defines where in memory persistent data is stored.
 #ifndef KEY_VALUE_STORE_PAGE
-#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))	
+#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))
 #endif
 
-#ifndef BLE_BOND_DATA_PAGE 
+#ifndef BLE_BOND_DATA_PAGE
 #define BLE_BOND_DATA_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
 #endif
 
+#ifndef MEMORY_MAP_PAGE
+#define MEMORY_MAP_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
+#endif
+
+// Scratch moved from page 19 to page 20
+// MicroBitFileSystem uses DEFAULT_SCRATCH_PAGE to mark end of FileSystem
 #ifndef DEFAULT_SCRATCH_PAGE
-#define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
+#define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 20))
 #endif
 
 // Address of the end of the current program in FLASH memory.
@@ -130,7 +136,7 @@ extern uint32_t __etext;
 // For standard S110 builds, this should be word aligned and in the range 0x300 - 0x700.
 // Any unused memory will be automatically reclaimed as HEAP memory if both MICROBIT_HEAP_REUSE_SD and MICROBIT_HEAP_ALLOCATOR are enabled.
 #ifndef MICROBIT_SD_GATT_TABLE_SIZE
-#define MICROBIT_SD_GATT_TABLE_SIZE             0x300
+#define MICROBIT_SD_GATT_TABLE_SIZE             0x400
 #endif
 
 //
@@ -372,7 +378,7 @@ extern uint32_t __etext;
 // Defines the logical block size for the file system.
 // Must be a factor of the physical PAGE_SIZE (ideally a power of two less).
 //
-#ifndef MBFS_BLOCK_SIZE		
+#ifndef MBFS_BLOCK_SIZE
 #define MBFS_BLOCK_SIZE		256
 #endif
 
@@ -382,7 +388,7 @@ extern uint32_t __etext;
 // Should be <= MBFS_BLOCK_SIZE.
 //
 #ifndef MBFS_CACHE_SIZE
-#define MBFS_CACHE_SIZE	    0	
+#define MBFS_CACHE_SIZE	    0
 #endif
 
 //

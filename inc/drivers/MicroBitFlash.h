@@ -73,7 +73,7 @@ class MicroBitFlash
       * Erase an entire page.
       * @param page_address address of first word of page.
       */
-    void erase_page(uint32_t* page_address);
+    uint8_t erase_page(uint32_t* page_address);
 
     /**
       * Write to flash memory, assuming that a write is valid

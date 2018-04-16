@@ -55,9 +55,16 @@ extern "C" void btle_set_user_evt_handler(void (*func)(uint32_t));
 static bool evt_handler_registered = false;
 static volatile bool flash_op_complete = false;
 
+/*
+ * static void SWI1_IRQHandler(uint32_t evt)
+{
+       flash_op_complete = true;
+}
+*/
+
 static void nvmc_event_handler(uint32_t evt)
 {
-    if(evt == NRF_EVT_FLASH_OPERATION_SUCCESS)
+        if(evt == NRF_EVT_FLASH_OPERATION_SUCCESS)
         flash_op_complete = true;
 }
 
@@ -101,15 +108,19 @@ int MicroBitFlash::need_erase(uint8_t* source, uint8_t* flash_addr, int len)
   * Erase an entire page
   * @param page_address address of first word of page
   */
-void MicroBitFlash::erase_page(uint32_t* pg_addr) 
+uint8_t MicroBitFlash::erase_page(uint32_t* pg_addr) 
 {
     if (ble_running())
     {
         flash_op_complete = false;
         while(1)
         {
-            if (sd_flash_page_erase(((uint32_t)pg_addr)/PAGE_SIZE) == NRF_SUCCESS)
+            uint8_t ret = sd_flash_page_erase(((uint32_t)pg_addr)/PAGE_SIZE);
+            if (ret == NRF_SUCCESS) {
                 break;
+            } else {
+                return ret;
+            }
 
             wait_ms(10);
         }
