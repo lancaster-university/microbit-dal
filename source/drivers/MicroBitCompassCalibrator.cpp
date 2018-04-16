@@ -64,44 +64,70 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
     {
         uint8_t x;
         uint8_t y;
-        uint8_t on;
     };
 
-    const int PERIMETER_POINTS = 12;
+    /* Relating to the selection of the points and calibration loop */
+    const int PERIMETER_POINTS = 25;
     const int PIXEL1_THRESHOLD = 200;
-    const int PIXEL2_THRESHOLD = 800;
+    const int PIXEL2_THRESHOLD = 680;
+    const int TIME_STEP = 100;
+
+    /* Contstants relating to repeatedly scrolling the 'help' message */
+    const int REDISPLAY_MSG_TIMEOUT_MS = 30000;
+    const int MSG_TIME = 155 * TIME_STEP; //We require MSG_TIME % TIME_STEP == 0
+
+    /* Number of samples required before message is terminated */
+    const int SAMPLES_END_MSG_COUNT = 15;
+
 
     wait_ms(100);
 
-	Matrix4 X(PERIMETER_POINTS, 4);
-    Point perimeter[PERIMETER_POINTS] = {{1,0,0}, {2,0,0}, {3,0,0}, {4,1,0}, {4,2,0}, {4,3,0}, {3,4,0}, {2,4,0}, {1,4,0}, {0,3,0}, {0,2,0}, {0,1,0}};
-    Point cursor = {2,2,0};
+    Matrix4 X(PERIMETER_POINTS, 4);
+    Point perimeter[PERIMETER_POINTS] = {{0,0}, {1,0}, {2,0}, {3,0}, {4,0}
+	                                ,{0,1}, {1,1}, {2,1}, {3,1}, {4,1}
+	                                ,{0,2}, {1,2}, {2,2}, {3,2}, {4,2}
+	                                ,{0,3}, {1,3}, {2,3}, {3,3}, {4,3}
+	                                ,{0,4}, {1,4}, {2,4}, {3,4}, {4,4}};
+
+    Point cursor = {2,2};
 
     MicroBitImage img(5,5);
     MicroBitImage smiley("0,255,0,255,0\n0,255,0,255,0\n0,0,0,0,0\n255,0,0,0,255\n0,255,255,255,0\n");
-    int samples = 0;
+
+    uint8_t visited[PERIMETER_POINTS] = { 0 };
+    uint8_t cursor_on = 0;
+    uint8_t samples = 0;
+    uint8_t samples_this_period = 0;
+    int16_t remaining_scroll_time = MSG_TIME; // 32s maximum in uint16_t
 
     // Firstly, we need to take over the display. Ensure all active animations are paused.
     display.stopAnimation();
-    display.scrollAsync("DRAW A CIRCLE");
-
-    for (int i=0; i<110; i++)
-        wait_ms(100);
-
-    display.stopAnimation();
-    display.clear();
 
     while(samples < PERIMETER_POINTS)
     {
+        // Scroll a message the first time we enter this loop and every REDISPLAY_MSG_TIMEOUT_MS
+        if (remaining_scroll_time == MSG_TIME || remaining_scroll_time <= -REDISPLAY_MSG_TIMEOUT_MS)        {
+                display.clear();
+                display.scrollAsync("TILT TO FILL SCREEN "); // Takes about 14s
+
+                remaining_scroll_time = MSG_TIME;
+                samples_this_period = 0;
+        }
+        else if (remaining_scroll_time == 0 || samples_this_period == SAMPLES_END_MSG_COUNT)
+        {
+                // This stops the scrolling at the end of the message or when enough points are
+		// found. Using 15 means someone can start calibrating as soon as the message starts
+		// and quickly dismiss the message by performing the correct calibration motion
+		//
+                // ...and it is also the source of the ((MSG_TIME % TIME_STEP) == 0) requirement
+                display.stopAnimation();
+        }
         // update our model of the flash status of the user controlled pixel.
-        cursor.on = (cursor.on + 1) % 4;
+        cursor_on = (cursor_on + 1) % 4;
 
         // take a snapshot of the current accelerometer data.
         int x = accelerometer.getX();
         int y = accelerometer.getY();
-
-        // Wait a little whie for the button state to stabilise (one scheduler tick).
-        wait_ms(10);
 
         // Deterine the position of the user controlled pixel on the screen.
         if (x < -PIXEL2_THRESHOLD)
@@ -130,19 +156,20 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
 
         // Turn on any pixels that have been visited.
         for (int i=0; i<PERIMETER_POINTS; i++)
-            if (perimeter[i].on)
+            if (visited[i] ==  1)
                 img.setPixelValue(perimeter[i].x, perimeter[i].y, 255);
 
         // Update the pixel at the users position.
-        img.setPixelValue(cursor.x, cursor.y, 255);
+        img.setPixelValue(cursor.x, cursor.y, cursor_on);
 
-        // Update the buffer to the screen.
-        display.image.paste(img,0,0,0);
+        // Update the buffer to the screen ONLY if we've finished scrolling the message
+        if (remaining_scroll_time < 0 || samples_this_period > SAMPLES_END_MSG_COUNT)
+            display.image.paste(img,0,0,0);
 
         // test if we need to update the state at the users position.
         for (int i=0; i<PERIMETER_POINTS; i++)
         {
-            if (cursor.x == perimeter[i].x && cursor.y == perimeter[i].y && !perimeter[i].on)
+            if (cursor.x == perimeter[i].x && cursor.y == perimeter[i].y && !(visited[i] == 1))
             {
                 // Record the sample data for later processing...
                 X.set(samples, 0, compass.getX(RAW));
@@ -151,12 +178,14 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
                 X.set(samples, 3, 1);
 
                 // Record that this pixel has been visited.
-                perimeter[i].on = 1;
+                visited[i] = 1;
                 samples++;
+                samples_this_period++;
             }
         }
 
-        wait_ms(100);
+        wait_ms(TIME_STEP);
+        remaining_scroll_time-=TIME_STEP;
     }
 
     // We have enough sample data to make a fairly accurate calibration.
