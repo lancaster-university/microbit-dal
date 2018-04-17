@@ -251,6 +251,11 @@ extern uint32_t __etext;
 #define MICROBIT_BLE_ADVERTISING_TIMEOUT        0
 #endif
 
+// Define the default BLE advertising interval in ms
+#ifndef MICROBIT_BLE_ADVERTISING_INTERVAL
+#define MICROBIT_BLE_ADVERTISING_INTERVAL        50
+#endif
+
 // Defines default power level of the BLE radio transmitter.
 // Valid values are in the range 0..7 inclusive, with 0 being the lowest power and 7 the highest power.
 // Based on trials undertaken by the BBC, the radio is normally set to its lowest power level

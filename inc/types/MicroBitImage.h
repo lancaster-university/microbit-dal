@@ -266,9 +266,9 @@ class MicroBitImage
       * Replaces the content of this image with that of a given 2D array representing
       * the image.
       *
-      * @param x the width of the image. Must be within the dimensions of the image.
+      * @param width the width of the image. Must be within the dimensions of the image.
       *
-      * @param y the width of the image. Must be within the dimensions of the image.
+      * @param height the height of the image. Must be within the dimensions of the image.
       *
       * @param bitmap a 2D array representing the image.
       *
@@ -276,13 +276,13 @@ class MicroBitImage
       *
       * @code
       * const uint8_t heart[] = { 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, }; // a cute heart
-      * MicroBitImage i();
-      * i.printImage(0,0,heart);
+      * MicroBitImage i(10, 5);
+      * i.printImage(10,5,heart);
       * @endcode
       *
       * @note all coordinates originate from the top left of an image.
       */
-    int printImage(int16_t x, int16_t y, const uint8_t *bitmap);
+    int printImage(int16_t width, int16_t height, const uint8_t *bitmap);
 
     /**
       * Pastes a given bitmap at the given co-ordinates.
