@@ -1,6 +1,6 @@
 {
   "name": "microbit-dal",
-  "version": "2.0.0-rc9-calliope-1.0.4",
+  "version": "2.0.0-rc9-calliope-1.0.5",
   "license": "MIT",
   "description": "The runtime library for the Calliope mini, based on the dal for BBC micro:bit, developed by Lancaster University",
   "keywords": [
