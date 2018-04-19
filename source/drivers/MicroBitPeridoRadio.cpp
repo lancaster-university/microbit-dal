@@ -90,7 +90,7 @@ extern void increment_counter(int);
 
 #define LAST_SEEN_BUFFER_SIZE       3
 
-#define DEBUG_MODE
+// #define DEBUG_MODE
 
 /**
  *  Timings for each event (us):
@@ -163,7 +163,11 @@ void radio_state_machine()
 
     if(radio_status & RADIO_STATUS_DISABLED)
     {
+#ifdef DEBUG_MODE
+        log_string("disabled\r\n");
+#endif
         NRF_RADIO->EVENTS_DISABLED = 0;
+        NRF_RADIO->EVENTS_END = 0;
 
         if(radio_status & RADIO_STATUS_TX_EN)
         {
@@ -352,6 +356,15 @@ void radio_state_machine()
                 MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (previous_period * 1000));
             }
 
+            if(tx && tx->id == p->id && tx->ttl < p->ttl)
+            {
+#ifdef DEBUG_MODE
+                log_string("POP\r\n");
+#endif
+                // only pop our tx buffer if something responds
+                MicroBitPeridoRadio::instance->popTxQueue();
+            }
+
             return;
         }
 
@@ -367,6 +380,7 @@ void radio_state_machine()
             // the original sender won't reach a ttl of 1, account for the transmitter configuring timer using an offset of a cycle to TX mode
             if(MicroBitPeridoRadio::instance->rxBuf->ttl == 1)
             {
+                radio_status &= ~RADIO_STATUS_FORWARD;
                 radio_status |= RADIO_STATUS_WAKE_CONFIGURED;
                 previous_period = MicroBitPeridoRadio::instance->rxBuf->sleep_period_ms;
                 MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (previous_period * 1000) + TX_ENABLE_TIME + RX_TX_DISABLE_TIME);
@@ -403,41 +417,30 @@ void radio_state_machine()
             previous_period = p->sleep_period_ms;
         }
 
-        if(tx && tx->id == p->id)
-        {
-#ifdef DEBUG_MODE
-            log_string("POP\r\n");
-#endif
-            // only pop our tx buffer if something responds
-            MicroBitPeridoRadio::instance->popTxQueue();
-        }
-        else
-        {
-            bool seen = false;
+        bool seen = false;
 
-            // check if we've seen this ID before...
-            for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
-                if(last_seen[i] == p->id)
-                {
-                    // log_string("seen\r\n");
-                    seen = true;
-                    increment_counter(i);
-                }
-
-            // if seen, queue a new buffer, and mark it as seen
-            if(!seen)
+        // check if we've seen this ID before...
+        for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
+            if(last_seen[i] == p->id)
             {
-#ifdef DEBUG_MODE
-                log_string("fn\r\n");
-#endif
-                MicroBitPeridoRadio::instance->queueRxBuf();
-                NRF_RADIO->PACKETPTR = (uint32_t) MicroBitPeridoRadio::instance->getRxBuf();
-
-                valid_packet_received(MicroBitPeridoRadio::instance->recv());
-
-                last_seen[last_seen_index] = p->id;
-                last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
+                // log_string("seen\r\n");
+                seen = true;
+                increment_counter(i);
             }
+
+        // if seen, queue a new buffer, and mark it as seen
+        if(!seen)
+        {
+#ifdef DEBUG_MODE
+            log_string("fn\r\n");
+#endif
+            MicroBitPeridoRadio::instance->queueRxBuf();
+            NRF_RADIO->PACKETPTR = (uint32_t) MicroBitPeridoRadio::instance->getRxBuf();
+
+            valid_packet_received(MicroBitPeridoRadio::instance->recv());
+
+            last_seen[last_seen_index] = p->id;
+            last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
         }
     }
 
@@ -460,7 +463,15 @@ void radio_state_machine()
 extern "C" void RADIO_IRQHandler(void)
 {
 #ifdef DEBUG_MODE
-    log_string("irq\r\n");
+    if(NRF_RADIO->EVENTS_END)
+        log_string("1");
+    else if(NRF_RADIO->EVENTS_DISABLED)
+        log_string("2");
+    else if(NRF_RADIO->EVENTS_ADDRESS)
+        log_string("3");
+    else
+        log_string("0");
+    log_string("\r\n");
 #endif
     radio_state_machine();
 }
@@ -475,10 +486,13 @@ void tx_callback()
 #endif
     // nothing to do if sleeping
     if(radio_status & RADIO_STATUS_SLEEPING)
+    {
+        log_string("SLEEEP");
         return;
+    }
 
     // no one else has transmitted recently, and we are not receiving, we can transmit
-    if(packet_received_count == tx_received_count && MicroBitPeridoRadio::instance->txQueueDepth > 0 && !(radio_status & RADIO_STATUS_RECEIVING))
+    if(packet_received_count == tx_received_count && MicroBitPeridoRadio::instance->txQueueDepth > 0 && !(radio_status & (RADIO_STATUS_RECEIVING | RADIO_STATUS_FORWARD))
     {
         radio_status = (radio_status & RADIO_STATUS_DISCOVERING) | RADIO_STATUS_TRANSMIT | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
         radio_state_machine();
@@ -503,7 +517,6 @@ void go_to_sleep()
     // we have reached the end of the period with no response, come back in another PERIOD useconds.
     if(radio_status & RADIO_STATUS_DISCOVERING)
     {
-        MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) +  DISCOVERY_TX_BACKOFF_TIME + microbit_random(DISCOVERY_TX_BACKOFF_TIME));
         MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + DISCOVERY_BACKOFF_TIME);
         return;
     }
@@ -554,15 +567,20 @@ void wake_up()
 
     if (radio_status & RADIO_STATUS_DISCOVERING)
     {
+#ifdef DEBUG_MODE
         log_string("dscvr\r\n");
+#endif
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) +  DISCOVERY_TX_BACKOFF_TIME + microbit_random(DISCOVERY_TX_BACKOFF_TIME));
         MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + DISCOVERY_BACKOFF_TIME);
     }
     else
     {
+#ifdef DEBUG_MODE
         log_string("norm\r\n");
+#endif
+        uint32_t tx_backoff = TX_BACKOFF_MIN +  microbit_random(TX_BACKOFF_TIME);
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_MIN +  microbit_random(TX_BACKOFF_TIME));
-        MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + SLEEP_BACKOFF_TIME);
+        MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + (tx_backoff + microbit_random(SLEEP_BACKOFF_TIME)));
     }
 
     radio_state_machine();
@@ -587,7 +605,7 @@ void timer_callback(uint8_t state)
 }
 
 //TODO: fix sleep check occurring before tx check happens? Is this a bug?
-
+//TODO: FIND cause of IRQ spinning -- some event is not being cleared
 /**
   * Constructor.
   *
@@ -814,10 +832,6 @@ int MicroBitPeridoRadio::enable()
     NRF_CLOCK->TASKS_HFCLKSTART = 1;
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
 
-    // NRF_RADIO->EVENTS_DISABLED = 0;
-    // NRF_RADIO->TASKS_DISABLE = 1;
-    // while(NRF_RADIO->EVENTS_DISABLED == 0);
-
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
     setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
     setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
@@ -871,9 +885,6 @@ int MicroBitPeridoRadio::enable()
     NVIC_SetPriority(RADIO_IRQn, 1);
     NVIC_EnableIRQ(RADIO_IRQn);
 
-    // register ourselves for a callback event, in order to empty the receive queue.
-    fiber_add_idle_component(this);
-
     log_num(NRF_RADIO->STATE);
 
     radio_status = RADIO_STATUS_DISABLED | RADIO_STATUS_DISCOVERING;
@@ -907,9 +918,6 @@ int MicroBitPeridoRadio::disable()
     NRF_RADIO->TASKS_DISABLE = 1;
     while(NRF_RADIO->EVENTS_DISABLED == 0);
 
-    // deregister ourselves from the callback event used to empty the receive queue.
-    fiber_remove_idle_component(this);
-
     // record that the radio is now disabled
     status &= ~MICROBIT_RADIO_STATUS_INITIALISED;
 
@@ -941,29 +949,6 @@ int MicroBitPeridoRadio::setPeriod(uint32_t period_ms)
 uint32_t MicroBitPeridoRadio::getPeriod()
 {
     return sleepPeriodMs;
-}
-
-/**
-  * A background, low priority callback that is triggered whenever the processor is idle.
-  * Here, we empty our queue of received packets, and pass them onto higher level protocol handlers.
-  */
-void MicroBitPeridoRadio::idleTick()
-{
-    // Walk the list of packets and process each one.
-    while(rxQueue)
-    {
-        PeridoFrameBuffer *p = rxQueue;
-
-        // MicroBitEvent(MICROBIT_ID_RADIO_DATA_READY, p->protocol);
-
-        // If the packet was processed, it will have been recv'd, and taken from the queue.
-        // If this was a packet for an unknown protocol, it will still be there, so simply free it.
-        if (p == rxQueue)
-        {
-            recv();
-            delete p;
-        }
-    }
 }
 
 /**

@@ -83,7 +83,7 @@ struct PeridoFrameBuffer
 };
 
 
-class MicroBitPeridoRadio : MicroBitComponent
+class MicroBitPeridoRadio : public MicroBitComponent
 {
 
     int                     rssi;
@@ -195,12 +195,6 @@ class MicroBitPeridoRadio : MicroBitComponent
       * @return the current period in milliseconds
       */
     uint32_t getPeriod();
-
-    /**
-      * A background, low priority callback that is triggered whenever the processor is idle.
-      * Here, we empty our queue of received packets, and pass them onto higher level protocol handlers.
-      */
-    virtual void idleTick();
 
     /**
       * Determines the number of packets ready to be processed.
