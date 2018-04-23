@@ -454,9 +454,8 @@ void radio_state_machine()
         // Turn off the transceiver.
         NRF_RADIO->EVENTS_DISABLED = 0;
         NRF_RADIO->TASKS_DISABLE = 1;
-        radio_status &= ~RADIO_STATUS_DISABLE;
-        radio_status |= RADIO_STATUS_DISABLED;
 
+        radio_status = (radio_status & (HIGH_LEVEL_STATE_MASK | RADIO_STATUS_RX_EN | RADIO_STATUS_TX_EN)) | RADIO_STATUS_DISABLED;
         MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_TX_DISABLE_TIME);
         return;
     }
@@ -582,7 +581,8 @@ void wake_up()
 #ifdef DEBUG_MODE
         log_string("norm\r\n");
 #endif
-        uint32_t tx_backoff = TX_BACKOFF_MIN +  microbit_random(TX_BACKOFF_TIME);
+        uint16_t len = (MicroBitPeridoRadio::instance->txQueueDepth > 0) ? MicroBitPeridoRadio::instance->txQueueDepth : 1;
+        uint32_t tx_backoff = (TX_BACKOFF_MIN / len) +  microbit_random(TX_BACKOFF_TIME);
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + tx_backoff);
         MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + (tx_backoff + SLEEP_BACKOFF_TIME));
     }
@@ -1024,7 +1024,7 @@ int MicroBitPeridoRadio::send(PeridoFrameBuffer& buffer)
   */
 int MicroBitPeridoRadio::send(uint8_t *buffer, int len)
 {
-    if (buffer == NULL || len < 0 || len > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_PERIDO_HEADER_SIZE - 1)
+    if (buffer == NULL || len < 0 || len > MICROBIT_PERIDO_MAX_PACKET_SIZE + MICROBIT_PERIDO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
 
     PeridoFrameBuffer buf;

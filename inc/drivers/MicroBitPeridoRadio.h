@@ -78,7 +78,7 @@ struct PeridoFrameBuffer
     uint32_t            app_id;
     uint32_t            namespace_id;
     uint32_t            sleep_period_ms;
-    uint8_t             payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
+    uint8_t             payload[MICROBIT_PERIDO_MAX_PACKET_SIZE];    // User / higher layer protocol data
     PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
 };
 
