@@ -80,7 +80,7 @@ struct PeridoFrameBuffer
     uint32_t            sleep_period_ms;
     uint8_t             payload[MICROBIT_PERIDO_MAX_PACKET_SIZE];    // User / higher layer protocol data
     PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
-};
+} __attribute__((packed));
 
 
 class MicroBitPeridoRadio : public MicroBitComponent
@@ -153,9 +153,9 @@ class MicroBitPeridoRadio : public MicroBitComponent
       * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if a replacement receiver buffer
       *         could not be allocated (either by policy or memory exhaustion).
       */
-    int queueRxBuf();
+    int copyRxBuf();
 
-    int queueTxBuf(PeridoFrameBuffer& tx);
+    int queueTxBuf(PeridoFrameBuffer* tx);
 
     /**
       * Initialises the radio for use as a multipoint sender/receiver
@@ -223,7 +223,7 @@ class MicroBitPeridoRadio : public MicroBitComponent
       *
       * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
       */
-    int send(PeridoFrameBuffer& buffer);
+    int send(PeridoFrameBuffer* buffer);
 
     int send(uint8_t *buffer, int len);
 
