@@ -1,3 +1,7 @@
+#include "MicroBitConfig.h"
+
+#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_MODIFIED
+
 #include "Radio.h"
 #include "RadioREST.h"
 #include "MicroBitFiber.h"
@@ -354,3 +358,5 @@ DataPacket* RadioREST::recvRaw(uint16_t id)
 {
     return removeFromQueue(&rxQueue, id);
 }
+
+#endif

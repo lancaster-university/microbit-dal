@@ -24,6 +24,9 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "MicroBitConfig.h"
+
+#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_MODIFIED
+
 #include "Radio.h"
 #include "MicroBitComponent.h"
 #include "EventModel.h"
@@ -541,3 +544,5 @@ int Radio::send(RadioFrameBuffer *buffer)
 
     return MICROBIT_OK;
 }
+
+#endif

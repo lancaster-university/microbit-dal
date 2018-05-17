@@ -24,6 +24,8 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "MicroBitConfig.h"
+
+#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_MODIFIED
 #include "Radio.h"
 
 /**
@@ -173,3 +175,4 @@ void RadioEvent::eventReceived(MicroBitEvent e)
 
     radio.send(&buf);
 }
+#endif
