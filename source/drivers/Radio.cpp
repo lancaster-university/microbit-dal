@@ -110,7 +110,7 @@ Radio::Radio(uint16_t appId, uint16_t id) : datagram(*this), event (*this), rest
 {
     this->id = id;
     this->status = 0;
-	this->group = RADIO_DEFAULT_GROUP;
+	this->group = MICROBIT_RADIO_DEFAULT_GROUP;
 	this->queueDepth = 0;
     this->rssi = 0;
     this->rxQueue = NULL;
@@ -179,7 +179,7 @@ int Radio::queueRxBuf()
     if (rxBuf == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (queueDepth >= RADIO_MAXIMUM_RX_BUFFERS)
+    if (queueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
         return MICROBIT_NO_RESOURCES;
 
     // Store the received RSSI value in the frame
@@ -227,7 +227,7 @@ int Radio::queueRxBuf()
   */
 int Radio::setRSSI(int rssi)
 {
-    if (!(status & RADIO_STATUS_INITIALISED))
+    if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
         return MICROBIT_NOT_SUPPORTED;
 
     this->rssi = rssi;
@@ -244,7 +244,7 @@ int Radio::setRSSI(int rssi)
   */
 int Radio::getRSSI()
 {
-    if (!(status & RADIO_STATUS_INITIALISED))
+    if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
         return MICROBIT_NOT_SUPPORTED;
 
     return this->rssi;
@@ -259,7 +259,7 @@ int Radio::enable()
 {
     log_string("ENABLE");
     // If the device is already initialised, then there's nothing to do.
-    if (status & RADIO_STATUS_INITIALISED)
+    if (status & MICROBIT_RADIO_STATUS_INITIALISED)
         return MICROBIT_OK;
 
     // Only attempt to enable this radio mode if BLE is disabled.
@@ -280,8 +280,8 @@ int Radio::enable()
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
 
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
-    setTransmitPower(RADIO_DEFAULT_TX_POWER);
-    setFrequencyBand(RADIO_DEFAULT_FREQUENCY);
+    setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
+    setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
@@ -292,7 +292,7 @@ int Radio::enable()
     // Statistically, this provides assurance to avoid other similar 2.4GHz protocols that may be in the vicinity.
     // We also map the assigned 8-bit GROUP id into the PREFIX field. This allows the RADIO hardware to perform
     // address matching for us, and only generate an interrupt when a packet matching our group is received.
-    NRF_RADIO->BASE0 = RADIO_BASE_ADDRESS;
+    NRF_RADIO->BASE0 = MICROBIT_RADIO_BASE_ADDRESS;
 
     // Join the default group. This will configure the remaining byte in the RADIO hardware module.
     setGroup(this->group);
@@ -344,7 +344,7 @@ int Radio::enable()
     fiber_add_idle_component(this);
 
     // Done. Record that our RADIO is configured.
-    status |= RADIO_STATUS_INITIALISED;
+    status |= MICROBIT_RADIO_STATUS_INITIALISED;
 
     return MICROBIT_OK;
 }
@@ -374,7 +374,7 @@ int Radio::disable()
     fiber_remove_idle_component(this);
 
     // record that the radio is now disabled
-    status &= ~RADIO_STATUS_INITIALISED;
+    status &= ~MICROBIT_RADIO_STATUS_INITIALISED;
 
     return MICROBIT_OK;
 }
@@ -413,15 +413,15 @@ void Radio::idleTick()
 
         switch (p->protocol)
         {
-            case RADIO_PROTOCOL_DATAGRAM:
+            case MICROBIT_RADIO_PROTOCOL_DATAGRAM:
                 datagram.packetReceived();
                 break;
 
-            case RADIO_PROTOCOL_EVENTBUS:
+            case MICROBIT_RADIO_PROTOCOL_EVENTBUS:
                 event.packetReceived();
                 break;
 
-            case RADIO_PROTOCOL_REST:
+            case MICROBIT_RADIO_PROTOCOL_REST:
                 rest.packetReceived();
                 break;
 
@@ -495,7 +495,7 @@ int Radio::send(RadioFrameBuffer *buffer)
     if (buffer == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (buffer->length > RADIO_MAX_PACKET_SIZE + RADIO_HEADER_SIZE - 1)
+    if (buffer->length > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
 
     // Firstly, disable the Radio interrupt. We want to wait until the trasmission completes.

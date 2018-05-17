@@ -78,10 +78,10 @@ void RadioREST::sendDataPacket(DataPacket* p)
 {
     RadioFrameBuffer buf;
 
-    buf.length = p->len + REST_HEADER_SIZE + RADIO_HEADER_SIZE - 1;
+    buf.length = p->len + REST_HEADER_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1;
     buf.version = 1;
     buf.group = 0;
-    buf.protocol = RADIO_PROTOCOL_REST;
+    buf.protocol = MICROBIT_RADIO_PROTOCOL_REST;
     memcpy(buf.payload, (uint8_t*)p, p->len + REST_HEADER_SIZE);
 
     radio.send(&buf);
@@ -307,8 +307,8 @@ void RadioREST::packetReceived()
 
     // add to our RX queue for app handling.
     DataPacket* p = new DataPacket();
-    memcpy(p, packet->payload, packet->length - (RADIO_HEADER_SIZE - 1));
-    p->len = packet->length - (RADIO_HEADER_SIZE - 1);
+    memcpy(p, packet->payload, packet->length - (MICROBIT_RADIO_HEADER_SIZE - 1));
+    p->len = packet->length - (MICROBIT_RADIO_HEADER_SIZE - 1);
 
     delete packet;
 

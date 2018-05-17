@@ -72,7 +72,7 @@ int RadioDatagram::recv(uint8_t *buf, int len)
     RadioFrameBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    int l = min(len, p->length - (RADIO_HEADER_SIZE - 1));
+    int l = min(len, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1));
 
     // Fill in the buffer provided, if possible.
     memcpy(buf, p->payload, l);
@@ -97,7 +97,7 @@ PacketBuffer RadioDatagram::recv()
     RadioFrameBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    PacketBuffer packet(p->payload, p->length - (RADIO_HEADER_SIZE - 1), p->rssi);
+    PacketBuffer packet(p->payload, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1), p->rssi);
 
     delete p;
     return packet;
@@ -118,15 +118,15 @@ PacketBuffer RadioDatagram::recv()
   */
 int RadioDatagram::send(uint8_t *buffer, int len)
 {
-    if (buffer == NULL || len < 0 || len > RADIO_MAX_PACKET_SIZE + RADIO_HEADER_SIZE - 1)
+    if (buffer == NULL || len < 0 || len > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
 
     RadioFrameBuffer buf;
 
-    buf.length = len + RADIO_HEADER_SIZE - 1;
+    buf.length = len + MICROBIT_RADIO_HEADER_SIZE - 1;
     buf.version = 1;
     buf.group = 0;
-    buf.protocol = RADIO_PROTOCOL_DATAGRAM;
+    buf.protocol = MICROBIT_RADIO_PROTOCOL_DATAGRAM;
     memcpy(buf.payload, buffer, len);
 
     return radio.send(&buf);
@@ -190,7 +190,7 @@ void RadioDatagram::packetReceived()
             queueDepth++;
         }
 
-        if (queueDepth >= RADIO_MAXIMUM_RX_BUFFERS)
+        if (queueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
         {
             delete packet;
             return;
@@ -199,5 +199,5 @@ void RadioDatagram::packetReceived()
         p->next = packet;
     }
 
-    MicroBitEvent(MICROBIT_ID_RADIO, RADIO_EVT_DATAGRAM);
+    MicroBitEvent(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM);
 }

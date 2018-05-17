@@ -61,25 +61,21 @@ struct RadioFrameBuffer;
  */
 
 // Status Flags
-#define RADIO_STATUS_INITIALISED       0x0001
+#define MICROBIT_RADIO_STATUS_INITIALISED       0x0001
 
 // Default configuration values
-#define RADIO_BASE_ADDRESS             0x75626974
-#define RADIO_DEFAULT_GROUP            0
-#define RADIO_DEFAULT_TX_POWER         6
-#define RADIO_DEFAULT_FREQUENCY        7
-#define RADIO_MAX_PACKET_SIZE          255
-#define RADIO_HEADER_SIZE              4
-#define RADIO_MAXIMUM_RX_BUFFERS       4
+#define MICROBIT_RADIO_BASE_ADDRESS             0x75626974
+#define MICROBIT_RADIO_DEFAULT_GROUP            0
+#define MICROBIT_RADIO_DEFAULT_TX_POWER         6
+#define MICROBIT_RADIO_DEFAULT_FREQUENCY        7
+#define MICROBIT_RADIO_MAX_PACKET_SIZE          255
+#define MICROBIT_RADIO_HEADER_SIZE              4
+#define MICROBIT_RADIO_MAXIMUM_RX_BUFFERS       4
 
 // Known Protocol Numbers
-#define RADIO_PROTOCOL_DATAGRAM                 1       // A simple, single frame datagram. a little like UDP but with smaller packets. :-)
-#define RADIO_PROTOCOL_EVENTBUS                 2       // Transparent propogation of events from one micro:bit to another.
-#define RADIO_PROTOCOL_REST                     3
-
-// Events
-#define RADIO_EVT_DATAGRAM                      1       // Event to signal that a new datagram has been received.
-
+#define MICROBIT_RADIO_PROTOCOL_DATAGRAM        1       // A simple, single frame datagram. a little like UDP but with smaller packets. :-)
+#define MICROBIT_RADIO_PROTOCOL_EVENTBUS        2       // Transparent propogation of events from one micro:bit to another.
+#define MICROBIT_RADIO_PROTOCOL_REST            3
 
 struct RadioFrameBuffer
 {
@@ -88,7 +84,7 @@ struct RadioFrameBuffer
     uint8_t         group;                              // ID of the group to which this packet belongs.
     uint8_t         protocol;                           // Inner protocol number c.f. those issued by IANA for IP protocols
 
-    uint8_t         payload[RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
+    uint8_t         payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
     RadioFrameBuffer     *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
     int             rssi;                               // Received signal strength of this frame.
 };

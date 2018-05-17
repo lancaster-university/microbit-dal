@@ -165,10 +165,10 @@ void RadioEvent::eventReceived(MicroBitEvent e)
 
     RadioFrameBuffer buf;
 
-    buf.length = sizeof(MicroBitEvent) + RADIO_HEADER_SIZE - 1;
+    buf.length = sizeof(MicroBitEvent) + MICROBIT_RADIO_HEADER_SIZE - 1;
     buf.version = 1;
     buf.group = 0;
-    buf.protocol = RADIO_PROTOCOL_EVENTBUS;
+    buf.protocol = MICROBIT_RADIO_PROTOCOL_EVENTBUS;
     memcpy(buf.payload, (const uint8_t *)&e, sizeof(MicroBitEvent));
 
     radio.send(&buf);
