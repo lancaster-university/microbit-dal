@@ -77,6 +77,9 @@ struct RadioFrameBuffer;
 #define MICROBIT_RADIO_PROTOCOL_EVENTBUS        2       // Transparent propogation of events from one micro:bit to another.
 #define MICROBIT_RADIO_PROTOCOL_REST            3
 
+// Events
+#define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received.
+
 struct RadioFrameBuffer
 {
     uint8_t         length;                             // The length of the remaining bytes in the packet. includes protocol/version/group fields, excluding the length field itself.
