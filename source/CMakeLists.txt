@@ -21,6 +21,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "types/MicroBitImage.cpp"
     "types/PacketBuffer.cpp"
     "types/RefCounted.cpp"
+    "types/DynamicType.cpp"
 
     "drivers/DynamicPwm.cpp"
     "drivers/MicroBitAccelerometer.cpp"
