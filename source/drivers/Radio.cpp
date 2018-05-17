@@ -360,7 +360,7 @@ int Radio::disable()
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
-    if (!(status & RADIO_STATUS_INITIALISED))
+    if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
         return MICROBIT_OK;
 
     // Disable interrupts and STOP any ongoing packet reception.
