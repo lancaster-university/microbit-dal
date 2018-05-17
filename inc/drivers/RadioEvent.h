@@ -22,19 +22,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include "MicroBitConfig.h"
 
-#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_MODIFIED
-
-#include "RadioEvent.h"
-
-#else
-
-#ifndef MICROBIT_RADIO_EVENT_H
-#define MICROBIT_RADIO_EVENT_H
+#ifndef RADIO_EVENT_H
+#define RADIO_EVENT_H
 
 #include "mbed.h"
-#include "MicroBitRadio.h"
+#include "MicroBitConfig.h"
+#include "Radio.h"
 #include "EventModel.h"
 
 /**
@@ -50,22 +44,22 @@ DEALINGS IN THE SOFTWARE.
  * teaching aid to demonstrate how simple communications operates, and to provide a sandpit through which learning can take place.
  * For serious applications, BLE should be considered a substantially more secure alternative.
  */
-class MicroBitRadioEvent
+class RadioEvent
 {
     bool            suppressForwarding;     // A private flag used to prevent event forwarding loops.
-    MicroBitRadio   &radio;                 // A reference to the underlying radio module to use.
+    Radio   &radio;                 // A reference to the underlying radio module to use.
 
     public:
 
     /**
       * Constructor.
       *
-      * Creates an instance of MicroBitRadioEvent which offers the ability to extend
+      * Creates an instance of RadioEvent which offers the ability to extend
       * the micro:bit's default EventModel to other micro:bits in the vicinity.
       *
       * @param r The underlying radio module used to send and receive data.
       */
-    MicroBitRadioEvent(MicroBitRadio &r);
+    RadioEvent(Radio &r);
 
     /**
       * Associates the given event with the radio channel.
@@ -146,5 +140,4 @@ class MicroBitRadioEvent
     void eventReceived(MicroBitEvent e);
 };
 
-#endif
 #endif

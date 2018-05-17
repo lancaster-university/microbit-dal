@@ -169,6 +169,13 @@ extern uint32_t __etext;
 // Core micro:bit services
 //
 
+#define MICROBIT_RADIO_STANDARD                 1
+#define MICROBIT_RADIO_MODIFIED                 2
+
+#ifndef MICROBIT_RADIO_VERSION                 
+#define MICROBIT_RADIO_VERSION                  MICROBIT_RADIO_STANDARD
+#endif
+
 // To reduce memory cost and complexity, the micro:bit allows components to register for
 // periodic callback events during interrupt context, which occur every scheduling quantum (FIBER_TICK_PERIOD_MS)
 // This defines the maximum size of interrupt callback list.

@@ -22,19 +22,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include "MicroBitConfig.h"
 
-#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_MODIFIED
-
-#include "RadioDatagram.h"
-
-#else
-
-#ifndef MICROBIT_RADIO_DATAGRAM_H
-#define MICROBIT_RADIO_DATAGRAM_H
+#ifndef RADIO_DATAGRAM_H
+#define RADIO_DATAGRAM_H
 
 #include "mbed.h"
-#include "MicroBitRadio.h"
+#include "MicroBitConfig.h"
+#include "Radio.h"
 #include "ManagedString.h"
 
 /**
@@ -48,22 +42,22 @@ DEALINGS IN THE SOFTWARE.
   * teaching aid to demonstrate how simple communications operates, and to provide a sandpit through which learning can take place.
   * For serious applications, BLE should be considered a substantially more secure alternative.
   */
-class MicroBitRadioDatagram
+class RadioDatagram
 {
-    MicroBitRadio   &radio;     // The underlying radio module used to send and receive data.
-    FrameBuffer     *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
+    Radio   &radio;     // The underlying radio module used to send and receive data.
+    RadioFrameBuffer     *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
 
     public:
 
     /**
       * Constructor.
       *
-      * Creates an instance of a MicroBitRadioDatagram which offers the ability
+      * Creates an instance of a RadioDatagram which offers the ability
       * to broadcast simple text or binary messages to other micro:bits in the vicinity
       *
       * @param r The underlying radio module used to send and receive data.
       */
-    MicroBitRadioDatagram(MicroBitRadio &r);
+    RadioDatagram(Radio &r);
 
     /**
       * Retrieves packet payload data into the given buffer.
@@ -138,5 +132,4 @@ class MicroBitRadioDatagram
     void packetReceived();
 };
 
-#endif
 #endif

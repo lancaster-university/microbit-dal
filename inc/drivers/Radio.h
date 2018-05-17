@@ -22,25 +22,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include "MicroBitConfig.h"
 
-#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_MODIFIED
+#ifndef RADIO_H
+#define RADIO_H
 
-#include "Radio.h"
-
-#else
-
-#ifndef MICROBIT_RADIO_H
-#define MICROBIT_RADIO_H
-
-class MicroBitRadio;
-struct FrameBuffer;
+class Radio;
+struct RadioFrameBuffer;
 
 #include "mbed.h"
 #include "MicroBitConfig.h"
 #include "PacketBuffer.h"
-#include "MicroBitRadioDatagram.h"
-#include "MicroBitRadioEvent.h"
+#include "RadioDatagram.h"
+#include "RadioEvent.h"
+
+#include "RadioREST.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -66,60 +61,62 @@ struct FrameBuffer;
  */
 
 // Status Flags
-#define MICROBIT_RADIO_STATUS_INITIALISED       0x0001
+#define RADIO_STATUS_INITIALISED       0x0001
 
 // Default configuration values
-#define MICROBIT_RADIO_BASE_ADDRESS             0x75626974
-#define MICROBIT_RADIO_DEFAULT_GROUP            0
-#define MICROBIT_RADIO_DEFAULT_TX_POWER         6
-#define MICROBIT_RADIO_DEFAULT_FREQUENCY        7
-#define MICROBIT_RADIO_MAX_PACKET_SIZE          32
-#define MICROBIT_RADIO_HEADER_SIZE              4
-#define MICROBIT_RADIO_MAXIMUM_RX_BUFFERS       4
+#define RADIO_BASE_ADDRESS             0x75626974
+#define RADIO_DEFAULT_GROUP            0
+#define RADIO_DEFAULT_TX_POWER         6
+#define RADIO_DEFAULT_FREQUENCY        7
+#define RADIO_MAX_PACKET_SIZE          255
+#define RADIO_HEADER_SIZE              4
+#define RADIO_MAXIMUM_RX_BUFFERS       4
 
 // Known Protocol Numbers
-#define MICROBIT_RADIO_PROTOCOL_DATAGRAM        1       // A simple, single frame datagram. a little like UDP but with smaller packets. :-)
-#define MICROBIT_RADIO_PROTOCOL_EVENTBUS        2       // Transparent propogation of events from one micro:bit to another.
+#define RADIO_PROTOCOL_DATAGRAM                 1       // A simple, single frame datagram. a little like UDP but with smaller packets. :-)
+#define RADIO_PROTOCOL_EVENTBUS                 2       // Transparent propogation of events from one micro:bit to another.
+#define RADIO_PROTOCOL_REST                     3
 
 // Events
-#define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received.
+#define RADIO_EVT_DATAGRAM                      1       // Event to signal that a new datagram has been received.
 
 
-struct FrameBuffer
+struct RadioFrameBuffer
 {
     uint8_t         length;                             // The length of the remaining bytes in the packet. includes protocol/version/group fields, excluding the length field itself.
     uint8_t         version;                            // Protocol version code.
     uint8_t         group;                              // ID of the group to which this packet belongs.
     uint8_t         protocol;                           // Inner protocol number c.f. those issued by IANA for IP protocols
 
-    uint8_t         payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
-    FrameBuffer     *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
+    uint8_t         payload[RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
+    RadioFrameBuffer     *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
     int             rssi;                               // Received signal strength of this frame.
 };
 
 
-class MicroBitRadio : MicroBitComponent
+class Radio : MicroBitComponent
 {
     uint8_t                 group;      // The radio group to which this micro:bit belongs.
     uint8_t                 queueDepth; // The number of packets in the receiver queue.
     int                     rssi;
-    FrameBuffer             *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
-    FrameBuffer             *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
+    RadioFrameBuffer        *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
+    RadioFrameBuffer        *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
 
     public:
-    MicroBitRadioDatagram   datagram;   // A simple datagram service.
-    MicroBitRadioEvent      event;      // A simple event handling service.
-    static MicroBitRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.
+    RadioDatagram           datagram;   // A simple datagram service.
+    RadioEvent              event;      // A simple event handling service.
+    RadioREST               rest;       // A simple REST handling service.
+    static Radio            *instance;  // A singleton reference, used purely by the interrupt service routine.
 
     /**
       * Constructor.
       *
-      * Initialise the MicroBitRadio.
+      * Initialise the Radio.
       *
       * @note This class is demand activated, as a result most resources are only
       *       committed if send/recv or event registrations calls are made.
       */
-    MicroBitRadio(uint16_t id = MICROBIT_ID_RADIO);
+    Radio(uint16_t appId, uint16_t id = MICROBIT_ID_RADIO);
 
     /**
       * Change the output power level of the transmitter to the given value.
@@ -146,7 +143,7 @@ class MicroBitRadio : MicroBitComponent
       *
       * @return a pointer to the current receive buffer.
       */
-    FrameBuffer * getRxBuf();
+    RadioFrameBuffer * getRxBuf();
 
     /**
       * Attempt to queue a buffer received by the radio hardware, if sufficient space is available.
@@ -222,7 +219,7 @@ class MicroBitRadio : MicroBitComponent
       * @note Once recv() has been called, it is the callers responsibility to
       *       delete the buffer when appropriate.
       */
-    FrameBuffer* recv();
+    RadioFrameBuffer* recv();
 
     /**
       * Transmits the given buffer onto the broadcast radio.
@@ -232,8 +229,7 @@ class MicroBitRadio : MicroBitComponent
       *
       * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
       */
-    int send(FrameBuffer *buffer);
+    int send(RadioFrameBuffer *buffer);
 };
 
-#endif
 #endif

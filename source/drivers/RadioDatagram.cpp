@@ -24,10 +24,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "MicroBitConfig.h"
-
-#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_STANDARD
-
-#include "MicroBitRadio.h"
+#include "Radio.h"
 
 /**
   * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -44,12 +41,12 @@ DEALINGS IN THE SOFTWARE.
 /**
 * Constructor.
 *
-* Creates an instance of a MicroBitRadioDatagram which offers the ability
+* Creates an instance of a RadioDatagram which offers the ability
 * to broadcast simple text or binary messages to other micro:bits in the vicinity
 *
 * @param r The underlying radio module used to send and receive data.
 */
-MicroBitRadioDatagram::MicroBitRadioDatagram(MicroBitRadio &r) : radio(r)
+RadioDatagram::RadioDatagram(Radio &r) : radio(r)
 {
     this->rxQueue = NULL;
 }
@@ -66,16 +63,16 @@ MicroBitRadioDatagram::MicroBitRadioDatagram(MicroBitRadio &r) : radio(r)
   *
   * @return The length of the data stored, or MICROBIT_INVALID_PARAMETER if no data is available, or the memory regions provided are invalid.
   */
-int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
+int RadioDatagram::recv(uint8_t *buf, int len)
 {
     if (buf == NULL || rxQueue == NULL || len < 0)
         return MICROBIT_INVALID_PARAMETER;
 
     // Take the first buffer from the queue.
-    FrameBuffer *p = rxQueue;
+    RadioFrameBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    int l = min(len, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1));
+    int l = min(len, p->length - (RADIO_HEADER_SIZE - 1));
 
     // Fill in the buffer provided, if possible.
     memcpy(buf, p->payload, l);
@@ -92,15 +89,15 @@ int MicroBitRadioDatagram::recv(uint8_t *buf, int len)
   *
   * @return the data received, or an empty PacketBuffer if no data is available.
   */
-PacketBuffer MicroBitRadioDatagram::recv()
+PacketBuffer RadioDatagram::recv()
 {
     if (rxQueue == NULL)
         return PacketBuffer::EmptyPacket;
 
-    FrameBuffer *p = rxQueue;
+    RadioFrameBuffer *p = rxQueue;
     rxQueue = rxQueue->next;
 
-    PacketBuffer packet(p->payload, p->length - (MICROBIT_RADIO_HEADER_SIZE - 1), p->rssi);
+    PacketBuffer packet(p->payload, p->length - (RADIO_HEADER_SIZE - 1), p->rssi);
 
     delete p;
     return packet;
@@ -119,17 +116,17 @@ PacketBuffer MicroBitRadioDatagram::recv()
   * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
   *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
   */
-int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
+int RadioDatagram::send(uint8_t *buffer, int len)
 {
-    if (buffer == NULL || len < 0 || len > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
+    if (buffer == NULL || len < 0 || len > RADIO_MAX_PACKET_SIZE + RADIO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
 
-    FrameBuffer buf;
+    RadioFrameBuffer buf;
 
-    buf.length = len + MICROBIT_RADIO_HEADER_SIZE - 1;
+    buf.length = len + RADIO_HEADER_SIZE - 1;
     buf.version = 1;
     buf.group = 0;
-    buf.protocol = MICROBIT_RADIO_PROTOCOL_DATAGRAM;
+    buf.protocol = RADIO_PROTOCOL_DATAGRAM;
     memcpy(buf.payload, buffer, len);
 
     return radio.send(&buf);
@@ -146,7 +143,7 @@ int MicroBitRadioDatagram::send(uint8_t *buffer, int len)
   * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
   *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
   */
-int MicroBitRadioDatagram::send(PacketBuffer data)
+int RadioDatagram::send(PacketBuffer data)
 {
     return send((uint8_t *)data.getBytes(), data.length());
 }
@@ -162,7 +159,7 @@ int MicroBitRadioDatagram::send(PacketBuffer data)
   * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
   *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
   */
-int MicroBitRadioDatagram::send(ManagedString data)
+int RadioDatagram::send(ManagedString data)
 {
     return send((uint8_t *)data.toCharArray(), data.length());
 }
@@ -172,9 +169,9 @@ int MicroBitRadioDatagram::send(ManagedString data)
   *
   * This function process this packet, and queues it for user reception.
   */
-void MicroBitRadioDatagram::packetReceived()
+void RadioDatagram::packetReceived()
 {
-    FrameBuffer *packet = radio.recv();
+    RadioFrameBuffer *packet = radio.recv();
     int queueDepth = 0;
 
     // We add to the tail of the queue to preserve causal ordering.
@@ -186,14 +183,14 @@ void MicroBitRadioDatagram::packetReceived()
     }
     else
     {
-        FrameBuffer *p = rxQueue;
+        RadioFrameBuffer *p = rxQueue;
         while (p->next != NULL)
         {
             p = p->next;
             queueDepth++;
         }
 
-        if (queueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
+        if (queueDepth >= RADIO_MAXIMUM_RX_BUFFERS)
         {
             delete packet;
             return;
@@ -202,7 +199,5 @@ void MicroBitRadioDatagram::packetReceived()
         p->next = packet;
     }
 
-    MicroBitEvent(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_DATAGRAM);
+    MicroBitEvent(MICROBIT_ID_RADIO, RADIO_EVT_DATAGRAM);
 }
-
-#endif

@@ -24,10 +24,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "MicroBitConfig.h"
-
-#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_STANDARD
-
-#include "MicroBitRadio.h"
+#include "Radio.h"
 #include "MicroBitComponent.h"
 #include "EventModel.h"
 #include "MicroBitDevice.h"
@@ -58,7 +55,9 @@ DEALINGS IN THE SOFTWARE.
   * For serious applications, BLE should be considered a substantially more secure alternative.
   */
 
-MicroBitRadio* MicroBitRadio::instance = NULL;
+Radio* Radio::instance = NULL;
+
+extern void log_string(const char *);
 
 extern "C" void RADIO_IRQHandler(void)
 {
@@ -72,6 +71,7 @@ extern "C" void RADIO_IRQHandler(void)
 
     if(NRF_RADIO->EVENTS_END)
     {
+
         NRF_RADIO->EVENTS_END = 0;
         if(NRF_RADIO->CRCSTATUS == 1)
         {
@@ -79,18 +79,18 @@ extern "C" void RADIO_IRQHandler(void)
 
             // Associate this packet's rssi value with the data just
             // transferred by DMA receive
-            MicroBitRadio::instance->setRSSI(-sample);
+            Radio::instance->setRSSI(-sample);
 
             // Now move on to the next buffer, if possible.
             // The queued packet will get the rssi value set above.
-            MicroBitRadio::instance->queueRxBuf();
+            Radio::instance->queueRxBuf();
 
             // Set the new buffer for DMA
-            NRF_RADIO->PACKETPTR = (uint32_t) MicroBitRadio::instance->getRxBuf();
+            NRF_RADIO->PACKETPTR = (uint32_t) Radio::instance->getRxBuf();
         }
         else
         {
-            MicroBitRadio::instance->setRSSI(0);
+            Radio::instance->setRSSI(0);
         }
 
         // Start listening and wait for the END event
@@ -101,16 +101,16 @@ extern "C" void RADIO_IRQHandler(void)
 /**
   * Constructor.
   *
-  * Initialise the MicroBitRadio.
+  * Initialise the Radio.
   *
   * @note This class is demand activated, as a result most resources are only
   *       committed if send/recv or event registrations calls are made.
   */
-MicroBitRadio::MicroBitRadio(uint16_t id) : datagram(*this), event (*this)
+Radio::Radio(uint16_t appId, uint16_t id) : datagram(*this), event (*this), rest (*this, appId)
 {
     this->id = id;
     this->status = 0;
-	this->group = MICROBIT_RADIO_DEFAULT_GROUP;
+	this->group = RADIO_DEFAULT_GROUP;
 	this->queueDepth = 0;
     this->rssi = 0;
     this->rxQueue = NULL;
@@ -126,7 +126,7 @@ MicroBitRadio::MicroBitRadio(uint16_t id) : datagram(*this), event (*this)
   *
   * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range.
   */
-int MicroBitRadio::setTransmitPower(int power)
+int Radio::setTransmitPower(int power)
 {
     if (power < 0 || power >= MICROBIT_BLE_POWER_LEVELS)
         return MICROBIT_INVALID_PARAMETER;
@@ -144,7 +144,7 @@ int MicroBitRadio::setTransmitPower(int power)
   * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the value is out of range,
   *         or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */
-int MicroBitRadio::setFrequencyBand(int band)
+int Radio::setFrequencyBand(int band)
 {
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
@@ -163,7 +163,7 @@ int MicroBitRadio::setFrequencyBand(int band)
   *
   * @return a pointer to the current receive buffer.
   */
-FrameBuffer* MicroBitRadio::getRxBuf()
+RadioFrameBuffer* Radio::getRxBuf()
 {
     return rxBuf;
 }
@@ -174,19 +174,19 @@ FrameBuffer* MicroBitRadio::getRxBuf()
   * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if a replacement receiver buffer
   *         could not be allocated (either by policy or memory exhaustion).
   */
-int MicroBitRadio::queueRxBuf()
+int Radio::queueRxBuf()
 {
     if (rxBuf == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (queueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
+    if (queueDepth >= RADIO_MAXIMUM_RX_BUFFERS)
         return MICROBIT_NO_RESOURCES;
 
     // Store the received RSSI value in the frame
     rxBuf->rssi = getRSSI();
 
     // Ensure that a replacement buffer is available before queuing.
-    FrameBuffer *newRxBuf = new FrameBuffer();
+    RadioFrameBuffer *newRxBuf = new RadioFrameBuffer();
 
     if (newRxBuf == NULL)
         return MICROBIT_NO_RESOURCES;
@@ -200,7 +200,7 @@ int MicroBitRadio::queueRxBuf()
     }
     else
     {
-        FrameBuffer *p = rxQueue;
+        RadioFrameBuffer *p = rxQueue;
         while (p->next != NULL)
             p = p->next;
 
@@ -225,9 +225,9 @@ int MicroBitRadio::queueRxBuf()
   *
   * @note should only be called from RADIO_IRQHandler...
   */
-int MicroBitRadio::setRSSI(int rssi)
+int Radio::setRSSI(int rssi)
 {
-    if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
+    if (!(status & RADIO_STATUS_INITIALISED))
         return MICROBIT_NOT_SUPPORTED;
 
     this->rssi = rssi;
@@ -242,9 +242,9 @@ int MicroBitRadio::setRSSI(int rssi)
   *
   * @return the most recent RSSI value or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */
-int MicroBitRadio::getRSSI()
+int Radio::getRSSI()
 {
-    if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
+    if (!(status & RADIO_STATUS_INITIALISED))
         return MICROBIT_NOT_SUPPORTED;
 
     return this->rssi;
@@ -255,10 +255,11 @@ int MicroBitRadio::getRSSI()
   *
   * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */
-int MicroBitRadio::enable()
+int Radio::enable()
 {
+    log_string("ENABLE");
     // If the device is already initialised, then there's nothing to do.
-    if (status & MICROBIT_RADIO_STATUS_INITIALISED)
+    if (status & RADIO_STATUS_INITIALISED)
         return MICROBIT_OK;
 
     // Only attempt to enable this radio mode if BLE is disabled.
@@ -267,7 +268,7 @@ int MicroBitRadio::enable()
 
     // If this is the first time we've been enable, allocate out receive buffers.
     if (rxBuf == NULL)
-        rxBuf = new FrameBuffer();
+        rxBuf = new RadioFrameBuffer();
 
     if (rxBuf == NULL)
         return MICROBIT_NO_RESOURCES;
@@ -279,8 +280,8 @@ int MicroBitRadio::enable()
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
 
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
-    setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
-    setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
+    setTransmitPower(RADIO_DEFAULT_TX_POWER);
+    setFrequencyBand(RADIO_DEFAULT_FREQUENCY);
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
@@ -291,7 +292,7 @@ int MicroBitRadio::enable()
     // Statistically, this provides assurance to avoid other similar 2.4GHz protocols that may be in the vicinity.
     // We also map the assigned 8-bit GROUP id into the PREFIX field. This allows the RADIO hardware to perform
     // address matching for us, and only generate an interrupt when a packet matching our group is received.
-    NRF_RADIO->BASE0 = MICROBIT_RADIO_BASE_ADDRESS;
+    NRF_RADIO->BASE0 = RADIO_BASE_ADDRESS;
 
     // Join the default group. This will configure the remaining byte in the RADIO hardware module.
     setGroup(this->group);
@@ -305,7 +306,7 @@ int MicroBitRadio::enable()
     // and reception of data, also contains a LENGTH field, two optional additional 1 byte fields (S0 and S1) and a CRC calculation.
     // Configure the packet format for a simple 8 bit length field and no additional fields.
     NRF_RADIO->PCNF0 = 0x00000008;
-    NRF_RADIO->PCNF1 = 0x02040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
+    NRF_RADIO->PCNF1 = 0x020400ff; //| RADIO_MAX_PACKET_SIZE;
 
     // Most communication channels contain some form of checksum - a mathematical calculation taken based on all the data
     // in a packet, that is also sent as part of the packet. When received, this calculation can be repeated, and the results
@@ -325,6 +326,7 @@ int MicroBitRadio::enable()
 
     // Configure the hardware to issue an interrupt whenever a task is complete (e.g. send/receive).
     NRF_RADIO->INTENSET = 0x00000008;
+    // NVIC_SetVector(RADIO_IRQn,(uint32_t)RADIO_IRQHandler_OVERRIDE);
     NVIC_ClearPendingIRQ(RADIO_IRQn);
     NVIC_EnableIRQ(RADIO_IRQn);
 
@@ -342,7 +344,7 @@ int MicroBitRadio::enable()
     fiber_add_idle_component(this);
 
     // Done. Record that our RADIO is configured.
-    status |= MICROBIT_RADIO_STATUS_INITIALISED;
+    status |= RADIO_STATUS_INITIALISED;
 
     return MICROBIT_OK;
 }
@@ -352,13 +354,13 @@ int MicroBitRadio::enable()
   *
   * @return MICROBIT_OK on success, MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */
-int MicroBitRadio::disable()
+int Radio::disable()
 {
     // Only attempt to enable.disable the radio if the protocol is alreayd running.
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
-    if (!(status & MICROBIT_RADIO_STATUS_INITIALISED))
+    if (!(status & RADIO_STATUS_INITIALISED))
         return MICROBIT_OK;
 
     // Disable interrupts and STOP any ongoing packet reception.
@@ -372,7 +374,7 @@ int MicroBitRadio::disable()
     fiber_remove_idle_component(this);
 
     // record that the radio is now disabled
-    status &= ~MICROBIT_RADIO_STATUS_INITIALISED;
+    status &= ~RADIO_STATUS_INITIALISED;
 
     return MICROBIT_OK;
 }
@@ -384,7 +386,7 @@ int MicroBitRadio::disable()
   *
   * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */
-int MicroBitRadio::setGroup(uint8_t group)
+int Radio::setGroup(uint8_t group)
 {
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
@@ -402,21 +404,25 @@ int MicroBitRadio::setGroup(uint8_t group)
   * A background, low priority callback that is triggered whenever the processor is idle.
   * Here, we empty our queue of received packets, and pass them onto higher level protocol handlers.
   */
-void MicroBitRadio::idleTick()
+void Radio::idleTick()
 {
     // Walk the list of packets and process each one.
     while(rxQueue)
     {
-        FrameBuffer *p = rxQueue;
+        RadioFrameBuffer *p = rxQueue;
 
         switch (p->protocol)
         {
-            case MICROBIT_RADIO_PROTOCOL_DATAGRAM:
+            case RADIO_PROTOCOL_DATAGRAM:
                 datagram.packetReceived();
                 break;
 
-            case MICROBIT_RADIO_PROTOCOL_EVENTBUS:
+            case RADIO_PROTOCOL_EVENTBUS:
                 event.packetReceived();
+                break;
+
+            case RADIO_PROTOCOL_REST:
+                rest.packetReceived();
                 break;
 
             default:
@@ -438,7 +444,7 @@ void MicroBitRadio::idleTick()
   *
   * @return The number of packets in the receive buffer.
   */
-int MicroBitRadio::dataReady()
+int Radio::dataReady()
 {
     return queueDepth;
 }
@@ -453,14 +459,14 @@ int MicroBitRadio::dataReady()
   * @note Once recv() has been called, it is the callers responsibility to
   *       delete the buffer when appropriate.
   */
-FrameBuffer* MicroBitRadio::recv()
+RadioFrameBuffer* Radio::recv()
 {
-    FrameBuffer *p = rxQueue;
+    RadioFrameBuffer *p = rxQueue;
 
     if (p)
     {
          // Protect shared resource from ISR activity
-        NVIC_DisableIRQ(RADIO_IRQn); 
+        NVIC_DisableIRQ(RADIO_IRQn);
 
         rxQueue = rxQueue->next;
         queueDepth--;
@@ -480,15 +486,16 @@ FrameBuffer* MicroBitRadio::recv()
   *
   * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
   */
-int MicroBitRadio::send(FrameBuffer *buffer)
+int Radio::send(RadioFrameBuffer *buffer)
 {
+    log_string("SEND");
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
     if (buffer == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (buffer->length > MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1)
+    if (buffer->length > RADIO_MAX_PACKET_SIZE + RADIO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
 
     // Firstly, disable the Radio interrupt. We want to wait until the trasmission completes.
@@ -534,4 +541,3 @@ int MicroBitRadio::send(FrameBuffer *buffer)
 
     return MICROBIT_OK;
 }
-#endif

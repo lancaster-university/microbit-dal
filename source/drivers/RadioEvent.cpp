@@ -24,9 +24,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "MicroBitConfig.h"
-
-#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_STANDARD
-#include "MicroBitRadio.h"
+#include "Radio.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -45,12 +43,12 @@ DEALINGS IN THE SOFTWARE.
 /**
   * Constructor.
   *
-  * Creates an instance of MicroBitRadioEvent which offers the ability to extend
+  * Creates an instance of RadioEvent which offers the ability to extend
   * the micro:bit's default EventModel to other micro:bits in the vicinity.
   *
   * @param r The underlying radio module used to send and receive data.
   */
-MicroBitRadioEvent::MicroBitRadioEvent(MicroBitRadio &r) : radio(r)
+RadioEvent::RadioEvent(Radio &r) : radio(r)
 {
     this->suppressForwarding = false;
 }
@@ -70,7 +68,7 @@ MicroBitRadioEvent::MicroBitRadioEvent(MicroBitRadio &r) : radio(r)
   * @note The wildcards MICROBIT_ID_ANY and MICROBIT_EVT_ANY can also be in place of the
   *       id and value fields.
   */
-int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
+int RadioEvent::listen(uint16_t id, uint16_t value)
 {
     if (EventModel::defaultEventBus)
         return listen(id, value, *EventModel::defaultEventBus);
@@ -95,9 +93,9 @@ int MicroBitRadioEvent::listen(uint16_t id, uint16_t value)
   * @note The wildcards MICROBIT_ID_ANY and MICROBIT_EVT_ANY can also be in place of the
   *       id and value fields.
   */
-int MicroBitRadioEvent::listen(uint16_t id, uint16_t value, EventModel &eventBus)
+int RadioEvent::listen(uint16_t id, uint16_t value, EventModel &eventBus)
 {
-    return eventBus.listen(id, value, this, &MicroBitRadioEvent::eventReceived, MESSAGE_BUS_LISTENER_IMMEDIATE);
+    return eventBus.listen(id, value, this, &RadioEvent::eventReceived, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
 /**
@@ -111,7 +109,7 @@ int MicroBitRadioEvent::listen(uint16_t id, uint16_t value, EventModel &eventBus
   *
   * @note MICROBIT_EVT_ANY can be used to deregister all event values matching the given id.
   */
-int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value)
+int RadioEvent::ignore(uint16_t id, uint16_t value)
 {
     if (EventModel::defaultEventBus)
         return ignore(id, value, *EventModel::defaultEventBus);
@@ -132,9 +130,9 @@ int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value)
   *
   * @note MICROBIT_EVT_ANY can be used to deregister all event values matching the given id.
   */
-int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value, EventModel &eventBus)
+int RadioEvent::ignore(uint16_t id, uint16_t value, EventModel &eventBus)
 {
-    return eventBus.ignore(id, value, this, &MicroBitRadioEvent::eventReceived);
+    return eventBus.ignore(id, value, this, &RadioEvent::eventReceived);
 }
 
 
@@ -143,9 +141,9 @@ int MicroBitRadioEvent::ignore(uint16_t id, uint16_t value, EventModel &eventBus
   *
   * This function process this packet, and fires the event contained inside onto the default EventModel.
   */
-void MicroBitRadioEvent::packetReceived()
+void RadioEvent::packetReceived()
 {
-    FrameBuffer *p = radio.recv();
+    RadioFrameBuffer *p = radio.recv();
     MicroBitEvent *e = (MicroBitEvent *) p->payload;
 
     suppressForwarding = true;
@@ -160,19 +158,18 @@ void MicroBitRadioEvent::packetReceived()
   * the registerEvent() method described above. Upon receiving such an event, it is wrapped into
   * a radio packet and transmitted to any other micro:bits in the same group.
   */
-void MicroBitRadioEvent::eventReceived(MicroBitEvent e)
+void RadioEvent::eventReceived(MicroBitEvent e)
 {
     if(suppressForwarding)
         return;
 
-    FrameBuffer buf;
+    RadioFrameBuffer buf;
 
-    buf.length = sizeof(MicroBitEvent) + MICROBIT_RADIO_HEADER_SIZE - 1;
+    buf.length = sizeof(MicroBitEvent) + RADIO_HEADER_SIZE - 1;
     buf.version = 1;
     buf.group = 0;
-    buf.protocol = MICROBIT_RADIO_PROTOCOL_EVENTBUS;
+    buf.protocol = RADIO_PROTOCOL_EVENTBUS;
     memcpy(buf.payload, (const uint8_t *)&e, sizeof(MicroBitEvent));
 
     radio.send(&buf);
 }
-#endif
