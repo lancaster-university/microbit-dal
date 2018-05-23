@@ -34,8 +34,7 @@ struct RadioFrameBuffer;
 #include "PacketBuffer.h"
 #include "RadioDatagram.h"
 #include "RadioEvent.h"
-
-#include "RadioREST.h"
+#include "RadioCloud.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -104,7 +103,7 @@ class Radio : MicroBitComponent
     public:
     RadioDatagram           datagram;   // A simple datagram service.
     RadioEvent              event;      // A simple event handling service.
-    RadioREST               rest;       // A simple REST handling service.
+    RadioCloud              cloud;       // A simple REST handling service.
     static Radio            *instance;  // A singleton reference, used purely by the interrupt service routine.
 
     /**

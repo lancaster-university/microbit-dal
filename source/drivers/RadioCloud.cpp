@@ -1,7 +1,13 @@
 #include "RadioCloud.h"
+#include "Radio.h"
+#include "MicroBitFiber.h"
 
-RadioCloud::RadioCloud(Radio& r) : radio(r)
+extern void log_string(const char *);
+extern void log_num(int num);
+
+RadioCloud::RadioCloud(Radio& r, uint16_t app_id) : radio(r), rest(*this), variable(*this)
 {
+    this->appId = app_id;
     this->txQueue = NULL;
     this->rxQueue = NULL;
 
@@ -79,7 +85,8 @@ DataPacket* RadioCloud::removeFromRxQueue(uint16_t id)
 
 int RadioCloud::setAppId(uint16_t id)
 {
-    this->app_id = id;
+    this->appId = id;
+    return MICROBIT_OK;
 }
 
 void RadioCloud::sendDataPacket(DataPacket* p)
@@ -230,13 +237,15 @@ void RadioCloud::packetReceived()
 
     delete packet;
 
+    MicroBitEvent(MICROBIT_RADIO_ID_CLOUD, p->id);
+
     // used for notifying underlying services that a packet has been received.
     // this occurs after the packet has been added to the rxQueue.
     if (temp->request_type & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_PUT_REQUEST | REQUEST_TYPE_POST_REQUEST | REQUEST_TYPE_DELETE_REQUEST))
-        rest.handlePacket(p);
+        rest.handlePacket(p->id);
 
     if (temp->request_type & REQUEST_TYPE_CLOUD_VARIABLE)
-        variable.handlePacket(p);
+        variable.handlePacket(p->id);
 
     // send an ACK immediately
     DataPacket* ack = new DataPacket();

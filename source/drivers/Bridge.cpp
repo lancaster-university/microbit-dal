@@ -26,19 +26,19 @@ bool Bridge::searchHistory(uint16_t app_id, uint16_t id)
         if (((id_history[idx] & APP_ID_MSK) >> 16) == app_id && (id_history[idx] & PACKET_ID_MSK) == id)
             return true;
     }
-    
+
     return false;
 }
 
 void Bridge::addToHistory(uint16_t app_id, uint16_t id)
 {
-    id_history[historyIndexHead] = ((app_id << 16) | id);   
+    id_history[historyIndexHead] = ((app_id << 16) | id);
     historyIndexHead = (historyIndexHead + 1) % HISTORY_COUNT;
 }
 
 void Bridge::onRadioPacket(MicroBitEvent e)
 {
-    DataPacket* r = radio.rest.recvRaw(e.value);
+    DataPacket* r = radio.cloud.recvRaw(e.value);
     log_string_priv("RAdio_PACKET");
 
     if (r == NULL)
@@ -114,7 +114,7 @@ void Bridge::onSerialPacket(MicroBitEvent)
         *packetPtr++ = c;
     }
 
-    radio.rest.send(packet);
+    radio.cloud.sendDataPacket(packet);
 
     serial.eventOn((char)SLIP_END);
 }
@@ -123,7 +123,9 @@ Bridge::Bridge(Radio& r, MicroBitSerial& s, MicroBitMessageBus& b) : radio(r), s
 {
     memset(id_history, 0, sizeof(uint32_t) * HISTORY_COUNT);
 
-    b.listen(RADIO_REST_ID, MICROBIT_EVT_ANY, this, &Bridge::onRadioPacket);
+    r.cloud.setAppId(0);
+
+    b.listen(MICROBIT_RADIO_ID_CLOUD, MICROBIT_EVT_ANY, this, &Bridge::onRadioPacket, MESSAGE_BUS_LISTENER_IMMEDIATE);
     b.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, this, &Bridge::onSerialPacket);
 
     s.setRxBufferSize(255);

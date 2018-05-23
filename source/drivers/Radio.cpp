@@ -109,7 +109,7 @@ extern "C" void RADIO_IRQHandler(void)
   * @note This class is demand activated, as a result most resources are only
   *       committed if send/recv or event registrations calls are made.
   */
-Radio::Radio(uint16_t appId, uint16_t id) : datagram(*this), event (*this), rest (*this, appId)
+Radio::Radio(uint16_t appId, uint16_t id) : datagram(*this), event (*this), cloud(*this, appId)
 {
     this->id = id;
     this->status = 0;
@@ -424,8 +424,8 @@ void Radio::idleTick()
                 event.packetReceived();
                 break;
 
-            case MICROBIT_RADIO_PROTOCOL_REST:
-                rest.packetReceived();
+            case MICROBIT_RADIO_PROTOCOL_CLOUD:
+                cloud.packetReceived();
                 break;
 
             default:

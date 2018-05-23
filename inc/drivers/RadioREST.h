@@ -1,10 +1,11 @@
 #ifndef RADIO_REST_H
 #define RADIO_REST_H
 
-#include "Radio.h"
+struct DataPacket;
+class RadioCloud;
+
 #include "DynamicType.h"
 #include "MicroBitConfig.h"
-#include "RadioCloud.h"
 
 #define REST_RADIO_MAXIMUM_TX_BUFFERS       10
 #define REST_RADIO_MAXIMUM_RX_BUFFERS       10
@@ -18,15 +19,15 @@
 #define DATA_PACKET_ACK_RECEIVED            0x04
 
 
-class RadioREST : public MicroBitComponent
+class RadioREST
 {
     RadioCloud& cloud;
 
-    DataPacket* composePacket(uint8_t type, uint8_t* payload, uint8_t payload_len, uint16_t app_id, uint16_t packet_id = 0);
+    DataPacket* composePacket(uint8_t type, uint8_t* payload, uint8_t payload_len, uint16_t packet_id = 0);
 
     public:
 
-    RadioREST(RadioCloud& r, uint16_t appId);
+    RadioREST(RadioCloud& r);
 
     DynamicType getRequest(ManagedString url);
 
@@ -36,7 +37,8 @@ class RadioREST : public MicroBitComponent
 
     uint16_t postRequestAsync(ManagedString url, DynamicType& parameters);
 
-    void handlePacket();
+    void handlePacket(uint16_t id);
+    void handleTimeout(uint16_t id);
 
     DynamicType recv(uint16_t id);
 

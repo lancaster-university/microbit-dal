@@ -13,12 +13,12 @@ RadioREST::RadioREST(RadioCloud& r) : cloud(r)
 {
 }
 
-DataPacket* RadioREST::composePacket(uint8_t type, uint8_t* payload, uint8_t payload_len, uint16_t app_id, uint16_t packet_id)
+DataPacket* RadioREST::composePacket(uint8_t type, uint8_t* payload, uint8_t payload_len, uint16_t packet_id)
 {
     uint32_t id = (packet_id != 0) ? packet_id : microbit_random(65535);
 
     DataPacket* p = new DataPacket();
-    p->app_id = app_id;
+    p->app_id = cloud.appId;
     p->id = id;
     p->request_type = type;
     p->status = DATA_PACKET_WAITING_FOR_SEND;
@@ -43,7 +43,7 @@ DynamicType RadioREST::getRequest(ManagedString url)
 
     memcpy(urlBuf + 1,url.toCharArray(), bufLen - 1);
 
-    DataPacket *p = composePacket(REQUEST_TYPE_GET_REQUEST, urlBuf, bufLen, appId);
+    DataPacket *p = composePacket(REQUEST_TYPE_GET_REQUEST, urlBuf, bufLen);
     uint32_t id = p->id;
 
     cloud.addToTxQueue(p);
@@ -62,7 +62,7 @@ uint16_t RadioREST::getRequestAsync(ManagedString url)
 
     memcpy(urlBuf + 1,url.toCharArray(), bufLen - 1);
 
-    DataPacket *p = composePacket(REQUEST_TYPE_GET_REQUEST, urlBuf, bufLen, appId);
+    DataPacket *p = composePacket(REQUEST_TYPE_GET_REQUEST, urlBuf, bufLen);
     uint32_t id = p->id;
 
     cloud.addToTxQueue(p);
@@ -80,7 +80,7 @@ DynamicType RadioREST::postRequest(ManagedString url, DynamicType& parameters)
     memcpy(urlBuf + 1,url.toCharArray(), strLen);
     memcpy(urlBuf + 1 + strLen, parameters.getBytes(), parameters.length());
 
-    DataPacket *p = composePacket(REQUEST_TYPE_POST_REQUEST, urlBuf, bufLen, appId);
+    DataPacket *p = composePacket(REQUEST_TYPE_POST_REQUEST, urlBuf, bufLen);
     uint32_t id = p->id;
 
     cloud.addToTxQueue(p);
@@ -101,7 +101,7 @@ uint16_t RadioREST::postRequestAsync(ManagedString url, DynamicType& parameters)
     memcpy(urlBuf + 1,url.toCharArray(), url.length() + 1);
     memcpy(urlBuf + 1 + strLen, parameters.getBytes(), parameters.length());
 
-    DataPacket *p = composePacket(REQUEST_TYPE_POST_REQUEST, urlBuf, bufLen, appId);
+    DataPacket *p = composePacket(REQUEST_TYPE_POST_REQUEST, urlBuf, bufLen);
     uint32_t id = p->id;
 
     cloud.addToTxQueue(p);
@@ -109,15 +109,21 @@ uint16_t RadioREST::postRequestAsync(ManagedString url, DynamicType& parameters)
     return id;
 }
 
+void RadioREST::handleTimeout(uint16_t id)
+{
+    // wake any waiting fibers.
+    MicroBitEvent(RADIO_REST_ID, id);
+}
+
 /**
   * Protocol handler callback. This is called when the radio receives a packet marked as a datagram.
   *
   * This function process this packet, and queues it for user reception.
   */
-void RadioREST::handlePacket(DataPacket* temp)
+void RadioREST::handlePacket(uint16_t id)
 {
     // wake any waiting fibers.
-    MicroBitEvent(RADIO_REST_ID, temp->id);
+    MicroBitEvent(RADIO_REST_ID, id);
 }
 
 DynamicType RadioREST::recv(uint16_t id)

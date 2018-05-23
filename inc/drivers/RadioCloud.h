@@ -1,20 +1,17 @@
 #ifndef RADIO_CLOUD_H
 #define RADIO_CLOUD_H
 
-#include "Radio.h"
 
-class RadioCloud;
-struct DataPacket;
+class Radio;
 
 #include "RadioREST.h"
-#include "RadioCloud.h"
-
+#include "RadioVariable.h"
 
 #include "DynamicType.h"
 #include "MicroBitConfig.h"
 
 #define CLOUD_HEADER_SIZE                    5
-#define MAX_PAYLOAD_SIZE                    (254 - 4 - REST_HEADER_SIZE)
+#define MAX_PAYLOAD_SIZE                    (254 - 4 - CLOUD_HEADER_SIZE)
 
 #define REQUEST_TYPE_GET_REQUEST            0x01
 #define REQUEST_TYPE_PUT_REQUEST            0x02
@@ -26,6 +23,7 @@ struct DataPacket;
 #define REQUEST_TYPE_STATUS_ERROR           0x40
 #define REQUEST_TYPE_STATUS_OK              0x80
 
+#define MICROBIT_RADIO_ID_CLOUD             62964
 #define RADIO_REST_ID                       62965
 #define RADIO_CLOUD_VARIABLE_ID             62966
 
@@ -57,8 +55,8 @@ class RadioCloud : public MicroBitComponent
 
     uint16_t appId;
 
-    RadioRest& rest;
-    RadioVariable& variable;
+    RadioREST rest;
+    RadioVariable variable;
 
     RadioCloud(Radio& r, uint16_t appId);
 

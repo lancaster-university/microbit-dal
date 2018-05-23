@@ -1,9 +1,9 @@
 #ifndef RADIO_VARIABLE_H
 #define RADIO_VARIABLE_H
 
-#include "RadioCloud.h"
-#include "CloudVariable.h"
+class RadioCloud;
 
+#include "CloudVariable.h"
 #include "DynamicType.h"
 #include "MicroBitConfig.h"
 
@@ -17,7 +17,8 @@ class RadioVariable
 
     int setVariable(CloudVariable& c);
 
-    void handlePacket(DataPacket* temp);
+    void handleTimeout(uint16_t id);
+    void handlePacket(uint16_t id);
 };
 
 
