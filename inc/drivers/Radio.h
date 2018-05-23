@@ -75,7 +75,7 @@ struct RadioFrameBuffer;
 // Known Protocol Numbers
 #define MICROBIT_RADIO_PROTOCOL_DATAGRAM        1       // A simple, single frame datagram. a little like UDP but with smaller packets. :-)
 #define MICROBIT_RADIO_PROTOCOL_EVENTBUS        2       // Transparent propogation of events from one micro:bit to another.
-#define MICROBIT_RADIO_PROTOCOL_REST            3
+#define MICROBIT_RADIO_PROTOCOL_CLOUD           3
 
 // Events
 #define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received.

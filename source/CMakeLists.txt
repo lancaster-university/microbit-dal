@@ -23,6 +23,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "types/RefCounted.cpp"
     "types/DynamicType.cpp"
 
+    "drivers/Bridge.cpp"
     "drivers/DynamicPwm.cpp"
     "drivers/MicroBitAccelerometer.cpp"
     "drivers/MicroBitButton.cpp"
