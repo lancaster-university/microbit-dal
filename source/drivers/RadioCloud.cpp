@@ -5,13 +5,26 @@
 extern void log_string(const char *);
 extern void log_num(int num);
 
+#define APP_ID_MSK              0xFFFF0000
+#define PACKET_ID_MSK           0x0000FFFF
+static uint32_t id_history[RADIO_CLOUD_FILTER_SIZE] = { 0 };
+static uint16_t historyIndexHead = 0;
+
 RadioCloud::RadioCloud(Radio& r, uint16_t app_id) : radio(r), rest(*this), variable(*this)
 {
     this->appId = app_id;
     this->txQueue = NULL;
     this->rxQueue = NULL;
 
+    this->status = RADIO_CLOUD_STATUS_FILTER;
+
     fiber_add_idle_component(this);
+}
+
+int RadioCloud::enableFilter(bool state)
+{
+    this->status = (state) ? RADIO_CLOUD_STATUS_FILTER : 0;
+    return MICROBIT_OK;
 }
 
 DataPacket* RadioCloud::removeFromQueue(DataPacket** queue, uint16_t id)
@@ -171,6 +184,23 @@ void RadioCloud::idleTick()
     }
 }
 
+bool RadioCloud::searchHistory(uint16_t app_id, uint16_t id)
+{
+    for (int idx = 0; idx < RADIO_CLOUD_FILTER_SIZE; idx++)
+    {
+        if (((id_history[idx] & APP_ID_MSK) >> 16) == app_id && (id_history[idx] & PACKET_ID_MSK) == id)
+            return true;
+    }
+
+    return false;
+}
+
+void RadioCloud::addToHistory(uint16_t app_id, uint16_t id)
+{
+    id_history[historyIndexHead] = ((app_id << 16) | id);
+    historyIndexHead = (historyIndexHead + 1) % RADIO_CLOUD_FILTER_SIZE;
+}
+
 /**
   * Protocol handler callback. This is called when the radio receives a packet marked as a datagram.
   *
@@ -183,7 +213,8 @@ void RadioCloud::packetReceived()
 
     log_string("RX: ");
     log_num((int) this->appId);
-    log_num((int) temp->app_id);
+    log_string("\r\n");
+    log_num((int) temp->id);
 
     // ignore any packets that aren't part of our application
     if (appId != 0 && temp->app_id != this->appId)
@@ -191,6 +222,17 @@ void RadioCloud::packetReceived()
         log_string("IGNORED");
         delete packet;
         return;
+    }
+
+    if (this->status & RADIO_CLOUD_STATUS_FILTER)
+    {
+        if (searchHistory(temp->app_id, temp->id))
+        {
+            delete packet;
+            return;
+        }
+
+        addToHistory(temp->app_id, temp->id);
     }
 
     if (temp->request_type & REQUEST_TYPE_STATUS_ACK)
@@ -237,6 +279,7 @@ void RadioCloud::packetReceived()
 
     delete packet;
 
+    // incterception event for Bridge.cpp
     MicroBitEvent(MICROBIT_RADIO_ID_CLOUD, p->id);
 
     // used for notifying underlying services that a packet has been received.
@@ -246,17 +289,6 @@ void RadioCloud::packetReceived()
 
     if (temp->request_type & REQUEST_TYPE_CLOUD_VARIABLE)
         variable.handlePacket(p->id);
-
-    // send an ACK immediately
-    DataPacket* ack = new DataPacket();
-    p->app_id = p->app_id;
-    p->id = p->id;
-    p->request_type = REQUEST_TYPE_STATUS_ACK;
-    p->status = 0;
-    p->len = 0;
-
-    sendDataPacket(ack);
-    delete ack;
 }
 
 

@@ -27,6 +27,10 @@ class Radio;
 #define RADIO_REST_ID                       62965
 #define RADIO_CLOUD_VARIABLE_ID             62966
 
+#define RADIO_CLOUD_FILTER_SIZE             4
+
+#define RADIO_CLOUD_STATUS_FILTER           0x02
+
 struct DataPacket
 {
     uint16_t id;
@@ -51,6 +55,10 @@ class RadioCloud : public MicroBitComponent
     int addToQueue(DataPacket** queue, DataPacket* packet);
     DataPacket* removeFromQueue(DataPacket** queue, uint16_t id);
 
+    bool searchHistory(uint16_t app_id, uint16_t id);
+
+    void addToHistory(uint16_t app_id, uint16_t id);
+
     public:
 
     uint16_t appId;
@@ -59,6 +67,8 @@ class RadioCloud : public MicroBitComponent
     RadioVariable variable;
 
     RadioCloud(Radio& r, uint16_t appId);
+
+    int enableFilter(bool state);
 
     int addToTxQueue(DataPacket* p);
 

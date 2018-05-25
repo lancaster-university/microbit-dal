@@ -39,10 +39,21 @@ void Bridge::addToHistory(uint16_t app_id, uint16_t id)
 void Bridge::onRadioPacket(MicroBitEvent e)
 {
     DataPacket* r = radio.cloud.recvRaw(e.value);
-    log_string_priv("RAdio_PACKET");
+    // log_string_priv("Radio_PACKET");
 
     if (r == NULL)
         return;
+
+    // send an ACK immediately
+    DataPacket* ack = new DataPacket();
+    ack->app_id = r->app_id;
+    ack->id = r->id;
+    ack->request_type = REQUEST_TYPE_STATUS_ACK;
+    ack->status = 0;
+    ack->len = 0;
+
+    radio.cloud.sendDataPacket(ack);
+    delete ack;
 
     uint8_t* packetPtr = (uint8_t *)r;
     uint16_t len = r->len;
@@ -51,7 +62,7 @@ void Bridge::onRadioPacket(MicroBitEvent e)
 
     if (!seen)
     {
-        log_string_priv("not_seen");
+        // log_string_priv("not_seen");
         addToHistory(r->app_id, r->id);
 
         for (uint16_t i = 0; i < len; i++)
@@ -124,6 +135,7 @@ Bridge::Bridge(Radio& r, MicroBitSerial& s, MicroBitMessageBus& b) : radio(r), s
     memset(id_history, 0, sizeof(uint32_t) * HISTORY_COUNT);
 
     r.cloud.setAppId(0);
+    r.cloud.enableFilter(false);
 
     b.listen(MICROBIT_RADIO_ID_CLOUD, MICROBIT_EVT_ANY, this, &Bridge::onRadioPacket, MESSAGE_BUS_LISTENER_IMMEDIATE);
     b.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, this, &Bridge::onSerialPacket);
