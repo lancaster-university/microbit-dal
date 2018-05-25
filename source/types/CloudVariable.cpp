@@ -37,11 +37,10 @@ inline unsigned char eightBitHash(const char* s)
 uint16_t CloudVariable::pearsonHash(ManagedString s)
 {
     unsigned char h1, h2;
-    uint32_t length = s.length();
-    char *buffer = (char *)malloc(sizeof(char) * length);
+    uint32_t length = s.length() + 1;
+    char *buffer = (char *)malloc(length);
 
     memcpy(buffer, s.toCharArray(), length);
-    buffer[length] = 0;
     h1 = eightBitHash(buffer);
 
     buffer[0] = (buffer[0] + 1) % 255;
