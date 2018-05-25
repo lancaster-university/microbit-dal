@@ -74,7 +74,6 @@ extern "C" void RADIO_IRQHandler(void)
 
     if(NRF_RADIO->EVENTS_END)
     {
-
         NRF_RADIO->EVENTS_END = 0;
         if(NRF_RADIO->CRCSTATUS == 1)
         {
@@ -260,7 +259,6 @@ int Radio::getRSSI()
   */
 int Radio::enable()
 {
-    log_string("ENABLE");
     // If the device is already initialised, then there's nothing to do.
     if (status & MICROBIT_RADIO_STATUS_INITIALISED)
         return MICROBIT_OK;
@@ -268,6 +266,8 @@ int Radio::enable()
     // Only attempt to enable this radio mode if BLE is disabled.
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
+
+    log_string("ENABLE");
 
     // If this is the first time we've been enable, allocate out receive buffers.
     if (rxBuf == NULL)

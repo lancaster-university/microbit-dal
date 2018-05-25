@@ -3,6 +3,9 @@
 #include "ErrorNo.h"
 #include "MicroBitEvent.h"
 
+extern void log_string(const char *);
+extern void log_num(int);
+
 RadioVariable::RadioVariable(RadioCloud& cloud) : cloud(cloud)
 {
 
@@ -54,7 +57,6 @@ void RadioVariable::handlePacket(uint16_t id)
     if (!(t->request_type & REQUEST_TYPE_STATUS_ERROR))
     {
         DynamicType dt(t->len - CLOUD_HEADER_SIZE, t->payload, 0);
-
         uint16_t namespaceHash = dt.getInteger(0);
         uint16_t variableHash = dt.getInteger(1);
 
