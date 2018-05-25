@@ -72,7 +72,7 @@ uint8_t* DynamicType::getPointerToIndex(int index)
 
         if (subtype & SUBTYPE_INT)
             payloadPtr += sizeof(int);
-        
+
         if (subtype & SUBTYPE_FLOAT)
             payloadPtr += sizeof(float);
     }
@@ -94,7 +94,7 @@ int DynamicType::getStatus()
 {
     if (status & (DYNAMIC_TYPE_STATUS_NOT_CONFIGURED) || status == 0)
         return MICROBIT_OK;
-    
+
     return MICROBIT_NO_DATA;
 }
 
@@ -104,10 +104,10 @@ ManagedString DynamicType::getString(int index)
 
     if (data == NULL || !(*data & SUBTYPE_STRING))
         return ManagedString();
-    
+
     // move past subtype byte
     data++;
-    
+
     return ManagedString((char*)data);
 }
 
@@ -117,11 +117,14 @@ int DynamicType::getInteger(int index)
 
     if (data == NULL || !(*data & SUBTYPE_INT))
         return MICROBIT_INVALID_PARAMETER;
-    
+
     // move past subtype byte
     data++;
-    
-    return (int)*data;
+
+    int res;
+    memcpy(&res, data, sizeof(int));
+
+    return res;
 }
 
 float DynamicType::getFloat(int index)
@@ -130,11 +133,14 @@ float DynamicType::getFloat(int index)
 
     if (data == NULL || !(*data & SUBTYPE_FLOAT))
         return MICROBIT_INVALID_PARAMETER;
-    
+
     // move past subtype byte
     data++;
-    
-    return (float)*data;
+
+    float res;
+    memcpy(&res, data, sizeof(float));
+
+    return res;
 }
 
 int DynamicType::grow(uint8_t size, uint8_t subtype, uint8_t* data)
@@ -148,7 +154,7 @@ int DynamicType::grow(uint8_t size, uint8_t subtype, uint8_t* data)
         return MICROBIT_NO_RESOURCES;
 
     memcpy(buf, getBytes(), len);
-    
+
     // set data type
     buf[len] = subtype;
 
