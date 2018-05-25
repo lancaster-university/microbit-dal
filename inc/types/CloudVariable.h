@@ -12,8 +12,6 @@ class CloudVariable
 {
     Radio& radio;
 
-    uint16_t pearsonHash(ManagedString s);
-
     public:
 
     uint16_t variableNameHash;
@@ -26,6 +24,8 @@ class CloudVariable
     CloudVariable(ManagedString variableNamespace, ManagedString variableName, Radio& radio);
 
     void operator= (const ManagedString &value);
+
+    static uint16_t pearsonHash(ManagedString s);
 
     ~CloudVariable();
 
