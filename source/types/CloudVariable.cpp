@@ -51,6 +51,8 @@ uint16_t CloudVariable::pearsonHash(ManagedString s)
     return (uint16_t)(h1 << 8) + h2;
 }
 
+// TODO: Add rate pacing to updating of variables to prevent hammering of radio!
+
 CloudVariable::CloudVariable(ManagedString variableNamespace, ManagedString variableName, Radio& r) : radio(r)
 {
     this->variableNamespaceHash = pearsonHash(variableNamespace);

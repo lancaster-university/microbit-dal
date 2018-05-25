@@ -10,16 +10,16 @@ class Radio;
 
 class CloudVariable
 {
-
-    uint16_t variableNameHash;
-    uint16_t variableNamespaceHash;
-
-    ManagedString value;
     Radio& radio;
 
     uint16_t pearsonHash(ManagedString s);
 
     public:
+
+    uint16_t variableNameHash;
+    uint16_t variableNamespaceHash;
+
+    ManagedString value;
 
     static CloudVariable* variables[CLOUD_VARIABLE_MAX_VARIABLES];
 
