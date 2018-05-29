@@ -16,6 +16,8 @@ class Bridge
     bool searchHistory(uint16_t app_id, uint16_t id);
     void addToHistory(uint16_t app_id, uint16_t id);
 
+    void test_send(DataPacket* p);
+
     public:
 
     Bridge(Radio& r, MicroBitSerial& s, MicroBitMessageBus& b);
