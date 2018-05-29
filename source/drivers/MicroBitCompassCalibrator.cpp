@@ -145,10 +145,15 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
             if (cursor.x == perimeter[i].x && cursor.y == perimeter[i].y && !perimeter[i].on)
             {
                 // Record the sample data for later processing...
-                X.set(samples, 0, compass.getX(RAW));
-                X.set(samples, 1, compass.getY(RAW));
-                X.set(samples, 2, compass.getZ(RAW));
+                Sample3D s = compass.getSample(RAW);
+                X.set(samples, 0, s.x);
+                X.set(samples, 1, s.y);
+                X.set(samples, 2, s.z);
                 X.set(samples, 3, 1);
+
+                //X.set(samples, 0, compass.getX(RAW));
+                //X.set(samples, 1, compass.getY(RAW));
+                //X.set(samples, 2, compass.getZ(RAW));
 
                 // Record that this pixel has been visited.
                 perimeter[i].on = 1;
@@ -177,7 +182,7 @@ void MicroBitCompassCalibrator::calibrate(MicroBitEvent)
 
     // The result contains the approximate zero point of each axis, but doubled.
     // Halve each sample, and record this as the compass calibration data.
-    CompassSample cal ((int)(Beta.get(0,0) / 2), (int)(Beta.get(1,0) / 2), (int)(Beta.get(2,0) / 2));
+    Sample3D cal ((int)(Beta.get(0,0) / 2), (int)(Beta.get(1,0) / 2), (int)(Beta.get(2,0) / 2));
     compass.setCalibration(cal);
 
     // Show a smiley to indicate that we're done, and continue on with the user program.

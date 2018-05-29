@@ -14,7 +14,9 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "core/MicroBitHeapAllocator.cpp"
     "core/MicroBitListener.cpp"
     "core/MicroBitSystemTimer.cpp"
+    "core/MicroBitUtil.cpp"
 
+    "types/CoordinateSystem.cpp"
     "types/ManagedString.cpp"
     "types/Matrix4.cpp"
     "types/MicroBitEvent.cpp"
@@ -45,6 +47,11 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitFlash.cpp"
     "drivers/MicroBitFile.cpp"
     "drivers/MicroBitFileSystem.cpp"
+    "drivers/FXOS8700.cpp"
+    "drivers/MMA8653.cpp"
+    "drivers/MAG3110.cpp"
+    "drivers/LSM303Accelerometer.cpp"
+    "drivers/LSM303Magnetometer.cpp"
 
     "bluetooth/MicroBitAccelerometerService.cpp"
     "bluetooth/MicroBitBLEManager.cpp"

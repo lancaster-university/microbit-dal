@@ -1,8 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2016 British Broadcasting Corporation.
-This software is provided by Lancaster University by arrangement with the BBC.
+Copyright (c) 2017 Lancaster University.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -23,167 +22,29 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-/**
- * Class definition for MicroBit Accelerometer.
- *
- * Represents an implementation of the Freescale MMA8653 3 axis accelerometer
- * Also includes basic data caching and on demand activation.
- */
-#include "MicroBitConfig.h"
 #include "MicroBitAccelerometer.h"
 #include "ErrorNo.h"
-#include "MicroBitConfig.h"
 #include "MicroBitEvent.h"
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
 
-/**
-  * Configures the accelerometer for G range and sample rate defined
-  * in this object. The nearest values are chosen to those defined
-  * that are supported by the hardware. The instance variables are then
-  * updated to reflect reality.
-  *
-  * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the accelerometer could not be configured.
-  */
-int MicroBitAccelerometer::configure()
-{
-    const MMA8653SampleRangeConfig  *actualSampleRange;
-    const MMA8653SampleRateConfig  *actualSampleRate;
-    int result;
-
-    // First find the nearest sample rate to that specified.
-    actualSampleRate = &MMA8653SampleRate[MMA8653_SAMPLE_RATES-1];
-    for (int i=MMA8653_SAMPLE_RATES-1; i>=0; i--)
-    {
-        if(MMA8653SampleRate[i].sample_period < this->samplePeriod * 1000)
-            break;
-
-        actualSampleRate = &MMA8653SampleRate[i];
-    }
-
-    // Now find the nearest sample range to that specified.
-    actualSampleRange = &MMA8653SampleRange[MMA8653_SAMPLE_RANGES-1];
-    for (int i=MMA8653_SAMPLE_RANGES-1; i>=0; i--)
-    {
-        if(MMA8653SampleRange[i].sample_range < this->sampleRange)
-            break;
-
-        actualSampleRange = &MMA8653SampleRange[i];
-    }
-
-    // OK, we have the correct data. Update our local state.
-    this->samplePeriod = actualSampleRate->sample_period / 1000;
-    this->sampleRange = actualSampleRange->sample_range;
-
-    // Now configure the accelerometer accordingly.
-    // First place the device into standby mode, so it can be configured.
-    result = writeCommand(MMA8653_CTRL_REG1, 0x00);
-    if (result != 0)
-        return MICROBIT_I2C_ERROR;
-
-    // Enable high precisiosn mode. This consumes a bit more power, but still only 184 uA!
-    result = writeCommand(MMA8653_CTRL_REG2, 0x10);
-    if (result != 0)
-        return MICROBIT_I2C_ERROR;
-
-    // Enable the INT1 interrupt pin.
-    result = writeCommand(MMA8653_CTRL_REG4, 0x01);
-    if (result != 0)
-        return MICROBIT_I2C_ERROR;
-
-    // Select the DATA_READY event source to be routed to INT1
-    result = writeCommand(MMA8653_CTRL_REG5, 0x01);
-    if (result != 0)
-        return MICROBIT_I2C_ERROR;
-
-    // Configure for the selected g range.
-    result = writeCommand(MMA8653_XYZ_DATA_CFG, actualSampleRange->xyz_data_cfg);
-    if (result != 0)
-        return MICROBIT_I2C_ERROR;
-
-    // Bring the device back online, with 10bit wide samples at the requested frequency.
-    result = writeCommand(MMA8653_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
-    if (result != 0)
-        return MICROBIT_I2C_ERROR;
-
-    return MICROBIT_OK;
-}
-
-/**
-  * Issues a standard, 2 byte I2C command write to the accelerometer.
-  *
-  * Blocks the calling thread until complete.
-  *
-  * @param reg The address of the register to write to.
-  *
-  * @param value The value to write.
-  *
-  * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the the write request failed.
-  */
-int MicroBitAccelerometer::writeCommand(uint8_t reg, uint8_t value)
-{
-    uint8_t command[2];
-    command[0] = reg;
-    command[1] = value;
-
-    return i2c.write(address, (const char *)command, 2);
-}
-
-/**
-  * Issues a read command, copying data into the specified buffer.
-  *
-  * Blocks the calling thread until complete.
-  *
-  * @param reg The address of the register to access.
-  *
-  * @param buffer Memory area to read the data into.
-  *
-  * @param length The number of bytes to read.
-  *
-  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
-  */
-int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
-{
-    int result;
-
-    if (buffer == NULL || length <= 0 )
-        return MICROBIT_INVALID_PARAMETER;
-
-    result = i2c.write(address, (const char *)&reg, 1, true);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
-
-    result = i2c.read(address, (char *)buffer, length);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
-
-    return MICROBIT_OK;
-}
 
 /**
   * Constructor.
-  * Create a software abstraction of an accelerometer.
+  * Create a software abstraction of an FXSO8700 combined accelerometer/magnetometer
   *
-  * @param _i2c an instance of MicroBitI2C used to communicate with the onboard accelerometer.
+  * @param _i2c an instance of I2C used to communicate with the device.
   *
-  * @param address the default I2C address of the accelerometer. Defaults to: MMA8653_DEFAULT_ADDR.
+  * @param address the default I2C address of the accelerometer. Defaults to: FXS8700_DEFAULT_ADDR.
   *
-  * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
-  *
-  * @code
-  * MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
-  *
-  * MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
-  * @endcode
  */
-MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address, uint16_t id) : sample(), int1(MICROBIT_PIN_ACCEL_DATA_READY), i2c(_i2c)
+MicroBitAccelerometer::MicroBitAccelerometer(CoordinateSpace &cspace, uint16_t id) : sample(), sampleENU(), coordinateSpace(cspace)
 {
     // Store our identifiers.
     this->id = id;
     this->status = 0;
-    this->address = address;
 
-    // Update our internal state for 50Hz at +/- 2g (50Hz has a period af 20ms).
+    // Set a default rate of 50Hz and a +/-2g range.
     this->samplePeriod = 20;
     this->sampleRange = 2;
 
@@ -200,97 +61,33 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
     this->shake.impulse_3 = 1;
     this->shake.impulse_6 = 1;
     this->shake.impulse_8 = 1;
-
-    // Configure and enable the accelerometer.
-    if (this->configure() == MICROBIT_OK)
-        status |= MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
-  * Attempts to read the 8 bit ID from the accelerometer, this can be used for
-  * validation purposes.
-  *
-  * @return the 8 bit ID returned by the accelerometer, or MICROBIT_I2C_ERROR if the request fails.
-  *
-  * @code
-  * accelerometer.whoAmI();
-  * @endcode
-  */
-int MicroBitAccelerometer::whoAmI()
-{
-    uint8_t data;
-    int result;
-
-    result = readCommand(MMA8653_WHOAMI, &data, 1);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
-
-    return (int)data;
-}
-
-/**
-  * Reads the acceleration data from the accelerometer, and stores it in our buffer.
-  * This only happens if the accelerometer indicates that it has new data via int1.
+  * Stores data from the accelerometer sensor in our buffer, and perform gesture tracking.
   *
   * On first use, this member function will attempt to add this component to the
   * list of fiber components in order to constantly update the values stored
   * by this object.
   *
-  * This technique is called lazy instantiation, and it means that we do not
+  * This lazy instantiation means that we do not
   * obtain the overhead from non-chalantly adding this component to fiber components.
   *
   * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the read request fails.
   */
-int MicroBitAccelerometer::updateSample()
+int MicroBitAccelerometer::update()
 {
-    if(!(status & MICROBIT_ACCEL_ADDED_TO_IDLE))
-    {
-        fiber_add_idle_component(this);
-        status |= MICROBIT_ACCEL_ADDED_TO_IDLE;
-    }
+    // Store the new data, after performing any necessary coordinate transformations.
+    sample = coordinateSpace.transform(sampleENU);
 
-    // Poll interrupt line from accelerometer.
-    // n.b. Default is Active LO. Interrupt is cleared in data read.
-    if(!int1)
-    {
-        int8_t data[6];
-        int result;
+    // Indicate that pitch and roll data is now stale, and needs to be recalculated if needed.
+    status &= ~MICROBIT_ACCELEROMETER_IMU_DATA_VALID;
 
-        result = readCommand(MMA8653_OUT_X_MSB, (uint8_t *)data, 6);
-        if (result !=0)
-            return MICROBIT_I2C_ERROR;
+    // Update gesture tracking
+    updateGesture();
 
-        // read MSB values...
-        sample.x = data[0];
-        sample.y = data[2];
-        sample.z = data[4];
-
-        // Normalize the data in the 0..1024 range.
-        sample.x *= 8;
-        sample.y *= 8;
-        sample.z *= 8;
-
-#if CONFIG_ENABLED(USE_ACCEL_LSB)
-        // Add in LSB values.
-        sample.x += (data[1] / 64);
-        sample.y += (data[3] / 64);
-        sample.z += (data[5] / 64);
-#endif
-
-        // Scale into millig (approx!)
-        sample.x *= this->sampleRange;
-        sample.y *= this->sampleRange;
-        sample.z *= this->sampleRange;
-
-        // Indicate that pitch and roll data is now stale, and needs to be recalculated if needed.
-        status &= ~MICROBIT_ACCEL_PITCH_ROLL_VALID;
-
-        // Update gesture tracking
-        updateGesture();
-
-        // Indicate that a new sample is available
-        MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
-    }
+    // Indicate that a new sample is available
+    MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
 
     return MICROBIT_OK;
 };
@@ -304,12 +101,12 @@ int MicroBitAccelerometer::updateSample()
   *
   * @return the sum of the square of the acceleration of the device across all axes.
   */
-int MicroBitAccelerometer::instantaneousAccelerationSquared()
+uint32_t MicroBitAccelerometer::instantaneousAccelerationSquared()
 {
-    updateSample();
+    requestUpdate();
 
     // Use pythagoras theorem to determine the combined force acting on the device.
-    return (int)sample.x*(int)sample.x + (int)sample.y*(int)sample.y + (int)sample.z*(int)sample.z;
+    return (uint32_t)sample.x*(uint32_t)sample.x + (uint32_t)sample.y*(uint32_t)sample.y + (uint32_t)sample.z*(uint32_t)sample.z;
 }
 
 /**
@@ -330,19 +127,19 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
     //
     // If we see enough zero crossings in succession (MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD), then we decide that the device
     // has been shaken.
-    if ((getX() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.x) || (getX() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.x))
+    if ((sample.x < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.x) || (sample.x > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.x))
     {
         shakeDetected = true;
         shake.x = !shake.x;
     }
 
-    if ((getY() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.y) || (getY() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.y))
+    if ((sample.y < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.y) || (sample.y > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.y))
     {
         shakeDetected = true;
         shake.y = !shake.y;
     }
 
-    if ((getZ() < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.z) || (getZ() > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.z))
+    if ((sample.z < -MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && shake.z) || (sample.z > MICROBIT_ACCELEROMETER_SHAKE_TOLERANCE && !shake.z))
     {
         shakeDetected = true;
         shake.z = !shake.z;
@@ -352,7 +149,7 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
     if (shakeDetected && shake.count < MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD)
     {
         shake.count++;
-  
+
         if (shake.count == 1)
             shake.timer = 0;
 
@@ -386,26 +183,27 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
         }
     }
 
-    if (instantaneousAccelerationSquared() < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD)
+    uint32_t force = instantaneousAccelerationSquared();
+    if (force < MICROBIT_ACCELEROMETER_FREEFALL_THRESHOLD)
         return MICROBIT_ACCELEROMETER_EVT_FREEFALL;
 
     // Determine our posture.
-    if (getX() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (sample.x < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return MICROBIT_ACCELEROMETER_EVT_TILT_LEFT;
 
-    if (getX() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (sample.x > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return MICROBIT_ACCELEROMETER_EVT_TILT_RIGHT;
 
-    if (getY() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (sample.y < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return MICROBIT_ACCELEROMETER_EVT_TILT_DOWN;
 
-    if (getY() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (sample.y > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return MICROBIT_ACCELEROMETER_EVT_TILT_UP;
 
-    if (getZ() < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (sample.z < (-1000 + MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return MICROBIT_ACCELEROMETER_EVT_FACE_UP;
 
-    if (getZ() > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
+    if (sample.z > (1000 - MICROBIT_ACCELEROMETER_TILT_TOLERANCE))
         return MICROBIT_ACCELEROMETER_EVT_FACE_DOWN;
 
     return MICROBIT_ACCELEROMETER_EVT_NONE;
@@ -420,7 +218,7 @@ void MicroBitAccelerometer::updateGesture()
     // Check for High/Low G force events - typically impulses, impacts etc.
     // Again, during such spikes, these event take priority of the posture of the device.
     // For these events, we don't perform any low pass filtering.
-    int force = instantaneousAccelerationSquared();
+    uint32_t force = instantaneousAccelerationSquared();
 
     if (force > MICROBIT_ACCELEROMETER_3G_THRESHOLD)
     {
@@ -496,8 +294,14 @@ void MicroBitAccelerometer::updateGesture()
   */
 int MicroBitAccelerometer::setPeriod(int period)
 {
-    this->samplePeriod = period;
-    return this->configure();
+    int result;
+
+    samplePeriod = period;
+    result = configure();
+
+    samplePeriod = getPeriod();
+    return result;
+
 }
 
 /**
@@ -527,8 +331,13 @@ int MicroBitAccelerometer::getPeriod()
   */
 int MicroBitAccelerometer::setRange(int range)
 {
-    this->sampleRange = range;
-    return this->configure();
+    int result;
+
+    sampleRange = range;
+    result = configure();
+
+    sampleRange = getRange();
+    return result;
 }
 
 /**
@@ -542,84 +351,93 @@ int MicroBitAccelerometer::getRange()
 }
 
 /**
-  * Reads the value of the X axis from the latest update retrieved from the accelerometer.
-  *
-  * @param system The coordinate system to use. By default, a simple cartesian system is provided.
-  *
-  * @return The force measured in the X axis, in milli-g.
-  *
-  * @code
-  * accelerometer.getX();
-  * @endcode
-  */
-int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
+ * Configures the accelerometer for G range and sample rate defined
+ * in this object. The nearest values are chosen to those defined
+ * that are supported by the hardware. The instance variables are then
+ * updated to reflect reality.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the accelerometer could not be configured.
+ *
+ * @note This method should be overidden by the hardware driver to implement the requested
+ * changes in hardware.
+ */
+int MicroBitAccelerometer::configure()
 {
-    updateSample();
-
-    switch (system)
-    {
-        case SIMPLE_CARTESIAN:
-            return -sample.x;
-
-        case NORTH_EAST_DOWN:
-            return sample.y;
-
-        case RAW:
-        default:
-            return sample.x;
-    }
+    return MICROBIT_NOT_SUPPORTED;
 }
 
 /**
-  * Reads the value of the Y axis from the latest update retrieved from the accelerometer.
-  *
-  * @return The force measured in the Y axis, in milli-g.
-  *
-  * @code
-  * accelerometer.getY();
-  * @endcode
-  */
-int MicroBitAccelerometer::getY(MicroBitCoordinateSystem system)
+ * Poll to see if new data is available from the hardware. If so, update it.
+ * n.b. it is not necessary to explicitly call this funciton to update data
+ * (it normally happens in the background when the scheduler is idle), but a check is performed
+ * if the user explicitly requests up to date data.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the update fails.
+ *
+ * @note This method should be overidden by the hardware driver to implement the requested
+ * changes in hardware.
+ */
+int MicroBitAccelerometer::requestUpdate()
 {
-    updateSample();
-
-    switch (system)
-    {
-        case SIMPLE_CARTESIAN:
-            return -sample.y;
-
-        case NORTH_EAST_DOWN:
-            return -sample.x;
-
-        case RAW:
-        default:
-            return sample.y;
-    }
+    return MICROBIT_NOT_SUPPORTED;
 }
 
 /**
-  * Reads the value of the Z axis from the latest update retrieved from the accelerometer.
-  *
-  * @return The force measured in the Z axis, in milli-g.
-  *
-  * @code
-  * accelerometer.getZ();
-  * @endcode
-  */
-int MicroBitAccelerometer::getZ(MicroBitCoordinateSystem system)
+ * Reads the last accelerometer value stored, and provides it in the coordinate system requested.
+ *
+ * @param coordinateSpace The coordinate system to use.
+ * @return The force measured in each axis, in milli-g.
+ */
+Sample3D MicroBitAccelerometer::getSample(CoordinateSystem coordinateSystem)
 {
-    updateSample();
+    requestUpdate();
+    return coordinateSpace.transform(sampleENU, coordinateSystem);
+}
 
-    switch (system)
-    {
-        case NORTH_EAST_DOWN:
-            return -sample.z;
+/**
+ * Reads the last accelerometer value stored, and in the coordinate system defined in the constructor.
+ * @return The force measured in each axis, in milli-g.
+ */
+Sample3D MicroBitAccelerometer::getSample()
+{
+    requestUpdate();
+    return sample;
+}
 
-        case SIMPLE_CARTESIAN:
-        case RAW:
-        default:
-            return sample.z;
-    }
+/**
+ * reads the value of the x axis from the latest update retrieved from the accelerometer,
+ * usingthe default coordinate system as specified in the constructor.
+ *
+ * @return the force measured in the x axis, in milli-g.
+ */
+int MicroBitAccelerometer::getX()
+{
+    requestUpdate();
+    return sample.x;
+}
+
+/**
+ * reads the value of the y axis from the latest update retrieved from the accelerometer,
+ * usingthe default coordinate system as specified in the constructor.
+ *
+ * @return the force measured in the y axis, in milli-g.
+ */
+int MicroBitAccelerometer::getY()
+{
+    requestUpdate();
+    return sample.y;
+}
+
+/**
+ * reads the value of the z axis from the latest update retrieved from the accelerometer,
+ * usingthe default coordinate system as specified in the constructor.
+ *
+ * @return the force measured in the z axis, in milli-g.
+ */
+int MicroBitAccelerometer::getZ()
+{
+    requestUpdate();
+    return sample.z;
 }
 
 /**
@@ -647,7 +465,8 @@ int MicroBitAccelerometer::getPitch()
   */
 float MicroBitAccelerometer::getPitchRadians()
 {
-    if (!(status & MICROBIT_ACCEL_PITCH_ROLL_VALID))
+    requestUpdate();
+    if (!(status & MICROBIT_ACCELEROMETER_IMU_DATA_VALID))
         recalculatePitchRoll();
 
     return pitch;
@@ -678,7 +497,8 @@ int MicroBitAccelerometer::getRoll()
   */
 float MicroBitAccelerometer::getRollRadians()
 {
-    if (!(status & MICROBIT_ACCEL_PITCH_ROLL_VALID))
+    requestUpdate();
+    if (!(status & MICROBIT_ACCELEROMETER_IMU_DATA_VALID))
         recalculatePitchRoll();
 
     return roll;
@@ -692,14 +512,14 @@ float MicroBitAccelerometer::getRollRadians()
   */
 void MicroBitAccelerometer::recalculatePitchRoll()
 {
-    double x = (double) getX(NORTH_EAST_DOWN);
-    double y = (double) getY(NORTH_EAST_DOWN);
-    double z = (double) getZ(NORTH_EAST_DOWN);
+    double x = (double) sample.x;
+    double y = (double) sample.y;
+    double z = (double) sample.z;
 
     roll = atan2(y, z);
     pitch = atan(-x / (y*sin(roll) + z*cos(roll)));
 
-    status |= MICROBIT_ACCEL_PITCH_ROLL_VALID;
+    status |= MICROBIT_ACCELEROMETER_IMU_DATA_VALID;
 }
 
 /**
@@ -709,7 +529,6 @@ void MicroBitAccelerometer::recalculatePitchRoll()
   *
   * Example:
   * @code
-  * MicroBitDisplay display;
   *
   * if (accelerometer.getGesture() == SHAKE)
   *     display.scroll("SHAKE!");
@@ -721,36 +540,9 @@ uint16_t MicroBitAccelerometer::getGesture()
 }
 
 /**
-  * A periodic callback invoked by the fiber scheduler idle thread.
-  *
-  * Internally calls updateSample().
-  */
-void MicroBitAccelerometer::idleTick()
-{
-    updateSample();
-}
-
-/**
-  * Destructor for MicroBitAccelerometer, where we deregister from the array of fiber components.
+  * Destructor for FXS8700, where we deregister from the array of fiber components.
   */
 MicroBitAccelerometer::~MicroBitAccelerometer()
 {
-    fiber_remove_idle_component(this);
 }
 
-const MMA8653SampleRangeConfig MMA8653SampleRange[MMA8653_SAMPLE_RANGES] = {
-    {2, 0},
-    {4, 1},
-    {8, 2}
-};
-
-const MMA8653SampleRateConfig MMA8653SampleRate[MMA8653_SAMPLE_RATES] = {
-    {1250,      0x00},
-    {2500,      0x08},
-    {5000,      0x10},
-    {10000,     0x18},
-    {20000,     0x20},
-    {80000,     0x28},
-    {160000,    0x30},
-    {640000,    0x38}
-};
