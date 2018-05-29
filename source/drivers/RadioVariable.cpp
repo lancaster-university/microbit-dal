@@ -3,9 +3,6 @@
 #include "ErrorNo.h"
 #include "MicroBitEvent.h"
 
-extern void log_string(const char *);
-extern void log_num(int);
-
 RadioVariable::RadioVariable(RadioCloud& cloud) : cloud(cloud)
 {
 

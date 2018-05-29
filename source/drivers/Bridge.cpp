@@ -14,8 +14,6 @@
 #define APP_ID_MSK              0xFFFF0000
 #define PACKET_ID_MSK           0x0000FFFF
 
-extern void log_string_priv(const char *);
-extern void log_num_priv(int num);
 static uint32_t id_history[HISTORY_COUNT] = { 0 };
 static uint16_t historyIndexHead = 0;
 
@@ -53,7 +51,6 @@ void Bridge::test_send(DataPacket* p)
 void Bridge::onRadioPacket(MicroBitEvent e)
 {
     DataPacket* r = radio.cloud.recvRaw(e.value);
-    // log_string_priv("Radio_PACKET");
 
     if (r == NULL)
         return;
@@ -76,7 +73,6 @@ void Bridge::onRadioPacket(MicroBitEvent e)
 
     if (!seen)
     {
-        // log_string_priv("not_seen");
         addToHistory(r->app_id, r->id);
 
         for (uint16_t i = 0; i < len; i++)
@@ -106,7 +102,6 @@ void Bridge::onRadioPacket(MicroBitEvent e)
 
 void Bridge::onSerialPacket(MicroBitEvent)
 {
-    log_string_priv("REC_SER");
     DataPacket* packet = (DataPacket*) malloc(sizeof(DataPacket));
     uint8_t* packetPtr = (uint8_t*)packet;
 
@@ -142,10 +137,6 @@ void Bridge::onSerialPacket(MicroBitEvent)
 
     packet->len -= CLOUD_HEADER_SIZE;
 
-    log_string_priv("TXING:");
-    log_num_priv(packet->id);
-    log_num_priv(packet->app_id);
-
     packet->status = DATA_PACKET_WAITING_FOR_SEND | DATA_PACKET_EXPECT_NO_RESPONSE;
     int ret = radio.cloud.addToTxQueue(packet);
 
@@ -157,8 +148,6 @@ Bridge::Bridge(Radio& r, MicroBitSerial& s, MicroBitMessageBus& b) : radio(r), s
     s.putc(SLIP_END);
 
     memset(id_history, 0, sizeof(uint32_t) * HISTORY_COUNT);
-
-    log_string_priv("BRIDGE_INIT");
 
     // listen to everything.
     r.cloud.setBridgeMode(true);

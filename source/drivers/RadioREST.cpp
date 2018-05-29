@@ -6,9 +6,6 @@
 #include "RadioREST.h"
 #include "MicroBitFiber.h"
 
-extern void log_string(const char *);
-extern void log_num(int num);
-
 RadioREST::RadioREST(RadioCloud& r) : cloud(r)
 {
 }

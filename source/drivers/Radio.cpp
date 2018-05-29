@@ -60,8 +60,6 @@ DEALINGS IN THE SOFTWARE.
 
 Radio* Radio::instance = NULL;
 
-extern void log_string(const char *);
-
 extern "C" void RADIO_IRQHandler(void)
 {
     if(NRF_RADIO->EVENTS_READY)
@@ -266,8 +264,6 @@ int Radio::enable()
     // Only attempt to enable this radio mode if BLE is disabled.
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
-
-    log_string("ENABLE\r\n");
 
     // If this is the first time we've been enable, allocate out receive buffers.
     if (rxBuf == NULL)

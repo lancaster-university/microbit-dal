@@ -2,13 +2,9 @@
 #include "Radio.h"
 #include "MicroBitFiber.h"
 
-extern void log_string(const char *);
-extern void log_num(int num);
-extern void log_num_priv(int c);
-extern void log_string_priv(const char *);
-
 #define APP_ID_MSK              0xFFFF0000
 #define PACKET_ID_MSK           0x0000FFFF
+
 static uint32_t rx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
 static uint8_t rx_history_index = 0;
 
@@ -51,15 +47,12 @@ DataPacket* RadioCloud::removeFromQueue(DataPacket** queue, uint16_t id)
 
     DataPacket* ret = NULL;
 
-	log_string("REMOVE\r\n");
-	log_num(id);
     __disable_irq();
 	DataPacket *p = (*queue)->next;
 	DataPacket *previous = *queue;
 
 	if (id == (*queue)->id)
 	{
-		log_string("HEAD\r\n");
 		*queue = p;
 		ret = previous;
 	}
@@ -67,8 +60,6 @@ DataPacket* RadioCloud::removeFromQueue(DataPacket** queue, uint16_t id)
     {
         while (p != NULL)
         {
-            log_string("ITER\r\n");
-            log_num(p->id);
             if (id == p->id)
             {
                 ret = p;
@@ -91,18 +82,11 @@ int RadioCloud::addToQueue(DataPacket** queue, DataPacket* packet)
     int queueDepth = 0;
     packet->next = NULL;
 
-    log_string("ADD\r\n");
-    log_num((int)packet->id);
-
     __disable_irq();
     if (*queue == NULL)
-    {
-        log_string("HEAD\r\n");
         *queue = packet;
-    }
     else
     {
-        log_string("ITER");
         DataPacket *p = *queue;
 
         while (p->next != NULL)
@@ -194,7 +178,6 @@ void RadioCloud::idleTick()
         // only transmit once every idle tick
         if (p->status & DATA_PACKET_WAITING_FOR_SEND && !transmitted)
         {
-            log_string_priv("SEND!!!\r\n");
             transmitted = true;
             sendDataPacket(p);
             addToHistory(tx_history, &tx_history_index, p->app_id, p->id);
@@ -209,7 +192,6 @@ void RadioCloud::idleTick()
         }
         else if (p->status & DATA_PACKET_WAITING_FOR_ACK)
         {
-            // log_string_priv("ACKW!!!\r\n");
              p->no_response_count++;
 
             if (p->no_response_count > CLOUD_RADIO_NO_ACK_THRESHOLD && !transmitted)
@@ -226,8 +208,6 @@ void RadioCloud::idleTick()
         }
         else if (p->status & DATA_PACKET_ACK_RECEIVED)
         {
-            // log_string_priv("ACK REC!!!\r\n");
-
             p->no_response_count++;
 
             if (p->no_response_count > CLOUD_RADIO_NO_RESPONSE_THRESHOLD || p->status & DATA_PACKET_EXPECT_NO_RESPONSE)
@@ -239,7 +219,6 @@ void RadioCloud::idleTick()
 
     if (p)
     {
-        log_string_priv("POP\r\n");
         DataPacket *t = removeFromQueue(&txQueue, p->id);
 
         uint8_t rt = t->request_type;
@@ -269,8 +248,6 @@ bool RadioCloud::searchHistory(uint32_t* history, uint16_t app_id, uint16_t id)
 
 void RadioCloud::addToHistory(uint32_t* history, uint8_t* history_index, uint16_t app_id, uint16_t id)
 {
-    log_string("IDX: ");
-    log_num((int)*history_index);
     history[*history_index] = ((app_id << 16) | id);
     *history_index = (*history_index + 1) % RADIO_CLOUD_HISTORY_SIZE;
 }
@@ -285,16 +262,10 @@ void RadioCloud::packetReceived()
     RadioFrameBuffer* packet = radio.recv();
     DataPacket* temp = (DataPacket*)packet->payload;
 
-    log_string("RX: ");
-    log_num((int) this->appId);
-    log_num((int) temp->id);
-    log_num((int) temp->request_type);
-
     // ignore any packets that aren't part of our application
     // If appId == 0, we are in bridge mode -- accept all packets
     if (appId != 0 && temp->app_id != this->appId)
     {
-        log_string("IGNORED\r\n");
         delete packet;
         return;
     }
@@ -302,14 +273,11 @@ void RadioCloud::packetReceived()
     // if an ack, update our packet status
     if (temp->request_type & REQUEST_STATUS_ACK)
     {
-        log_string("ack\r\n");
-
         DataPacket* p = peakTxQueue(temp->id);
 
         // we don't expect a response from a node here.
         if (getBridgeMode())
         {
-            log_string("BRIDGE RM\r\n");
             p = removeFromTxQueue(temp->id);
             if (p == NULL)
                 while(1);
@@ -317,7 +285,6 @@ void RadioCloud::packetReceived()
         }
         else if (p)
         {
-            log_string("HANDLE_ACK\r\n");
             // otherwise in normal mode, we expect a response from a bridged ubit
             p->status &= ~(DATA_PACKET_WAITING_FOR_ACK);
             p->status |= DATA_PACKET_ACK_RECEIVED;
@@ -331,7 +298,6 @@ void RadioCloud::packetReceived()
 
     if (!getBridgeMode())
     {
-        log_string("filt\r\n");
         // ack any packets we've previously sent
         if (searchHistory(tx_history, temp->app_id, temp->id))
         {
@@ -344,21 +310,17 @@ void RadioCloud::packetReceived()
 
             sendDataPacket(ack);
             delete ack;
-            log_string("OUR ACK\r\n");
         }
 
         // ignore previously received packets
         if (searchHistory(rx_history, temp->app_id, temp->id))
         {
             delete packet;
-            log_string("FILTERED\r\n");
             return;
         }
 
         addToHistory(rx_history, &rx_history_index, temp->app_id, temp->id);
     }
-
-    log_string("RECEIVED\r\n");
 
     // we have received a response, remove any matching packets from the txQueue
     DataPacket* toDelete = removeFromQueue(&txQueue, temp->id);
@@ -397,10 +359,6 @@ DynamicType RadioCloud::recv(uint16_t id)
 
     if (t == NULL)
         return DynamicType();
-
-    log_string("VALID\r\n");
-    log_num(t->len);
-    log_num(t->len - CLOUD_HEADER_SIZE);
 
     DynamicType dt;
 
