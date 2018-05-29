@@ -42,7 +42,9 @@ void RadioVariable::handleTimeout(uint16_t id)
 {
     // just remove for now, but should retransmit last change in future...
     DataPacket* t = cloud.recvRaw(id);
-    delete t;
+
+    if (t)
+        delete t;
 }
 
 void RadioVariable::handlePacket(uint16_t id)
@@ -50,11 +52,7 @@ void RadioVariable::handlePacket(uint16_t id)
     // use the raw variant and coherce into DynamicType
     DataPacket* t = cloud.recvRaw(id);
 
-    if (t == NULL)
-        return;
-
-    // can't do much if there's an error from a previous request
-    if (!(t->request_type & REQUEST_TYPE_STATUS_ERROR))
+    if (t != NULL && !(t->request_type & (REQUEST_STATUS_OK | REQUEST_STATUS_ERROR)))
     {
         DynamicType dt(t->len - CLOUD_HEADER_SIZE, t->payload, 0);
         uint16_t namespaceHash = dt.getInteger(0);

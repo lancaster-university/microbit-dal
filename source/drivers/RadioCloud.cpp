@@ -4,53 +4,86 @@
 
 extern void log_string(const char *);
 extern void log_num(int num);
+extern void log_num_priv(int c);
+extern void log_string_priv(const char *);
 
 #define APP_ID_MSK              0xFFFF0000
 #define PACKET_ID_MSK           0x0000FFFF
-static uint32_t id_history[RADIO_CLOUD_FILTER_SIZE] = { 0 };
-static uint16_t historyIndexHead = 0;
+static uint32_t rx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
+static uint8_t rx_history_index = 0;
+
+static uint32_t tx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
+static uint8_t tx_history_index = 0;
 
 RadioCloud::RadioCloud(Radio& r, uint16_t app_id) : radio(r), rest(*this), variable(*this)
 {
     this->appId = app_id;
     this->txQueue = NULL;
     this->rxQueue = NULL;
-
-    this->status = RADIO_CLOUD_STATUS_FILTER;
+    rx_history_index = 0;
+    tx_history_index = 0;
 
     fiber_add_idle_component(this);
 }
 
-int RadioCloud::enableFilter(bool state)
+int RadioCloud::setBridgeMode(bool state)
 {
-    this->status = (state) ? RADIO_CLOUD_STATUS_FILTER : 0;
+    if (state)
+    {
+        this->status |= RADIO_CLOUD_STATUS_HUB_MODE;
+        setAppId(0);
+    }
+    else
+        this->status &= ~RADIO_CLOUD_STATUS_HUB_MODE;
+
     return MICROBIT_OK;
+}
+
+bool RadioCloud::getBridgeMode()
+{
+    return (this->status & RADIO_CLOUD_STATUS_HUB_MODE) ? true : false;
 }
 
 DataPacket* RadioCloud::removeFromQueue(DataPacket** queue, uint16_t id)
 {
-    DataPacket *p = *queue;
-    DataPacket *previous = *queue;
+    if (*queue == NULL)
+		return NULL;
 
+    DataPacket* ret = NULL;
+
+	log_string("REMOVE\r\n");
+	log_num(id);
     __disable_irq();
-    while (p != NULL)
+	DataPacket *p = (*queue)->next;
+	DataPacket *previous = *queue;
+
+	if (id == (*queue)->id)
+	{
+		log_string("HEAD\r\n");
+		*queue = p;
+		ret = previous;
+	}
+    else
     {
-        if (id == p->id)
+        while (p != NULL)
         {
-            if (p == *queue)
-                *queue = p->next;
-            else
+            log_string("ITER\r\n");
+            log_num(p->id);
+            if (id == p->id)
+            {
+                ret = p;
                 previous->next = p->next;
+                break;
+            }
 
-            return p;
+            previous = p;
+            p = p->next;
         }
-
-        previous = p;
-        p = p->next;
     }
+
     __enable_irq();
 
-    return NULL;
+	return ret;
 }
 
 int RadioCloud::addToQueue(DataPacket** queue, DataPacket* packet)
@@ -58,13 +91,18 @@ int RadioCloud::addToQueue(DataPacket** queue, DataPacket* packet)
     int queueDepth = 0;
     packet->next = NULL;
 
+    log_string("ADD\r\n");
+    log_num((int)packet->id);
+
     __disable_irq();
     if (*queue == NULL)
     {
+        log_string("HEAD\r\n");
         *queue = packet;
     }
     else
     {
+        log_string("ITER");
         DataPacket *p = *queue;
 
         while (p->next != NULL)
@@ -73,7 +111,7 @@ int RadioCloud::addToQueue(DataPacket** queue, DataPacket* packet)
             queueDepth++;
         }
 
-        if (queueDepth >= REST_RADIO_MAXIMUM_TX_BUFFERS)
+        if (queueDepth >= CLOUD_RADIO_MAXIMUM_BUFFERS)
         {
             delete packet;
             return MICROBIT_NO_RESOURCES;
@@ -86,14 +124,41 @@ int RadioCloud::addToQueue(DataPacket** queue, DataPacket* packet)
     return MICROBIT_OK;
 }
 
+DataPacket* RadioCloud::peakQueue(DataPacket** queue, uint16_t id)
+{
+    DataPacket *p = *queue;
+
+    __disable_irq();
+    while (p != NULL)
+    {
+        if (id == p->id)
+            return p;
+
+        p = p->next;
+    }
+    __enable_irq();
+
+    return NULL;
+}
+
 int RadioCloud::addToTxQueue(DataPacket* p)
 {
     return addToQueue(&txQueue, p);
 }
 
+DataPacket* RadioCloud::removeFromTxQueue(uint16_t id)
+{
+    return removeFromQueue(&txQueue, id);
+}
+
 DataPacket* RadioCloud::removeFromRxQueue(uint16_t id)
 {
     return removeFromQueue(&rxQueue, id);
+}
+
+DataPacket* RadioCloud::peakTxQueue(uint16_t id)
+{
+    return peakQueue(&txQueue, id);
 }
 
 int RadioCloud::setAppId(uint16_t id)
@@ -122,32 +187,37 @@ void RadioCloud::idleTick()
 
     // walk the txqueue and check to see if any have exceeded our retransmit time
     bool transmitted = false;
-    bool pop = false;
 
     DataPacket* p = txQueue;
-
     while(p != NULL)
     {
         // only transmit once every idle tick
         if (p->status & DATA_PACKET_WAITING_FOR_SEND && !transmitted)
         {
-            log_string("SENDING!!!!!");
+            log_string_priv("SEND!!!\r\n");
             transmitted = true;
             sendDataPacket(p);
-            p->status = DATA_PACKET_WAITING_FOR_ACK;
+            addToHistory(tx_history, &tx_history_index, p->app_id, p->id);
+            p->status &=~(DATA_PACKET_WAITING_FOR_SEND);
+
+            if (p->request_type & REQUEST_TYPE_BROADCAST)
+                break;
+
+            p->status |= DATA_PACKET_WAITING_FOR_ACK;
             p->no_response_count = 0;
             p->retry_count = 0;
         }
         else if (p->status & DATA_PACKET_WAITING_FOR_ACK)
         {
+            // log_string_priv("ACKW!!!\r\n");
              p->no_response_count++;
 
-            if (p->no_response_count > REST_RADIO_NO_ACK_THRESHOLD && !transmitted)
+            if (p->no_response_count > CLOUD_RADIO_NO_ACK_THRESHOLD && !transmitted)
             {
                 p->retry_count++;
 
-                if (p->retry_count > REST_RADIO_RETRY_THRESHOLD)
-                    pop = true;
+                if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
+                    break;
 
                 sendDataPacket(p);
                 p->no_response_count = 0;
@@ -156,49 +226,53 @@ void RadioCloud::idleTick()
         }
         else if (p->status & DATA_PACKET_ACK_RECEIVED)
         {
+            // log_string_priv("ACK REC!!!\r\n");
+
             p->no_response_count++;
 
-            if (p->no_response_count > REST_RADIO_NO_RESPONSE_THRESHOLD)
-                pop = true;
-        }
-
-        if (pop)
-        {
-            pop = false;
-            DataPacket *t = removeFromQueue(&txQueue, p->id);
-
-            uint8_t rt = t->request_type;
-            t->request_type = REQUEST_TYPE_STATUS_ERROR;
-
-            // expect client code to check for errors...
-            addToQueue(&rxQueue, t);
-
-            if (rt & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_PUT_REQUEST | REQUEST_TYPE_POST_REQUEST | REQUEST_TYPE_DELETE_REQUEST))
-                rest.handleTimeout(p->id);
-
-            if (rt & REQUEST_TYPE_CLOUD_VARIABLE)
-                variable.handleTimeout(p->id);
+            if (p->no_response_count > CLOUD_RADIO_NO_RESPONSE_THRESHOLD || p->status & DATA_PACKET_EXPECT_NO_RESPONSE)
+                break;
         }
 
         p = p->next;
     }
+
+    if (p)
+    {
+        log_string_priv("POP\r\n");
+        DataPacket *t = removeFromQueue(&txQueue, p->id);
+
+        uint8_t rt = t->request_type;
+        t->request_type = REQUEST_STATUS_ERROR;
+
+        // expect client code to check for errors...
+        addToQueue(&rxQueue, t);
+
+        if (rt & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_POST_REQUEST))
+            rest.handleTimeout(t->id);
+
+        if (rt & REQUEST_TYPE_CLOUD_VARIABLE)
+            variable.handleTimeout(t->id);
+    }
 }
 
-bool RadioCloud::searchHistory(uint16_t app_id, uint16_t id)
+bool RadioCloud::searchHistory(uint32_t* history, uint16_t app_id, uint16_t id)
 {
-    for (int idx = 0; idx < RADIO_CLOUD_FILTER_SIZE; idx++)
+    for (int idx = 0; idx < RADIO_CLOUD_HISTORY_SIZE; idx++)
     {
-        if (((id_history[idx] & APP_ID_MSK) >> 16) == app_id && (id_history[idx] & PACKET_ID_MSK) == id)
+        if (((history[idx] & APP_ID_MSK) >> 16) == app_id && (history[idx] & PACKET_ID_MSK) == id)
             return true;
     }
 
     return false;
 }
 
-void RadioCloud::addToHistory(uint16_t app_id, uint16_t id)
+void RadioCloud::addToHistory(uint32_t* history, uint8_t* history_index, uint16_t app_id, uint16_t id)
 {
-    id_history[historyIndexHead] = ((app_id << 16) | id);
-    historyIndexHead = (historyIndexHead + 1) % RADIO_CLOUD_FILTER_SIZE;
+    log_string("IDX: ");
+    log_num((int)*history_index);
+    history[*history_index] = ((app_id << 16) | id);
+    *history_index = (*history_index + 1) % RADIO_CLOUD_HISTORY_SIZE;
 }
 
 /**
@@ -213,53 +287,78 @@ void RadioCloud::packetReceived()
 
     log_string("RX: ");
     log_num((int) this->appId);
-    log_string("\r\n");
     log_num((int) temp->id);
+    log_num((int) temp->request_type);
 
     // ignore any packets that aren't part of our application
+    // If appId == 0, we are in bridge mode -- accept all packets
     if (appId != 0 && temp->app_id != this->appId)
     {
-        log_string("IGNORED");
+        log_string("IGNORED\r\n");
         delete packet;
         return;
     }
 
-    if (this->status & RADIO_CLOUD_STATUS_FILTER)
+    // if an ack, update our packet status
+    if (temp->request_type & REQUEST_STATUS_ACK)
     {
-        if (searchHistory(temp->app_id, temp->id))
+        log_string("ack\r\n");
+
+        DataPacket* p = peakTxQueue(temp->id);
+
+        // we don't expect a response from a node here.
+        if (getBridgeMode())
         {
-            delete packet;
-            return;
+            log_string("BRIDGE RM\r\n");
+            p = removeFromTxQueue(temp->id);
+            if (p == NULL)
+                while(1);
+            delete p;
         }
-
-        addToHistory(temp->app_id, temp->id);
-    }
-
-    if (temp->request_type & REQUEST_TYPE_STATUS_ACK)
-    {
-        DataPacket* p = txQueue;
-
-        while (p != NULL)
+        else if (p)
         {
-            if (temp->id == p->id)
-                break;
-
-            p = p->next;
-        }
-
-        if (p)
-        {
-            p->status = DATA_PACKET_ACK_RECEIVED;
+            log_string("HANDLE_ACK\r\n");
+            // otherwise in normal mode, we expect a response from a bridged ubit
+            p->status &= ~(DATA_PACKET_WAITING_FOR_ACK);
+            p->status |= DATA_PACKET_ACK_RECEIVED;
             p->no_response_count = 0;
             p->retry_count = 0;
         }
 
         delete packet;
-
         return;
     }
 
-    log_string("AFTER");
+    if (!getBridgeMode())
+    {
+        log_string("filt\r\n");
+        // ack any packets we've previously sent
+        if (searchHistory(tx_history, temp->app_id, temp->id))
+        {
+            DataPacket* ack = new DataPacket();
+            ack->app_id = temp->app_id;
+            ack->id = temp->id;
+            ack->request_type = REQUEST_STATUS_ACK;
+            ack->status = 0;
+            ack->len = 0;
+
+            sendDataPacket(ack);
+            delete ack;
+            log_string("OUR ACK\r\n");
+        }
+
+        // ignore previously received packets
+        if (searchHistory(rx_history, temp->app_id, temp->id))
+        {
+            delete packet;
+            log_string("FILTERED\r\n");
+            return;
+        }
+
+        addToHistory(rx_history, &rx_history_index, temp->app_id, temp->id);
+    }
+
+    log_string("RECEIVED\r\n");
 
     // we have received a response, remove any matching packets from the txQueue
     DataPacket* toDelete = removeFromQueue(&txQueue, temp->id);
@@ -279,12 +378,12 @@ void RadioCloud::packetReceived()
 
     delete packet;
 
-    // incterception event for Bridge.cpp
+    // interception event for Bridge.cpp
     MicroBitEvent(MICROBIT_RADIO_ID_CLOUD, p->id);
 
     // used for notifying underlying services that a packet has been received.
     // this occurs after the packet has been added to the rxQueue.
-    if (temp->request_type & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_PUT_REQUEST | REQUEST_TYPE_POST_REQUEST | REQUEST_TYPE_DELETE_REQUEST))
+    if (temp->request_type & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_POST_REQUEST))
         rest.handlePacket(p->id);
 
     if (temp->request_type & REQUEST_TYPE_CLOUD_VARIABLE)
@@ -305,7 +404,7 @@ DynamicType RadioCloud::recv(uint16_t id)
 
     DynamicType dt;
 
-    if (t->request_type == REQUEST_TYPE_STATUS_ERROR)
+    if (t->request_type == REQUEST_STATUS_ERROR)
         dt = DynamicType(7, (uint8_t*)"\01ERROR\0", DYNAMIC_TYPE_STATUS_ERROR);
     else
         dt = DynamicType(t->len - CLOUD_HEADER_SIZE, t->payload, 0);

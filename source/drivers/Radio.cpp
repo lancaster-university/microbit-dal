@@ -267,7 +267,7 @@ int Radio::enable()
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
-    log_string("ENABLE");
+    log_string("ENABLE\r\n");
 
     // If this is the first time we've been enable, allocate out receive buffers.
     if (rxBuf == NULL)
@@ -491,7 +491,6 @@ RadioFrameBuffer* Radio::recv()
   */
 int Radio::send(RadioFrameBuffer *buffer)
 {
-    log_string("SEND");
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 

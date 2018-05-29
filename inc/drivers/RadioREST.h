@@ -7,18 +7,6 @@ class RadioCloud;
 #include "DynamicType.h"
 #include "MicroBitConfig.h"
 
-#define REST_RADIO_MAXIMUM_TX_BUFFERS       10
-#define REST_RADIO_MAXIMUM_RX_BUFFERS       10
-
-#define REST_RADIO_NO_ACK_THRESHOLD         30
-#define REST_RADIO_NO_RESPONSE_THRESHOLD    100
-#define REST_RADIO_RETRY_THRESHOLD          5
-
-#define DATA_PACKET_WAITING_FOR_SEND        0x01
-#define DATA_PACKET_WAITING_FOR_ACK         0x02
-#define DATA_PACKET_ACK_RECEIVED            0x04
-
-
 class RadioREST
 {
     RadioCloud& cloud;

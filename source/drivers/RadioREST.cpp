@@ -123,7 +123,6 @@ void RadioREST::handleTimeout(uint16_t id)
 void RadioREST::handlePacket(uint16_t id)
 {
     // wake any waiting fibers, to recv the packet.
-
     // TODO: who removes the packet if nothing reads it?!
     MicroBitEvent(RADIO_REST_ID, id);
 }
