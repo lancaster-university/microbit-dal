@@ -165,6 +165,12 @@ DEALINGS IN THE SOFTWARE.
 #define FXOS8700_WHOAMI_VAL      0xC7
 
 /**
+  * Term to convert sample data into SI units. 
+  */
+#define FXOS8700_NORMALIZE_SAMPLE(x) (100 * (int)(x))
+
+
+/**
  * Class definition for an FXSO8700 hybrid Accelerometer/Magnetometer
  */
 class FXOS8700 : public MicroBitAccelerometer, public MicroBitCompass
@@ -228,7 +234,7 @@ class FXOS8700 : public MicroBitAccelerometer, public MicroBitCompass
      *
      * Internally calls updateSample().
      */
-    virtual void idleCallback();
+    virtual void idleTick();
 
     /**
      * Destructor.

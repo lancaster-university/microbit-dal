@@ -200,7 +200,7 @@ int MMA8653::requestUpdate()
   *
   * Internally calls updateSample().
   */
-void MMA8653::idleCallback()
+void MMA8653::idleTick()
 {
     requestUpdate();
 }

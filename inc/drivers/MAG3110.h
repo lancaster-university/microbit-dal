@@ -35,7 +35,7 @@ DEALINGS IN THE SOFTWARE.
 /**
   * Term to convert sample data into SI units
   */
-#define MAG3110_NORMALIZE_SAMPLE(x) (100 * (int)x)
+#define MAG3110_NORMALIZE_SAMPLE(x) (100 * (int)(x))
 
 /**
   * MAG3110 MAGIC ID value
@@ -120,7 +120,7 @@ class MAG3110 : public MicroBitCompass
      *
      * Internally calls updateSample().
      */
-    virtual void idleCallback();
+    virtual void idleTick();
 
 
     /**

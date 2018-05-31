@@ -34,9 +34,8 @@ DEALINGS IN THE SOFTWARE.
 
 /**
   * Term to convert sample data into SI units. 
-  * TODO: Write this, if necessary
   */
-#define LSM303_M_NORMALIZE_SAMPLE(x) ((int)x)
+#define LSM303_M_NORMALIZE_SAMPLE(x) (150 * (int)(x))
 
 /**
   * LSM303_M MAGIC ID value
@@ -125,7 +124,7 @@ class LSM303Magnetometer : public MicroBitCompass
      *
      * Internally calls updateSample().
      */
-    virtual void idleCallback();
+    virtual void idleTick();
 
 
     /**

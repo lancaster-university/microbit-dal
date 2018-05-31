@@ -29,8 +29,6 @@ DEALINGS IN THE SOFTWARE.
  * Also includes basic data caching and on demand activation.
  */
 #include "FXOS8700.h"
-#include "FXOS8700Accelerometer.h"
-#include "FXOS8700Magnetometer.h"
 #include "ErrorNo.h"
 #include "MicroBitEvent.h"
 #include "MicroBitCompat.h"
@@ -253,10 +251,10 @@ int FXOS8700::requestUpdate()
         MicroBitAccelerometer::sampleENU.y = (accelerometerSample.x * MicroBitAccelerometer::sampleRange) / 32;
         MicroBitAccelerometer::sampleENU.z = (accelerometerSample.z * MicroBitAccelerometer::sampleRange) / 32;
 
-        // translate magnetometer data into ENU coordinate system
-        MicroBitCompass::sampleENU.x = -compassSample.y;
-        MicroBitCompass::sampleENU.y = compassSample.x;
-        MicroBitCompass::sampleENU.z = compassSample.z;
+        // translate magnetometer data into ENU coordinate system and normalise into nano-teslas
+        MicroBitCompass::sampleENU.x = FXOS8700_NORMALIZE_SAMPLE(-compassSample.y);
+        MicroBitCompass::sampleENU.y = FXOS8700_NORMALIZE_SAMPLE(compassSample.x);
+        MicroBitCompass::sampleENU.z = FXOS8700_NORMALIZE_SAMPLE(compassSample.z);
 
         MicroBitAccelerometer::update();
         MicroBitCompass::update();
@@ -271,7 +269,7 @@ int FXOS8700::requestUpdate()
   *
   * Internally calls updateSample().
   */
-void FXOS8700::idleCallback()
+void FXOS8700::idleTick()
 {
     requestUpdate();
 }

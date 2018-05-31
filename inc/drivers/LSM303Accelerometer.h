@@ -138,7 +138,7 @@ class LSM303Accelerometer : public MicroBitAccelerometer
      *
      * Internally calls updateSample().
      */
-    virtual void idleCallback();
+    virtual void idleTick();
 
 
     /**

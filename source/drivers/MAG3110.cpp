@@ -185,7 +185,7 @@ int MAG3110::requestUpdate()
   *
   * Internally calls updateSample().
   */
-void MAG3110::idleCallback()
+void MAG3110::idleTick()
 {
     requestUpdate();
 }

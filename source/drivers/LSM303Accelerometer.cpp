@@ -40,10 +40,10 @@ DEALINGS IN THE SOFTWARE.
 // Maps g ->  CTRL_REG4 full scale selection bits [4..5]
 //
 static const KeyValueTableEntry accelerometerRangeData[] = {
-    {2, 0},
-    {4, 1},
-    {8, 2},
-    {16, 3}
+    {2, 0x00},
+    {4, 0x10},
+    {8, 0x20},
+    {16, 0x30}
 };
 CREATE_KEY_VALUE_TABLE(accelerometerRange, accelerometerRangeData);
 
@@ -52,15 +52,15 @@ CREATE_KEY_VALUE_TABLE(accelerometerRange, accelerometerRangeData);
 // maps microsecond period -> CTRL_REG1 data rate selection bits [4..7]
 //
 static const KeyValueTableEntry accelerometerPeriodData[] = {
-    {1235, 0x80},
-    {1488, 0x90},
-    {5000, 0x70},
-    {10000, 0x60},
-    {20000, 0x50},
-    {40000, 0x40},
-    {80000, 0x30},
-    {200000, 0x20},
-    {2000000, 0x10}
+    {617, 0x80},
+    {744, 0x90},
+    {2500, 0x70},
+    {5000, 0x60},
+    {10000, 0x50},
+    {20000, 0x40},
+    {40000, 0x30},
+    {100000, 0x20},
+    {1000000, 0x10}
 };
 CREATE_KEY_VALUE_TABLE(accelerometerPeriod, accelerometerPeriodData);
 
@@ -80,7 +80,7 @@ LSM303Accelerometer::LSM303Accelerometer(MicroBitI2C& _i2c, MicroBitPin &_int1, 
     this->address = address;
 
     // Configure and enable the accelerometer.
-    //configure();
+    configure();
 }
 
 /**
@@ -105,7 +105,7 @@ int LSM303Accelerometer::configure()
     // Now configure the accelerometer accordingly.
 
     // Place the device into normal (10 bit) mode, with all axes enabled at the nearest supported data rate to that  requested.
-    result = i2c.writeRegister(address, LSM303_CTRL_REG1_A, samplePeriod | 0x07);
+    result = i2c.writeRegister(address, LSM303_CTRL_REG1_A, accelerometerPeriod.get(samplePeriod * 1000) | 0x07);
     if (result != 0)
         return MICROBIT_I2C_ERROR;
 
@@ -115,7 +115,7 @@ int LSM303Accelerometer::configure()
         return MICROBIT_I2C_ERROR;
 
     // Select the g range to that requested, using little endian data format and disable self-test and high rate functions.
-    result = i2c.writeRegister(address, LSM303_CTRL_REG3_A, sampleRange);
+    result = i2c.writeRegister(address, LSM303_CTRL_REG4_A, 0x80 | accelerometerRange.get(sampleRange));
     if (result != 0)
         return MICROBIT_I2C_ERROR;
 
@@ -135,41 +135,48 @@ int LSM303Accelerometer::configure()
  */
 int LSM303Accelerometer::requestUpdate()
 {
-#ifdef POOP
     // Ensure we're scheduled to update the data periodically
+
     if(!(status & MICROBIT_ACCEL_ADDED_TO_IDLE))
     {
         fiber_add_idle_component(this);
         status |= MICROBIT_ACCEL_ADDED_TO_IDLE;
     }
 
-    // Poll interrupt line from device (ACTIVE LO)
-    if(!int1.getDigitalValue())
+    // Poll interrupt line from device (ACTIVE HI)
+    if(int1.getDigitalValue())
     {
-        int8_t data[6];
+        uint8_t data[6];
         int result;
-        Sample3D s;
+        int16_t *x;
+        int16_t *y;
+        int16_t *z;
 
-        uint16_t *x = (uint16_t *) &data[0];
-        uint16_t *y = (uint16_t *) &data[2];
-        uint16_t *z = (uint16_t *) &data[4];
 
         // Read the combined accelerometer and magnetometer data.
-        result = i2c.readRegister(address, LSM303_OUT_X_L_A, (uint8_t *)data, 6);
+        result = i2c.readRegister(address, LSM303_OUT_X_L_A | 0x80, data, 6);
 
         if (result !=0)
             return MICROBIT_I2C_ERROR;
 
+        // Read in each reading as a 16 bit little endian value, and scale to 10 bits.
+        x = ((int16_t *) &data[0]);
+        y = ((int16_t *) &data[2]);
+        z = ((int16_t *) &data[4]);
+
+        *x = *x / 32;
+        *y = *y / 32;
+        *z = *z / 32;
+
         // Scale into millig (approx) and align to ENU coordinate system
-        sampleENU.x = -(int)(*y * sampleRange);
-        sampleENU.y =  (int)(*x * sampleRange);
-        sampleENU.z =  (int)(*z * sampleRange);
+        sampleENU.x = -((int)(*y)) * sampleRange;
+        sampleENU.y = -((int)(*x)) * sampleRange;
+        sampleENU.z =  ((int)(*z)) * sampleRange;
 
         // indicate that new data is available.
         update();
     }
 
-#endif
     return MICROBIT_OK;
 }
 
@@ -178,7 +185,7 @@ int LSM303Accelerometer::requestUpdate()
   *
   * Internally calls updateSample().
   */
-void LSM303Accelerometer::idleCallback()
+void LSM303Accelerometer::idleTick()
 {
     requestUpdate();
 }

@@ -196,7 +196,7 @@ extern uint32_t __etext;
 // Enable/Disable BLE during normal operation.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_ENABLED
-#define MICROBIT_BLE_ENABLED                    1
+#define MICROBIT_BLE_ENABLED                    0
 #endif
 
 // Enable/Disable BLE pairing mode mode at power up.
@@ -416,7 +416,7 @@ extern uint32_t __etext;
 // n.b. This also disables the user serial port 'uBit.serial'.
 // Set '1' to enable.
 #ifndef MICROBIT_DBG
-#define MICROBIT_DBG                            0
+#define MICROBIT_DBG                            1
 #endif
 
 // Enable this to receive diagnostic messages from the heap allocator via the USB serial interface.

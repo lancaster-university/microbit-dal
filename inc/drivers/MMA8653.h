@@ -114,7 +114,7 @@ class MMA8653 : public MicroBitAccelerometer
      *
      * Internally calls updateSample().
      */
-    virtual void idleCallback();
+    virtual void idleTick();
 
 
     /**

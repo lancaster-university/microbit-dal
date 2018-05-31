@@ -38,10 +38,10 @@ DEALINGS IN THE SOFTWARE.
 // maps microsecond period -> LSM303_CFG_REG_A_M data rate selection bits [2..3]
 //
 static const KeyValueTableEntry magnetometerPeriodData[] = {
-    {100000, 0x0},              // 10 Hz
-    {50000, 0x4},               // 20 Hz
-    {20000, 0x8},               // 50 Hz
-    {10000, 0xC}               // 100 Hz
+    {10000, 0x0C},             // 100 Hz
+    {20000, 0x08},             // 50 Hz
+    {50000, 0x04},             // 20 Hz
+    {100000, 0x00}             // 10 Hz
 };
 CREATE_KEY_VALUE_TABLE(magnetometerPeriod, magnetometerPeriodData);
 
@@ -61,14 +61,14 @@ int LSM303Magnetometer::configure()
     // First find the nearest sample rate to that specified.
     samplePeriod = magnetometerPeriod.getKey(samplePeriod * 1000) / 1000;
 
-    // Now configure the magnetometer accordingly.
-    // Enable automatic reset after each sample;
-    result = i2c.writeRegister(address, LSM303_CFG_REG_A_M, magnetometerPeriod.get(samplePeriod));
+    // Now configure the magnetometer for the requested sample rate, low power continuous mode with temperature compensation disabled
+    // TODO: Review if temperature compensation improves performance.
+    result = i2c.writeRegister(address, LSM303_CFG_REG_A_M, magnetometerPeriod.get(samplePeriod * 1000));
     if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 
     // Enable Data Ready interrupt, with buffering of data to avoid race conditions.
-    result = i2c.writeRegister(address, LSM303_CFG_REG_C_M, 0x51);
+    result = i2c.writeRegister(address, LSM303_CFG_REG_C_M, 0x41);
     if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 
@@ -90,7 +90,7 @@ LSM303Magnetometer::LSM303Magnetometer(MicroBitI2C &_i2c, MicroBitPin &_int1, Co
     this->address = address;
 
     // Configure and enable the magnetometer.
-    //configure();
+    configure();
 }
 
 
@@ -107,7 +107,6 @@ LSM303Magnetometer::LSM303Magnetometer(MicroBitI2C &_i2c, MicroBitPin &_int1, Co
  */
 int LSM303Magnetometer::requestUpdate()
 {
-#ifdef POOP
     // Ensure we're scheduled to update the data periodically
     if(!(status & MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE))
     {
@@ -118,30 +117,35 @@ int LSM303Magnetometer::requestUpdate()
     // Poll interrupt line from device (ACTIVE LO)
     if(!int1.getDigitalValue())
     {
-        int8_t data[6];
+        uint8_t data[6];
         int result;
-        Sample3D s;
+        int16_t *x;
+        int16_t *y;
+        int16_t *z;
 
-        uint16_t *x = (uint16_t *) &data[0];
-        uint16_t *y = (uint16_t *) &data[2];
-        uint16_t *z = (uint16_t *) &data[4];
 
         // Read the combined accelerometer and magnetometer data.
-        result = i2c.readRegister(address, LSM303_OUTX_L_REG_M, (uint8_t *)data, 6);
+        result = i2c.readRegister(address, LSM303_OUTX_L_REG_M | 0x80, data, 6);
 
         if (result !=0)
             return MICROBIT_I2C_ERROR;
 
-        // Scale into millig (approx) and align to ENU coordinate system
-        sampleENU.x = -((int)(*y));
-        sampleENU.y = (int)*x;
-        sampleENU.z = (int)*z;
+        // Read in each reading as a 16 bit little endian value, and scale to 10 bits.
+        x = ((int16_t *) &data[0]);
+        y = ((int16_t *) &data[2]);
+        z = ((int16_t *) &data[4]);
+
+        // TODO: May need to scale here to align with the output format of the MAG3110...
+
+        // Align to ENU coordinate system
+        sampleENU.x = LSM303_M_NORMALIZE_SAMPLE(-((int)(*y)));
+        sampleENU.y = LSM303_M_NORMALIZE_SAMPLE(-((int)(*x)));
+        sampleENU.z = LSM303_M_NORMALIZE_SAMPLE(((int)(*z)));
 
         // indicate that new data is available.
         update();
     }
 
-#endif
     return MICROBIT_OK;
 }
 
@@ -151,7 +155,7 @@ int LSM303Magnetometer::requestUpdate()
   *
   * Internally calls updateSample().
   */
-void LSM303Magnetometer::idleCallback()
+void LSM303Magnetometer::idleTick()
 {
     requestUpdate();
 }
