@@ -642,13 +642,11 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
     ManagedString namePostfix("]");
     ManagedString BLEName = namePrefix + deviceName + namePostfix;
 
-    ManagedString msg("M M!");
-
     int timeInPairingMode = 0;
     int brightness = 255;
     int fadeDirection = 0;
 
-    bleMode = MICROBIT_BLE_MODE_PAIRING;
+    currentMode = MICROBIT_MODE_PAIRING;
 
     ble->gap().stopAdvertising();
 
@@ -676,9 +674,6 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
 
     // Stop any running animations on the display
     display.stopAnimation();
-
-    // Replaced by animation TODO remove
-    //display.scroll(msg);
 
     fiber_add_idle_component(this);
 
@@ -786,11 +781,11 @@ void MicroBitBLEManager::showManagementModeAnimation(MicroBitDisplay &display)
     const int mgmt_animation_h = 5;
     const uint8_t mgmt_animation[] =
     {
-         1,1,1,1,1, 1,1,1,1,1, 1,1,0,1,1, 1,0,0,0,1,
-         1,1,1,1,1, 1,1,0,1,1, 1,0,0,0,1, 0,0,0,0,0,
-         1,1,0,1,1, 1,0,0,0,1, 0,0,0,0,0, 0,0,0,0,0,
-         1,1,1,1,1, 1,1,0,1,1, 1,0,0,0,1, 0,0,0,0,0,
-         1,1,1,1,1, 1,1,1,1,1, 1,1,0,1,1, 1,0,0,0,1
+         255,255,255,255,255,   255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,
+         255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,
+         255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,     0,  0,  0,  0,  0,
+         255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,
+         255,255,255,255,255,   255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255
     };
 
     MicroBitImage mgmt(mgmt_animation_w,mgmt_animation_h,mgmt_animation);
@@ -798,11 +793,11 @@ void MicroBitBLEManager::showManagementModeAnimation(MicroBitDisplay &display)
 
     const uint8_t bt_icon_raw[] =
     {
-        255,255,255,0  ,255,
-        255,0  ,255,255,0  ,
-        255,255,255,0  ,0  ,
-        255,0  ,255,255,0  ,
-        255,255,255,0  ,255
+        255,255,255,  0,255,
+        255,  0,255,255,  0,
+        255,255,255,  0,  0,
+        255,  0,255,255,  0,
+        255,255,255,  0,255
     };
 
     MicroBitImage bt_icon(5,5,bt_icon_raw);
@@ -843,15 +838,15 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
 }
 
 /**
- * Restarts in BLE Mode
+ * Restarts into BLE Mode
  *
  */
  void MicroBitBLEManager::restartInBLEMode(){
-   KeyValuePair* BLEMode = storage->get("BLEMode");
-   if(BLEMode == NULL){
-     uint8_t BLEMode = 0x01;
-     storage->put("BLEMode", &BLEMode, sizeof(BLEMode));
-     delete &BLEMode;
+   KeyValuePair* RebootMode = storage->get("RebootMode");
+   if(RebootMode == NULL){
+     uint8_t RebootModeValue = MICROBIT_MODE_PAIRING;
+     storage->put("RebootMode", &RebootModeValue, sizeof(RebootMode));
+     delete RebootMode;
    }
    microbit_reset();
  }
@@ -859,6 +854,6 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
  /**
   * Get BLE mode. Returns the current mode: application, pairing mode
   */
-uint8_t MicroBitBLEManager::getBLEMode(){
-  return bleMode;
+uint8_t MicroBitBLEManager::getCurrentMode(){
+  return currentMode;
 }

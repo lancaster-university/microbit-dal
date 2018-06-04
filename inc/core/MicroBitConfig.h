@@ -86,14 +86,9 @@ DEALINGS IN THE SOFTWARE.
 #define BLE_BOND_DATA_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
 #endif
 
-#ifndef MEMORY_MAP_PAGE
-#define MEMORY_MAP_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
-#endif
-
-// Scratch moved from page 19 to page 20
 // MicroBitFileSystem uses DEFAULT_SCRATCH_PAGE to mark end of FileSystem
 #ifndef DEFAULT_SCRATCH_PAGE
-#define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 20))
+#define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
 #endif
 
 // Address of the end of the current program in FLASH memory.
@@ -441,6 +436,15 @@ extern uint32_t __etext;
 #define MICROBIT_DAL_VERSION                    "unknown"
 #endif
 
+// micro:bit Modes
+// The micro:bit may be in different states: running a user's application or into BLE pairing mode
+// These modes can be representeded using these #defines
+#ifndef MICROBIT_MODE_PAIRING
+#define MICROBIT_MODE_PAIRING                   0
+#endif
+#ifndef MICROBIT_MODE_APPLICATION
+#define MICROBIT_MODE_APPLICATION               1
+#endif
 
 //
 // Helper macro used by the micro:bit runtime to determine if a boolean configuration option is set.

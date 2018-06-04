@@ -42,7 +42,7 @@ class MicroBitFlash
       * @return non-zero if erase required, zero otherwise.
       */
     int need_erase(uint8_t* source, uint8_t* flash_addr, int len);
- 
+
     public:
     /**
       * Default constructor.
@@ -53,12 +53,12 @@ class MicroBitFlash
       * Writes the given number of bytes to the address in flash specified.
       * Neither address nor buffer need be word-aligned.
       * @param address location in flash to write to.
-      * @param buffer location in memory to write from. 
+      * @param buffer location in memory to write from.
       * @length number of bytes to burn
-      * @param scratch_addr if specified, scratch page to use. Use default 
+      * @param scratch_addr if specified, scratch page to use. Use default
       *                     otherwise.
       * @return non-zero on sucess, zero on error.
-      * 
+      *
       * Example:
       * @code
       * MicroBitFlash flash();
@@ -66,20 +66,20 @@ class MicroBitFlash
       * flash.flash_write((uint8_t*)0x38000, &word, sizeof(word))
       * @endcode
       */
-    int flash_write(void* address, void* buffer, int length, 
+    int flash_write(void* address, void* buffer, int length,
                     void* scratch_addr = NULL);
 
     /**
       * Erase an entire page.
       * @param page_address address of first word of page.
       */
-    uint8_t erase_page(uint32_t* page_address);
+    void erase_page(uint32_t* page_address);
 
     /**
       * Write to flash memory, assuming that a write is valid
       * (using need_erase).
-      * 
-      * @param page_address address of memory to write to. 
+      *
+      * @param page_address address of memory to write to.
       * 	Must be word aligned.
       * @param buffer address to write from, must be word-aligned.
       * @param len number of uint32_t words to write.

@@ -1,8 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2016 British Broadcasting Corporation.
-This software is provided by Lancaster University by arrangement with the BBC.
+This class has been written by Sam Kent for the Microbit Educational Foundation.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -40,6 +39,15 @@ DEALINGS IN THE SOFTWARE.
 #include "EventModel.h"
 
 #define PARTIAL_FLASHING_VERSION 0x01
+
+// BLE PF Control Codes
+#define REGION_INFO 0x00
+#define FLASH_DATA  0x01
+#define END_OF_TRANSMISSION 0x02
+
+// BLE Utilities
+#define MICROBIT_STATUS 0xEE
+#define MICROBIT_RESET  0xFF
 
 // UUIDs for our service and characteristics
 extern const uint8_t  MicroBitPartialFlashingServiceUUID[];
@@ -80,9 +88,6 @@ class MicroBitPartialFlashingService
       */
     void partialFlashingEvent(MicroBitEvent e);
 
-    // The base address to write to. Bit masked:  (0xFFFF0000 & region.endAddress) >> 16
-    uint8_t baseAddress = 0x3;
-
     // Handles to access each characteristic when they are held by Soft Device.
     GattAttribute::Handle_t partialFlashCharacteristicHandle;
 
@@ -98,7 +103,7 @@ class MicroBitPartialFlashingService
     // Keep track of blocks of data
     uint32_t block[16];
     uint8_t  blockNum = 0;
-    uint16_t offset   = 0;
+    uint32_t offset   = 0;
 
 };
 

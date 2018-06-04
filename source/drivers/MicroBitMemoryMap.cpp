@@ -73,14 +73,13 @@ int MicroBitMemoryMap::pushRegion(Region region)
 
     // Find next blank Region in map
     if(regionCount == NUMBER_OF_REGIONS){
-        return MICROBIT_NO_DATA;
+        return MICROBIT_NO_RESOURCES;
     } else {
         // Add data
         memoryMapStore.memoryMap[regionCount].startAddress = region.startAddress;
         memoryMapStore.memoryMap[regionCount].endAddress   = region.endAddress;
-        memcpy(&memoryMapStore.memoryMap[regionCount].hash, &region.hash, 8);
-        memoryMapStore.memoryMap[regionCount].regionId     = region.regionId;
-        regionCount++;
+        //memcpy(&memoryMapStore.memoryMap[regionCount].hash, &region.hash, 8);
+        memoryMapStore.memoryMap[regionCount++].regionId     = region.regionId;
         return MICROBIT_OK;
     }
 }
@@ -90,7 +89,7 @@ int MicroBitMemoryMap::pushRegion(Region region)
   *
   * @param region The Region to update in the MemoryMap. The name is used as the selector.
   *
-  * @return MICROBIT_OK success, MICROBIT_NO_DATA if the region is not found
+  * @return MICROBIT_OK success, MICROBIT_NO_RESOURCES if the region is not found
   */
 int MicroBitMemoryMap::updateRegion(Region region)
 {
@@ -99,24 +98,12 @@ int MicroBitMemoryMap::updateRegion(Region region)
     while(memoryMapStore.memoryMap[i].regionId != region.regionId && i < NUMBER_OF_REGIONS) i++;
 
     if(i == NUMBER_OF_REGIONS){
-        return MICROBIT_NO_DATA;
+        return MICROBIT_NO_RESOURCES;
     } else {
         // Add data
         memoryMapStore.memoryMap[i] = region;
-        updateFlash(&memoryMapStore);
         return MICROBIT_OK;
     }
-}
-
-/**
-  * Function to update the flash with the current MemoryMapStore
-  *
-  * @param memoryMapStore The memory map to write to flash
-  */
-void MicroBitMemoryMap::updateFlash(MemoryMapStore *store)
-{
-  MicroBitFlash flash;
-  flash.flash_write((uint32_t *)MEMORY_MAP_PAGE, store, (sizeof(MemoryMapStore) / 4));
 }
 
 /*
@@ -125,53 +112,27 @@ void MicroBitMemoryMap::updateFlash(MemoryMapStore *store)
 void MicroBitMemoryMap::findHashes()
 {
     // Iterate through pages to find magic
-    for(int x = 0; x < NRF_FICR->CODESIZE - 1; x++)
+    for(uint8_t x = 0; x < NRF_FICR->CODESIZE - 1; x++)
     {
 
         uint32_t volatile *magicAddress  = (uint32_t *)(0x400 * x);
 
         // Check for first 32 bits of Magic
-        if(*magicAddress == 0x923b8e70)
-        {
-            // Check remaining magic
-            if(
-               *(uint32_t *)(magicAddress + 0x1) == 0x41A815C6 &&
-               *(uint32_t *)(magicAddress + 0x2) == 0xC96698C4 &&
-               *(uint32_t *)(magicAddress + 0x3) == 0x9751EE75
-              )
-            {
+        // memcmp(magicAddress, magic, 16);
+        if(*magicAddress                     == 0x923b8e70 &&
+           *(uint32_t *)(magicAddress + 0x1) == 0x41A815C6 &&
+           *(uint32_t *)(magicAddress + 0x2) == 0xC96698C4 &&
+           *(uint32_t *)(magicAddress + 0x3) == 0x9751EE75
+          ){
                 // If the magic has been found use the hashes follow
                 magicAddress = (uint32_t *)(magicAddress + 0x4);
+                memcpy(memoryMapStore.memoryMap[1].hash, (uint8_t *)magicAddress, 8);
 
-                memoryMapStore.memoryMap[1].hash[0] = (*magicAddress & 0xFF);
-                memoryMapStore.memoryMap[1].hash[1] = (*magicAddress & 0xFF00)     >>  8;
-                memoryMapStore.memoryMap[1].hash[2] = (*magicAddress & 0xFF0000)   >> 16;
-                memoryMapStore.memoryMap[1].hash[3] = (*magicAddress & 0xFF000000) >> 24;
-
-                magicAddress = (uint32_t *)(magicAddress + 0x1);
-
-                memoryMapStore.memoryMap[1].hash[4] = (*magicAddress & 0xFF);
-                memoryMapStore.memoryMap[1].hash[5] = (*magicAddress & 0xFF00)     >>  8;
-                memoryMapStore.memoryMap[1].hash[6] = (*magicAddress & 0xFF0000)   >> 16;
-                memoryMapStore.memoryMap[1].hash[7] = (*magicAddress & 0xFF000000) >> 24;
-
-                magicAddress = (uint32_t *)(magicAddress + 0x1);
-
-                memoryMapStore.memoryMap[2].hash[0] = (*magicAddress & 0xFF);
-                memoryMapStore.memoryMap[2].hash[1] = (*magicAddress & 0xFF00)     >>  8;
-                memoryMapStore.memoryMap[2].hash[2] = (*magicAddress & 0xFF0000)   >> 16;
-                memoryMapStore.memoryMap[2].hash[3] = (*magicAddress & 0xFF000000) >> 24;
-
-                magicAddress = (uint32_t *)(magicAddress + 0x1);
-
-                memoryMapStore.memoryMap[2].hash[4] = (*magicAddress & 0xFF);
-                memoryMapStore.memoryMap[2].hash[5] = (*magicAddress & 0xFF00)     >>  8;
-                memoryMapStore.memoryMap[2].hash[6] = (*magicAddress & 0xFF0000)   >> 16;
-                memoryMapStore.memoryMap[2].hash[7] = (*magicAddress & 0xFF000000) >> 24;
+                magicAddress = (uint32_t *)(magicAddress + 0x2);
+                memcpy(memoryMapStore.memoryMap[2].hash, (uint8_t *)magicAddress, 8);
 
                 return;
 
-            }
 
         }
 

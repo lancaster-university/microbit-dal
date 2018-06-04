@@ -1,8 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2016 British Broadcasting Corporation.
-This software is provided by Lancaster University by arrangement with the BBC.
+This class has been written by Sam Kent for the Microbit Educational Foundation.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -31,8 +30,6 @@ DEALINGS IN THE SOFTWARE.
 #include "ManagedString.h"
 #include "ErrorNo.h"
 
-#define MICROBIT_MEMORY_MAP_MAGIC       0xCA8E
-
 #define NUMBER_OF_REGIONS 3
 
 /**
@@ -56,31 +53,24 @@ class MicroBitMemoryMap
             this->regionId = regionId;
             this->startAddress = startAddress;
             this->endAddress = endAddress;
-            memmove( this->hash, &hash, 8 );
+            memcpy( this->hash, hash, 8 );
         }
 
         Region(){
           this->regionId = 0x0;
           this->startAddress = 0x0;
           this->endAddress = 0x0;
-          memset( this->hash, 0xDD, 8 );
+          memset( this->hash, 0x00, 8 );
         }
 
     };
 
     struct MemoryMapStore
     {
-        Region memoryMap[3];
+        Region memoryMap[NUMBER_OF_REGIONS];
     };
 
     uint8_t regionCount = 0;
-
-    /**
-    * Function to update the flash with the current MemoryMapStore
-    *
-    * @param memoryMapStore The memory map to write to flash
-    */
-    void updateFlash(MemoryMapStore *store);
 
     public:
 
@@ -115,7 +105,6 @@ class MicroBitMemoryMap
     /**
      * Function to fetch hashes from PXT build
      *
-     * @return int  Boolean result of the search. 1 = Hashes Found; 0 = No Hash Found
      */
     void findHashes();
 };

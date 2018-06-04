@@ -79,9 +79,6 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BLE_STATUS_STORE_SYSATTR       0x02
 #define MICROBIT_BLE_STATUS_DISCONNECT          0x04
 
-#define MICROBIT_BLE_MODE_PAIRING     0x00
-#define MICROBIT_BLE_MODE_APPLICATION 0x01
-
 extern const int8_t MICROBIT_BLE_POWER_LEVEL[];
 
 struct BLESysAttribute
@@ -150,7 +147,7 @@ class MicroBitBLEManager : MicroBitComponent
       * @param enableBonding If true, the security manager enabled bonding.
       *
       * @code
-      * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus);
+      * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
       * @endcode
       */
     void init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding);
@@ -293,10 +290,10 @@ class MicroBitBLEManager : MicroBitComponent
 
    /**
     * Get current BLE mode; application, pairing
-    * #define MICROBIT_BLE_MODE_PAIRING     0x00
-    * #define MICROBIT_BLE_MODE_APPLICATION 0x01
+    * #define MICROBIT_MODE_PAIRING     0x00
+    * #define MICROBIT_MODE_APPLICATION 0x01
     */
-    uint8_t getBLEMode();
+    uint8_t getCurrentMode();
 
   private:
     /**
@@ -320,7 +317,13 @@ class MicroBitBLEManager : MicroBitComponent
     int pairingStatus;
     ManagedString passKey;
     ManagedString deviceName;
-    uint8_t bleMode = MICROBIT_BLE_MODE_APPLICATION;
+
+    /*
+     * Default to Application Mode
+     * This variable will be set to MICROBIT_MODE_PAIRING if pairingMode() is executed.
+     */
+    uint8_t currentMode = MICROBIT_MODE_APPLICATION;
+
 };
 
 #endif
