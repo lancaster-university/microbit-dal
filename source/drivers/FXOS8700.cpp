@@ -104,9 +104,9 @@ int FXOS8700::configure()
     if (result != 0)
         return MICROBIT_I2C_ERROR;
 
-    // Configure PushPull Active LOW interrupt mode.
+    // Configure Open Drain Active LOW interrupt mode.
     // n.b. This may need to be reconfigured if the interrupt line is shared.
-    value = 0x00;
+    value = 0x01;
     result = i2c.writeRegister(address, FXOS8700_CTRL_REG3, value);
     if (result != 0)
         return MICROBIT_I2C_ERROR;
@@ -156,6 +156,9 @@ FXOS8700::FXOS8700(MicroBitI2C &_i2c, MicroBitPin &_int1, CoordinateSpace &coord
 {
     // Store our identifiers.
     this->address = address;
+
+    // Enable pullup on the interrupt line
+    int1.setPull(PullUp);
 
     // Configure and enable the accelerometer.
     configure();
