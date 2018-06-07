@@ -41,7 +41,7 @@ DEALINGS IN THE SOFTWARE.
   * LSM303_M MAGIC ID value
   * Returned from the MAG_WHO_AM_I register for ID purposes.
   */
-#define LSM303_M_WHOAMI_VAL             0x20
+#define LSM303_M_WHOAMI_VAL             0x40
 
 /**
   * I2C constants
