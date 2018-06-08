@@ -60,7 +60,7 @@ struct PeridoFrameBuffer;
  */
 
 // Default configuration values
-#define MICROBIT_PERIDO_HEADER_SIZE             18
+#define MICROBIT_PERIDO_HEADER_SIZE             8
 #define MICROBIT_PERIDO_DEFAULT_SLEEP           600
 
 #define MICROBIT_PERIDO_MAX_PACKET_SIZE         200
@@ -73,12 +73,12 @@ struct PeridoFrameBuffer;
 struct PeridoFrameBuffer
 {
     uint8_t             length;                             // The length of the remaining bytes in the packet.
-    uint8_t             ttl;
-    uint32_t            id;
-    uint32_t            app_id;
-    uint32_t            namespace_id;
-    uint32_t            sleep_period_ms;
+    uint8_t             app_id;
+    uint8_t             namespace_id;
+    uint8_t             ttl:4, initial_ttl:4;
+    uint32_t            time_since_wake:24, period:8;
     uint8_t             payload[MICROBIT_PERIDO_MAX_PACKET_SIZE];    // User / higher layer protocol data
+    uint32_t            crc;
     PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
 } __attribute__((packed));
 
