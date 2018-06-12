@@ -367,7 +367,7 @@ void radio_state_machine()
             log_string("txend\r\n");
 #endif
 
-            radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN | RADIO_STATUS_EXPECT_RESPONSE);
+            radio_status |= (RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN | RADIO_STATUS_EXPECT_RESPONSE);
 
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
         }
@@ -388,7 +388,7 @@ void radio_state_machine()
             log_string("ftxend\r\n");
 #endif
             set_gpio(0);
-            radio_status &= ~RADIO_STATUS_TX_END;
+            radio_status &= ~(RADIO_STATUS_TX_END | RADIO_STATUS_FORWARD);
             radio_status |= RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN;
 
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
@@ -437,6 +437,7 @@ void radio_state_machine()
 
             // correct and set wake up period.
             correction = (t + (hops * (p->length * TIME_TO_TRANSMIT_BYTE_1MB))) + RX_TX_DISABLE_TIME + TX_ENABLE_TIME;
+
             if (correction > 100)
                 MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction));
         }
@@ -546,7 +547,7 @@ void tx_callback()
         return;
 
     // no one else has transmitted recently, and we are not receiving, we can transmit
-    if(MicroBitPeridoRadio::instance->txQueueDepth > 0 && !(radio_status & (RADIO_STATUS_RECEIVING | RADIO_STATUS_FORWARD)))
+    if(MicroBitPeridoRadio::instance->txQueueDepth > 0 && !(radio_status & RADIO_STATUS_RECEIVING))
     {
         radio_status = (radio_status & (RADIO_STATUS_DISCOVERING | RADIO_STATUS_FIRST_PACKET | RADIO_STATUS_DIRECTING)) | RADIO_STATUS_TRANSMIT | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
         radio_state_machine();
