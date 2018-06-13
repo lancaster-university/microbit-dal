@@ -191,27 +191,22 @@ void MicroBitPartialFlashingService::flashData(uint8_t *data)
           * If the packet count doesn't match send a notification to the client
           * and set the packet count to the next block number
           */
-        if(packetNum != ++packetCount)
+        if (packetNum != packetCount)
         {
-            uint8_t flashNotificationBuffer[] = {FLASH_DATA, 0xAA};
-            ble.gattServer().notify(partialFlashCharacteristicHandle, (const uint8_t *)flashNotificationBuffer, sizeof(flashNotificationBuffer));
-            packetCount = blockPacketCount + 3;
-            blockNum = 0;
-            return;
+          if ( packetNum < packetCount ? packetCount - packetNum < 8 : packetNum - packetCount > 248 )
+            return; // packet is from a previous batch
+
+          uint8_t flashNotificationBuffer[] = {FLASH_DATA, 0xAA};
+          ble.gattServer().notify(partialFlashCharacteristicHandle, (const uint8_t *)flashNotificationBuffer, sizeof(flashNotificationBuffer));
+          packetCount = blockPacketCount + 4;
+          blockNum = 0;
+          return;
         }
 
+        packetCount++;
+
         // Add to block
-        // Something dodgy going on here!
-        // memcpy(block + (blockNum * 16), data + 4, 16);
         memcpy(block + (4*blockNum), data + 4, 16);
-
-
-        /*
-        block[(4*blockNum) + 0] = data[ 4] | data[ 5] << 8 | data[ 6] << 16 | data[ 7] << 24;
-        block[(4*blockNum) + 1] = data[ 8] | data[ 9] << 8 | data[10] << 16 | data[11] << 24;
-        block[(4*blockNum) + 2] = data[12] | data[13] << 8 | data[14] << 16 | data[15] << 24;
-        block[(4*blockNum) + 3] = data[16] | data[17] << 8 | data[18] << 16 | data[19] << 24;
-        */
 
         // Actions
         switch(blockNum) {
