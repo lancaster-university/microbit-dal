@@ -188,6 +188,27 @@ uint32_t read_and_restart_wake()
     return t;
 }
 
+// hardware crc is unavailable for tx, use this simple algo.
+uint16_t simple_crc(PeridoFrameBuffer* f)
+{
+    uint16_t i = 0;
+    uint16_t sum = 0;
+    uint16_t len = f->length - (MICROBIT_PERIDO_HEADER_SIZE - 1);
+    uint8_t* data = f->payload;
+
+    while(i < len)
+    {
+        log_num(*data);
+        log_string(" ");
+        sum += *data++;
+        i++;
+    }
+
+    log_num(sum);
+
+    return sum;
+}
+
 void radio_state_machine()
 {
 #ifdef DEBUG_MODE
@@ -308,11 +329,43 @@ void radio_state_machine()
                 // add last packet to worry queue
             }
 
-            // if(radio_status & RADIO_STATUS_EXPECT_RESPONSE)
-            // {
-            //     no_response_count = 0;
-            //     radio_status &= ~(RADIO_STATUS_EXPECT_RESPONSE);
-            // }
+            if(radio_status & RADIO_STATUS_EXPECT_RESPONSE)
+            {
+                PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
+                PeridoFrameBuffer *tx = MicroBitPeridoRadio::instance->txQueue;
+
+                if (p && tx)
+                {
+                    uint16_t pl_crc = simple_crc(p);
+                    packet_debug(p);
+                    log_string("\r\n");
+                    log_num(pl_crc);
+                    log_string("\r\n");
+                    packet_debug(tx);
+                    log_string("\r\n");
+                    log_num(tx->crc);
+                    if (pl_crc == tx->crc)
+                        log_string("\r\nTRRUEUEUUEUE\r\n");
+                    while (1);
+                }
+
+                // double check payload lengths...
+                if(tx && tx->app_id == p->app_id && simple_crc(p) == tx->crc)
+                {
+#ifdef DEBUG_MODE
+                    log_string("POP\r\n");
+#endif
+                    log_string("POP\r\n");
+                    while(1);
+                    // only pop our tx buffer if something responds
+                    MicroBitPeridoRadio::instance->popTxQueue();
+                    last_seen[last_seen_index] = p->crc;
+                    last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
+                }
+
+                no_response_count = 0;
+                radio_status &= ~(RADIO_STATUS_EXPECT_RESPONSE);
+            }
         }
     }
 
@@ -425,7 +478,6 @@ void radio_state_machine()
         bool seen = false;
 
         PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
-        PeridoFrameBuffer *tx = MicroBitPeridoRadio::instance->txQueue;
 
         // if this is the first packet we are storing, then calculate how far off the original senders period we are.
         if (radio_status & RADIO_STATUS_FIRST_PACKET)
@@ -442,41 +494,29 @@ void radio_state_machine()
                 MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction));
         }
 
-//         if(tx && (radio_status & RADIO_STATUS_EXPECT_RESPONSE) && tx->app_id == p->app_id && p->ttl < tx->ttl)
-//         {
-// #ifdef DEBUG_MODE
-//             log_string("POP\r\n");
-// #endif
-//             // only pop our tx buffer if something responds
-//             // MicroBitPeridoRadio::instance->popTxQueue();
-//             seen = true;
-//             last_seen[last_seen_index] = p->crc;
-//             last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
-//         }
+        // check if we've seen this ID before...
+        for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
+            if(last_seen[i] == p->crc)
+            {
+                // log_string("seen\r\n");
+                seen = true;
+                increment_counter(i);
+            }
 
-//         // check if we've seen this ID before...
-//         for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
-//             if(last_seen[i] == p->crc)
-//             {
-//                 // log_string("seen\r\n");
-//                 seen = true;
-//                 increment_counter(i);
-//             }
+        // if seen, queue a new buffer, and mark it as seen
+        if(!seen)
+        {
+#ifdef DEBUG_MODE
+            log_string("fn\r\n");
+#endif
+            // MicroBitPeridoRadio::instance->copyRxBuf();
+            // NRF_RADIO->PACKETPTR = (uint32_t) MicroBitPeridoRadio::instance->rxBuf;
 
-//         // if seen, queue a new buffer, and mark it as seen
-//         if(!seen)
-//         {
-// #ifdef DEBUG_MODE
-//             log_string("fn\r\n");
-// #endif
-//             // MicroBitPeridoRadio::instance->copyRxBuf();
-//             // NRF_RADIO->PACKETPTR = (uint32_t) MicroBitPeridoRadio::instance->rxBuf;
+            // valid_packet_received(MicroBitPeridoRadio::instance->recv());
 
-//             // valid_packet_received(MicroBitPeridoRadio::instance->recv());
-
-//             last_seen[last_seen_index] = p->crc;
-//             last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
-//         }
+            last_seen[last_seen_index] = p->crc;
+            last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
+        }
     }
 
     if(radio_status & RADIO_STATUS_DISABLE)
@@ -590,11 +630,11 @@ void wake_up()
     log_string("woke\r\n");
 #endif
 
-    // if (no_response_count > NO_RESPONSE_THRESHOLD)
-    // {
-    //     radio_status |= RADIO_STATUS_DISCOVERING;
-    //     no_response_count = 0;
-    // }
+    if (no_response_count > NO_RESPONSE_THRESHOLD)
+    {
+        radio_status |= RADIO_STATUS_DISCOVERING;
+        no_response_count = 0;
+    }
 
     // TODO: make it so that the current_period_index changes based on some concensus.
     period_start_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL);
@@ -1078,6 +1118,8 @@ int MicroBitPeridoRadio::send(uint8_t *buffer, int len)
     buf.time_since_wake = 0;
     buf.period = 0;
     memcpy(buf.payload, buffer, len);
+
+    buf.crc = simple_crc(&buf);
 
     return send(&buf);
 }
