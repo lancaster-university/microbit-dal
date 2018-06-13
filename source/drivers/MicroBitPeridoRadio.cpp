@@ -188,27 +188,6 @@ uint32_t read_and_restart_wake()
     return t;
 }
 
-// hardware crc is unavailable for tx, use this simple algo.
-uint16_t simple_crc(PeridoFrameBuffer* f)
-{
-    uint16_t i = 0;
-    uint16_t sum = 0;
-    uint16_t len = f->length - (MICROBIT_PERIDO_HEADER_SIZE - 1);
-    uint8_t* data = f->payload;
-
-    while(i < len)
-    {
-        log_num(*data);
-        log_string(" ");
-        sum += *data++;
-        i++;
-    }
-
-    log_num(sum);
-
-    return sum;
-}
-
 void radio_state_machine()
 {
 #ifdef DEBUG_MODE
@@ -307,8 +286,6 @@ void radio_state_machine()
 
                 if (p)
                 {
-                    p->crc = NRF_RADIO->RXCRC;
-
                     if(p->ttl > 0)
                     {
                         p->ttl--;
@@ -334,32 +311,15 @@ void radio_state_machine()
                 PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
                 PeridoFrameBuffer *tx = MicroBitPeridoRadio::instance->txQueue;
 
-                if (p && tx)
-                {
-                    uint16_t pl_crc = simple_crc(p);
-                    packet_debug(p);
-                    log_string("\r\n");
-                    log_num(pl_crc);
-                    log_string("\r\n");
-                    packet_debug(tx);
-                    log_string("\r\n");
-                    log_num(tx->crc);
-                    if (pl_crc == tx->crc)
-                        log_string("\r\nTRRUEUEUUEUE\r\n");
-                    while (1);
-                }
-
                 // double check payload lengths...
-                if(tx && tx->app_id == p->app_id && simple_crc(p) == tx->crc)
+                if(tx && tx->app_id == p->app_id && p->id == tx->id)
                 {
 #ifdef DEBUG_MODE
                     log_string("POP\r\n");
 #endif
-                    log_string("POP\r\n");
-                    while(1);
                     // only pop our tx buffer if something responds
                     MicroBitPeridoRadio::instance->popTxQueue();
-                    last_seen[last_seen_index] = p->crc;
+                    last_seen[last_seen_index] = p->id;
                     last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
                 }
 
@@ -496,7 +456,7 @@ void radio_state_machine()
 
         // check if we've seen this ID before...
         for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
-            if(last_seen[i] == p->crc)
+            if(last_seen[i] == p->id)
             {
                 // log_string("seen\r\n");
                 seen = true;
@@ -514,7 +474,7 @@ void radio_state_machine()
 
             // valid_packet_received(MicroBitPeridoRadio::instance->recv());
 
-            last_seen[last_seen_index] = p->crc;
+            last_seen[last_seen_index] = p->id;
             last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
         }
     }
@@ -1110,6 +1070,7 @@ int MicroBitPeridoRadio::send(uint8_t *buffer, int len)
 
     PeridoFrameBuffer buf;
 
+    buf.id = microbit_random(65535);
     buf.length = len + MICROBIT_PERIDO_HEADER_SIZE - 1;
     buf.app_id = appId;
     buf.namespace_id = namespaceId;
@@ -1118,8 +1079,6 @@ int MicroBitPeridoRadio::send(uint8_t *buffer, int len)
     buf.time_since_wake = 0;
     buf.period = 0;
     memcpy(buf.payload, buffer, len);
-
-    buf.crc = simple_crc(&buf);
 
     return send(&buf);
 }
