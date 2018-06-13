@@ -48,6 +48,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitFile.cpp"
     "drivers/MicroBitFileSystem.cpp"
     "drivers/NRF51Timer.cpp"
+    "drivers/PearsonHash.cpp"
 
     "bluetooth/MicroBitAccelerometerService.cpp"
     "bluetooth/MicroBitBLEManager.cpp"
