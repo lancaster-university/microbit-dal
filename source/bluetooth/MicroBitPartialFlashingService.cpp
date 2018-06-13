@@ -179,12 +179,6 @@ void MicroBitPartialFlashingService::flashData(uint8_t *data)
         // | COMMAND   | OFFSET  | PACKET# | DATA     |
         // +-----------+---------+---------+----------+
         uint8_t packetNum = data[3];
-        /**
-          * Packets with packet num < packet count
-          * Ignore as part of retransmitted block
-          */
-        if(packetNum < packetCount)
-          return;
 
         /**
           * Check packet count
