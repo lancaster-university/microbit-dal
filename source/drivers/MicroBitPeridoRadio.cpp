@@ -137,7 +137,7 @@ extern void increment_counter(int);
 
 #define FORWARD_POLL_TIME           1500
 #define ABSOLUTE_RESPONSE_TIME      10000
-#define PERIDO_DEFAULT_PERIOD_IDX   3
+#define PERIDO_DEFAULT_PERIOD_IDX   1
 
 #define TIME_TO_TRANSMIT_BYTE_1MB   8
 
@@ -155,14 +155,17 @@ extern void increment_counter(int);
 
 #define CONSTANT_SYNC_OFFSET        110
 
-#define SPEED_WEIGHT_MAX            5
-
 #define WAKE_UP_CHANNEL             0
 #define GO_TO_SLEEP_CHANNEL         1
 #define CHECK_TX_CHANNEL            2
 #define STATE_MACHINE_CHANNEL       3
 
-uint16_t periods[] = {10, 20, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500};
+#define PERIOD_COUNT                13
+
+#define SPEED_THRESHOLD_MAX         5
+#define SPEED_THRESHOLD_MIN         -5
+
+uint16_t periods[PERIOD_COUNT] = {10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960};
 
 volatile uint32_t radio_status = 0;
 
@@ -170,7 +173,12 @@ volatile static uint32_t packet_received_count = 0;
 volatile static uint32_t sleep_received_count = 0;
 volatile uint32_t no_response_count = 0;
 
-volatile uint8_t current_period_index = PERIDO_DEFAULT_PERIOD_IDX;
+volatile int8_t speed = 0;
+volatile static uint8_t network_period_idx = PERIDO_DEFAULT_PERIOD_IDX;
+
+volatile uint32_t crc_fail_count = 0;
+volatile uint32_t packet_count = 0;
+
 volatile static uint32_t current_cc = 0;
 volatile static uint32_t period_start_cc = 0;
 volatile static uint32_t correction = 0;
@@ -270,6 +278,7 @@ void radio_state_machine()
 #ifdef DEBUG_MODE
             log_string("rxend\r\n");
 #endif
+            packet_count++;
             radio_status &= ~(RADIO_STATUS_RECEIVING | RADIO_STATUS_DISCOVERING);
 
             NRF_RADIO->EVENTS_ADDRESS = 0;
@@ -286,45 +295,86 @@ void radio_state_machine()
 
                 if (p)
                 {
+
                     if(p->ttl > 0)
                     {
                         p->ttl--;
-                        radio_status &= ~RADIO_STATUS_RX_RDY;
-                        radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN);
+
+                        // if (p->flags & MICROBIT_PERIDO_FRAME_PROPOSAL_FLAG)
+                        // {
+                        //     // if we want to go faster
+                        //     if (p->period < network_period_idx)
+                        //     {
+                        //         if (MicroBitPeridoRadio::instance->periodIndex <= p->period || speed > 2)
+                        //         {
+                        //             network_period_idx = p->period;
+                        //             // swap to forward mode
+                        //             radio_status &= ~RADIO_STATUS_RX_RDY;
+                        //             // policy decisions could be implemented here. i.e. forward only ours, forward all, whitelist
+                        //             radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN);
+                        //         }
+                        //     }
+
+                        //     // if we want to go slower
+                        //     else if (p->period < network_period_idx)
+                        //     {
+                        //         if (MicroBitPeridoRadio::instance->periodIndex >= p->period || speed < -2)
+                        //         {
+                        //             network_period_idx = p->period;
+                        //             // swap to forward mode
+                        //             radio_status &= ~RADIO_STATUS_RX_RDY;
+                        //             // policy decisions could be implemented here. i.e. forward only ours, forward all, whitelist
+                        //             radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN);
+                        //         }
+                        //     }
+                        // }
+                        // else
+                        // {
+                            // swap to forward mode
+                            radio_status &= ~RADIO_STATUS_RX_RDY;
+                            // policy decisions could be implemented here. i.e. forward only ours, forward all, whitelist
+                            radio_status |= (RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN);
+                        // }
+
                     }
                     else
                     {
                         radio_status &= ~RADIO_STATUS_FORWARD;
+
+                        // store this packet (should be a nop in most cases as we store after every forward), then try and transmit...
                         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_MIN + microbit_random(TX_BACKOFF_TIME));
                         radio_status |= RADIO_STATUS_STORE;
                     }
 
+                    // if we sent a packet, we also flagged that we expected a response.
+                    // If we don't see our own packet it means that there was a collision or we are out of sync.
+                    if(radio_status & RADIO_STATUS_EXPECT_RESPONSE)
+                    {
+                        PeridoFrameBuffer *tx = MicroBitPeridoRadio::instance->txQueue;
+
+                        // if we get our own packet back pop our tx queue and reset our no_response_count
+                        if(tx && tx->app_id == p->app_id && p->id == tx->id)
+                        {
+        #ifdef DEBUG_MODE
+                            log_string("POP\r\n");
+        #endif
+                            // only pop our tx buffer if something responds
+                            MicroBitPeridoRadio::instance->popTxQueue();
+                            last_seen[last_seen_index] = p->id;
+                            last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
+
+                            // we received a response, reset our counter.
+                            no_response_count = 0;
+                        }
+
+                        // we could increment no_response_count here, but it is done when we go to sleep.
+                        radio_status &= ~(RADIO_STATUS_EXPECT_RESPONSE);
+                    }
                 }
             }
             else
             {
-                // add last packet to worry queue
-            }
-
-            if(radio_status & RADIO_STATUS_EXPECT_RESPONSE)
-            {
-                PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
-                PeridoFrameBuffer *tx = MicroBitPeridoRadio::instance->txQueue;
-
-                // double check payload lengths...
-                if(tx && tx->app_id == p->app_id && p->id == tx->id)
-                {
-#ifdef DEBUG_MODE
-                    log_string("POP\r\n");
-#endif
-                    // only pop our tx buffer if something responds
-                    MicroBitPeridoRadio::instance->popTxQueue();
-                    last_seen[last_seen_index] = p->id;
-                    last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
-                }
-
-                no_response_count = 0;
-                radio_status &= ~(RADIO_STATUS_EXPECT_RESPONSE);
+                crc_fail_count++;
             }
         }
     }
@@ -352,7 +402,18 @@ void radio_state_machine()
 
             if(p)
             {
-                p->period = current_period_index;
+                // if (network_period_idx != MicroBitPeridoRadio::instance->periodIndex && !(radio_status & RADIO_STATUS_DISCOVERING))
+                // {
+                //     p->period = MicroBitPeridoRadio::instance->periodIndex;
+                //     p->flags = MICROBIT_PERIDO_FRAME_PROPOSAL_FLAG;
+                //     // p->flags = 0;
+                // }
+                // else
+                // {
+                    p->period = network_period_idx;
+                    p->flags = 0;
+                // }
+
                 p->ttl = p->initial_ttl;
                 p->time_since_wake =  read_and_restart_wake() - period_start_cc;
 
@@ -440,9 +501,11 @@ void radio_state_machine()
         PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
 
         // if this is the first packet we are storing, then calculate how far off the original senders period we are.
-        if (radio_status & RADIO_STATUS_FIRST_PACKET)
+        // don't sync to a proposal frame
+        if (radio_status & RADIO_STATUS_FIRST_PACKET && !(p->flags & MICROBIT_PERIDO_FRAME_PROPOSAL_FLAG))
         {
             radio_status &= ~RADIO_STATUS_FIRST_PACKET;
+
             uint32_t t = p->time_since_wake;
             uint32_t period = periods[p->period] * 1000;
             uint8_t hops = (p->initial_ttl - p->ttl);
@@ -450,8 +513,7 @@ void radio_state_machine()
             // correct and set wake up period.
             correction = (t + (hops * (p->length * TIME_TO_TRANSMIT_BYTE_1MB))) + RX_TX_DISABLE_TIME + TX_ENABLE_TIME;
 
-            if (correction > 100)
-                MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction));
+            MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction));
         }
 
         // check if we've seen this ID before...
@@ -572,8 +634,14 @@ void go_to_sleep()
             radio_status &= ~RADIO_STATUS_EXPECT_RESPONSE;
         }
 
+        // if we never saw a packet, slow down.
+        if (radio_status & RADIO_STATUS_FIRST_PACKET)
+        {
+            speed--;
+            radio_status &= ~RADIO_STATUS_FIRST_PACKET;
+        }
+
         sleep_received_count = packet_received_count;
-        radio_status &= ~RADIO_STATUS_FORWARD;
         radio_status |= RADIO_STATUS_SLEEPING | RADIO_STATUS_DISABLE;
 
         set_gpio2(0);
@@ -596,13 +664,13 @@ void wake_up()
         no_response_count = 0;
     }
 
-    // TODO: make it so that the current_period_index changes based on some concensus.
     period_start_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL);
-    current_cc = period_start_cc + ((periods[current_period_index] * 1000));
+    current_cc = period_start_cc + ((periods[network_period_idx] * 1000));
 
     // we're still exchanging packets - come back in another period amount.
     if (!(radio_status & RADIO_STATUS_SLEEPING))
     {
+        speed++;
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         return;
     }
@@ -618,6 +686,30 @@ void wake_up()
     }
     else
     {
+        // we have a backlog of packets, we should try and speed up.
+        // if (MicroBitPeridoRadio::instance->txQueueDepth > 5)
+        //     speed++;
+
+        // // we want to go faster or slower, but we haven't committed this to the network yet, remain neutral.
+        // if (network_period_idx != MicroBitPeridoRadio::instance->periodIndex )
+        //     speed = 0;
+
+        // // we've hit the max threshold -- speed up
+        // if (speed == SPEED_THRESHOLD_MAX)
+        // {
+        //     // will take effect next wake
+        //     speed = 0;
+        //     MicroBitPeridoRadio::instance->periodIndex = ( MicroBitPeridoRadio::instance->periodIndex > 0) ?  MicroBitPeridoRadio::instance->periodIndex - 1 : 0;
+        // }
+
+        // // we've hit the min threshold -- slow down
+        // if (speed == SPEED_THRESHOLD_MIN)
+        // {
+        //     // will take effect next wake
+        //     speed = 0;
+        //     MicroBitPeridoRadio::instance->periodIndex = ( MicroBitPeridoRadio::instance->periodIndex < PERIOD_COUNT - 1) ?  MicroBitPeridoRadio::instance->periodIndex + 1 : PERIOD_COUNT - 1;
+        // }
+
         uint32_t tx_backoff = PERIDO_WAKE_THRESHOLD_MID;
         tx_backoff +=  microbit_random(3000);
 
@@ -629,6 +721,23 @@ void wake_up()
     radio_state_machine();
 }
 
+/**
+* automatic transposition of textual name to app id and namespace...
+    * should there be a default app_id and namespace?
+* The ability to create a "private" group where there aren't other devices is desired
+    * could probably use the app_id to select a band...
+    * it's on the user to create reliability.
+    * Probably want some group collision detection and the selection of another group...
+    * there are only 100 bands...
+* increasing and decreasing data rates...
+    * how do we reach concensus?
+        * do we need a broadcast frame?
+            * i'd rather not...
+        * expresses of intent in a frame
+            * only works if others have data to transmit.
+        * First to broadcast, if others are ok with that then then they move, otherwise they stay where they are.
+    * automatic slowdown on no transmission in wake period... inverse as well if we're not sleeping as often as we should, speed up.
+**/
 void timer_callback(uint8_t state)
 {
 #ifdef DEBUG_MODE
@@ -655,7 +764,7 @@ void timer_callback(uint8_t state)
   * @note This class is demand activated, as a result most resources are only
   *       committed if send/recv or event registrations calls are made.
   */
-MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint32_t appId, uint32_t namespaceId, uint16_t id) : timer(timer)
+MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, uint8_t namespaceId, uint16_t id) : timer(timer)
 {
     this->id = id;
     this->appId = appId;
@@ -663,7 +772,6 @@ MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint32_t appId, u
     this->status = 0;
 	this->rxQueueDepth = 0;
     this->txQueueDepth = 0;
-    this->rssi = 0;
     this->rxQueue = NULL;
     this->rxBuf = NULL;
     this->txQueue = NULL;
@@ -685,7 +793,7 @@ MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint32_t appId, u
 
     microbit_seed_random();
 
-    this->sleepPeriodMs = MICROBIT_PERIDO_DEFAULT_SLEEP;
+    this->periodIndex = PERIDO_DEFAULT_PERIOD_IDX;
 
     instance = this;
 }
@@ -934,7 +1042,7 @@ int MicroBitPeridoRadio::enable()
 
     radio_status = RADIO_STATUS_DISABLED | RADIO_STATUS_DISCOVERING | RADIO_STATUS_SLEEPING;
 
-    timer.setCompare(WAKE_UP_CHANNEL, sleepPeriodMs * 1000);
+    timer.setCompare(WAKE_UP_CHANNEL, periods[periodIndex] * 1000);
 
     // Done. Record that our RADIO is configured.
     status |= MICROBIT_RADIO_STATUS_INITIALISED;
@@ -978,10 +1086,21 @@ int MicroBitPeridoRadio::disable()
   */
 int MicroBitPeridoRadio::setPeriod(uint32_t period_ms)
 {
-    if(period_ms < 10)
-        return MICROBIT_INVALID_PARAMETER;
+    int index = -1;
 
-    sleepPeriodMs = period_ms;
+    for (int i = 0 ; i < PERIOD_COUNT; i++)
+    {
+        if (periods[i] < period_ms)
+            continue;
+
+        index = i;
+        break;
+    }
+
+    if (index == -1)
+        index = PERIOD_COUNT - 1;
+
+    periodIndex = index;
 
     return MICROBIT_OK;
 }
@@ -993,7 +1112,7 @@ int MicroBitPeridoRadio::setPeriod(uint32_t period_ms)
   */
 uint32_t MicroBitPeridoRadio::getPeriod()
 {
-    return sleepPeriodMs;
+    return periods[periodIndex];
 }
 
 /**

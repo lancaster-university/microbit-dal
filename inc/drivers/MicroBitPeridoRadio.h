@@ -60,7 +60,7 @@ struct PeridoFrameBuffer;
  */
 
 // Default configuration values
-#define MICROBIT_PERIDO_HEADER_SIZE             8
+#define MICROBIT_PERIDO_HEADER_SIZE             10
 #define MICROBIT_PERIDO_DEFAULT_SLEEP           600
 
 #define MICROBIT_PERIDO_MAX_PACKET_SIZE         200
@@ -70,29 +70,29 @@ struct PeridoFrameBuffer;
 #define MICROBIT_PERIDO_DEFAULT_APP_ID          0
 #define MICROBIT_PERIDO_DEFAULT_NAMESPACE       0
 
+#define MICROBIT_PERIDO_FRAME_PROPOSAL_FLAG     0x01
+
 struct PeridoFrameBuffer
 {
     uint8_t             length;                             // The length of the remaining bytes in the packet.
     uint8_t             app_id;
     uint8_t             namespace_id;
+    uint16_t            id;
     uint8_t             ttl:4, initial_ttl:4;
-    uint32_t            time_since_wake:24, period:8;
+    uint32_t            time_since_wake:24, period:4, flags:4;
     uint8_t             payload[MICROBIT_PERIDO_MAX_PACKET_SIZE];    // User / higher layer protocol data
-    uint32_t            crc;
     PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
 } __attribute__((packed));
 
 
 class MicroBitPeridoRadio : public MicroBitComponent
 {
-
-    int                     rssi;
-    uint32_t                sleepPeriodMs;
-    uint32_t                appId;
-    uint32_t                namespaceId;
+    uint8_t                appId;
+    uint8_t                namespaceId;
 
     public:
 
+    uint8_t                periodIndex;
     uint8_t                 rxQueueDepth; // The number of packets in the receiver queue.
     uint8_t                 txQueueDepth; // The number of packets in the tx queue.
 
@@ -114,7 +114,7 @@ class MicroBitPeridoRadio : public MicroBitComponent
       * @note This class is demand activated, as a result most resources are only
       *       committed if send/recv or event registrations calls are made.
       */
-    MicroBitPeridoRadio(LowLevelTimer& timer, uint32_t appId = MICROBIT_PERIDO_DEFAULT_APP_ID, uint32_t namespaceId = MICROBIT_PERIDO_DEFAULT_NAMESPACE, uint16_t id = MICROBIT_ID_RADIO);
+    MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId = MICROBIT_PERIDO_DEFAULT_APP_ID, uint8_t namespaceId = MICROBIT_PERIDO_DEFAULT_NAMESPACE, uint16_t id = MICROBIT_ID_RADIO);
 
     /**
       * Change the output power level of the transmitter to the given value.
