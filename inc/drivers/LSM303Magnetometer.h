@@ -84,7 +84,7 @@ DEALINGS IN THE SOFTWARE.
 class LSM303Magnetometer : public MicroBitCompass
 {
     MicroBitI2C&            i2c;                    // The I2C interface to use.
-    MicroBitPin&            int1;                   // Data ready interrupt.
+    MicroBitPin             int1;                   // Data ready interrupt.
     uint16_t                address;                // I2C address of this compass.
 
     public:
@@ -97,7 +97,7 @@ class LSM303Magnetometer : public MicroBitCompass
      * @param id The unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
      *
      */
-    LSM303Magnetometer(MicroBitI2C& _i2c, MicroBitPin &_int1, CoordinateSpace &coordinateSpace, uint16_t address = LSM303_M_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
+    LSM303Magnetometer(MicroBitI2C& _i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address = LSM303_M_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
      * Configures the compass for the sample rate defined in this object. 
@@ -126,6 +126,12 @@ class LSM303Magnetometer : public MicroBitCompass
      */
     virtual void idleTick();
 
+    /**
+     * Attempts to read the 8 bit WHO_AM_I value from the accelerometer
+     *
+     * @return true if the WHO_AM_I value is succesfully read. false otherwise.
+     */
+    static int isDetected(MicroBitI2C &i2c, uint16_t address = LSM303_M_DEFAULT_ADDR);
 
     /**
      * Destructor.

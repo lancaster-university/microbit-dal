@@ -27,6 +27,11 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitEvent.h"
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
+#include "MicroBitDevice.h"
+
+#include "MAG3110.h"
+#include "LSM303Magnetometer.h"
+#include "FXOS8700.h"
 
 
 /**
@@ -81,6 +86,56 @@ void MicroBitCompass::init(uint16_t id)
     status |= MICROBIT_COMPONENT_RUNNING;
 }
 
+/**
+ * Device autodetection. Scans the given I2C bus for supported accelerometer devices.
+ * if found, constructs an appropriate driver and returns it.
+ *
+ * @param i2c the bus to scan. 
+ * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
+ *
+ */
+MicroBitCompass& MicroBitCompass::autoDetect(MicroBitI2C &i2c)
+{
+    if (MicroBitCompass::detectedCompass == NULL)
+    {
+        // Configuration of IRQ lines
+        MicroBitPin int1(MICROBIT_ID_IO_INT1, P0_28, PIN_CAPABILITY_STANDARD);
+        MicroBitPin int2(MICROBIT_ID_IO_INT2, P0_29, PIN_CAPABILITY_STANDARD);
+        MicroBitPin int3(MICROBIT_ID_IO_INT3, P0_27, PIN_CAPABILITY_STANDARD);
+
+        // All known accelerometer/magnetometer peripherals have the same alignment
+        CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, true, COORDINATE_SPACE_ROTATED_0));
+
+        // Now, probe for connected peripherals, if none have already been found.
+        if (MAG3110::isDetected(i2c))
+            MicroBitCompass::detectedCompass = new MAG3110(i2c, int2, coordinateSpace);
+
+        else if (LSM303Magnetometer::isDetected(i2c))
+            MicroBitCompass::detectedCompass = new LSM303Magnetometer(i2c, int2, coordinateSpace);
+
+        else if (FXOS8700::isDetected(i2c))
+        {
+            FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace);
+            MicroBitAccelerometer::detectedAccelerometer = fxos;
+            MicroBitCompass::detectedCompass = fxos;
+        }
+
+        // Insert this case to support FXOS on the microbit1.5-SN
+        //else if (FXOS8700::isDetected(i2c, 0x3A))
+        //{
+        //    FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace, 0x3A);
+        //    MicroBitAccelerometer::detectedAccelerometer = fxos;
+        //    MicroBitCompass::detectedCompass = fxos;
+        //}
+
+        else
+        {
+            microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE);
+        }
+    }
+
+    return *MicroBitCompass::detectedCompass;
+}
 
 /**
  * Gets the current heading of the device, relative to magnetic north.
@@ -416,4 +471,4 @@ MicroBitCompass::~MicroBitCompass()
 {
 }
 
-
+MicroBitCompass* MicroBitCompass::detectedCompass= NULL;

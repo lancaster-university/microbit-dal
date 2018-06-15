@@ -73,7 +73,7 @@ CREATE_KEY_VALUE_TABLE(accelerometerPeriod, accelerometerPeriodData);
  * @param id The unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
  *
  */
-LSM303Accelerometer::LSM303Accelerometer(MicroBitI2C& _i2c, MicroBitPin &_int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t id) : MicroBitAccelerometer(coordinateSpace, id), i2c(_i2c), int1(_int1)
+LSM303Accelerometer::LSM303Accelerometer(MicroBitI2C& _i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t id) : MicroBitAccelerometer(coordinateSpace, id), i2c(_i2c), int1(_int1)
 {
     // Store our identifiers.
     this->status = 0;
@@ -190,6 +190,15 @@ void LSM303Accelerometer::idleTick()
     requestUpdate();
 }
 
+/**
+ * Attempts to read the 8 bit WHO_AM_I value from the accelerometer
+ *
+ * @return true if the WHO_AM_I value is succesfully read. false otherwise.
+ */
+int LSM303Accelerometer::isDetected(MicroBitI2C &i2c, uint16_t address)
+{
+    return i2c.readRegister(address, LSM303_WHO_AM_I_A) == LSM303_A_WHOAMI_VAL;
+}
 
 /**
  * Destructor.

@@ -59,9 +59,11 @@ class MicroBitCompass : public MicroBitComponent
         Sample3D                sample;                     // The last sample read, in the coordinate system specified by the coordinateSpace variable.
         Sample3D                sampleENU;                  // The last sample read, in raw ENU format (stored in case requests are made for data in other coordinate spaces)
         CoordinateSpace         &coordinateSpace;           // The coordinate space transform (if any) to apply to the raw data from the hardware.
-        MicroBitAccelerometer*  accelerometer;      // The accelerometer to use for tilt compensation.
+        MicroBitAccelerometer*  accelerometer;              // The accelerometer to use for tilt compensation.
 
     public:
+
+       static MicroBitCompass   *detectedCompass;           // The autodetected instance of a MicroBitAcelerometer driver.
 
         /**
          * Constructor.
@@ -83,6 +85,16 @@ class MicroBitCompass : public MicroBitComponent
          *
          */
         MicroBitCompass(MicroBitAccelerometer &accel, CoordinateSpace &coordinateSpace, uint16_t id = MICROBIT_ID_COMPASS);
+
+        /**
+         * Device autodetection. Scans the given I2C bus for supported compass devices.
+         * if found, constructs an appropriate driver and returns it.
+         *
+         * @param i2c the bus to scan. 
+         *
+         */
+        static MicroBitCompass& autoDetect(MicroBitI2C &i2c); 
+
 
         /**
          * Gets the current heading of the device, relative to magnetic north.

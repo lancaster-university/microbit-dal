@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitComponent.h"
 #include "MicroBitPin.h"
 #include "CoordinateSystem.h"
+#include "MicroBitI2C.h"
 
 /**
  * Status flags
@@ -117,6 +118,8 @@ class MicroBitAccelerometer : public MicroBitComponent
 
     public:
 
+        static          MicroBitAccelerometer *detectedAccelerometer;       // The autodetected instance of a MicroBitAcelerometer driver.
+
         /**
          * Constructor.
          * Create a software abstraction of an accelerometer.
@@ -126,6 +129,15 @@ class MicroBitAccelerometer : public MicroBitComponent
          *
          */
         MicroBitAccelerometer(CoordinateSpace &coordinateSpace, uint16_t id = MICROBIT_ID_ACCELEROMETER);
+
+        /**
+         * Device autodetection. Scans the given I2C bus for supported accelerometer devices.
+         * if found, constructs an appropriate driver and returns it.
+         *
+         * @param i2c the bus to scan. 
+         *
+         */
+        static MicroBitAccelerometer& autoDetect(MicroBitI2C &i2c); 
 
         /**
          * Attempts to set the sample rate of the accelerometer to the specified value (in ms).
