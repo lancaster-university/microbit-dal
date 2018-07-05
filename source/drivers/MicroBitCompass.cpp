@@ -33,6 +33,10 @@ DEALINGS IN THE SOFTWARE.
 #include "LSM303Magnetometer.h"
 #include "FXOS8700.h"
 
+//
+// Internal convenience macro to apply calibration to a given sample.
+//
+#define CALIBRATED_SAMPLE(sample, axis) (((sample.axis - calibration.centre.axis) * calibration.scale.axis) >> 10)
 
 /**
  * Constructor.
@@ -42,7 +46,7 @@ DEALINGS IN THE SOFTWARE.
  * @param coordinateSpace the orientation of the sensor. Defaults to: SIMPLE_CARTESIAN
  *
  */
-MicroBitCompass::MicroBitCompass(CoordinateSpace &cspace, uint16_t id) : sample(), sampleENU(), coordinateSpace(cspace)
+MicroBitCompass::MicroBitCompass(CoordinateSpace &cspace, uint16_t id) : calibration(), sample(), sampleENU(), coordinateSpace(cspace)
 {
     accelerometer = NULL;
     init(id);
@@ -57,7 +61,7 @@ MicroBitCompass::MicroBitCompass(CoordinateSpace &cspace, uint16_t id) : sample(
  * @param coordinateSpace the orientation of the sensor. Defaults to: SIMPLE_CARTESIAN
  *
  */
-MicroBitCompass::MicroBitCompass(MicroBitAccelerometer &accel, CoordinateSpace &cspace, uint16_t id) :  sample(), sampleENU(), coordinateSpace(cspace)
+MicroBitCompass::MicroBitCompass(MicroBitAccelerometer &accel, CoordinateSpace &cspace, uint16_t id) :  calibration(), sample(), sampleENU(), coordinateSpace(cspace)
 {
     accelerometer = &accel;
     init(id);
@@ -236,9 +240,9 @@ int MicroBitCompass::calibrate()
  *
  * @param calibration A Sample3D containing the offsets for the x, y and z axis.
  */
-void MicroBitCompass::setCalibration(Sample3D calibration)
+void MicroBitCompass::setCalibration(CompassCalibration calibration)
 {
-    average = calibration;
+    this->calibration = calibration;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
 
@@ -249,9 +253,9 @@ void MicroBitCompass::setCalibration(Sample3D calibration)
  *
  * @return A Sample3D containing the offsets for the x, y and z axis.
  */
-Sample3D MicroBitCompass::getCalibration()
+CompassCalibration MicroBitCompass::getCalibration()
 {
-    return average;
+    return calibration;
 }
 
 /**
@@ -275,7 +279,7 @@ int MicroBitCompass::isCalibrating()
  */
 void MicroBitCompass::clearCalibration()
 {
-    average = Sample3D();
+    calibration = CompassCalibration();
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
 
@@ -356,7 +360,10 @@ int MicroBitCompass::requestUpdate()
 int MicroBitCompass::update()
 {
     // Store the new data, after performing any necessary coordinate transformations.
-    sample = coordinateSpace.transform(sampleENU - average);
+    sampleENU.x = CALIBRATED_SAMPLE(sampleENU, x);
+    sampleENU.y = CALIBRATED_SAMPLE(sampleENU, y);
+    sampleENU.z = CALIBRATED_SAMPLE(sampleENU, z);
+    sample = coordinateSpace.transform(sampleENU);
 
     // Indicate that a new sample is available
     MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
@@ -373,7 +380,7 @@ int MicroBitCompass::update()
 Sample3D MicroBitCompass::getSample(CoordinateSystem coordinateSystem)
 {
     requestUpdate();
-    return coordinateSpace.transform(sampleENU - average, coordinateSystem);
+    return coordinateSpace.transform(sampleENU, coordinateSystem);
 }
 
 /**
@@ -427,28 +434,36 @@ int MicroBitCompass::getZ()
  */
 int MicroBitCompass::tiltCompensatedBearing()
 {
-    // Precompute the tilt compensation parameters to improve readability.
-    float phi = accelerometer->getRollRadians();
-    float theta = accelerometer->getPitchRadians();
+    Sample3D cs = this->getSample(NORTH_EAST_DOWN);
+    Sample3D as = accelerometer->getSample(NORTH_EAST_DOWN);
 
-    Sample3D s = getSample(NORTH_EAST_DOWN);
+    // Convert to floating point to reduce rounding errors
+    float x = (float) cs.x;
+    float y = (float) cs.y;
+    float z = (float) cs.z;
 
-    float x = (float) s.x;
-    float y = (float) s.y;
-    float z = (float) s.z;
+    float ax = (float) as.x;
+    float ay = (float) as.y;
+    float az = (float) as.z;
 
-    // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
-    float sinPhi = sin(phi);
-    float cosPhi = cos(phi);
-    float sinTheta = sin(theta);
-    float cosTheta = cos(theta);
+    // normalize the readings
+    float amag = sqrt(ax*ax + ay*ay + az*az);
+    ax = ax/amag;
+    ay = ay/amag;
+    az = az/amag;
 
-    float bearing = (360*atan2(z*sinPhi - y*cosPhi, x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi)) / (2*PI);
+    float ax2 = ax*ax;
+    float ay2 = ay*ay;
+
+    float resultx = x*(1.0f - ax2) - y*ax*ay - z*ax*sqrt(1.0f-ax2-ay2);
+    float resulty = y*sqrt(1.0f-ax2-ay2) - z*ay;
+
+    float bearing = (360*atan2(resulty,resultx)) / (2*PI);
 
     if (bearing < 0)
         bearing += 360.0;
 
-    return (int) bearing;
+    return (int) (360.0 - bearing);
 }
 
 /**
@@ -456,7 +471,7 @@ int MicroBitCompass::tiltCompensatedBearing()
  */
 int MicroBitCompass::basicBearing()
 {
-    float bearing = (atan2((double)(sample.y - average.y),(double)(sample.x - average.x)))*180/PI;
+    float bearing = (atan2((double)getY(),(double)getX()))*180/PI;
 
     if (bearing < 0)
         bearing += 360.0;

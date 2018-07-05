@@ -121,6 +121,12 @@ struct Sample3D
     {
         return !(x == other.x && y == other.y && z == other.z);
     }
+
+    int dSquared(Sample3D &s)
+    {
+        return (x - s.x)*(x - s.x) + (y - s.y)*(y - s.y) + (z - s.z)*(z - s.z);
+    }
+
 };
 
 
