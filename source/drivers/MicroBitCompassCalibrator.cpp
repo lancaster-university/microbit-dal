@@ -48,10 +48,46 @@ DEALINGS IN THE SOFTWARE.
   */
 MicroBitCompassCalibrator::MicroBitCompassCalibrator(MicroBitCompass& _compass, MicroBitAccelerometer& _accelerometer, MicroBitDisplay& _display) : compass(_compass), accelerometer(_accelerometer), display(_display)
 {
+    this->storage = NULL;
+
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBitCompassCalibrator::calibrateUX, MESSAGE_BUS_LISTENER_IMMEDIATE);
 }
 
+/**
+ * Constructor.
+ *
+ * Create an object capable of calibrating the compass.
+ *
+ * The algorithm uses an accelerometer to ensure that a broad range of sample data has been gathered
+ * from the compass module, then performs a least mean squares optimisation of the
+ * results to determine the calibration data for the compass.
+ *
+ * The LED matrix display is used to provide feedback to the user on the gestures required.
+ *
+ * @param compass The compass instance to calibrate.
+ * @param accelerometer The accelerometer to gather contextual data from.
+ * @param display The LED matrix to display user feedback on.
+ * @param storage The object to use for storing calibration data in persistent FLASH. 
+ */
+MicroBitCompassCalibrator::MicroBitCompassCalibrator(MicroBitCompass& _compass, MicroBitAccelerometer& _accelerometer, MicroBitDisplay& _display, MicroBitStorage &storage) : compass(_compass), accelerometer(_accelerometer), display(_display)
+{
+    this->storage = &storage;
+
+    //Attempt to load any stored calibration datafor the compass.
+    KeyValuePair *calibrationData =  this->storage->get("compassCal");
+
+    if(calibrationData != NULL)
+    {
+        CompassCalibration cal = CompassCalibration();
+        memcpy(&cal, calibrationData->value, sizeof(CompassCalibration));
+        compass.setCalibration(cal);
+        delete calibrationData;
+    }
+
+    if (EventModel::defaultEventBus)
+        EventModel::defaultEventBus->listen(MICROBIT_ID_COMPASS, MICROBIT_COMPASS_EVT_CALIBRATE, this, &MicroBitCompassCalibrator::calibrateUX, MESSAGE_BUS_LISTENER_IMMEDIATE);
+}
 /**
  * Scoring function for a hill climb algorithm.
  *
@@ -367,7 +403,11 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
         remaining_scroll_time-=TIME_STEP;
     }
 
-    compass.setCalibration(calibrate(data, samples));
+    CompassCalibration cal = calibrate(data, samples); 
+    compass.setCalibration(cal);
+
+    if(this->storage)
+        this->storage->put(ManagedString("compassCal"), (uint8_t *) &cal, sizeof(CompassCalibration));
 
     // Show a smiley to indicate that we're done, and continue on with the user program.
     display.clear();

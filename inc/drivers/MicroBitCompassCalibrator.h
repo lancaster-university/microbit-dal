@@ -30,6 +30,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitCompass.h"
 #include "MicroBitAccelerometer.h"
 #include "MicroBitDisplay.h"
+#include "MicroBitStorage.h"
 
 
 /**
@@ -49,6 +50,7 @@ class MicroBitCompassCalibrator
     MicroBitCompass&        compass;
     MicroBitAccelerometer&  accelerometer;
     MicroBitDisplay&        display;
+    MicroBitStorage         *storage;
 
     public:
 
@@ -70,6 +72,24 @@ class MicroBitCompassCalibrator
       * @param display The LED matrix to display user feedback on.
       */
     MicroBitCompassCalibrator(MicroBitCompass& _compass, MicroBitAccelerometer& _accelerometer, MicroBitDisplay& _display);
+
+    /**
+      * Constructor.
+      *
+      * Create an object capable of calibrating the compass.
+      *
+      * The algorithm uses an accelerometer to ensure that a broad range of sample data has been gathered
+      * from the compass module, then performs a least mean squares optimisation of the
+      * results to determine the calibration data for the compass.
+      *
+      * The LED matrix display is used to provide feedback to the user on the gestures required.
+      *
+      * @param compass The compass instance to calibrate.
+      * @param accelerometer The accelerometer to gather contextual data from.
+      * @param display The LED matrix to display user feedback on.
+      * @param storage The object to use for storing calibration data in persistent FLASH. 
+      */
+    MicroBitCompassCalibrator(MicroBitCompass& _compass, MicroBitAccelerometer& _accelerometer, MicroBitDisplay& _display, MicroBitStorage &storage);
 
     /**
       * Performs a simple game that in parallel, calibrates the compass.
