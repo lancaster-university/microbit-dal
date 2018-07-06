@@ -26,7 +26,6 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitCompassCalibrator.h"
 #include "EventModel.h"
-#include "Matrix4.h"
 
 #define CALIBRATION_INCREMENT     200
 

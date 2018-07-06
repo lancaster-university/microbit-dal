@@ -18,7 +18,6 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
 
     "types/CoordinateSystem.cpp"
     "types/ManagedString.cpp"
-    "types/Matrix4.cpp"
     "types/MicroBitEvent.cpp"
     "types/MicroBitImage.cpp"
     "types/PacketBuffer.cpp"
