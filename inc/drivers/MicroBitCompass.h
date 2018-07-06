@@ -291,6 +291,14 @@ class MicroBitCompass : public MicroBitComponent
          */
         int getZ();
 
+        /**
+         * updateSample() method maintained here as an inline method purely for backward compatibility.
+         */
+        inline void updateSample()
+        {
+            getSample();
+        }
+
 
         /**
          * Destructor.

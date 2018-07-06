@@ -317,6 +317,14 @@ class MicroBitAccelerometer : public MicroBitComponent
         uint16_t getGesture();
 
         /**
+         * updateSample() method maintained here as an inline method purely for backward compatibility.
+         */
+        inline void updateSample()
+        {
+            getSample();
+        }
+
+        /**
          * Destructor.
          */
         ~MicroBitAccelerometer();
