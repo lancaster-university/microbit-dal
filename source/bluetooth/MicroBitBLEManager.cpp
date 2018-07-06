@@ -1,4 +1,6 @@
 /*
+The MIT License (MIT)
+
 Copyright (c) 2016 British Broadcasting Corporation.
 This software is provided by Lancaster University by arrangement with the BBC.
 
@@ -269,7 +271,7 @@ void MicroBitBLEManager::advertise()
 }
 
 /**
- * A member function used to defer writes to flash, in order to prevent a write collision with
+ * A member function used to defer writes to flash, in order to prevent a write collision with 
  * softdevice.
  * @param handle The handle offered by soft device during pairing.
  * */
@@ -378,13 +380,11 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // Configure the radio at our default power level
     setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER);
 
-
 // Bring up core BLE services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
     new MicroBitPartialFlashingService(*ble, messageBus);
 #endif
-
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
     DeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);

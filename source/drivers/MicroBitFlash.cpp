@@ -57,14 +57,14 @@ static volatile bool flash_op_complete = false;
 
 static void nvmc_event_handler(uint32_t evt)
 {
-        if(evt == NRF_EVT_FLASH_OPERATION_SUCCESS)
+    if(evt == NRF_EVT_FLASH_OPERATION_SUCCESS)
         flash_op_complete = true;
 }
 
 /**
   * Default Constructor
   */
-MicroBitFlash::MicroBitFlash()
+MicroBitFlash::MicroBitFlash() 
 {
     if (!evt_handler_registered)
     {
@@ -84,13 +84,13 @@ MicroBitFlash::MicroBitFlash()
   * @param len number of uint8_t to check.
   * @return non-zero if erase required, zero otherwise.
   */
-int MicroBitFlash::need_erase(uint8_t* source, uint8_t* flash_addr, int len)
+int MicroBitFlash::need_erase(uint8_t* source, uint8_t* flash_addr, int len) 
 {
     // Erase is necessary if for any byte:
     // O & ~N != 0
     // Where O = original, and N = new byte.
 
-    for(;len>0;len--)
+    for(;len>0;len--) 
     {
         if((~*(flash_addr++) & *(source++)) != 0x00) return 1;
     }
@@ -101,7 +101,7 @@ int MicroBitFlash::need_erase(uint8_t* source, uint8_t* flash_addr, int len)
   * Erase an entire page
   * @param page_address address of first word of page
   */
-void MicroBitFlash::erase_page(uint32_t* pg_addr)
+void MicroBitFlash::erase_page(uint32_t* pg_addr) 
 {
     if (ble_running())
     {
@@ -110,7 +110,6 @@ void MicroBitFlash::erase_page(uint32_t* pg_addr)
         {
             if (sd_flash_page_erase(((uint32_t)pg_addr)/PAGE_SIZE) == NRF_SUCCESS)
                 break;
-
 
             wait_ms(10);
         }
@@ -132,7 +131,7 @@ void MicroBitFlash::erase_page(uint32_t* pg_addr)
         while (NRF_NVMC->READY == NVMC_READY_READY_Busy) { }
     }
 }
-
+ 
 /**
   * Write to flash memory, assuming that a write is valid
   * (using need_erase).
@@ -142,8 +141,8 @@ void MicroBitFlash::erase_page(uint32_t* pg_addr)
   * @param buffer address to write from, must be word-aligned.
   * @param len number of uint32_t words to write.
   */
-void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size)
-{
+void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size) 
+{ 
     if (ble_running())
     {
         // Schedule SoftDevice to write this memory for us, and wait for it to complete.
@@ -167,7 +166,7 @@ void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size)
         NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos);
         while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
 
-        for(int i=0;i<size;i++)
+        for(int i=0;i<size;i++) 
         {
             *(addr+i) = *(buffer+i);
             while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
@@ -178,7 +177,7 @@ void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size)
         while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {};
     }
 }
-
+ 
 /**
   * Writes the given number of bytes to the address in flash specified.
   * Neither address nor buffer need be word-aligned.
@@ -196,7 +195,7 @@ void MicroBitFlash::flash_burn(uint32_t* addr, uint32_t* buffer, int size)
   * flash.flash_write((uint8_t*)0x38000, &word, sizeof(word))
   * @endcode
   */
-int MicroBitFlash::flash_write(void* address, void* from_buffer,
+int MicroBitFlash::flash_write(void* address, void* from_buffer, 
                                int length, void* scratch_addr)
 {
     // If no scratch_addr has been supplied use the default
@@ -205,7 +204,7 @@ int MicroBitFlash::flash_write(void* address, void* from_buffer,
 
 
     // Ensure that scratch_addr is aligned on a page boundary.
-    if((uint32_t)scratch_addr & 0x3FF)
+    if((uint32_t)scratch_addr & 0x3FF) 
         return MICROBIT_INVALID_PARAMETER;
 
     // Locate the hardware FLASH page used by this operation.
@@ -221,7 +220,7 @@ int MicroBitFlash::flash_write(void* address, void* from_buffer,
     int erase = need_erase((uint8_t *)from_buffer, (uint8_t *)address, length);
 
     // Preserve the data by writing to the scratch page.
-    if(erase)
+    if(erase) 
     {
         if (!scratch_addr)
             return MICROBIT_INVALID_PARAMETER;
@@ -237,21 +236,21 @@ int MicroBitFlash::flash_write(void* address, void* from_buffer,
 
     uint32_t writeWord = 0;
 
-    for(int i=start;i<end;i++)
+    for(int i=start;i<end;i++) 
     {
         int byteOffset = i%4;
 
-        if(i >= offset && i < (offset + length))
+        if(i >= offset && i < (offset + length)) 
         {
             // Write from buffer.
             writeWord |= (((uint8_t *)from_buffer)[i-offset] << ((byteOffset)*8));
         }
-        else
+        else 
         {
             writeWord |= (writeFrom[i] << ((byteOffset)*8));
         }
 
-        if( ((i+1)%4) == 0)
+        if( ((i+1)%4) == 0) 
         {
             this->flash_burn(pgAddr + (i/4), &writeWord, 1);
             writeWord = 0;
@@ -260,3 +259,4 @@ int MicroBitFlash::flash_write(void* address, void* from_buffer,
 
     return MICROBIT_OK;
 }
+
