@@ -51,6 +51,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MAG3110.cpp"
     "drivers/LSM303Accelerometer.cpp"
     "drivers/LSM303Magnetometer.cpp"
+    "drivers/MicroBitMemoryMap.cpp"
 
     "bluetooth/MicroBitAccelerometerService.cpp"
     "bluetooth/MicroBitBLEManager.cpp"
@@ -63,6 +64,8 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "bluetooth/MicroBitMagnetometerService.cpp"
     "bluetooth/MicroBitTemperatureService.cpp"
     "bluetooth/MicroBitUARTService.cpp"
+    "bluetooth/MicroBitPartialFlashingService.cpp"
+
 )
 
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)
