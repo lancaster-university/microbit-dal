@@ -1,6 +1,6 @@
 {
   "name": "microbit-dal",
-  "version": "2.1.0-rc2",
+  "version": "2.1.0-dal-integration",
   "license": "MIT",
   "description": "The runtime library for the BBC micro:bit, developed by Lancaster University",
   "keywords": [
