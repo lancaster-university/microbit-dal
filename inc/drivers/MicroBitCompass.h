@@ -316,4 +316,9 @@ class MicroBitCompass : public MicroBitComponent
         int basicBearing();
 };
 
+//
+// Backward Compatibility
+//
+typedef Sample3D CompassSample;
+
 #endif
