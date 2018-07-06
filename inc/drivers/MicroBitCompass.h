@@ -199,6 +199,14 @@ class MicroBitCompass : public MicroBitComponent
         int configure();
 
         /**
+         *
+         * Defines the accelerometer to be used for tilt compensation.
+         *
+         * @param acceleromter Reference to the accelerometer to use.
+         */
+        void setAccelerometer(MicroBitAccelerometer &accelerometer);
+
+        /**
          * Attempts to set the sample rate of the compass to the specified period value (in ms).
          *
          * @param period the requested time between samples, in milliseconds.

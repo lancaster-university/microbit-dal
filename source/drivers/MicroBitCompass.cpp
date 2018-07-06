@@ -138,6 +138,10 @@ MicroBitCompass& MicroBitCompass::autoDetect(MicroBitI2C &i2c)
         }
     }
 
+    // If an accelerometer has been discovered, enable tilt compensation on the e-compass.
+    if (MicroBitAccelerometer::detectedAccelerometer)
+        MicroBitCompass::detectedCompass->setAccelerometer(*MicroBitAccelerometer::detectedAccelerometer);
+
     return *MicroBitCompass::detectedCompass;
 }
 
@@ -297,6 +301,17 @@ int MicroBitCompass::configure()
 }
 
 /**
+ *
+ * Defines the accelerometer to be used for tilt compensation.
+ *
+ * @param acceleromter Reference to the accelerometer to use.
+ */
+void MicroBitCompass::setAccelerometer(MicroBitAccelerometer &accelerometer)
+{
+    this->accelerometer = &accelerometer;
+}
+
+/**
  * Attempts to set the sample rate of the compass to the specified period value (in ms).
  *
  * @param period the requested time between samples, in milliseconds.
@@ -359,10 +374,12 @@ int MicroBitCompass::requestUpdate()
  */
 int MicroBitCompass::update()
 {
-    // Store the new data, after performing any necessary coordinate transformations.
+    // Store the raw data, and apply any calibration data we have.
     sampleENU.x = CALIBRATED_SAMPLE(sampleENU, x);
     sampleENU.y = CALIBRATED_SAMPLE(sampleENU, y);
     sampleENU.z = CALIBRATED_SAMPLE(sampleENU, z);
+
+    // Store the user accessible data, in the requested coordinate space, and taking into account component placement of the sensor.
     sample = coordinateSpace.transform(sampleENU);
 
     // Indicate that a new sample is available
@@ -434,36 +451,28 @@ int MicroBitCompass::getZ()
  */
 int MicroBitCompass::tiltCompensatedBearing()
 {
-    Sample3D cs = this->getSample(NORTH_EAST_DOWN);
-    Sample3D as = accelerometer->getSample(NORTH_EAST_DOWN);
+    // Precompute the tilt compensation parameters to improve readability.
+    float phi = accelerometer->getRollRadians();
+    float theta = accelerometer->getPitchRadians();
 
     // Convert to floating point to reduce rounding errors
+    Sample3D cs = this->getSample(SIMPLE_CARTESIAN);
     float x = (float) cs.x;
     float y = (float) cs.y;
     float z = (float) cs.z;
 
-    float ax = (float) as.x;
-    float ay = (float) as.y;
-    float az = (float) as.z;
+    // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
+    float sinPhi = sin(phi);
+    float cosPhi = cos(phi);
+    float sinTheta = sin(theta);
+    float cosTheta = cos(theta);
 
-    // normalize the readings
-    float amag = sqrt(ax*ax + ay*ay + az*az);
-    ax = ax/amag;
-    ay = ay/amag;
-    az = az/amag;
-
-    float ax2 = ax*ax;
-    float ay2 = ay*ay;
-
-    float resultx = x*(1.0f - ax2) - y*ax*ay - z*ax*sqrt(1.0f-ax2-ay2);
-    float resulty = y*sqrt(1.0f-ax2-ay2) - z*ay;
-
-    float bearing = (360*atan2(resulty,resultx)) / (2*PI);
+    float bearing = (360*atan2(x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi, z*sinPhi - y*cosPhi)) / (2*PI);
 
     if (bearing < 0)
-        bearing += 360.0;
+        bearing += 360.0f;
 
-    return (int) (360.0 - bearing);
+    return (int) (bearing);
 }
 
 /**
@@ -471,12 +480,17 @@ int MicroBitCompass::tiltCompensatedBearing()
  */
 int MicroBitCompass::basicBearing()
 {
-    float bearing = (atan2((double)getY(),(double)getX()))*180/PI;
+    // Convert to floating point to reduce rounding errors
+    Sample3D cs = this->getSample(SIMPLE_CARTESIAN);
+    float x = (float) cs.x;
+    float y = (float) cs.y;
+
+    float bearing = (atan2(x,y))*180/PI;
 
     if (bearing < 0)
         bearing += 360.0;
 
-    return (int)(360.0 - bearing);
+    return (int)bearing;
 }
 
 /**

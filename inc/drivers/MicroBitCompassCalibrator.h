@@ -106,7 +106,7 @@ class MicroBitCompassCalibrator
      *
      * @return The deviation between the closest and further point in the data array from the point given. 
      */
-    static int measureScore(Sample3D &c, Sample3D *data, int samples);
+    static float measureScore(Sample3D &c, Sample3D *data, int samples);
 
     /*
      * Performs an interative approximation (hill descent) algorithm to determine an

@@ -116,6 +116,9 @@ MicroBitAccelerometer& MicroBitAccelerometer::autoDetect(MicroBitI2C &i2c)
         }
     }
 
+    if (MicroBitCompass::detectedCompass)
+        MicroBitCompass::detectedCompass->setAccelerometer(*MicroBitAccelerometer::detectedAccelerometer);
+
     return *MicroBitAccelerometer::detectedAccelerometer;
 }
 

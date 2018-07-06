@@ -65,6 +65,10 @@ Sample3D CoordinateSpace::transform(Sample3D s, CoordinateSystem system)
     Sample3D result = s;
     int temp;
 
+    // If we've been asked to supply raw data, simply return it.
+    if (system == RAW)
+        return result;
+
     // Firstly, handle any inversions.
     // As we know the input is in ENU format, this means we flip the polarity of the X and Z axes.
     if(upsidedown)
@@ -109,8 +113,7 @@ Sample3D CoordinateSpace::transform(Sample3D s, CoordinateSystem system)
             result.z = -result.z;
             break;
 
-        case EAST_NORTH_UP:
-        case RAW:
+        default:                    // EAST_NORTH_UP
             break;
     }
 

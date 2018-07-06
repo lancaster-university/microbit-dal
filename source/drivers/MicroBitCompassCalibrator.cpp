@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #include "EventModel.h"
 #include "Matrix4.h"
 
-#define CALIBRATION_INCREMENT     10
+#define CALIBRATION_INCREMENT     200
 
 /**
   * Constructor.
@@ -62,15 +62,15 @@ MicroBitCompassCalibrator::MicroBitCompassCalibrator(MicroBitCompass& _compass, 
  *
  * @return The deviation between the closest and further point in the data array from the point given. 
  */
-int MicroBitCompassCalibrator::measureScore(Sample3D &c, Sample3D *data, int samples)
+float MicroBitCompassCalibrator::measureScore(Sample3D &c, Sample3D *data, int samples)
 {
-    int minD;
-    int maxD;
+    float minD;
+    float maxD;
 
     minD = maxD = c.dSquared(data[0]);
     for (int i = 1; i < samples; i++)
     {
-        int d = c.dSquared(data[i]);
+        float d = c.dSquared(data[i]);
 
         if (d < minD)
             minD = d;
@@ -194,7 +194,7 @@ Sample3D MicroBitCompassCalibrator::approximateCentre(Sample3D *data, int sample
     Sample3D centre = { 0,0,0 };
     Sample3D best = { 0,0,0 };
 
-    int score;
+    float score;
 
     for (int i = 0; i < samples; i++)
     {
@@ -228,7 +228,7 @@ Sample3D MicroBitCompassCalibrator::approximateCentre(Sample3D *data, int sample
                     t.y += y;
                     t.z += z;
 
-                    int s = measureScore(t, data, samples);
+                    float s = measureScore(t, data, samples);
                     if (s < score)
                     {
                         score = s;
@@ -356,7 +356,7 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
             if (cursor.x == perimeter[i].x && cursor.y == perimeter[i].y && !(visited[i] == 1))
             {
                 // Record the sample data for later processing...
-                data[samples] = compass.getSample();
+                data[samples] = compass.getSample(RAW);
 
                 // Record that this pixel has been visited.
                 visited[i] = 1;
