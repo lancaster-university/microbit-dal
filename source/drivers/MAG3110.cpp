@@ -115,7 +115,7 @@ int MAG3110::configure()
   * @param address the default I2C address of the magnetometer. Defaults to: FXS8700_DEFAULT_ADDR.
   *
  */
-MAG3110::MAG3110(MicroBitI2C &_i2c, MicroBitPin &_int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t id) : MicroBitCompass(coordinateSpace, id), i2c(_i2c), int1(_int1)
+MAG3110::MAG3110(MicroBitI2C &_i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t id) : MicroBitCompass(coordinateSpace, id), i2c(_i2c), int1(_int1)
 {
     // Store our identifiers.
     this->address = address;
@@ -188,6 +188,16 @@ int MAG3110::requestUpdate()
 void MAG3110::idleTick()
 {
     requestUpdate();
+}
+
+/**
+ * Attempts to read the 8 bit WHO_AM_I value from the accelerometer
+ *
+ * @return true if the WHO_AM_I value is succesfully read. false otherwise.
+ */
+int MAG3110::isDetected(MicroBitI2C &i2c, uint16_t address)
+{
+    return i2c.readRegister(address, MAG_WHOAMI) == MAG3110_WHOAMI_VAL;
 }
 
 /**

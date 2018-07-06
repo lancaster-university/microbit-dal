@@ -149,7 +149,7 @@ int FXOS8700::configure()
   * @param address the default I2C address of the accelerometer. Defaults to: FXS8700_DEFAULT_ADDR.
   *
  */
-FXOS8700::FXOS8700(MicroBitI2C &_i2c, MicroBitPin &_int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t aid, uint16_t cid) : 
+FXOS8700::FXOS8700(MicroBitI2C &_i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t aid, uint16_t cid) : 
     MicroBitAccelerometer(coordinateSpace, aid),
     MicroBitCompass(coordinateSpace, cid),
     i2c(_i2c), int1(_int1)
@@ -165,38 +165,26 @@ FXOS8700::FXOS8700(MicroBitI2C &_i2c, MicroBitPin &_int1, CoordinateSpace &coord
 }
 
 /**
-  * Attempts to read the 8 bit ID from the accelerometer, this can be used for
-  * validation purposes.
-  *
-  * @return the 8 bit ID returned by the accelerometer, or MICROBIT_I2C_ERROR if the request fails.
-  *
-  * @code
-  * accelerometer.whoAmI();
-  * @endcode
-  */
-int FXOS8700::whoAmI()
+ * Attempts to read the 8 bit WHO_AM_I value from the accelerometer
+ *
+ * @return true if the WHO_AM_I value is succesfully read. false otherwise.
+ */
+int FXOS8700::isDetected(MicroBitI2C &i2c, uint16_t address)
 {
-    uint8_t data;
-    int result;
-
-    result = i2c.readRegister(address, FXOS8700_WHO_AM_I, &data, 1);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
-
-    return (int)data;
+    return i2c.readRegister(address, FXOS8700_WHO_AM_I) == FXOS8700_WHOAMI_VAL;
 }
 
-    /**
-     * Poll to see if new data is available from the hardware. If so, update it.
-     * n.b. it is not necessary to explicitly call this funciton to update data
-     * (it normally happens in the background when the scheduler is idle), but a check is performed
-     * if the user explicitly requests up to date data.
-     *
-     * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the update fails.
-     *
-     * @note This method should be overidden by the hardware driver to implement the requested
-     * changes in hardware.
-     */
+/**
+ * Poll to see if new data is available from the hardware. If so, update it.
+ * n.b. it is not necessary to explicitly call this funciton to update data
+ * (it normally happens in the background when the scheduler is idle), but a check is performed
+ * if the user explicitly requests up to date data.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the update fails.
+ *
+ * @note This method should be overidden by the hardware driver to implement the requested
+ * changes in hardware.
+ */
 int FXOS8700::requestUpdate()
 {
     // Ensure we're scheduled to update the data periodically

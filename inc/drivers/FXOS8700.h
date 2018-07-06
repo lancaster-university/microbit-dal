@@ -176,7 +176,7 @@ DEALINGS IN THE SOFTWARE.
 class FXOS8700 : public MicroBitAccelerometer, public MicroBitCompass
 {
     MicroBitI2C&            i2c;                    // The I2C interface to use.
-    MicroBitPin             &int1;                  // Data ready interrupt.
+    MicroBitPin             int1;                   // Data ready interrupt.
     uint16_t                address;                // I2C address of this accelerometer.
 
     public:
@@ -190,7 +190,7 @@ class FXOS8700 : public MicroBitAccelerometer, public MicroBitCompass
      * @param address the default I2C address of the accelerometer. Defaults to: FXOS8700_DEFAULT_ADDR.
      *
      */
-    FXOS8700(MicroBitI2C &_i2c, MicroBitPin &_int1, CoordinateSpace &coordinateSpace, uint16_t address = FXOS8700_DEFAULT_ADDR, uint16_t aid = MICROBIT_ID_ACCELEROMETER, uint16_t cid = MICROBIT_ID_COMPASS);
+    FXOS8700(MicroBitI2C &_i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address = FXOS8700_DEFAULT_ADDR, uint16_t aid = MICROBIT_ID_ACCELEROMETER, uint16_t cid = MICROBIT_ID_COMPASS);
 
     /**
      * Configures the accelerometer for G range and sample rate defined
@@ -218,16 +218,11 @@ class FXOS8700 : public MicroBitAccelerometer, public MicroBitCompass
     virtual int requestUpdate();
 
     /**
-     * Attempts to read the 8 bit ID from the accelerometer, this can be used for
-     * validation purposes.
+     * Attempts to read the 8 bit WHO_AM_I value from the accelerometer
      *
-     * @return the 8 bit ID returned by the accelerometer, or DEVICE_I2C_ERROR if the request fails.
-     *
-     * @code
-     * accelerometer.whoAmI();
-     * @endcode
+     * @return true if the WHO_AM_I value is succesfully read. false otherwise.
      */
-    int whoAmI();
+    static int isDetected(MicroBitI2C &i2c, uint16_t address = FXOS8700_DEFAULT_ADDR);
 
     /**
      * A periodic callback invoked by the fiber scheduler idle thread.

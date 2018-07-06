@@ -68,7 +68,7 @@ DEALINGS IN THE SOFTWARE.
 class MMA8653 : public MicroBitAccelerometer
 {
     MicroBitI2C&            i2c;                    // The I2C interface to use.
-    MicroBitPin&            int1;                   // Data ready interrupt.
+    MicroBitPin             int1;                   // Data ready interrupt.
     uint16_t                address;                // I2C address of this accelerometer.
 
     public:
@@ -81,7 +81,7 @@ class MMA8653 : public MicroBitAccelerometer
      * @param id The unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
      *
      */
-    MMA8653(MicroBitI2C& _i2c, MicroBitPin &_int1, CoordinateSpace &coordinateSpace, uint16_t address = MMA8653_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_ACCELEROMETER);
+    MMA8653(MicroBitI2C& _i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address = MMA8653_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_ACCELEROMETER);
 
     /**
      * Configures the accelerometer for G range and sample rate defined
@@ -115,6 +115,13 @@ class MMA8653 : public MicroBitAccelerometer
      * Internally calls updateSample().
      */
     virtual void idleTick();
+
+    /**
+     * Attempts to read the 8 bit WHO_AM_I value from the accelerometer
+     *
+     * @return true if the WHO_AM_I value is succesfully read. false otherwise.
+     */
+    static int isDetected(MicroBitI2C &i2c, uint16_t address = MMA8653_DEFAULT_ADDR);
 
 
     /**

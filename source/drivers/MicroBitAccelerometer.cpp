@@ -27,7 +27,12 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitEvent.h"
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
+#include "MicroBitDevice.h"
 
+#include "MicroBitI2C.h"
+#include "MMA8653.h"
+#include "FXOS8700.h"
+#include "LSM303Accelerometer.h"
 
 /**
   * Constructor.
@@ -62,6 +67,61 @@ MicroBitAccelerometer::MicroBitAccelerometer(CoordinateSpace &cspace, uint16_t i
     this->shake.impulse_6 = 1;
     this->shake.impulse_8 = 1;
 }
+
+/**
+ * Device autodetection. Scans the given I2C bus for supported accelerometer devices.
+ * if found, constructs an appropriate driver and returns it.
+ *
+ * @param i2c the bus to scan. 
+ * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
+ *
+ */
+MicroBitAccelerometer& MicroBitAccelerometer::autoDetect(MicroBitI2C &i2c)
+{
+    if (MicroBitAccelerometer::detectedAccelerometer == NULL)
+    {
+        // Configuration of IRQ lines
+        MicroBitPin int1(MICROBIT_ID_IO_INT1, P0_28, PIN_CAPABILITY_STANDARD);
+        MicroBitPin int2(MICROBIT_ID_IO_INT2, P0_29, PIN_CAPABILITY_STANDARD);
+        MicroBitPin int3(MICROBIT_ID_IO_INT3, P0_27, PIN_CAPABILITY_STANDARD);
+
+        // All known accelerometer/magnetometer peripherals have the same alignment
+        CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, true, COORDINATE_SPACE_ROTATED_0));
+
+        // Now, probe for connected peripherals, if none have already been found.
+        if (MMA8653::isDetected(i2c))
+            MicroBitAccelerometer::detectedAccelerometer = new MMA8653(i2c, int1, coordinateSpace);
+
+        else if (LSM303Accelerometer::isDetected(i2c))
+            MicroBitAccelerometer::detectedAccelerometer = new LSM303Accelerometer(i2c, int1, coordinateSpace);
+
+        else if (FXOS8700::isDetected(i2c))
+        {
+            FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace);
+            MicroBitAccelerometer::detectedAccelerometer = fxos;
+            MicroBitCompass::detectedCompass = fxos;
+        }
+
+        // Insert this case to support FXOS on the microbit1.5-SN
+        //else if (FXOS8700::isDetected(i2c, 0x3A))
+        //{
+        //    FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace, 0x3A);
+        //    MicroBitAccelerometer::detectedAccelerometer = fxos;
+        //    MicroBitCompass::detectedCompass = fxos;
+        //}
+
+        else
+        {
+            microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE);
+        }
+    }
+
+    if (MicroBitCompass::detectedCompass)
+        MicroBitCompass::detectedCompass->setAccelerometer(*MicroBitAccelerometer::detectedAccelerometer);
+
+    return *MicroBitAccelerometer::detectedAccelerometer;
+}
+
 
 /**
   * Stores data from the accelerometer sensor in our buffer, and perform gesture tracking.
@@ -103,8 +163,6 @@ int MicroBitAccelerometer::update()
   */
 uint32_t MicroBitAccelerometer::instantaneousAccelerationSquared()
 {
-    requestUpdate();
-
     // Use pythagoras theorem to determine the combined force acting on the device.
     return (uint32_t)sample.x*(uint32_t)sample.x + (uint32_t)sample.y*(uint32_t)sample.y + (uint32_t)sample.z*(uint32_t)sample.z;
 }
@@ -546,3 +604,4 @@ MicroBitAccelerometer::~MicroBitAccelerometer()
 {
 }
 
+MicroBitAccelerometer* MicroBitAccelerometer::detectedAccelerometer = NULL;

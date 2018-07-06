@@ -27,7 +27,16 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitEvent.h"
 #include "MicroBitCompat.h"
 #include "MicroBitFiber.h"
+#include "MicroBitDevice.h"
 
+#include "MAG3110.h"
+#include "LSM303Magnetometer.h"
+#include "FXOS8700.h"
+
+//
+// Internal convenience macro to apply calibration to a given sample.
+//
+#define CALIBRATED_SAMPLE(sample, axis) (((sample.axis - calibration.centre.axis) * calibration.scale.axis) >> 10)
 
 /**
  * Constructor.
@@ -37,7 +46,7 @@ DEALINGS IN THE SOFTWARE.
  * @param coordinateSpace the orientation of the sensor. Defaults to: SIMPLE_CARTESIAN
  *
  */
-MicroBitCompass::MicroBitCompass(CoordinateSpace &cspace, uint16_t id) : sample(), sampleENU(), coordinateSpace(cspace)
+MicroBitCompass::MicroBitCompass(CoordinateSpace &cspace, uint16_t id) : calibration(), sample(), sampleENU(), coordinateSpace(cspace)
 {
     accelerometer = NULL;
     init(id);
@@ -52,7 +61,7 @@ MicroBitCompass::MicroBitCompass(CoordinateSpace &cspace, uint16_t id) : sample(
  * @param coordinateSpace the orientation of the sensor. Defaults to: SIMPLE_CARTESIAN
  *
  */
-MicroBitCompass::MicroBitCompass(MicroBitAccelerometer &accel, CoordinateSpace &cspace, uint16_t id) :  sample(), sampleENU(), coordinateSpace(cspace)
+MicroBitCompass::MicroBitCompass(MicroBitAccelerometer &accel, CoordinateSpace &cspace, uint16_t id) :  calibration(), sample(), sampleENU(), coordinateSpace(cspace)
 {
     accelerometer = &accel;
     init(id);
@@ -81,6 +90,60 @@ void MicroBitCompass::init(uint16_t id)
     status |= MICROBIT_COMPONENT_RUNNING;
 }
 
+/**
+ * Device autodetection. Scans the given I2C bus for supported accelerometer devices.
+ * if found, constructs an appropriate driver and returns it.
+ *
+ * @param i2c the bus to scan. 
+ * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
+ *
+ */
+MicroBitCompass& MicroBitCompass::autoDetect(MicroBitI2C &i2c)
+{
+    if (MicroBitCompass::detectedCompass == NULL)
+    {
+        // Configuration of IRQ lines
+        MicroBitPin int1(MICROBIT_ID_IO_INT1, P0_28, PIN_CAPABILITY_STANDARD);
+        MicroBitPin int2(MICROBIT_ID_IO_INT2, P0_29, PIN_CAPABILITY_STANDARD);
+        MicroBitPin int3(MICROBIT_ID_IO_INT3, P0_27, PIN_CAPABILITY_STANDARD);
+
+        // All known accelerometer/magnetometer peripherals have the same alignment
+        CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, true, COORDINATE_SPACE_ROTATED_0));
+
+        // Now, probe for connected peripherals, if none have already been found.
+        if (MAG3110::isDetected(i2c))
+            MicroBitCompass::detectedCompass = new MAG3110(i2c, int2, coordinateSpace);
+
+        else if (LSM303Magnetometer::isDetected(i2c))
+            MicroBitCompass::detectedCompass = new LSM303Magnetometer(i2c, int2, coordinateSpace);
+
+        else if (FXOS8700::isDetected(i2c))
+        {
+            FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace);
+            MicroBitAccelerometer::detectedAccelerometer = fxos;
+            MicroBitCompass::detectedCompass = fxos;
+        }
+
+        // Insert this case to support FXOS on the microbit1.5-SN
+        //else if (FXOS8700::isDetected(i2c, 0x3A))
+        //{
+        //    FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace, 0x3A);
+        //    MicroBitAccelerometer::detectedAccelerometer = fxos;
+        //    MicroBitCompass::detectedCompass = fxos;
+        //}
+
+        else
+        {
+            microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE);
+        }
+    }
+
+    // If an accelerometer has been discovered, enable tilt compensation on the e-compass.
+    if (MicroBitAccelerometer::detectedAccelerometer)
+        MicroBitCompass::detectedCompass->setAccelerometer(*MicroBitAccelerometer::detectedAccelerometer);
+
+    return *MicroBitCompass::detectedCompass;
+}
 
 /**
  * Gets the current heading of the device, relative to magnetic north.
@@ -181,9 +244,9 @@ int MicroBitCompass::calibrate()
  *
  * @param calibration A Sample3D containing the offsets for the x, y and z axis.
  */
-void MicroBitCompass::setCalibration(Sample3D calibration)
+void MicroBitCompass::setCalibration(CompassCalibration calibration)
 {
-    average = calibration;
+    this->calibration = calibration;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
 
@@ -194,9 +257,9 @@ void MicroBitCompass::setCalibration(Sample3D calibration)
  *
  * @return A Sample3D containing the offsets for the x, y and z axis.
  */
-Sample3D MicroBitCompass::getCalibration()
+CompassCalibration MicroBitCompass::getCalibration()
 {
-    return average;
+    return calibration;
 }
 
 /**
@@ -220,7 +283,7 @@ int MicroBitCompass::isCalibrating()
  */
 void MicroBitCompass::clearCalibration()
 {
-    average = Sample3D();
+    calibration = CompassCalibration();
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
 
@@ -235,6 +298,17 @@ void MicroBitCompass::clearCalibration()
 int MicroBitCompass::configure()
 {
     return MICROBIT_NOT_SUPPORTED;
+}
+
+/**
+ *
+ * Defines the accelerometer to be used for tilt compensation.
+ *
+ * @param acceleromter Reference to the accelerometer to use.
+ */
+void MicroBitCompass::setAccelerometer(MicroBitAccelerometer &accelerometer)
+{
+    this->accelerometer = &accelerometer;
 }
 
 /**
@@ -300,8 +374,13 @@ int MicroBitCompass::requestUpdate()
  */
 int MicroBitCompass::update()
 {
-    // Store the new data, after performing any necessary coordinate transformations.
-    sample = coordinateSpace.transform(sampleENU - average);
+    // Store the raw data, and apply any calibration data we have.
+    sampleENU.x = CALIBRATED_SAMPLE(sampleENU, x);
+    sampleENU.y = CALIBRATED_SAMPLE(sampleENU, y);
+    sampleENU.z = CALIBRATED_SAMPLE(sampleENU, z);
+
+    // Store the user accessible data, in the requested coordinate space, and taking into account component placement of the sensor.
+    sample = coordinateSpace.transform(sampleENU);
 
     // Indicate that a new sample is available
     MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
@@ -318,7 +397,7 @@ int MicroBitCompass::update()
 Sample3D MicroBitCompass::getSample(CoordinateSystem coordinateSystem)
 {
     requestUpdate();
-    return coordinateSpace.transform(sampleENU - average, coordinateSystem);
+    return coordinateSpace.transform(sampleENU, coordinateSystem);
 }
 
 /**
@@ -376,11 +455,11 @@ int MicroBitCompass::tiltCompensatedBearing()
     float phi = accelerometer->getRollRadians();
     float theta = accelerometer->getPitchRadians();
 
-    Sample3D s = getSample(NORTH_EAST_DOWN);
-
-    float x = (float) s.x;
-    float y = (float) s.y;
-    float z = (float) s.z;
+    // Convert to floating point to reduce rounding errors
+    Sample3D cs = this->getSample(SIMPLE_CARTESIAN);
+    float x = (float) cs.x;
+    float y = (float) cs.y;
+    float z = (float) cs.z;
 
     // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
     float sinPhi = sin(phi);
@@ -388,12 +467,12 @@ int MicroBitCompass::tiltCompensatedBearing()
     float sinTheta = sin(theta);
     float cosTheta = cos(theta);
 
-    float bearing = (360*atan2(z*sinPhi - y*cosPhi, x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi)) / (2*PI);
+    float bearing = (360*atan2(x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi, z*sinPhi - y*cosPhi)) / (2*PI);
 
     if (bearing < 0)
-        bearing += 360.0;
+        bearing += 360.0f;
 
-    return (int) bearing;
+    return (int) (bearing);
 }
 
 /**
@@ -401,12 +480,17 @@ int MicroBitCompass::tiltCompensatedBearing()
  */
 int MicroBitCompass::basicBearing()
 {
-    float bearing = (atan2((double)(sample.y - average.y),(double)(sample.x - average.x)))*180/PI;
+    // Convert to floating point to reduce rounding errors
+    Sample3D cs = this->getSample(SIMPLE_CARTESIAN);
+    float x = (float) cs.x;
+    float y = (float) cs.y;
+
+    float bearing = (atan2(x,y))*180/PI;
 
     if (bearing < 0)
         bearing += 360.0;
 
-    return (int)(360.0 - bearing);
+    return (int)bearing;
 }
 
 /**
@@ -416,4 +500,4 @@ MicroBitCompass::~MicroBitCompass()
 {
 }
 
-
+MicroBitCompass* MicroBitCompass::detectedCompass= NULL;

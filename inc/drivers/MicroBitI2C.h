@@ -131,6 +131,18 @@ class MicroBitI2C : public I2C
      */
     int readRegister(uint8_t address, uint8_t reg, uint8_t* buffer, int length);
 
+    /**
+     * Issues a single byte read command, and returns the value read, or an error.
+     *
+     * Blocks the calling thread until complete.
+     *
+     * @param address The address of the I2C device to write to.
+     * @param reg The address of the register to access.
+     *
+     * @return the byte read on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
+     */
+    int readRegister(uint8_t address, uint8_t reg);
+
 };
 
 #endif
