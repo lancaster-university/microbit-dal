@@ -79,13 +79,14 @@ DEALINGS IN THE SOFTWARE.
 
 // Defines where in memory persistent data is stored.
 #ifndef KEY_VALUE_STORE_PAGE
-#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))	
+#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17)) 
 #endif
 
 #ifndef BLE_BOND_DATA_PAGE 
 #define BLE_BOND_DATA_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
 #endif
 
+// MicroBitFileSystem uses DEFAULT_SCRATCH_PAGE to mark end of FileSystem
 #ifndef DEFAULT_SCRATCH_PAGE
 #define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
 #endif
@@ -372,7 +373,7 @@ extern uint32_t __etext;
 // Defines the logical block size for the file system.
 // Must be a factor of the physical PAGE_SIZE (ideally a power of two less).
 //
-#ifndef MBFS_BLOCK_SIZE		
+#ifndef MBFS_BLOCK_SIZE
 #define MBFS_BLOCK_SIZE		256
 #endif
 
@@ -382,7 +383,7 @@ extern uint32_t __etext;
 // Should be <= MBFS_BLOCK_SIZE.
 //
 #ifndef MBFS_CACHE_SIZE
-#define MBFS_CACHE_SIZE	    0	
+#define MBFS_CACHE_SIZE	    0   
 #endif
 
 //
@@ -435,6 +436,15 @@ extern uint32_t __etext;
 #define MICROBIT_DAL_VERSION                    "unknown"
 #endif
 
+// micro:bit Modes
+// The micro:bit may be in different states: running a user's application or into BLE pairing mode
+// These modes can be representeded using these #defines
+#ifndef MICROBIT_MODE_PAIRING
+#define MICROBIT_MODE_PAIRING                   0
+#endif
+#ifndef MICROBIT_MODE_APPLICATION
+#define MICROBIT_MODE_APPLICATION               1
+#endif
 
 //
 // Helper macro used by the micro:bit runtime to determine if a boolean configuration option is set.

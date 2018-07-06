@@ -383,6 +383,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 // Bring up core BLE services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
+    new MicroBitPartialFlashingService(*ble, messageBus);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
@@ -641,11 +642,11 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
     ManagedString namePostfix("]");
     ManagedString BLEName = namePrefix + deviceName + namePostfix;
 
-    ManagedString msg("PAIRING MODE!");
-
     int timeInPairingMode = 0;
     int brightness = 255;
     int fadeDirection = 0;
+
+    currentMode = MICROBIT_MODE_PAIRING;
 
     ble->gap().stopAdvertising();
 
@@ -673,12 +674,13 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
 
     // Stop any running animations on the display
     display.stopAnimation();
-    display.scroll(msg);
+
+    fiber_add_idle_component(this);
+
+    showManagementModeAnimation(display);
 
     // Display our name, visualised as a histogram in the display to aid identification.
     showNameHistogram(display);
-
-    fiber_add_idle_component(this);
 
     while (1)
     {
@@ -766,6 +768,50 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
 }
 
 /**
+ * Displays the management mode animation on the provided MicroBitDisplay instance.
+ *
+ * @param display The Display instance used for displaying the animation.
+ */
+void MicroBitBLEManager::showManagementModeAnimation(MicroBitDisplay &display)
+{
+    // Animation for display object
+    // https://makecode.microbit.org/93264-81126-90471-58367
+
+    const int mgmt_animation_w = 20;
+    const int mgmt_animation_h = 5;
+    const uint8_t mgmt_animation[] =
+    {
+         255,255,255,255,255,   255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,
+         255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,
+         255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,     0,  0,  0,  0,  0,
+         255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,
+         255,255,255,255,255,   255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255
+    };
+
+    MicroBitImage mgmt(mgmt_animation_w,mgmt_animation_h,mgmt_animation);
+    display.animate(mgmt,100,5);
+
+    const uint8_t bt_icon_raw[] =
+    {
+        255,255,255,  0,255,
+        255,  0,255,255,  0,
+        255,255,255,  0,  0,
+        255,  0,255,255,  0,
+        255,255,255,  0,255
+    };
+
+    MicroBitImage bt_icon(5,5,bt_icon_raw);
+    display.print(bt_icon,0,0,0,0);
+
+    for(int i=0; i < 255; i = i + 5){
+        display.setBrightness(i);
+        fiber_sleep(5);
+    }
+    fiber_sleep(1000);
+
+}
+
+/**
  * Displays the device's ID code as a histogram on the provided MicroBitDisplay instance.
  *
  * @param display The display instance used for displaying the histogram.
@@ -789,4 +835,25 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
         for (int j = 0; j < h + 1; j++)
             display.image.setPixelValue(MICROBIT_DFU_HISTOGRAM_WIDTH - i - 1, MICROBIT_DFU_HISTOGRAM_HEIGHT - j - 1, 255);
     }
+}
+
+/**
+ * Restarts into BLE Mode
+ *
+ */
+ void MicroBitBLEManager::restartInBLEMode(){
+   KeyValuePair* RebootMode = storage->get("RebootMode");
+   if(RebootMode == NULL){
+     uint8_t RebootModeValue = MICROBIT_MODE_PAIRING;
+     storage->put("RebootMode", &RebootModeValue, sizeof(RebootMode));
+     delete RebootMode;
+   }
+   microbit_reset();
+ }
+
+ /**
+  * Get BLE mode. Returns the current mode: application, pairing mode
+  */
+uint8_t MicroBitBLEManager::getCurrentMode(){
+  return currentMode;
 }
