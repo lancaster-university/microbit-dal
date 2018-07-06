@@ -163,8 +163,6 @@ int MicroBitAccelerometer::update()
   */
 uint32_t MicroBitAccelerometer::instantaneousAccelerationSquared()
 {
-    requestUpdate();
-
     // Use pythagoras theorem to determine the combined force acting on the device.
     return (uint32_t)sample.x*(uint32_t)sample.x + (uint32_t)sample.y*(uint32_t)sample.y + (uint32_t)sample.z*(uint32_t)sample.z;
 }
