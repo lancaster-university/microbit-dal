@@ -28,6 +28,9 @@ DataPacket* RadioREST::composePacket(uint8_t type, uint8_t* payload, uint8_t pay
     if (len > 0)
         memcpy(p->payload, payload, len);
 
+    // free the payload
+    free(payload);
+
     return p;
 }
 
