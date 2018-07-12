@@ -44,6 +44,8 @@ DynamicType RadioREST::getRequest(ManagedString url)
     memcpy(urlBuf + 1,url.toCharArray(), bufLen - 1);
 
     DataPacket *p = composePacket(REQUEST_TYPE_GET_REQUEST, urlBuf, bufLen);
+
+    free(urlBuf);
     uint32_t id = p->id;
 
     cloud.addToTxQueue(p);
@@ -63,6 +65,8 @@ uint16_t RadioREST::getRequestAsync(ManagedString url)
     memcpy(urlBuf + 1,url.toCharArray(), bufLen - 1);
 
     DataPacket *p = composePacket(REQUEST_TYPE_GET_REQUEST, urlBuf, bufLen);
+
+    free(urlBuf);
     uint32_t id = p->id;
 
     cloud.addToTxQueue(p);
@@ -81,6 +85,7 @@ DynamicType RadioREST::postRequest(ManagedString url, DynamicType& parameters)
     memcpy(urlBuf + 1 + strLen, parameters.getBytes(), parameters.length());
 
     DataPacket *p = composePacket(REQUEST_TYPE_POST_REQUEST, urlBuf, bufLen);
+    free(urlBuf);
     uint32_t id = p->id;
 
     cloud.addToTxQueue(p);
@@ -102,6 +107,7 @@ uint16_t RadioREST::postRequestAsync(ManagedString url, DynamicType& parameters)
     memcpy(urlBuf + 1 + strLen, parameters.getBytes(), parameters.length());
 
     DataPacket *p = composePacket(REQUEST_TYPE_POST_REQUEST, urlBuf, bufLen);
+    free(urlBuf);
     uint32_t id = p->id;
 
     cloud.addToTxQueue(p);

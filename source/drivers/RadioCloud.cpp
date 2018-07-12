@@ -1,5 +1,6 @@
 #include "RadioCloud.h"
 #include "Radio.h"
+#include "MicroBitConfig.h"
 #include "MicroBitFiber.h"
 
 #define APP_ID_MSK              0xFFFF0000
@@ -220,18 +221,26 @@ void RadioCloud::idleTick()
     if (p)
     {
         DataPacket *t = removeFromQueue(&txQueue, p->id);
+        if (t)
+        {
+            if (t->status & DATA_PACKET_EXPECT_NO_RESPONSE)
+            {
+                delete t;
+                return;
+            }
 
-        uint8_t rt = t->request_type;
-        t->request_type = REQUEST_STATUS_ERROR;
+            uint8_t rt = t->request_type;
+            t->request_type = REQUEST_STATUS_ERROR;
 
-        // expect client code to check for errors...
-        addToQueue(&rxQueue, t);
+            // expect client code to check for errors...
+            addToQueue(&rxQueue, t);
 
-        if (rt & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_POST_REQUEST))
-            rest.handleTimeout(t->id);
+            if (rt & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_POST_REQUEST))
+                rest.handleTimeout(t->id);
 
-        if (rt & REQUEST_TYPE_CLOUD_VARIABLE)
-            variable.handleTimeout(t->id);
+            if (rt & REQUEST_TYPE_CLOUD_VARIABLE)
+                variable.handleTimeout(t->id);
+        }
     }
 }
 
@@ -276,7 +285,7 @@ void RadioCloud::packetReceived()
         DataPacket* p = peakTxQueue(temp->id);
 
         // we don't expect a response from a node here.
-        if (getBridgeMode())
+        if (getBridgeMode() && p)
         {
             p = removeFromTxQueue(temp->id);
             if (p == NULL)
