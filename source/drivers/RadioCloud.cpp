@@ -154,8 +154,6 @@ int RadioCloud::setAppId(uint16_t id)
 
 void RadioCloud::sendDataPacket(DataPacket* p)
 {
-    if (p->request_type & REQUEST_STATUS_ERROR)
-        SERIAL_DEBUG->printf("Sending: %d %d", p->id, p->status);
     RadioFrameBuffer buf;
 
     buf.length = p->len + CLOUD_HEADER_SIZE + MICROBIT_RADIO_HEADER_SIZE - 1;
