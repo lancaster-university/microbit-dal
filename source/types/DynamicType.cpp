@@ -1,5 +1,6 @@
 #include "DynamicType.h"
 #include "ErrorNo.h"
+#include "MicroBitConfig.h"
 
 extern void log_string(const char *);
 extern void log_num(int);
@@ -9,7 +10,7 @@ void DynamicType::init(uint8_t len, uint8_t* payload, bool resize)
     if (resize)
         free(this->ptr);
 
-    ptr = (SubTyped *) malloc(sizeof(SubTyped) + len);
+    ptr = (SubTyped *) malloc(3 + len);
     ptr->init();
 
     ptr->len = len;
@@ -158,10 +159,12 @@ int DynamicType::grow(uint8_t size, uint8_t subtype, uint8_t* data)
     // set data type
     buf[len] = subtype;
 
-    // append the new string
-    memcpy(buf+ len + 1, data, size);
+    // append the new data
+    memcpy(buf + len + 1, data, size);
 
     this->init(newSize, buf, true);
+
+    free(buf);
 
     return MICROBIT_OK;
 }
