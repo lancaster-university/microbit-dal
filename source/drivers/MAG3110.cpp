@@ -99,7 +99,7 @@ int MAG3110::configure()
 
 
     // Bring the device online, with the requested sample frequency.
-    result = i2c.writeRegister(address, MAG_CTRL_REG1, magnetometerPeriod.get(samplePeriod) | 0x01);
+    result = i2c.writeRegister(address, MAG_CTRL_REG1, magnetometerPeriod.get(samplePeriod * 1000) | 0x01);
     if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 

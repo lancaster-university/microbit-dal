@@ -130,7 +130,7 @@ int MMA8653::configure()
         return MICROBIT_I2C_ERROR;
 
     // Bring the device back online, with 10bit wide samples at the requested frequency.
-    value = accelerometerPeriod.get(samplePeriod);
+    value = accelerometerPeriod.get(samplePeriod * 1000);
     result = i2c.writeRegister(address, MMA8653_CTRL_REG1, value | 0x01);
     if (result != 0)
         return MICROBIT_I2C_ERROR;
