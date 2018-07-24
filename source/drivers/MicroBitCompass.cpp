@@ -79,8 +79,8 @@ void MicroBitCompass::init(uint16_t id)
     this->id = id;
     this->status = 0;
 
-    // Set a default rate of 50Hz.
-    this->samplePeriod = 20;
+    // Set a default rate of 10Hz.
+    this->samplePeriod = 100;
     this->configure();
 
     // Assume that we have no calibration information.
