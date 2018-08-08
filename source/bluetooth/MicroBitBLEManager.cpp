@@ -793,11 +793,11 @@ void MicroBitBLEManager::showManagementModeAnimation(MicroBitDisplay &display)
 
     const uint8_t bt_icon_raw[] =
     {
-        255,  0,255,255,255,
-          0,255,255,  0,255,
-          0,  0,255,255,255,
-          0,255,255,  0,255,
-        255,  0,255,255,255
+          0,  0,255,255,  0,
+        255,  0,255,  0,255,
+          0,255,255,255,  0,
+        255,  0,255,  0,255,
+          0,  0,255,255,  0
     };
 
     MicroBitImage bt_icon(5,5,bt_icon_raw);
