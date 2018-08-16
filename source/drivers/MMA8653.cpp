@@ -216,6 +216,16 @@ int MMA8653::isDetected(MicroBitI2C &i2c, uint16_t address)
 }
 
 /**
+* Returns which accelerometer is detected
+*
+* @return MICROBIT_ACCELEROMETER_XXX
+*/
+uint8_t MMA8653::whatAmI()
+{
+        return MICROBIT_ACCELEROMETER_MMA8653;
+}
+
+/**
  * Destructor.
  */
 MMA8653::~MMA8653()

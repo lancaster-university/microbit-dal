@@ -598,6 +598,16 @@ uint16_t MicroBitAccelerometer::getGesture()
 }
 
 /**
+ * Returns which accelerometer is detected
+ *
+ * @return MICROBIT_ACCELEROMETER_XXX
+ */
+uint8_t MicroBitAccelerometer::whatAmI()
+{
+    return MICROBIT_ACCELEROMETER_UNKNOWN;
+}
+
+/**
   * Destructor for FXS8700, where we deregister from the array of fiber components.
   */
 MicroBitAccelerometer::~MicroBitAccelerometer()

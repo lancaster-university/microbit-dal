@@ -148,6 +148,13 @@ class LSM303Accelerometer : public MicroBitAccelerometer
     static int isDetected(MicroBitI2C &i2c, uint16_t address = LSM303_A_DEFAULT_ADDR);
 
     /**
+    * Returns which accelerometer is detected
+    *
+    * @return MICROBIT_ACCELEROMETER_XXX
+    */
+    virtual uint8_t whatAmI();
+
+    /**
      * Destructor.
      */
     ~LSM303Accelerometer();
