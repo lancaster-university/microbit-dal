@@ -289,12 +289,13 @@ void MicroBitBLEManager::deferredSysAttrWrite(Gap::Handle_t handle)
   * @param serialNumber The serial number exposed by the device information service
   * @param messageBus An instance of an EventModel, used during pairing.
   * @param enableBonding If true, the security manager enabled bonding.
+  * @param microbitModel The model of the micro:bit if detected
   *
   * @code
-  * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
+  * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true, uBit.getModel());
   * @endcode
   */
-void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding)
+void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding, ManagedString microbitModel)
 {
     ManagedString BLEName("BBC micro:bit");
     this->deviceName = deviceName;
@@ -387,7 +388,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    DeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, microbitModel.toCharArray(), serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 #else
     (void)serialNumber;
 #endif
@@ -857,3 +858,4 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
 uint8_t MicroBitBLEManager::getCurrentMode(){
   return currentMode;
 }
+
