@@ -192,7 +192,8 @@ void MicroBitPartialFlashingService::flashData(uint8_t *data)
 
           uint8_t flashNotificationBuffer[] = {FLASH_DATA, 0xAA};
           ble.gattServer().notify(partialFlashCharacteristicHandle, (const uint8_t *)flashNotificationBuffer, sizeof(flashNotificationBuffer));
-          packetCount = blockPacketCount + 4;
+          blockPacketCount += 4;
+          packetCount = blockPacketCount;
           blockNum = 0;
           return;
         }
@@ -208,7 +209,6 @@ void MicroBitPartialFlashingService::flashData(uint8_t *data)
             case 0:
                 {
                     offset = ((data[1] << 8) | data[2] << 0);
-                    blockPacketCount = packetNum;
                     blockNum++;
                     break;
                 }
@@ -226,6 +226,7 @@ void MicroBitPartialFlashingService::flashData(uint8_t *data)
                     MicroBitEvent evt(MICROBIT_ID_PARTIAL_FLASHING, FLASH_DATA );
                     // Reset blockNum
                     blockNum = 0;
+                    blockPacketCount += 4;
                     break;
                 }
             default:
