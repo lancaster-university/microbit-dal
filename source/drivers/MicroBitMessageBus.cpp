@@ -409,7 +409,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
     {
         methodCallback = (newListener->flags & MESSAGE_BUS_LISTENER_METHOD) && (l->flags & MESSAGE_BUS_LISTENER_METHOD);
 
-        if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb))
+        if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb) && newListener->cb_arg == l->cb_arg)
         {
             // We have a perfect match for this event listener already registered.
             // If it's marked for deletion, we simply resurrect the listener, and we're done.
@@ -447,7 +447,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
         l = l->next;
     }
 
-    while (l != NULL && l->id == newListener->id && l->value < newListener->value)
+    while (l != NULL && l->id == newListener->id && l->value <= newListener->value)
     {
         p = l;
         l = l->next;
@@ -499,8 +499,12 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
             if(((listener->flags & MESSAGE_BUS_LISTENER_METHOD) && (*l->cb_method == *listener->cb_method)) ||
               ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
             {
-                if ((listener->id == MICROBIT_ID_ANY || listener->id == l->id) && (listener->value == MICROBIT_EVT_ANY || listener->value == l->value))
+                if ((listener->id == MICROBIT_ID_ANY || listener->id == l->id) && (listener->value == MICROBIT_EVT_ANY || listener->value == l->value) && (listener->cb_arg == l->cb_arg || listener->cb_arg == NULL))
                 {
+                    // if notification of deletion has been requested, invoke the listener deletion callback.
+                    if (listener_deletion_callback)
+                        listener_deletion_callback(l);
+
                     // Found a match. mark this to be removed from the list.
                     l->flags |= MESSAGE_BUS_LISTENER_DELETING;
                     removed++;
