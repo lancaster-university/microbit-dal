@@ -298,6 +298,14 @@ extern uint32_t __etext;
 #define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE 1
 #endif
 
+// Enable/Disable BLE Service: MicroBitPartialFlashingService
+// This enables the flashing part of the partial flashing service.
+// Partial flashing is currently only possible for programs built using MakeCode
+// and is disabled by default.
+#ifndef MICROBIT_BLE_PARTIAL_FLASHING
+#define MICROBIT_BLE_PARTIAL_FLASHING           0
+#endif
+
 //
 // Accelerometer options
 //
