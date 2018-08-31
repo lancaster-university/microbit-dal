@@ -311,6 +311,7 @@ void MicroBitAccelerometer::updateGesture()
 
     if (g == MICROBIT_ACCELEROMETER_EVT_SHAKE)
     {
+        lastGesture = MICROBIT_ACCELEROMETER_EVT_SHAKE;
         MicroBitEvent e(MICROBIT_ID_GESTURE, MICROBIT_ACCELEROMETER_EVT_SHAKE);
         return;
     }
