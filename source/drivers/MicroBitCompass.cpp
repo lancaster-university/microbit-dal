@@ -456,7 +456,7 @@ int MicroBitCompass::tiltCompensatedBearing()
     float theta = accelerometer->getPitchRadians();
 
     // Convert to floating point to reduce rounding errors
-    Sample3D cs = this->getSample(SIMPLE_CARTESIAN);
+    Sample3D cs = this->getSample(NORTH_EAST_DOWN);
     float x = (float) cs.x;
     float y = (float) cs.y;
     float z = (float) cs.z;
@@ -467,8 +467,13 @@ int MicroBitCompass::tiltCompensatedBearing()
     float sinTheta = sin(theta);
     float cosTheta = cos(theta);
 
+    // Calculate the tilt compensated bearing, and convert to degrees.
     float bearing = (360*atan2(x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi, z*sinPhi - y*cosPhi)) / (2*PI);
 
+    // Handle the 90 degree offset caused by the NORTH_EAST_DOWN based calculation.
+    bearing = bearing - 90;
+
+    // Ensure the calculated bearing is in the 0..359 degree range.
     if (bearing < 0)
         bearing += 360.0f;
 

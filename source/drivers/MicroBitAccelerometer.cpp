@@ -574,8 +574,19 @@ void MicroBitAccelerometer::recalculatePitchRoll()
     double y = (double) sample.y;
     double z = (double) sample.z;
 
-    roll = atan2(y, z);
-    pitch = atan(-x / (y*sin(roll) + z*cos(roll)));
+    roll = atan2(x, -z);
+    pitch = atan2(y, (x*sin(roll) - z*cos(roll)));
+
+#if CONFIG_ENABLED(MICROBIT_FULL_RANGE_PITCH_CALCULATION)
+
+    // Handle to the two "negative quadrants", such that we get an output in the +/- 18- degree range.
+    // This ensures that the pitch values are consistent with the roll values.
+    if (z > 0.0)
+    {
+        double reference = pitch > 0.0 ? (PI / 2.0) : (-PI / 2.0);
+        pitch = reference + (reference - pitch);
+    }
+#endif
 
     status |= MICROBIT_ACCELEROMETER_IMU_DATA_VALID;
 }

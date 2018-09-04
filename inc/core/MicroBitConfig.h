@@ -310,6 +310,18 @@ extern uint32_t __etext;
 #endif
 
 //
+// Enable a 0..360 degree range on the accelerometer getPitch()
+// calculation. Set to '1' to enable.
+//
+// A value of '0' provides consistency with the (buggy) microbit-dal 2.0
+// and earlier versions, which inadvertently provided only an ambiguous
+// 0..180 degree range
+//
+#ifndef MICROBIT_FULL_RANGE_PITCH_CALCULATION
+#define MICROBIT_FULL_RANGE_PITCH_CALCULATION   1
+#endif
+
+//
 // Display options
 //
 
