@@ -112,29 +112,23 @@ int MicroBitMemoryMap::updateRegion(Region region)
 void MicroBitMemoryMap::findHashes()
 {
     // Iterate through pages to find magic
-    for(uint8_t x = 0; x < NRF_FICR->CODESIZE - 1; x++)
+    uint32_t add = FLASH_PROGRAM_END;
+    uint32_t rem = add % PAGE_SIZE;
+    if ( rem) add += PAGE_SIZE - rem;
+    int step = PAGE_SIZE / sizeof( uint32_t);
+    uint32_t *nxt = ( uint32_t *)DEFAULT_SCRATCH_PAGE;
+    for( uint32_t *magicAddress = (uint32_t *) add; magicAddress < nxt; magicAddress += step)
     {
-
-        uint32_t volatile *magicAddress  = (uint32_t *)(0x400 * x);
-
-        // Check for first 32 bits of Magic
-        // memcmp(magicAddress, magic, 16);
-        if(*magicAddress                     == 0x923b8e70 &&
-           *(uint32_t *)(magicAddress + 0x1) == 0x41A815C6 &&
-           *(uint32_t *)(magicAddress + 0x2) == 0xC96698C4 &&
-           *(uint32_t *)(magicAddress + 0x3) == 0x9751EE75
-          ){
+        // Check for 16 bytes of Magic
+        if (   magicAddress[0] == 0x923b8e70
+            && magicAddress[1] == 0x41A815C6
+            && magicAddress[2] == 0xC96698C4
+            && magicAddress[3] == 0x9751EE75) {
                 // If the magic has been found use the hashes follow
-                magicAddress = (uint32_t *)(magicAddress + 0x4);
-                memcpy(memoryMapStore.memoryMap[1].hash, (uint8_t *)magicAddress, 8);
-
-                magicAddress = (uint32_t *)(magicAddress + 0x2);
-                memcpy(memoryMapStore.memoryMap[2].hash, (uint8_t *)magicAddress, 8);
-
+                memcpy( memoryMapStore.memoryMap[1].hash, magicAddress + 4, 8);
+                memcpy( memoryMapStore.memoryMap[2].hash, magicAddress + 6, 8);
+                memoryMapStore.memoryMap[2].startAddress = (uint32_t)magicAddress;
                 return;
-
-
         }
-
     }
 }
