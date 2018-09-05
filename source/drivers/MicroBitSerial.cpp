@@ -88,11 +88,12 @@ MicroBitSerial::MicroBitSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uin
   */
 void MicroBitSerial::dataReceived()
 {
+    //get the received character
+    //Note: always read from the serial to clear the RX interrupt
+    char c = getc();
+
     if(!(status & MICROBIT_SERIAL_RX_BUFF_INIT))
         return;
-
-    //get the received character
-    char c = getc();
 
     int delimeterOffset = 0;
     int delimLength = this->delimeters.length();
