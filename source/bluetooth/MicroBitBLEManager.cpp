@@ -310,15 +310,26 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     btle_set_gatt_table_size(MICROBIT_SD_GATT_TABLE_SIZE);
 #endif
 
+    SERIAL_DEBUG->printf("***<BLEDevice>***\r\n");
+    SERIAL_DEBUG->printf("  sizeof(BLEDevice): %d\r\n", sizeof(BLEDevice));
     ble = new BLEDevice();
+    SERIAL_DEBUG->printf("***<BLEDevice.init()>***\r\n");
     ble->init();
+    SERIAL_DEBUG->printf("***</BLEDevice.init()>***\r\n");
+    SERIAL_DEBUG->printf("***</BLEDevice>***\r\n");
 
     // automatically restart advertising after a device disconnects.
+    SERIAL_DEBUG->printf("***<onDisconnection>***\r\n");
     ble->gap().onDisconnection(bleDisconnectionCallback);
+    SERIAL_DEBUG->printf("***</onDisconnection>***\r\n");
+    SERIAL_DEBUG->printf("***<onSysAttrMissing>***\r\n");
     ble->gattServer().onSysAttrMissing(bleSysAttrMissingCallback);
+    SERIAL_DEBUG->printf("***</onSysAttrMissing>***\r\n");
 
     // generate an event when a Bluetooth connection is established
+    SERIAL_DEBUG->printf("***<onConnection>***\r\n");
     ble->gap().onConnection(bleConnectionCallback);
+    SERIAL_DEBUG->printf("***</onConnection>***\r\n");
 
     // Configure the stack to hold onto the CPU during critical timing events.
     // mbed-classic performs __disable_irq() calls in its timers that can cause
@@ -338,6 +349,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 // @bluetooth_mdw: select either passkey pairing (more secure), "just works" pairing (less secure but nice and simple for the user)
 // or no security
 // Default to passkey pairing with MITM protection
+    SERIAL_DEBUG->printf("***<SecurityManager>***\r\n");
 #if (SECURITY_MODE_IS(SECURITY_MODE_ENCRYPTION_NO_MITM))
     // Just Works
     ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE);
@@ -348,7 +360,9 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     // passkey
     ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 #endif
+    SERIAL_DEBUG->printf("***</SecurityManager>***\r\n");
 
+    SERIAL_DEBUG->printf("***<EnableBonding>***\r\n");
     if (enableBonding)
     {
         // If we're in pairing mode, review the size of the bond table.
@@ -361,7 +375,9 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
         if (bonds >= MICROBIT_BLE_MAXIMUM_BONDS)
             ble->securityManager().purgeAllBondingState();
     }
+    SERIAL_DEBUG->printf("***</EnableBonding>***\r\n");
 
+    SERIAL_DEBUG->printf("***<WhiteList>***\r\n");
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     // Configure a whitelist to filter all connection requetss from unbonded devices.
     // Most BLE stacks only permit one connection at a time, so this prevents denial of service attacks.
@@ -376,27 +392,34 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
     ble->gap().setScanningPolicyMode(Gap::SCAN_POLICY_IGNORE_WHITELIST);
     ble->gap().setAdvertisingPolicyMode(Gap::ADV_POLICY_FILTER_CONN_REQS);
 #endif
+    SERIAL_DEBUG->printf("***</WhiteList>***\r\n");
 
     // Configure the radio at our default power level
     setTransmitPower(MICROBIT_BLE_DEFAULT_TX_POWER);
 
 // Bring up core BLE services.
+    SERIAL_DEBUG->printf("***<DFU>***\r\n");
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
     new MicroBitPartialFlashingService(*ble, messageBus);
 #endif
+    SERIAL_DEBUG->printf("***</DFU>***\r\n");
 
+    SERIAL_DEBUG->printf("***<DeviceInformation>***\r\n");
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
     DeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 #else
     (void)serialNumber;
 #endif
+    SERIAL_DEBUG->printf("***</DeviceInformation>***\r\n");
 
+    SERIAL_DEBUG->printf("***<Event>***\r\n");
 #if CONFIG_ENABLED(MICROBIT_BLE_EVENT_SERVICE)
     new MicroBitEventService(*ble, messageBus);
 #else
     (void)messageBus;
 #endif
+    SERIAL_DEBUG->printf("***</Event>***\r\n");
 
     // Configure for high speed mode where possible.
     Gap::ConnectionParams_t fast;
@@ -423,10 +446,13 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 // If we have whitelisting enabled, then prevent only enable advertising of we have any binded devices...
 // This is to further protect kids' privacy. If no-one initiates BLE, then the device is unreachable.
 // If whiltelisting is disabled, then we always advertise.
+    SERIAL_DEBUG->printf("***<Advertising>***\r\n");
 #if CONFIG_ENABLED(MICROBIT_BLE_WHITELIST)
     if (whitelist.size > 0)
 #endif
         ble->startAdvertising();
+
+    SERIAL_DEBUG->printf("***</Advertising>***\r\n");
 }
 
 /**
