@@ -110,22 +110,10 @@ extern uint32_t __etext;
 #endif
 
 
-// Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
-// reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
-// i.e. panic() will no longer be triggered on memory full conditions.
-#ifndef MICROBIT_HEAP_ALLOCATOR
-#define MICROBIT_HEAP_ALLOCATOR                 1
-#endif
-
 // Block size used by the allocator in bytes.
 // n.b. Currently only 32 bits (4 bytes) is supported.
 #ifndef MICROBIT_HEAP_BLOCK_SIZE
 #define MICROBIT_HEAP_BLOCK_SIZE                4
-#endif
-
-// The proportion of SRAM available on the mbed heap to reserve for the micro:bit heap.
-#ifndef MICROBIT_NESTED_HEAP_SIZE
-#define MICROBIT_NESTED_HEAP_SIZE               0.75
 #endif
 
 // If defined, reuse any unused SRAM normally reserved for SoftDevice (Nordic's memory resident BLE stack) as heap memory.
@@ -437,14 +425,14 @@ extern uint32_t __etext;
 // n.b. This also disables the user serial port 'uBit.serial'.
 // Set '1' to enable.
 #ifndef MICROBIT_DBG
-#define MICROBIT_DBG                            0
+#define MICROBIT_DBG                            1
 #endif
 
 // Enable this to receive diagnostic messages from the heap allocator via the USB serial interface.
 // n.b. This requires MICROBIT_DBG to be defined.
 // Set '1' to enable.
 #ifndef MICROBIT_HEAP_DBG
-#define MICROBIT_HEAP_DBG                       0
+#define MICROBIT_HEAP_DBG                       1
 #endif
 
 // Versioning options.
