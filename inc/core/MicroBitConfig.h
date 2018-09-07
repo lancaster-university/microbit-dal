@@ -109,23 +109,20 @@ extern uint32_t __etext;
 #define FLASH_PROGRAM_END (uint32_t) (&__etext)
 #endif
 
-
-// Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
-// reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
-// i.e. panic() will no longer be triggered on memory full conditions.
-#ifndef MICROBIT_HEAP_ALLOCATOR
-#define MICROBIT_HEAP_ALLOCATOR                 1
+//
+// If set to '1', this option enables the microbit heap allocator. This supports multiple heaps and interrupt safe operation.
+// If set to '0', the standard GCC libc heap allocator is used, which restricts available memory in BLE scenarios, and MessageBus operations
+// in ISR contexts will no longer be safe.
+//
+#ifndef MICROBIT_HEAP_ENABLED
+#define MICROBIT_HEAP_ENABLED                   1
 #endif
+
 
 // Block size used by the allocator in bytes.
 // n.b. Currently only 32 bits (4 bytes) is supported.
 #ifndef MICROBIT_HEAP_BLOCK_SIZE
 #define MICROBIT_HEAP_BLOCK_SIZE                4
-#endif
-
-// The proportion of SRAM available on the mbed heap to reserve for the micro:bit heap.
-#ifndef MICROBIT_NESTED_HEAP_SIZE
-#define MICROBIT_NESTED_HEAP_SIZE               0.75
 #endif
 
 // If defined, reuse any unused SRAM normally reserved for SoftDevice (Nordic's memory resident BLE stack) as heap memory.

@@ -51,17 +51,15 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitHeapAllocator.h"
 #include "MicroBitDevice.h"
+#include "MicroBitCompat.h"
 #include "ErrorNo.h"
 
-struct HeapDefinition
-{
-    uint32_t *heap_start;		// Physical address of the start of this heap.
-    uint32_t *heap_end;		    // Physical address of the end of this heap.
-};
+#if CONFIG_ENABLED(MICROBIT_HEAP_ENABLED)
 
 // A list of all active heap regions, and their dimensions in memory.
 HeapDefinition heap[MICROBIT_MAXIMUM_HEAPS] = { };
 uint8_t heap_count = 0;
+extern "C" int __end__;
 
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
 // Diplays a usage summary about a given heap...
@@ -90,7 +88,7 @@ void microbit_heap_print(HeapDefinition &heap)
 	while (block < heap.heap_end)
 	{
 		blockSize = *block & ~MICROBIT_HEAP_BLOCK_FREE;
-        if(SERIAL_DEBUG) SERIAL_DEBUG->printf("[%c:%d] ", *block & MICROBIT_HEAP_BLOCK_FREE ? 'F' : 'U', blockSize*4);
+        if(SERIAL_DEBUG) SERIAL_DEBUG->printf("[%c:%d] ", *block & MICROBIT_HEAP_BLOCK_FREE ? 'F' : 'U', blockSize*MICROBIT_HEAP_BLOCK_SIZE);
         if (cols++ == 20)
         {
             if(SERIAL_DEBUG) SERIAL_DEBUG->printf("\n");
@@ -110,8 +108,8 @@ void microbit_heap_print(HeapDefinition &heap)
 
     if(SERIAL_DEBUG) SERIAL_DEBUG->printf("\n");
 
-    if(SERIAL_DEBUG) SERIAL_DEBUG->printf("mb_total_free : %d\n", totalFreeBlock*4);
-    if(SERIAL_DEBUG) SERIAL_DEBUG->printf("mb_total_used : %d\n", totalUsedBlock*4);
+    if(SERIAL_DEBUG) SERIAL_DEBUG->printf("mb_total_free : %d\n", totalFreeBlock*MICROBIT_HEAP_BLOCK_SIZE);
+    if(SERIAL_DEBUG) SERIAL_DEBUG->printf("mb_total_used : %d\n", totalUsedBlock*MICROBIT_HEAP_BLOCK_SIZE);
 }
 
 
@@ -125,13 +123,6 @@ void microbit_heap_print()
     }
 }
 #endif
-
-void microbit_initialise_heap(HeapDefinition &heap)
-{
-    // Simply mark the entire heap as free.
-    *heap.heap_start = ((uint32_t) heap.heap_end - (uint32_t) heap.heap_start) / MICROBIT_HEAP_BLOCK_SIZE;
-    *heap.heap_start |= MICROBIT_HEAP_BLOCK_FREE;
-}
 
 /**
   * Create and initialise a given memory region as for heap storage.
@@ -151,23 +142,25 @@ void microbit_initialise_heap(HeapDefinition &heap)
   */
 int microbit_create_heap(uint32_t start, uint32_t end)
 {
+    HeapDefinition *h = &heap[heap_count];
+
     // Ensure we don't exceed the maximum number of heap segments.
     if (heap_count == MICROBIT_MAXIMUM_HEAPS)
         return MICROBIT_NO_RESOURCES;
 
     // Sanity check. Ensure range is valid, large enough and word aligned.
-    if (end <= start || end - start < MICROBIT_HEAP_BLOCK_SIZE*2 || end % 4 != 0 || start % 4 != 0)
+    if (end <= start || end - start < MICROBIT_HEAP_BLOCK_SIZE*2 || end % MICROBIT_HEAP_BLOCK_SIZE != 0 || start % MICROBIT_HEAP_BLOCK_SIZE != 0)
         return MICROBIT_INVALID_PARAMETER;
 
 	// Disable IRQ temporarily to ensure no race conditions!
     __disable_irq();
 
     // Record the dimensions of this new heap
-    heap[heap_count].heap_start = (uint32_t *)start;
-    heap[heap_count].heap_end = (uint32_t *)end;
+    h->heap_start = (uint32_t *)start;
+    h->heap_end = (uint32_t *)end;
 
     // Initialise the heap as being completely empty and available for use.
-    microbit_initialise_heap(heap[heap_count]);
+    *h->heap_start = MICROBIT_HEAP_BLOCK_FREE | (((uint32_t) h->heap_end - (uint32_t) h->heap_start) / MICROBIT_HEAP_BLOCK_SIZE);
     heap_count++;
 
 	// Enable Interrupts
@@ -176,55 +169,6 @@ int microbit_create_heap(uint32_t start, uint32_t end)
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     microbit_heap_print();
 #endif
-
-    return MICROBIT_OK;
-}
-
-/**
-  * Create and initialise a heap region within the current the heap region specified
-  * by the linker script.
-  *
-  * If the requested amount is not available, then the amount requested will be reduced
-  * automatically to fit the space available.
-  *
-  * @param ratio The proportion of the underlying heap to allocate.
-  *
-  * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if the heap could not be allocated.
-  */
-int microbit_create_nested_heap(float ratio)
-{
-    uint32_t length;
-    void *p;
-
-    if (ratio <= 0.0 || ratio > 1.0)
-        return MICROBIT_INVALID_PARAMETER;
-
-    // Snapshot something at the top of the main heap.
-    p = native_malloc(sizeof(uint32_t));
-
-    // Estimate the size left in our heap, taking care to ensure it lands on a word boundary.
-    length = (uint32_t) (((float)(MICROBIT_HEAP_END - (uint32_t)p)) * ratio);
-    length &= 0xFFFFFFFC;
-
-    // Release our reference pointer.
-    native_free(p);
-    p = NULL;
-
-    // Allocate memory for our heap.
-    // We iteratively reduce the size of memory are allocate until it fits within available space.
-    while (p == NULL)
-    {
-        p = native_malloc(length);
-        if (p == NULL)
-        {
-            length -= 32;
-            if (length <= 0)
-                return MICROBIT_NO_RESOURCES;
-        }
-    }
-
-    uint32_t start = (uint32_t) p;
-    microbit_create_heap(start, start + length);
 
     return MICROBIT_OK;
 }
@@ -327,42 +271,40 @@ void *microbit_malloc(size_t size, HeapDefinition &heap)
   *
   * @return A pointer to the allocated memory, or NULL if insufficient memory is available.
   */
-void *microbit_malloc(size_t size)
+void *malloc(size_t size)
 {
+    static uint8_t initialised = 0;
     void *p;
+
+    if (!initialised)
+    {
+        heap_count = 0;
+
+        if(microbit_create_heap((uint32_t)(&__end__), (uint32_t)(MICROBIT_HEAP_END)) == MICROBIT_INVALID_PARAMETER)
+            microbit_panic(MICROBIT_HEAP_ERROR);
+
+        initialised = 1;
+    }
 
     // Assign the memory from the first heap created that has space.
     for (int i=0; i < heap_count; i++)
     {
         p = microbit_malloc(size, heap[i]);
         if (p != NULL)
-        {
-#if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
-            if(SERIAL_DEBUG) SERIAL_DEBUG->printf("microbit_malloc: ALLOCATED: %d [%p]\n", size, p);
-#endif
-            return p;
-        }
+            break;
     }
 
-    // If we reach here, then either we have no memory available, or our heap spaces
-    // haven't been initialised. Either way, we try the native allocator.
-
-    p = native_malloc(size);
     if (p != NULL)
     {
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
-        // Keep everything trasparent if we've not been initialised yet
-        if (heap_count > 0)
-            if(SERIAL_DEBUG) SERIAL_DEBUG->printf("microbit_malloc: NATIVE ALLOCATED: %d [%p]\n", size, p);
+            if(SERIAL_DEBUG) SERIAL_DEBUG->printf("malloc: ALLOCATED: %d [%p]\n", size, p);
 #endif
         return p;
     }
 
     // We're totally out of options (and memory!).
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
-    // Keep everything transparent if we've not been initialised yet
-    if (heap_count > 0)
-        if(SERIAL_DEBUG) SERIAL_DEBUG->printf("microbit_malloc: OUT OF MEMORY [%d]\n", size);
+    if(SERIAL_DEBUG) SERIAL_DEBUG->printf("malloc: OUT OF MEMORY [%d]\n", size);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_PANIC_HEAP_FULL)
@@ -377,14 +319,14 @@ void *microbit_malloc(size_t size)
   *
   * @param mem The memory area to release.
   */
-void microbit_free(void *mem)
+void free(void *mem)
 {
 	uint32_t	*memory = (uint32_t *)mem;
 	uint32_t	*cb = memory-1;
 
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
     if (heap_count > 0)
-        if(SERIAL_DEBUG) SERIAL_DEBUG->printf("microbit_free:   %p\n", mem);
+        if(SERIAL_DEBUG) SERIAL_DEBUG->printf("free:   %p\n", mem);
 #endif
     // Sanity check.
 	if (memory == NULL)
@@ -397,12 +339,73 @@ void microbit_free(void *mem)
         {
             // The memory block given is part of this heap, so we can simply
 	        // flag that this memory area is now free, and we're done.
+            if (*cb == 0 || *cb & MICROBIT_HEAP_BLOCK_FREE)
+                microbit_panic(MICROBIT_HEAP_ERROR);
+
 	        *cb |= MICROBIT_HEAP_BLOCK_FREE;
             return;
         }
     }
 
     // If we reach here, then the memory is not part of any registered heap.
-    // Forward it to the native heap allocator, and let nature take its course...
-    native_free(mem);
+    microbit_panic(MICROBIT_HEAP_ERROR);
 }
+
+void* calloc (size_t num, size_t size)
+{
+    void *mem = malloc(num*size);
+
+    if (mem)
+        memclr(mem, num*size);
+
+    return mem;
+}
+
+void* realloc (void* ptr, size_t size)
+{
+    void *mem = malloc(size);
+
+    // handle the simplest case - no previous memory allocted.
+    if (ptr != NULL && mem != NULL)
+    {
+
+        // Otherwise we need to copy and free up the old data.
+        uint32_t *cb = ((uint32_t *)ptr) - 1;
+        uint32_t blockSize = *cb & ~MICROBIT_HEAP_BLOCK_FREE;
+
+        memcpy(mem, ptr, min(blockSize * sizeof(uint32_t), size));
+        free(ptr);
+    }
+
+    return mem;
+}
+
+// make sure the libc allocator is not pulled in
+void *_malloc_r(struct _reent *, size_t len)
+{
+    return malloc(len);
+}
+
+void _free_r(struct _reent *, void *addr)
+{
+    free(addr);
+}
+
+void *
+_realloc_r (struct _reent *ptr, void *old, size_t newlen)
+{
+    (void) ptr;
+    return realloc (old, newlen);
+}
+
+#else
+
+int microbit_create_heap(uint32_t start, uint32_t end)
+{
+    (void) start;
+    (void) end;
+
+    return MICROBIT_OK;
+}
+
+#endif
