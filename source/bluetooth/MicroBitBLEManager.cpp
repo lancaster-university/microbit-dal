@@ -383,6 +383,9 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 // Bring up core BLE services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_PARTIAL_FLASHING)
     new MicroBitPartialFlashingService(*ble, messageBus);
 #endif
 

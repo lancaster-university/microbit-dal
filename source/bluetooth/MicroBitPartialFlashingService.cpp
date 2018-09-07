@@ -113,7 +113,6 @@ void MicroBitPartialFlashingService::onDataWritten(const GattWriteCallbackParams
 
           break;
         }
-#if CONFIG_ENABLED(MICROBIT_BLE_PARTIAL_FLASHING)
         case FLASH_DATA:
         {
           // Process FLASH data packet
@@ -130,7 +129,6 @@ void MicroBitPartialFlashingService::onDataWritten(const GattWriteCallbackParams
            MicroBitEvent evt(MICROBIT_ID_PARTIAL_FLASHING, END_OF_TRANSMISSION);
            break;
         }
-#endif
         case MICROBIT_STATUS:
         {
           /*
@@ -159,14 +157,6 @@ void MicroBitPartialFlashingService::onDataWritten(const GattWriteCallbackParams
            }
            break;
         }
-        default:
-        {
-         /* Return command unknown
-          */
-          uint8_t unknownCommandBuffer[] = {data[0], 0xAB, 0xCD, 0xEF};
-          ble.gattServer().notify(partialFlashCharacteristicHandle, (const uint8_t *)unknownCommandBuffer, sizeof(unknownCommandBuffer));
-          break;
-        }   
     }
   }
 }
