@@ -109,6 +109,15 @@ extern uint32_t __etext;
 #define FLASH_PROGRAM_END (uint32_t) (&__etext)
 #endif
 
+//
+// If set to '1', this option enables the microbit heap allocator. This supports multiple heaps and interrupt safe operation.
+// If set to '0', the standard GCC libc heap allocator is used, which restricts available memory in BLE scenarios, and MessageBus operations
+// in ISR contexts will no longer be safe.
+//
+#ifndef MICROBIT_HEAP_ENABLED
+#define MICROBIT_HEAP_ENABLED                   1
+#endif
+
 
 // Block size used by the allocator in bytes.
 // n.b. Currently only 32 bits (4 bytes) is supported.

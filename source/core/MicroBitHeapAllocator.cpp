@@ -54,6 +54,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitCompat.h"
 #include "ErrorNo.h"
 
+#if CONFIG_ENABLED(MICROBIT_HEAP_ENABLED)
+
 // A list of all active heap regions, and their dimensions in memory.
 HeapDefinition heap[MICROBIT_MAXIMUM_HEAPS] = { };
 uint8_t heap_count = 0;
@@ -395,3 +397,15 @@ _realloc_r (struct _reent *ptr, void *old, size_t newlen)
     (void) ptr;
     return realloc (old, newlen);
 }
+
+#else
+
+int microbit_create_heap(uint32_t start, uint32_t end)
+{
+    (void) start;
+    (void) end;
+
+    return MICROBIT_OK;
+}
+
+#endif
