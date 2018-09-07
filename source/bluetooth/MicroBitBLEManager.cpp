@@ -638,6 +638,9 @@ int MicroBitBLEManager::advertiseEddystoneUid(const char* uid_namespace, const c
  */
 void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &authorisationButton)
 {
+    // Do not page this fiber!
+    currentFiber->flags |= MICROBIT_FIBER_FLAG_DO_NOT_PAGE;
+        
     ManagedString namePrefix("BBC micro:bit [");
     ManagedString namePostfix("]");
     ManagedString BLEName = namePrefix + deviceName + namePostfix;
@@ -777,10 +780,9 @@ void MicroBitBLEManager::showManagementModeAnimation(MicroBitDisplay &display)
     // Animation for display object
     // https://makecode.microbit.org/93264-81126-90471-58367
 
-    const int mgmt_animation_w = 20;
-    const int mgmt_animation_h = 5;
-    const uint8_t mgmt_animation[] =
+    const uint8_t mgmt_animation[] __attribute__ ((aligned (4))) =
     {
+         0xff, 0xff, 20, 0, 5, 0,
          255,255,255,255,255,   255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,
          255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,
          255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,     0,  0,  0,  0,  0,
@@ -788,7 +790,7 @@ void MicroBitBLEManager::showManagementModeAnimation(MicroBitDisplay &display)
          255,255,255,255,255,   255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255
     };
 
-    MicroBitImage mgmt(mgmt_animation_w,mgmt_animation_h,mgmt_animation);
+    MicroBitImage mgmt((ImageData*)mgmt_animation);
     display.animate(mgmt,100,5);
 
     const uint8_t bt_icon_raw[] =
