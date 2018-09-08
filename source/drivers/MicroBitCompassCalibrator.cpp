@@ -321,6 +321,10 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
     uint8_t samples_this_period = 0;
     int16_t remaining_scroll_time = MSG_TIME; // 32s maximum in uint16_t
 
+    // Set the display to full brightness (in case a user program has it very dim / off). Store the current brightness, so we can restore it later.
+    int displayBrightness = display.getBrightness();
+    display.setBrightness(255);
+
     // Firstly, we need to take over the display. Ensure all active animations are paused.
     display.stopAnimation();
 
@@ -414,4 +418,7 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
     display.printAsync(smiley, 0, 0, 0, 1500);
     wait_ms(1000);
     display.clear();
+
+    // Retore the display brightness to the level it was at before this function was called.
+    display.setBrightness(displayBrightness);
 }
