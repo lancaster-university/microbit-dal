@@ -471,7 +471,7 @@ int MicroBitCompass::tiltCompensatedBearing()
     float bearing = (360*atan2(x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi, z*sinPhi - y*cosPhi)) / (2*PI);
 
     // Handle the 90 degree offset caused by the NORTH_EAST_DOWN based calculation.
-    bearing = bearing - 90;
+    bearing = 90 - bearing;
 
     // Ensure the calculated bearing is in the 0..359 degree range.
     if (bearing < 0)
