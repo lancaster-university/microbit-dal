@@ -68,7 +68,7 @@ int LSM303Magnetometer::configure()
         return MICROBIT_I2C_ERROR;
 
     // Enable Data Ready interrupt, with buffering of data to avoid race conditions.
-    result = i2c.writeRegister(address, LSM303_CFG_REG_C_M, 0x41);
+    result = i2c.writeRegister(address, LSM303_CFG_REG_C_M, 0x01);
     if (result != MICROBIT_OK)
         return MICROBIT_I2C_ERROR;
 
@@ -115,7 +115,7 @@ int LSM303Magnetometer::requestUpdate()
     }
 
     // Poll interrupt line from device (ACTIVE LO)
-    if(!int1.getDigitalValue())
+    if(int1.getDigitalValue())
     {
         uint8_t data[6];
         int result;

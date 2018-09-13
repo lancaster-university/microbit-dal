@@ -196,7 +196,7 @@ class MicroBitCompass : public MicroBitComponent
          *
          * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the compass could not be configured.
          */
-        int configure();
+        virtual int configure();
 
         /**
          *
