@@ -150,7 +150,7 @@ class MicroBitBLEManager : MicroBitComponent
       * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
       * @endcode
       */
-    void init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding);
+    void init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding, ManagedString microbitModel = ManagedString("BBC micro:bit"));
 
     /**
      * Change the output power level of the transmitter to the given value.
@@ -323,6 +323,8 @@ class MicroBitBLEManager : MicroBitComponent
      * This variable will be set to MICROBIT_MODE_PAIRING if pairingMode() is executed.
      */
     uint8_t currentMode = MICROBIT_MODE_APPLICATION;
+
+    char* getMicrobitModel();
 
 };
 

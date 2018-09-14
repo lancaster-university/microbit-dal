@@ -232,6 +232,13 @@ class FXOS8700 : public MicroBitAccelerometer, public MicroBitCompass
     virtual void idleTick();
 
     /**
+    * Returns which accelerometer is detected
+    *
+    * @return MICROBIT_ACCELEROMETER_XXX
+    */
+    virtual uint8_t whatAmI();
+
+    /**
      * Destructor.
      */
     ~FXOS8700();
