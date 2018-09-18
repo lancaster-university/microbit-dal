@@ -39,7 +39,7 @@ DEALINGS IN THE SOFTWARE.
   *
   * Example: { 0x08, 0x08, 0x08, 0x0, 0x08 }
   *
-  * The above will produce an exclaimation mark on the second column in form the left.
+  * The above will produce an exclamation mark on the second column from the left.
   *
   * We could compress further, but the complexity of decode would likely outweigh the gains.
   */
@@ -91,7 +91,7 @@ void MicroBitFont::setSystemFont(MicroBitFont font)
 }
 
 /**
-  * Retreives the font object used for rendering characters on the display.
+  * Retrieves the font object used for rendering characters on the display.
   */
 MicroBitFont MicroBitFont::getSystemFont()
 {
