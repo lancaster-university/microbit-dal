@@ -312,6 +312,25 @@ extern uint32_t __etext;
 #endif
 
 //
+// Radio options
+//
+
+// Sets the default radio channel
+#ifndef MICROBIT_RADIO_DEFAULT_FREQUENCY
+#define MICROBIT_RADIO_DEFAULT_FREQUENCY 7
+#endif
+
+// Sets the minimum frequency band permissable for the device
+#ifndef MICROBIT_RADIO_LOWER_FREQ_BAND
+#define MICROBIT_RADIO_LOWER_FREQ_BAND 0
+#endif
+
+// Sets the maximum frequency band permissable for the device
+#ifndef MICROBIT_RADIO_UPPER_FREQ_BAND
+#define MICROBIT_RADIO_UPPER_FREQ_BAND 83
+#endif
+
+//
 // Accelerometer options
 //
 

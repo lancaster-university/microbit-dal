@@ -146,7 +146,7 @@ int MicroBitRadio::setFrequencyBand(int band)
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
-    if (band < 0 || band > 83)
+    if (band < MICROBIT_RADIO_LOWER_FREQ_BAND || band > MICROBIT_RADIO_UPPER_FREQ_BAND)
         return MICROBIT_INVALID_PARAMETER;
 
     // We need to disable the radio before setting the frequency
