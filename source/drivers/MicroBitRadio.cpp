@@ -146,7 +146,7 @@ int MicroBitRadio::setFrequencyBand(int band)
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
-    if (band < 0 || band > 100)
+    if (band < 0 || band > 83)
         return MICROBIT_INVALID_PARAMETER;
 
     // We need to disable the radio before setting the frequency
@@ -293,7 +293,7 @@ int MicroBitRadio::enable()
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
 
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
-    NRF_RADIO->TXPOWER = MICROBIT_RADIO_DEFAULT_TX_POWER;
+    setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
     NRF_RADIO->FREQUENCY = MICROBIT_RADIO_DEFAULT_FREQUENCY;
 
     // Configure for 1Mbps throughput.
