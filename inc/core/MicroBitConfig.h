@@ -184,6 +184,21 @@ extern uint32_t __etext;
 #endif
 
 //
+// Define MESSAGE_BUS concurrency behaviour. 
+// Set to MESSAGE_BUS_CONCURRENT_LISTENERS to fire event handler 
+// concurrently when a given event is raised, and process events sequentially as they arrive (default micro:bit semantics). 
+// Set to MESSAGE_BUS_CONCURRENT_EVENTS to to fire event handlers sequentially for any given event, while still allowing 
+// concurrent processing of events.
+//
+//
+// Permissable values are:
+//   0: MESSAGE_BUS_CONCURRENT_LISTENERS
+//   1: MESSAGE_BUS_CONCURRENT_EVENTS
+//
+#ifndef MESSAGE_BUS_CONCURRENCY_MODE
+#define MESSAGE_BUS_CONCURRENCY_MODE            MESSAGE_BUS_CONCURRENT_LISTENERS
+#endif
+//
 // Core micro:bit services
 //
 
