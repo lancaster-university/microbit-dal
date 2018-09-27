@@ -942,3 +942,84 @@ void idle_task()
         schedule();
     }
 }
+
+/**
+ * Create a new lock that can be used for mutual exclusion and condition synchronisation.
+ */
+MicroBitLock::MicroBitLock()
+{
+    queue = NULL;
+    locked = false;
+}
+
+/**
+ * Block the calling fiber until the lock is available
+ **/
+void MicroBitLock::wait()
+{
+    Fiber *f = currentFiber;
+
+    // If the scheduler is not running, then simply exit, as we're running monothreaded.
+    if (!fiber_scheduler_running())
+        return;
+
+    if (locked)
+    {
+        // wait() is a blocking call, so if we're in a fork on block context,
+        // it's time to spawn a new fiber...
+        if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
+        {
+            // Allocate a new fiber. This will come from the fiber pool if availiable,
+            // else a new one will be allocated on the heap.
+            forkedFiber = getFiberContext();
+
+            // If we're out of memory, there's nothing we can do.
+            // keep running in the context of the current thread as a best effort.
+            if (forkedFiber != NULL)
+                f = forkedFiber;
+        }
+
+        // Remove fiber from the run queue
+        dequeue_fiber(f);
+
+        // Add fiber to the sleep queue. We maintain strict ordering here to reduce lookup times.
+        queue_fiber(f, &queue);
+
+        // Finally, enter the scheduler.
+        schedule();
+    }
+
+    locked = true;
+}
+
+/**
+ * Release the lock, and signal to one waiting fiber to continue
+ */
+void MicroBitLock::notify()
+{
+    Fiber *f = queue;
+
+    if (f)
+    {
+        dequeue_fiber(f);
+        queue_fiber(f, &runQueue);
+    }
+    locked = false;
+}
+
+/**
+ * Release the lock, and signal to all waiting fibers to continue
+ */
+void MicroBitLock::notifyAll()
+{
+    Fiber *f = queue;
+
+    while (f)
+    {
+        dequeue_fiber(f);
+        queue_fiber(f, &runQueue);
+        f = queue;
+    }
+
+    locked = false;
+}
