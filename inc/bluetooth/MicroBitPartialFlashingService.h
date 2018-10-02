@@ -81,7 +81,6 @@ class MicroBitPartialFlashingService
     private:
     // M:B Bluetooth stack and MessageBus
     BLEDevice           &ble;
-    EventModel          &messageBus;
 
     /**
       * Writing to flash inside MicroBitEvent rather than in the ISR
@@ -101,7 +100,8 @@ class MicroBitPartialFlashingService
     uint8_t blockPacketCount = 0;
 
     // Keep track of blocks of data
-    uint32_t block[16];
+    // uint32_t block[16]; // Replaced with pointer, memory allocated when PFS is used
+    uint32_t *block = NULL;
     uint8_t  blockNum = 0;
     uint32_t offset   = 0;
 
