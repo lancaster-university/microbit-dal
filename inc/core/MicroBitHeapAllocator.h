@@ -83,5 +83,6 @@ struct HeapDefinition
   * simply use the standard heap.
   */
 int microbit_create_heap(uint32_t start, uint32_t end);
+void microbit_heap_print();
 
 #endif
