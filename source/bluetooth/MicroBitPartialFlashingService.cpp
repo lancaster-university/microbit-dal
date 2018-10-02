@@ -200,6 +200,11 @@ void MicroBitPartialFlashingService::flashData(uint8_t *data)
 
         packetCount++;
 
+        // Reallocate block
+        if(block == NULL) {
+            (uint32_t*) malloc(16 * sizeof(uint32_t));
+        }
+
         // Add to block
         memcpy(block + (4*blockNum), data + 4, 16);
 
