@@ -842,20 +842,6 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
     }
 }
 
-/**
- * Restarts into BLE Mode
- *
- */
- void MicroBitBLEManager::restartInBLEMode(){
-   KeyValuePair* RebootMode = storage->get("RebootMode");
-   if(RebootMode == NULL){
-     uint8_t RebootModeValue = MICROBIT_MODE_PAIRING;
-     storage->put("RebootMode", &RebootModeValue, sizeof(RebootMode));
-     delete RebootMode;
-   }
-   microbit_reset();
- }
-
  /**
   * Get BLE mode. Returns the current mode: application, pairing mode
   */

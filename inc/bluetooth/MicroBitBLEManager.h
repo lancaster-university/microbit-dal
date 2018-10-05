@@ -282,12 +282,6 @@ class MicroBitBLEManager : MicroBitComponent
     int advertiseEddystoneUid(const char* uid_namespace, const char* uid_instance, int8_t calibratedPower = MICROBIT_BLE_EDDYSTONE_DEFAULT_POWER, bool connectable = true, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
-  /**
-   * Restarts in BLE Mode
-   *
-   */
-   void restartInBLEMode();
-
    /**
     * Get current BLE mode; application, pairing
     * #define MICROBIT_MODE_PAIRING     0x00
