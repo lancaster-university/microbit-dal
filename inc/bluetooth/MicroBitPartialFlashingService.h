@@ -81,7 +81,6 @@ class MicroBitPartialFlashingService
     private:
     // M:B Bluetooth stack and MessageBus
     BLEDevice           &ble;
-    EventModel          &messageBus;
 
     /**
       * Writing to flash inside MicroBitEvent rather than in the ISR
