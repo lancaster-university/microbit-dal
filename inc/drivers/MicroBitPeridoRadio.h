@@ -22,25 +22,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-#include "MicroBitConfig.h"
 
-#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_MODIFIED
+#ifndef MICROBIT_PERIDO_RADIO_H
+#define MICROBIT_PERIDO_RADIO_H
 
-#include "Radio.h"
-
-#else
-
-#ifndef MICROBIT_RADIO_H
-#define MICROBIT_RADIO_H
-
-class MicroBitRadio;
-struct FrameBuffer;
+class MicroBitPeridoRadio;
+struct PeridoFrameBuffer;
 
 #include "mbed.h"
 #include "MicroBitConfig.h"
 #include "PacketBuffer.h"
-#include "MicroBitRadioDatagram.h"
-#include "MicroBitRadioEvent.h"
+#include "MicroBitRadio.h"
+#include "LowLevelTimer.h"
+#include "HigherLevelTimer.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -65,67 +59,62 @@ struct FrameBuffer;
  * For serious applications, BLE should be considered a substantially more secure alternative.
  */
 
-// Status Flags
-#define MICROBIT_RADIO_STATUS_INITIALISED       0x0001
-
 // Default configuration values
-#define MICROBIT_RADIO_BASE_ADDRESS             0x75626974
-#define MICROBIT_RADIO_DEFAULT_GROUP            0
-#define MICROBIT_RADIO_DEFAULT_TX_POWER         6
-#define MICROBIT_RADIO_DEFAULT_FREQUENCY        7
-#define MICROBIT_RADIO_MAX_PACKET_SIZE          32
-#define MICROBIT_RADIO_HEADER_SIZE              4
-#define MICROBIT_RADIO_MAXIMUM_RX_BUFFERS       4
+#define MICROBIT_PERIDO_HEADER_SIZE             10
+#define MICROBIT_PERIDO_DEFAULT_SLEEP           600
 
-// Known Protocol Numbers
-#define MICROBIT_RADIO_PROTOCOL_DATAGRAM        1       // A simple, single frame datagram. a little like UDP but with smaller packets. :-)
-#define MICROBIT_RADIO_PROTOCOL_EVENTBUS        2       // Transparent propogation of events from one micro:bit to another.
+#define MICROBIT_PERIDO_MAX_PACKET_SIZE         200
 
-// Events
-#define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received.
+#define MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS      10
 
-struct TestPacket
+#define MICROBIT_PERIDO_DEFAULT_APP_ID          0
+#define MICROBIT_PERIDO_DEFAULT_NAMESPACE       0
+
+#define MICROBIT_PERIDO_FRAME_PROPOSAL_FLAG     0x01
+
+struct PeridoFrameBuffer
 {
-    uint32_t seq;
-};
+    uint8_t             length;                             // The length of the remaining bytes in the packet.
+    uint8_t             app_id;
+    uint8_t             namespace_id;
+    uint16_t            id;
+    uint8_t             ttl:4, initial_ttl:4;
+    uint32_t            time_since_wake:24, period:4, flags:4;
+    uint8_t             payload[MICROBIT_PERIDO_MAX_PACKET_SIZE];    // User / higher layer protocol data
+    PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
+} __attribute__((packed));
 
 
-struct FrameBuffer
+class MicroBitPeridoRadio : public MicroBitComponent
 {
-    uint8_t         length;                             // The length of the remaining bytes in the packet. includes protocol/version/group fields, excluding the length field itself.
-    uint8_t         version;                            // Protocol version code.
-    uint8_t         group;                              // ID of the group to which this packet belongs.
-    uint8_t         protocol;                           // Inner protocol number c.f. those issued by IANA for IP protocols
-    uint32_t        id;
-    uint8_t         payload[MICROBIT_RADIO_MAX_PACKET_SIZE];    // User / higher layer protocol data
-    FrameBuffer     *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
-    int             rssi;                               // Received signal strength of this frame.
-};
-
-
-class MicroBitRadio : MicroBitComponent
-{
-    uint8_t                 group;      // The radio group to which this micro:bit belongs.
-    uint8_t                 queueDepth; // The number of packets in the receiver queue.
-    int                     rssi;
+    uint8_t                appId;
+    uint8_t                namespaceId;
 
     public:
 
-    FrameBuffer             *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
-    FrameBuffer             *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
-    MicroBitRadioDatagram   datagram;   // A simple datagram service.
-    MicroBitRadioEvent      event;      // A simple event handling service.
-    static MicroBitRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.
+    uint8_t                periodIndex;
+    uint8_t                 rxQueueDepth; // The number of packets in the receiver queue.
+    uint8_t                 txQueueDepth; // The number of packets in the tx queue.
+
+    LowLevelTimer&          timer;
+
+    PeridoFrameBuffer       *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
+    PeridoFrameBuffer       *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
+
+    PeridoFrameBuffer       *txQueue;   // A linear list of incoming packets, queued awaiting processing.
+    PeridoFrameBuffer       *txBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
+
+    static MicroBitPeridoRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.
 
     /**
       * Constructor.
       *
-      * Initialise the MicroBitRadio.
+      * Initialise the MicroBitPeridoRadio.
       *
       * @note This class is demand activated, as a result most resources are only
       *       committed if send/recv or event registrations calls are made.
       */
-    MicroBitRadio(uint16_t id = MICROBIT_ID_RADIO);
+    MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId = MICROBIT_PERIDO_DEFAULT_APP_ID, uint8_t namespaceId = MICROBIT_PERIDO_DEFAULT_NAMESPACE, uint16_t id = MICROBIT_ID_RADIO);
 
     /**
       * Change the output power level of the transmitter to the given value.
@@ -152,7 +141,11 @@ class MicroBitRadio : MicroBitComponent
       *
       * @return a pointer to the current receive buffer.
       */
-    FrameBuffer * getRxBuf();
+    PeridoFrameBuffer * getRxBuf();
+
+    int popTxQueue();
+
+    PeridoFrameBuffer* getTxBuf();
 
     /**
       * Attempt to queue a buffer received by the radio hardware, if sufficient space is available.
@@ -160,27 +153,9 @@ class MicroBitRadio : MicroBitComponent
       * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if a replacement receiver buffer
       *         could not be allocated (either by policy or memory exhaustion).
       */
-    int queueRxBuf();
+    int copyRxBuf();
 
-    /**
-      * Sets the RSSI for the most recent packet.
-      * The value is measured in -dbm. The higher the value, the stronger the signal.
-      * Typical values are in the range -42 to -128.
-      *
-      * @param rssi the new rssi value.
-      *
-      * @note should only be called from RADIO_IRQHandler...
-      */
-    int setRSSI(int rssi);
-
-    /**
-      * Retrieves the current RSSI for the most recent packet.
-      * The return value is measured in -dbm. The higher the value, the stronger the signal.
-      * Typical values are in the range -42 to -128.
-      *
-      * @return the most recent RSSI value or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
-      */
-    int getRSSI();
+    int queueTxBuf(PeridoFrameBuffer* tx);
 
     /**
       * Initialises the radio for use as a multipoint sender/receiver
@@ -206,10 +181,20 @@ class MicroBitRadio : MicroBitComponent
     int setGroup(uint8_t group);
 
     /**
-      * A background, low priority callback that is triggered whenever the processor is idle.
-      * Here, we empty our queue of received packets, and pass them onto higher level protocol handlers.
+      * Set the current period in milliseconds broadcasted in the perido frame
+      *
+      * @param period_ms the new period, in milliseconds.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the period is too short.
       */
-    virtual void idleTick();
+    int setPeriod(uint32_t period_ms);
+
+    /**
+      * Retrieve the current period in milliseconds broadcasted in the perido frame
+      *
+      * @return the current period in milliseconds
+      */
+    uint32_t getPeriod();
 
     /**
       * Determines the number of packets ready to be processed.
@@ -228,7 +213,7 @@ class MicroBitRadio : MicroBitComponent
       * @note Once recv() has been called, it is the callers responsibility to
       *       delete the buffer when appropriate.
       */
-    FrameBuffer* recv();
+    PeridoFrameBuffer* recv();
 
     /**
       * Transmits the given buffer onto the broadcast radio.
@@ -238,8 +223,35 @@ class MicroBitRadio : MicroBitComponent
       *
       * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
       */
-    int send(FrameBuffer *buffer);
+    int send(PeridoFrameBuffer* buffer);
+
+    int send(uint8_t *buffer, int len);
+
+    /**
+      * Transmits the given string onto the broadcast radio.
+      *
+      * This is a synchronous call that will wait until the transmission of the packet
+      * has completed before returning.
+      *
+      * @param data The packet contents to transmit.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
+      *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
+      */
+    int send(PacketBuffer data);
+
+    /**
+      * Transmits the given string onto the broadcast radio.
+      *
+      * This is a synchronous call that will wait until the transmission of the packet
+      * has completed before returning.
+      *
+      * @param data The packet contents to transmit.
+      *
+      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
+      *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
+      */
+    int send(ManagedString data);
 };
 
-#endif
 #endif

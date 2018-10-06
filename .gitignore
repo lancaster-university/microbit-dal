@@ -4,3 +4,4 @@ yotta_modules
 yotta_targets
 *.swp
 Makefile
+source/asm/CortexContextSwitch.s
