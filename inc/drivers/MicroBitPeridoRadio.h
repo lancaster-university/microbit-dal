@@ -35,6 +35,7 @@ struct PeridoFrameBuffer;
 #include "MicroBitRadio.h"
 #include "LowLevelTimer.h"
 #include "HigherLevelTimer.h"
+#include "ManagedString.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -58,6 +59,13 @@ struct PeridoFrameBuffer;
  * teaching aid to demonstrate how simple communications operates, and to provide a sandpit through which learning can take place.
  * For serious applications, BLE should be considered a substantially more secure alternative.
  */
+
+
+#define MICROBIT_RADIO_MAXIMUM_RX_BUFFERS       4
+#define MICROBIT_RADIO_STATUS_INITIALISED       0x0001
+#define MICROBIT_RADIO_DEFAULT_TX_POWER         6
+#define MICROBIT_RADIO_DEFAULT_FREQUENCY        7
+#define MICROBIT_RADIO_BASE_ADDRESS             0x75626974
 
 // Default configuration values
 #define MICROBIT_PERIDO_HEADER_SIZE             10

@@ -79,10 +79,10 @@ DEALINGS IN THE SOFTWARE.
 
 // Defines where in memory persistent data is stored.
 #ifndef KEY_VALUE_STORE_PAGE
-#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))	
+#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))
 #endif
 
-#ifndef BLE_BOND_DATA_PAGE 
+#ifndef BLE_BOND_DATA_PAGE
 #define BLE_BOND_DATA_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
 #endif
 
@@ -170,9 +170,10 @@ extern uint32_t __etext;
 //
 
 #define MICROBIT_RADIO_STANDARD                 1
-#define MICROBIT_RADIO_MODIFIED                 2
+#define MICROBIT_RADIO_REST                     2
+#define MICROBIT_RADIO_PERIDO                   3
 
-#ifndef MICROBIT_RADIO_VERSION                 
+#ifndef MICROBIT_RADIO_VERSION
 #define MICROBIT_RADIO_VERSION                  MICROBIT_RADIO_STANDARD
 #endif
 
@@ -379,7 +380,7 @@ extern uint32_t __etext;
 // Defines the logical block size for the file system.
 // Must be a factor of the physical PAGE_SIZE (ideally a power of two less).
 //
-#ifndef MBFS_BLOCK_SIZE		
+#ifndef MBFS_BLOCK_SIZE
 #define MBFS_BLOCK_SIZE		256
 #endif
 
@@ -389,7 +390,7 @@ extern uint32_t __etext;
 // Should be <= MBFS_BLOCK_SIZE.
 //
 #ifndef MBFS_CACHE_SIZE
-#define MBFS_CACHE_SIZE	    0	
+#define MBFS_CACHE_SIZE	    0
 #endif
 
 //

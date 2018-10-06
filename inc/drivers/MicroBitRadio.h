@@ -24,12 +24,15 @@ DEALINGS IN THE SOFTWARE.
 */
 #include "MicroBitConfig.h"
 
-#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_MODIFIED
+#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_REST
 
 #include "Radio.h"
 
-#else
+#elif MICROBIT_RADIO_VERSION == MICROBIT_RADIO_PERIDO
 
+#include "MicroBitPeridoRadio.h"
+
+#else
 #ifndef MICROBIT_RADIO_H
 #define MICROBIT_RADIO_H
 
@@ -83,11 +86,6 @@ struct FrameBuffer;
 
 // Events
 #define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received.
-
-struct TestPacket
-{
-    uint32_t seq;
-};
 
 
 struct FrameBuffer

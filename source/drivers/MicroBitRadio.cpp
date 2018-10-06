@@ -110,8 +110,8 @@ MicroBitRadio::MicroBitRadio(uint16_t id) : datagram(*this), event (*this)
 {
     this->id = id;
     this->status = 0;
-	this->group = MICROBIT_RADIO_DEFAULT_GROUP;
-	this->queueDepth = 0;
+    this->group = MICROBIT_RADIO_DEFAULT_GROUP;
+    this->queueDepth = 0;
     this->rssi = 0;
     this->rxQueue = NULL;
     this->rxBuf = NULL;
@@ -460,7 +460,7 @@ FrameBuffer* MicroBitRadio::recv()
     if (p)
     {
          // Protect shared resource from ISR activity
-        NVIC_DisableIRQ(RADIO_IRQn); 
+        NVIC_DisableIRQ(RADIO_IRQn);
 
         rxQueue = rxQueue->next;
         queueDepth--;

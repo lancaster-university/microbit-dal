@@ -24,6 +24,9 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "MicroBitConfig.h"
+
+#if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_PERIDO
+
 #include "MicroBitPeridoRadio.h"
 #include "MicroBitComponent.h"
 #include "EventModel.h"
@@ -1233,3 +1236,5 @@ int MicroBitPeridoRadio::send(ManagedString data)
 {
     return send((uint8_t *)data.toCharArray(), data.length());
 }
+
+#endif
