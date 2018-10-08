@@ -64,6 +64,8 @@ extern void set_gpio(int);
 extern void set_gpio2(int);
 
 extern void packet_debug(PeridoFrameBuffer*);
+
+extern void process_packet(PeridoFrameBuffer*);
 extern void valid_packet_received(PeridoFrameBuffer*);
 extern void increment_counter(int);
 
@@ -361,6 +363,8 @@ void radio_state_machine()
         #ifdef DEBUG_MODE
                             log_string("POP\r\n");
         #endif
+
+                            process_packet(MicroBitPeridoRadio::instance->rxBuf);
                             // only pop our tx buffer if something responds
                             MicroBitPeridoRadio::instance->popTxQueue();
                             last_seen[last_seen_index] = p->id;
@@ -368,6 +372,8 @@ void radio_state_machine()
 
                             // we received a response, reset our counter.
                             no_response_count = 0;
+
+                            radio_status &= ~(RADIO_STATUS_STORE);
                         }
 
                         // we could increment no_response_count here, but it is done when we go to sleep.
@@ -519,29 +525,30 @@ void radio_state_machine()
             MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction));
         }
 
-        // check if we've seen this ID before...
-        for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
-            if(last_seen[i] == p->id)
-            {
-                // log_string("seen\r\n");
-                seen = true;
-                increment_counter(i);
-            }
+        // // check if we've seen this ID before...
+        // for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
+        //     if(last_seen[i] == p->id)
+        //     {
+        //         // log_string("seen\r\n");
+        //         seen = true;
+        //         increment_counter(i);
+        //     }
 
-        // if seen, queue a new buffer, and mark it as seen
-        if(!seen)
-        {
+        // // if seen, queue a new buffer, and mark it as seen
+        // if(!seen)
+        // {
 #ifdef DEBUG_MODE
             log_string("fn\r\n");
 #endif
             // MicroBitPeridoRadio::instance->copyRxBuf();
             // NRF_RADIO->PACKETPTR = (uint32_t) MicroBitPeridoRadio::instance->rxBuf;
 
+            process_packet(MicroBitPeridoRadio::instance->rxBuf);
             // valid_packet_received(MicroBitPeridoRadio::instance->recv());
 
-            last_seen[last_seen_index] = p->id;
-            last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
-        }
+        //     last_seen[last_seen_index] = p->id;
+        //     last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
+        // }
     }
 
     if(radio_status & RADIO_STATUS_DISABLE)
@@ -656,7 +663,6 @@ void go_to_sleep()
 // used to begin a transmission window
 void wake_up()
 {
-    // log_string("w");
 #ifdef DEBUG_MODE
     log_string("woke\r\n");
 #endif
@@ -717,7 +723,7 @@ void wake_up()
         tx_backoff +=  microbit_random(3000);
 
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + tx_backoff);
-        MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + 2500);
+        MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + 3500);
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
     }
 
@@ -1042,6 +1048,8 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->EVENTS_END = 0;
 
     log_num(NRF_RADIO->STATE);
+    log_string(" ");
+    log_num(periods[periodIndex] * 1000);
 
     radio_status = RADIO_STATUS_DISABLED | RADIO_STATUS_DISCOVERING | RADIO_STATUS_SLEEPING;
 
