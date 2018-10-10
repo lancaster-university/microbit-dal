@@ -60,12 +60,16 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
-extern void set_gpio(int);
+extern void set_gpio0(int);
+extern void set_gpio1(int);
 extern void set_gpio2(int);
+
 
 extern void packet_debug(PeridoFrameBuffer*);
 
 extern void process_packet(PeridoFrameBuffer*);
+extern void packet_missed(PeridoFrameBuffer *p);
+
 extern void valid_packet_received(PeridoFrameBuffer*);
 extern void increment_counter(int);
 
@@ -133,14 +137,14 @@ extern void increment_counter(int);
 #define TX_BACKOFF_TIME             (3000 - TX_BACKOFF_MIN)
 #endif
 #define TX_TIME                     300         // includes tx time for a larger packet
-#define TX_ENABLE_TIME              300         // includes processing time overhead on reception for other nodes...
+#define TX_ENABLE_TIME              350         // includes processing time overhead on reception for other nodes...
 #define RX_ENABLE_TIME              200
 #define RX_TX_DISABLE_TIME          30          // 10 us is pretty pointless for a timer callback.
 #define TX_ADDRESS_TIME             64
 
 #define TIME_TO_TRANSMIT_ADDR       RX_TX_DISABLE_TIME + TX_ENABLE_TIME + TX_ADDRESS_TIME
 
-#define FORWARD_POLL_TIME           1500
+#define FORWARD_POLL_TIME           2500
 #define ABSOLUTE_RESPONSE_TIME      10000
 #define PERIDO_DEFAULT_PERIOD_IDX   1
 
@@ -223,7 +227,7 @@ void radio_state_machine()
 #ifdef DEBUG_MODE
             log_string("ten\r\n");
 #endif
-
+            set_gpio0(1);
             radio_status &= ~(RADIO_STATUS_TX_EN | RADIO_STATUS_DISABLED);
             radio_status |= RADIO_STATUS_TX_RDY;
 
@@ -250,6 +254,7 @@ void radio_state_machine()
             return;
         }
     }
+
     if(radio_status & RADIO_STATUS_RX_RDY)
     {
         if (NRF_RADIO->EVENTS_READY)
@@ -284,7 +289,9 @@ void radio_state_machine()
             log_string("rxend\r\n");
 #endif
             packet_count++;
-            radio_status &= ~(RADIO_STATUS_RECEIVING | RADIO_STATUS_DISCOVERING);
+
+
+            radio_status &= ~(RADIO_STATUS_RECEIVING);
 
             NRF_RADIO->EVENTS_ADDRESS = 0;
             NRF_RADIO->EVENTS_END = 0;
@@ -296,6 +303,14 @@ void radio_state_machine()
 
             if(NRF_RADIO->CRCSTATUS == 1)
             {
+                // if we've been discovering and are now synced, it's highly likely that our new wake sleep window
+                // does not align with our previous tx callback check... cancel!
+                if (radio_status & RADIO_STATUS_DISCOVERING)
+                {
+                    MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL);
+                    radio_status &= ~(RADIO_STATUS_DISCOVERING);
+                }
+
                 PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
 
                 if (p)
@@ -357,14 +372,18 @@ void radio_state_machine()
                     {
                         PeridoFrameBuffer *tx = MicroBitPeridoRadio::instance->txQueue;
 
-                        // if we get our own packet back pop our tx queue and reset our no_response_count
-                        if(tx && tx->app_id == p->app_id && p->id == tx->id)
-                        {
-        #ifdef DEBUG_MODE
-                            log_string("POP\r\n");
-        #endif
+                        bool app_id_same = tx->app_id == p->app_id;
+                        bool namespace_same = p->namespace_id == tx->namespace_id;
+                        bool id_same = p->id == tx->id;
 
-                            process_packet(MicroBitPeridoRadio::instance->rxBuf);
+                        // if we get our own packet back pop our tx queue and reset our no_response_count
+                        if(tx && app_id_same && namespace_same && id_same)
+                        {
+#ifdef DEBUG_MODE
+                            log_string("POP\r\n");
+#endif
+
+                            process_packet(tx);
                             // only pop our tx buffer if something responds
                             MicroBitPeridoRadio::instance->popTxQueue();
                             last_seen[last_seen_index] = p->id;
@@ -376,6 +395,7 @@ void radio_state_machine()
                             radio_status &= ~(RADIO_STATUS_STORE);
                         }
 
+                            // packet_missed(MicroBitPeridoRadio::instance->txQueue);
                         // we could increment no_response_count here, but it is done when we go to sleep.
                         radio_status &= ~(RADIO_STATUS_EXPECT_RESPONSE);
                     }
@@ -406,7 +426,7 @@ void radio_state_machine()
 #endif
             PeridoFrameBuffer* p = MicroBitPeridoRadio::instance->txQueue;
 
-            radio_status &= ~(RADIO_STATUS_TX_RDY | RADIO_STATUS_FIRST_PACKET);
+            radio_status &= ~(RADIO_STATUS_TX_RDY);
             radio_status |= RADIO_STATUS_TX_END;
 
             if(p)
@@ -424,14 +444,14 @@ void radio_state_machine()
                 // }
 
                 p->ttl = p->initial_ttl;
-                p->time_since_wake =  read_and_restart_wake() - period_start_cc;
+                p->time_since_wake =  (radio_status & RADIO_STATUS_DISCOVERING) ? 0 : read_and_restart_wake() - period_start_cc;
 
                 NRF_RADIO->PACKETPTR = (uint32_t)p;
 #ifdef DEBUG_MODE
                 packet_debug(p);
 #endif
                 // grab next packet and set pointer
-                set_gpio(1);
+                set_gpio1(1);
                 NRF_RADIO->TASKS_START = 1;
                 NRF_RADIO->EVENTS_END = 0;
 
@@ -444,7 +464,7 @@ void radio_state_machine()
         {
             NRF_RADIO->EVENTS_END = 0;
 
-            set_gpio(0);
+            set_gpio1(0);
             radio_status &= ~(RADIO_STATUS_TX_END | RADIO_STATUS_TRANSMIT);
 #ifdef DEBUG_MODE
             log_string("txend\r\n");
@@ -470,7 +490,7 @@ void radio_state_machine()
 #ifdef DEBUG_MODE
             log_string("ftxend\r\n");
 #endif
-            set_gpio(0);
+            set_gpio1(0);
             radio_status &= ~(RADIO_STATUS_TX_END | RADIO_STATUS_FORWARD);
             radio_status |= RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN;
 
@@ -489,7 +509,7 @@ void radio_state_machine()
 
             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
 
-            set_gpio(1);
+            set_gpio1(1);
             NRF_RADIO->TASKS_START = 1;
             NRF_RADIO->EVENTS_END = 0;
 
@@ -556,6 +576,7 @@ void radio_state_machine()
 #ifdef DEBUG_MODE
         log_string("dis\r\n");
 #endif
+        set_gpio0(0);
         NRF_RADIO->EVENTS_END = 0;
         NRF_RADIO->EVENTS_READY = 0;
         NRF_RADIO->EVENTS_ADDRESS = 0;
@@ -626,6 +647,12 @@ void tx_callback()
         return;
     }
 
+    if (radio_status & RADIO_STATUS_DISCOVERING)
+    {
+        MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + DISCOVERY_TX_BACKOFF_TIME + microbit_random(DISCOVERY_TX_BACKOFF_TIME));
+        return;
+    }
+
     // MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_MIN + microbit_random(TX_BACKOFF_TIME));
 }
 
@@ -667,19 +694,21 @@ void wake_up()
     log_string("woke\r\n");
 #endif
 
+    period_start_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL);
+    current_cc = period_start_cc + ((periods[network_period_idx] * 1000));
+
     if (no_response_count > NO_RESPONSE_THRESHOLD)
     {
         radio_status |= RADIO_STATUS_DISCOVERING;
         no_response_count = 0;
     }
 
-    period_start_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL);
-    current_cc = period_start_cc + ((periods[network_period_idx] * 1000));
-
     // we're still exchanging packets - come back in another period amount.
     if (!(radio_status & RADIO_STATUS_SLEEPING))
     {
         speed++;
+
+        // if we're discovering let's check our tx packets (otherwise we get stuck in an infinite loop of waiting around :) )
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         return;
     }
@@ -720,10 +749,10 @@ void wake_up()
         // }
 
         uint32_t tx_backoff = PERIDO_WAKE_THRESHOLD_MID;
-        tx_backoff +=  microbit_random(3000);
+        tx_backoff +=  microbit_random(2500);
 
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + tx_backoff);
-        MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + 3500);
+        MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + 4000);
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
     }
 
