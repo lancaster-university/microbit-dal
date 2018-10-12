@@ -134,6 +134,8 @@ extern void increment_counter(int);
 #define DISCOVERY_TX_BACKOFF_TIME   10000000
 #define DISCOVERY_BACKOFF_TIME      (DISCOVERY_TX_BACKOFF_TIME * 2)
 
+#define DISCOVERY_TX_BACKOFF_TIME_RUNNING   40000
+
 #ifdef DEBUG_MODE
 #define TX_BACKOFF_MIN              10000
 #define TX_BACKOFF_TIME             (100000 - TX_BACKOFF_MIN)
@@ -187,6 +189,8 @@ volatile static uint32_t packet_received_count = 0;
 volatile static uint32_t sleep_received_count = 0;
 volatile uint32_t no_response_count = 0;
 
+volatile uint32_t discovery_tx_time = DISCOVERY_TX_BACKOFF_TIME;
+
 volatile int8_t speed = 0;
 volatile static uint8_t network_period_idx = PERIDO_DEFAULT_PERIOD_IDX;
 
@@ -211,8 +215,8 @@ uint32_t read_and_restart_wake()
 }
 
 #define TRACE_CRC_FAIL
-#define TRACE_WAKE
-#define TRACE_TX
+// #define TRACE_WAKE
+// #define TRACE_TX
 #define TRACE
 
 void radio_state_machine()
@@ -401,6 +405,8 @@ void radio_state_machine()
         {
             NRF_RADIO->EVENTS_READY = 0;
 
+            MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL); // cancel sleep callback.
+
 #ifdef DEBUG_MODE
             log_string("txst\r\n");
 #endif
@@ -484,6 +490,7 @@ void radio_state_machine()
 #ifdef DEBUG_MODE
             log_string("ftxst\r\n");
 #endif
+            MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL); // cancel sleep callback.
             radio_status &= ~RADIO_STATUS_TX_RDY;
             radio_status |= RADIO_STATUS_TX_END;
 
@@ -658,11 +665,11 @@ extern "C" void RADIO_IRQHandler(void)
 // used to initiate transmission if the window is clear.
 void tx_callback()
 {
-#ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-    set_gpio6(1);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//     set_gpio7(1);
+// #endif
+// #endif
 #ifdef DEBUG_MODE
     log_string("tx cb: ");
     log_num(NRF_RADIO->STATE);
@@ -671,11 +678,11 @@ void tx_callback()
     // nothing to do if sleeping
     if (radio_status & (RADIO_STATUS_SLEEPING | RADIO_STATUS_FORWARD | RADIO_STATUS_RECEIVING))
     {
-#ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-        set_gpio6(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//         set_gpio7(0);
+// #endif
+// #endif
         return;
     }
 
@@ -685,11 +692,11 @@ void tx_callback()
     {
         radio_status = (radio_status & (RADIO_STATUS_DISCOVERING | RADIO_STATUS_FIRST_PACKET | RADIO_STATUS_DIRECTING)) | RADIO_STATUS_TRANSMIT | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
         radio_state_machine();
-#ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-        set_gpio6(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//         set_gpio7(0);
+// #endif
+// #endif
         NVIC_EnableIRQ(RADIO_IRQn);
         return;
     }
@@ -698,19 +705,19 @@ void tx_callback()
     {
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + DISCOVERY_TX_BACKOFF_TIME + microbit_random(DISCOVERY_TX_BACKOFF_TIME));
         NVIC_EnableIRQ(RADIO_IRQn);
-#ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-        set_gpio6(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//         set_gpio7(0);
+// #endif
+// #endif
         return;
     }
     NVIC_EnableIRQ(RADIO_IRQn);
-#ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-    set_gpio6(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//     set_gpio7(0);
+// #endif
+// #endif
 
     // MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_MIN + microbit_random(TX_BACKOFF_TIME));
 }
@@ -723,11 +730,11 @@ void go_to_sleep()
 //     set_gpio7(1);
 // #endif
 // #endif
-#ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-    set_gpio6(1);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//     set_gpio7(1);
+// #endif
+// #endif
     if (radio_status & (RADIO_STATUS_RECEIVING | RADIO_STATUS_TRANSMIT | RADIO_STATUS_FORWARD))
     {
 // #ifdef TRACE
@@ -735,11 +742,11 @@ void go_to_sleep()
 //         set_gpio7(0);
 // #endif
 // #endif
-#ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-    set_gpio6(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//     set_gpio7(0);
+// #endif
+// #endif
         return;
     }
 
@@ -769,11 +776,11 @@ void go_to_sleep()
     }
     NVIC_EnableIRQ(RADIO_IRQn);
 
-#ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-    set_gpio6(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//     set_gpio7(0);
+// #endif
+// #endif
 
 // #ifdef TRACE
 // #ifndef TRACE_WAKE
@@ -815,8 +822,9 @@ void wake_up()
 
     if (radio_status & RADIO_STATUS_DISCOVERING)
     {
-        MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + DISCOVERY_TX_BACKOFF_TIME + microbit_random(DISCOVERY_TX_BACKOFF_TIME));
+        MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + discovery_tx_time + microbit_random(discovery_tx_time));
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
+        discovery_tx_time = DISCOVERY_TX_BACKOFF_TIME_RUNNING;
     }
     else
     {
@@ -853,6 +861,11 @@ void timer_callback(uint8_t state)
 #ifdef DEBUG_MODE
     log_string("tc\r\n");
 #endif
+#ifdef TRACE
+#ifndef TRACE_WAKE
+        set_gpio7(1);
+#endif
+#endif
     if(state & (1 << STATE_MACHINE_CHANNEL))
         radio_state_machine();
 
@@ -864,6 +877,11 @@ void timer_callback(uint8_t state)
 
     if(state & (1 << GO_TO_SLEEP_CHANNEL))
         go_to_sleep();
+#ifdef TRACE
+#ifndef TRACE_WAKE
+        set_gpio7(0);
+#endif
+#endif
 }
 
 /**
