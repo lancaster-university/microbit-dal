@@ -184,9 +184,6 @@ extern void increment_counter(int);
 uint16_t periods[PERIOD_COUNT] = {10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960};
 
 volatile uint32_t radio_status = 0;
-
-volatile static uint32_t packet_received_count = 0;
-volatile static uint32_t sleep_received_count = 0;
 volatile uint32_t no_response_count = 0;
 
 volatile uint32_t discovery_tx_time = DISCOVERY_TX_BACKOFF_TIME;
@@ -229,11 +226,11 @@ void radio_state_machine()
 
     if(radio_status & RADIO_STATUS_DISABLED)
     {
-#ifdef TRACE
-#ifndef TRACE_TX
-        set_gpio0(1);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_TX
+//         set_gpio0(1);
+// #endif
+// #endif
 #ifdef DEBUG_MODE
         log_string("disabled\r\n");
 #endif
@@ -256,11 +253,11 @@ void radio_state_machine()
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_TXEN = 1;
             MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_ENABLE_TIME);
-#ifdef TRACE
-#ifndef TRACE_TX
-            set_gpio0(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_TX
+//             set_gpio0(0);
+// #endif
+// #endif
             return;
         }
 
@@ -271,7 +268,7 @@ void radio_state_machine()
 #endif
             // WE WANT THE ADDRESS EVENT TO REDUCE COLLISIONS.
             NRF_RADIO->INTENCLR = 0x0000000A;
-            NRF_RADIO->INTENSET = 0x00000008;
+            NRF_RADIO->INTENSET = 0x0000000A;
             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
 
             radio_status &= ~(RADIO_STATUS_RX_EN | RADIO_STATUS_DISABLED);
@@ -281,18 +278,18 @@ void radio_state_machine()
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_RXEN = 1;
             MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_ENABLE_TIME);
-#ifdef TRACE
-#ifndef TRACE_TX
-            set_gpio0(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_TX
+//             set_gpio0(0);
+// #endif
+// #endif
             return;
         }
-#ifdef TRACE
-#ifndef TRACE_TX
-        set_gpio0(0);
-#endif
-#endif
+// #ifdef TRACE
+// #ifndef TRACE_TX
+//         set_gpio0(0);
+// #endif
+// #endif
         // we're disabled but haven't been configured for rx / tx DO NOT CONTINUE!
         return;
     }
@@ -327,6 +324,7 @@ void radio_state_machine()
             // clear any timer cb's so we aren't interrupted in our critical section
             MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL);
             MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL);
+            return;
         }
 
 #ifdef DEBUG_MODE
@@ -346,13 +344,12 @@ void radio_state_machine()
             NRF_RADIO->EVENTS_END = 0;
             NRF_RADIO->TASKS_START = 1;
 
-            packet_received_count++;
-            sleep_received_count = packet_received_count;
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
 
             if(NRF_RADIO->CRCSTATUS == 1)
             {
-                // if we've been discovering and are now synced, it's highly likely that our new wake sleep window
+                // if we've been discovering and are now synced, it's
+                // highly likely that our new wake sleep window
                 // does not align with our previous tx callback check... cancel!
                 MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL);
                 radio_status &= ~(RADIO_STATUS_DISCOVERING);
@@ -476,6 +473,14 @@ void radio_state_machine()
             log_string("ftxend\r\n");
 #endif
 
+            // check if it is somehow getting in here...
+
+            if (radio_status & RADIO_STATUS_DISABLE)
+            {
+                log_string("BAD!");
+                while(1);
+            }
+
 #ifdef TRACE_TX
             set_gpio0(0);
 #endif
@@ -487,6 +492,11 @@ void radio_state_machine()
 
         if(radio_status & RADIO_STATUS_TX_RDY)
         {
+            if (radio_status & RADIO_STATUS_DISABLE)
+            {
+                log_string("BAD!");
+                while(1);
+            }
 #ifdef DEBUG_MODE
             log_string("ftxst\r\n");
 #endif
@@ -751,20 +761,17 @@ void go_to_sleep()
     }
 
     NVIC_DisableIRQ(RADIO_IRQn);
-    // nothing has changed, and nothing is about to change.
-    if (packet_received_count == sleep_received_count)
-    {
-        if (radio_status & RADIO_STATUS_EXPECT_RESPONSE)
-        {
-            no_response_count++;
-            radio_status &= ~RADIO_STATUS_EXPECT_RESPONSE;
-        }
 
-        sleep_received_count = packet_received_count;
-        radio_status |= RADIO_STATUS_SLEEPING | RADIO_STATUS_DISABLE;
+    if (radio_status & RADIO_STATUS_EXPECT_RESPONSE)
+    {
+        no_response_count++;
+        radio_status &= ~RADIO_STATUS_EXPECT_RESPONSE;
+    }
+
+    radio_status |= RADIO_STATUS_SLEEPING | RADIO_STATUS_DISABLE;
 
 #ifdef TRACE_WAKE
-        set_gpio7(0);
+    set_gpio7(0);
 #endif
 
 // #ifdef TRACE
@@ -772,8 +779,7 @@ void go_to_sleep()
 //         set_gpio7(0);
 // #endif
 // #endif
-        radio_state_machine();
-    }
+    radio_state_machine();
     NVIC_EnableIRQ(RADIO_IRQn);
 
 // #ifdef TRACE
@@ -1057,6 +1063,8 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
 
     memcpy(newTx, tx, sizeof(PeridoFrameBuffer));
 
+    set_gpio0(1);
+
     __disable_irq();
 
     // We add to the tail of the queue to preserve causal ordering.
@@ -1078,6 +1086,7 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
     txQueueDepth++;
 
     __enable_irq();
+    set_gpio0(0);
 
     return MICROBIT_OK;
 }
@@ -1152,13 +1161,12 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->CRCPOLY = 0x11021;
 
     // Set the start random value of the data whitening algorithm. This can be any non zero number.
-    NRF_RADIO->DATAWHITEIV = 0x18;
+    // NRF_RADIO->DATAWHITEIV = 0x18;
 
     // Set up the RADIO module to read and write from our internal buffer.
     NRF_RADIO->PACKETPTR = (uint32_t)rxBuf;
 
     // Configure the hardware to issue an interrupt whenever a task is complete (e.g. send/receive)
-    NRF_RADIO->INTENSET = 0x00000008;
     NVIC_ClearPendingIRQ(RADIO_IRQn);
     NVIC_SetPriority(RADIO_IRQn, 0);
     NVIC_EnableIRQ(RADIO_IRQn);
