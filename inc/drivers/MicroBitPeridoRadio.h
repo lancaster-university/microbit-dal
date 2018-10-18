@@ -89,7 +89,6 @@ struct PeridoFrameBuffer
     uint8_t             ttl:4, initial_ttl:4;
     uint32_t            time_since_wake:24, period:4, flags:4;
     uint8_t             payload[MICROBIT_PERIDO_MAX_PACKET_SIZE];    // User / higher layer protocol data
-    PeridoFrameBuffer   *next;                              // Linkage, to allow this and other protocols to queue packets pending processing.
 } __attribute__((packed));
 
 
@@ -106,11 +105,18 @@ class MicroBitPeridoRadio : public MicroBitComponent
 
     LowLevelTimer&          timer;
 
-    PeridoFrameBuffer       *rxQueue;   // A linear list of incoming packets, queued awaiting processing.
-    PeridoFrameBuffer       *rxBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
+    // a fifo array of received packets
+    PeridoFrameBuffer       *rxArray[MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS];
+    uint8_t                 rxHead;
+    uint8_t                 rxTail;
 
-    PeridoFrameBuffer       *txQueue;   // A linear list of incoming packets, queued awaiting processing.
+    // a fifo array of transmitted packets
+    PeridoFrameBuffer       *txArray[MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS];
+    uint8_t                 txHead;
+    uint8_t                 txTail;
+
     PeridoFrameBuffer       *txBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
+    PeridoFrameBuffer       *rxBuf;
 
     static MicroBitPeridoRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.
 
@@ -164,6 +170,8 @@ class MicroBitPeridoRadio : public MicroBitComponent
     int copyRxBuf();
 
     int queueTxBuf(PeridoFrameBuffer* tx);
+
+    PeridoFrameBuffer* getCurrentTxBuf();
 
     /**
       * Initialises the radio for use as a multipoint sender/receiver

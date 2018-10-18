@@ -226,11 +226,11 @@ void radio_state_machine()
 
     if(radio_status & RADIO_STATUS_DISABLED)
     {
-// #ifdef TRACE
-// #ifndef TRACE_TX
-//         set_gpio0(1);
-// #endif
-// #endif
+#ifdef TRACE
+#ifndef TRACE_TX
+        set_gpio0(1);
+#endif
+#endif
 #ifdef DEBUG_MODE
         log_string("disabled\r\n");
 #endif
@@ -253,11 +253,11 @@ void radio_state_machine()
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_TXEN = 1;
             MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_ENABLE_TIME);
-// #ifdef TRACE
-// #ifndef TRACE_TX
-//             set_gpio0(0);
-// #endif
-// #endif
+#ifdef TRACE
+#ifndef TRACE_TX
+            set_gpio0(0);
+#endif
+#endif
             return;
         }
 
@@ -278,18 +278,18 @@ void radio_state_machine()
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_RXEN = 1;
             MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_ENABLE_TIME);
-// #ifdef TRACE
-// #ifndef TRACE_TX
-//             set_gpio0(0);
-// #endif
-// #endif
+#ifdef TRACE
+#ifndef TRACE_TX
+            set_gpio0(0);
+#endif
+#endif
             return;
         }
-// #ifdef TRACE
-// #ifndef TRACE_TX
-//         set_gpio0(0);
-// #endif
-// #endif
+#ifdef TRACE
+#ifndef TRACE_TX
+        set_gpio0(0);
+#endif
+#endif
         // we're disabled but haven't been configured for rx / tx DO NOT CONTINUE!
         return;
     }
@@ -407,7 +407,7 @@ void radio_state_machine()
 #ifdef DEBUG_MODE
             log_string("txst\r\n");
 #endif
-            PeridoFrameBuffer* p = MicroBitPeridoRadio::instance->txQueue;
+            PeridoFrameBuffer* p = MicroBitPeridoRadio::instance->getCurrentTxBuf();
 
             radio_status &= ~(RADIO_STATUS_TX_RDY);
             radio_status |= RADIO_STATUS_TX_END;
@@ -538,7 +538,7 @@ void radio_state_machine()
         // If we don't see our own packet it means that there was a collision or we are out of sync.
         if(radio_status & RADIO_STATUS_EXPECT_RESPONSE)
         {
-            PeridoFrameBuffer *tx = MicroBitPeridoRadio::instance->txQueue;
+            PeridoFrameBuffer* tx = MicroBitPeridoRadio::instance->getCurrentTxBuf();
 
             bool app_id_same = tx->app_id == p->app_id;
             bool namespace_same = p->namespace_id == tx->namespace_id;
@@ -698,7 +698,7 @@ void tx_callback()
 
     NVIC_DisableIRQ(RADIO_IRQn);
     // no one else has transmitted recently, and we are not receiving, we can transmit
-    if(MicroBitPeridoRadio::instance->txQueueDepth > 0)
+    if(MicroBitPeridoRadio::instance->getCurrentTxBuf() != NULL)
     {
         radio_status = (radio_status & (RADIO_STATUS_DISCOVERING | RADIO_STATUS_FIRST_PACKET | RADIO_STATUS_DIRECTING)) | RADIO_STATUS_TRANSMIT | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
         radio_state_machine();
@@ -904,11 +904,19 @@ MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, ui
     this->appId = appId;
     this->namespaceId = namespaceId;
     this->status = 0;
-	this->rxQueueDepth = 0;
+    this->rxQueueDepth = 0;
     this->txQueueDepth = 0;
-    this->rxQueue = NULL;
+
     this->rxBuf = NULL;
-    this->txQueue = NULL;
+    this->txBuf = NULL;
+
+    memset(this->rxArray, 0, sizeof(PeridoFrameBuffer*) * MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS);
+    this->rxHead = 0;
+    this->rxTail = 0;
+
+    memset(this->txArray, 0, sizeof(PeridoFrameBuffer*) * MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS);
+    this->txHead = 0;
+    this->txTail = 0;
 
     timer.disable();
 
@@ -982,32 +990,6 @@ PeridoFrameBuffer* MicroBitPeridoRadio::getRxBuf()
 }
 
 /**
-  * Retrieve a pointer to the currently allocated receive buffer. This is the area of memory
-  * actively being used by the radio hardware to store incoming data.
-  *
-  * @return a pointer to the current receive buffer.
-  */
-int MicroBitPeridoRadio::popTxQueue()
-{
-    PeridoFrameBuffer* p = txQueue;
-
-    if (p)
-    {
-         // Protect shared resource from ISR activity
-        NVIC_DisableIRQ(RADIO_IRQn);
-
-        txQueue = txQueue->next;
-        txQueueDepth--;
-        delete p;
-
-        // Allow ISR access to shared resource
-        NVIC_EnableIRQ(RADIO_IRQn);
-    }
-
-    return MICROBIT_OK;
-}
-
-/**
   * Attempt to queue a buffer received by the radio hardware, if sufficient space is available.
   *
   * @return MICROBIT_OK on success, or MICROBIT_NO_RESOURCES if a replacement receiver buffer
@@ -1018,7 +1000,9 @@ int MicroBitPeridoRadio::copyRxBuf()
     if (rxBuf == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    if (rxQueueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
+    uint8_t nextHead = (this->rxHead + 1) % MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS;
+
+    if (nextHead == this->rxTail)
         return MICROBIT_NO_RESOURCES;
 
     // Ensure that a replacement buffer is available before queuing.
@@ -1029,20 +1013,10 @@ int MicroBitPeridoRadio::copyRxBuf()
 
     memcpy(newRxBuf, rxBuf, sizeof(PeridoFrameBuffer));
 
-    newRxBuf->next = NULL;
-
-    if (rxQueue == NULL)
-    {
-        rxQueue = newRxBuf;
-    }
-    else
-    {
-        PeridoFrameBuffer *p = rxQueue;
-        while (p->next != NULL)
-            p = p->next;
-
-        p->next = newRxBuf;
-    }
+    // add our buffer to the array before updating the head
+    // this ensures atomicity.
+    this->rxArray[nextHead] = newRxBuf;
+    this->rxHead = nextHead;
 
     // Increase our received packet count
     rxQueueDepth++;
@@ -1050,9 +1024,42 @@ int MicroBitPeridoRadio::copyRxBuf()
     return MICROBIT_OK;
 }
 
+
+/**
+  * Retrieve a pointer to the currently allocated receive buffer. This is the area of memory
+  * actively being used by the radio hardware to store incoming data.
+  *
+  * @return a pointer to the current receive buffer.
+  */
+int MicroBitPeridoRadio::popTxQueue()
+{
+    if (this->txTail == this->txHead)
+        return MICROBIT_OK;
+
+    uint8_t nextHead = (this->txHead + 1) % MICROBIT_RADIO_MAXIMUM_RX_BUFFERS;
+    PeridoFrameBuffer *p = txArray[nextHead];
+    this->txArray[nextHead] = NULL;
+    this->txHead = nextHead;
+    txQueueDepth--;
+
+    delete p;
+
+    return MICROBIT_OK;
+}
+
+PeridoFrameBuffer* MicroBitPeridoRadio::getCurrentTxBuf()
+{
+    if (this->txTail == this->txHead)
+        return NULL;
+
+    uint8_t nextTx = (this->txHead + 1) % MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS;
+    return this->txArray[nextTx];
+}
+
 int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
 {
-    if (txQueueDepth >= MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS)
+    uint8_t nextTail = (this->txTail + 1) % MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS;
+    if (nextTail == this->txHead)
         return MICROBIT_NO_RESOURCES;
 
     // Ensure that a replacement buffer is available before queuing.
@@ -1063,30 +1070,12 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
 
     memcpy(newTx, tx, sizeof(PeridoFrameBuffer));
 
-    set_gpio0(1);
-
-    __disable_irq();
-
-    // We add to the tail of the queue to preserve causal ordering.
-    newTx->next = NULL;
-
-    if (txQueue == NULL)
-    {
-        txQueue = newTx;
-    }
-    else
-    {
-        PeridoFrameBuffer *p = txQueue;
-        while (p->next != NULL)
-            p = p->next;
-
-        p->next = newTx;
-    }
+    // add our buffer to the array before updating the head
+    // this ensures atomicity.
+    this->txArray[nextTail] = newTx;
+    this->txTail = nextTail;
 
     txQueueDepth++;
-
-    __enable_irq();
-    set_gpio0(0);
 
     return MICROBIT_OK;
 }
@@ -1275,19 +1264,16 @@ int MicroBitPeridoRadio::dataReady()
   */
 PeridoFrameBuffer* MicroBitPeridoRadio::recv()
 {
-    PeridoFrameBuffer *p = rxQueue;
 
-    if (p)
-    {
-         // Protect shared resource from ISR activity
-        NVIC_DisableIRQ(RADIO_IRQn);
+    if (this->rxTail == this->rxHead)
+        return NULL;
 
-        rxQueue = rxQueue->next;
-        rxQueueDepth--;
+    uint8_t nextTail = (this->rxTail + 1) % MICROBIT_RADIO_MAXIMUM_RX_BUFFERS;
 
-        // Allow ISR access to shared resource
-        NVIC_EnableIRQ(RADIO_IRQn);
-    }
+    PeridoFrameBuffer *p = rxArray[nextTail];
+    this->rxArray[nextTail] = NULL;
+    this->rxTail = nextTail;
+    rxQueueDepth--;
 
     return p;
 }
