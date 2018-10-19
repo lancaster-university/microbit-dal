@@ -545,7 +545,7 @@ void radio_state_machine()
             bool id_same = p->id == tx->id;
 
             // if we get our own packet back pop our tx queue and reset our no_response_count
-            if(tx && app_id_same && namespace_same && id_same)
+            if(app_id_same && namespace_same && id_same)
             {
 #ifdef DEBUG_MODE
                 log_string("POP\r\n");
@@ -1035,7 +1035,7 @@ int MicroBitPeridoRadio::popTxQueue()
     if (this->txTail == this->txHead)
         return MICROBIT_OK;
 
-    uint8_t nextHead = (this->txHead + 1) % MICROBIT_RADIO_MAXIMUM_RX_BUFFERS;
+    uint8_t nextHead = (this->txHead + 1) % MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS;
     PeridoFrameBuffer *p = txArray[nextHead];
     this->txArray[nextHead] = NULL;
     this->txHead = nextHead;
@@ -1073,7 +1073,9 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
     // add our buffer to the array before updating the head
     // this ensures atomicity.
     this->txArray[nextTail] = newTx;
+    __disable_irq();
     this->txTail = nextTail;
+    __enable_irq();
 
     txQueueDepth++;
 
