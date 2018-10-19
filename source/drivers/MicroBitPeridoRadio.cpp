@@ -908,7 +908,6 @@ MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, ui
     this->txQueueDepth = 0;
 
     this->rxBuf = NULL;
-    this->txBuf = NULL;
 
     memset(this->rxArray, 0, sizeof(PeridoFrameBuffer*) * MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS);
     this->rxHead = 0;
@@ -1096,7 +1095,7 @@ int MicroBitPeridoRadio::enable()
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
-    // If this is the first time we've been enable, allocate out receive buffers.
+    // If this is the first time we've been enable, allocate our receive buffers.
     if (rxBuf == NULL)
         rxBuf = new PeridoFrameBuffer();
 

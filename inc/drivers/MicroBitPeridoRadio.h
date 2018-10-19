@@ -116,7 +116,7 @@ class MicroBitPeridoRadio : public MicroBitComponent
     PeridoFrameBuffer       *txArray[MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS];
     uint8_t                 txHead; // head points to the first packet to be tx'd
     uint8_t                 txTail; // head points to the last packet to be tx'd
-.
+
     // this member variable is allocated and used whenever a packet is received. The received packet is then copied into the rxArray
     PeridoFrameBuffer       *rxBuf;
 
