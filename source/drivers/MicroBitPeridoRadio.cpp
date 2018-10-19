@@ -473,14 +473,6 @@ void radio_state_machine()
             log_string("ftxend\r\n");
 #endif
 
-            // check if it is somehow getting in here...
-
-            if (radio_status & RADIO_STATUS_DISABLE)
-            {
-                log_string("BAD!");
-                while(1);
-            }
-
 #ifdef TRACE_TX
             set_gpio0(0);
 #endif
@@ -492,11 +484,6 @@ void radio_state_machine()
 
         if(radio_status & RADIO_STATUS_TX_RDY)
         {
-            if (radio_status & RADIO_STATUS_DISABLE)
-            {
-                log_string("BAD!");
-                while(1);
-            }
 #ifdef DEBUG_MODE
             log_string("ftxst\r\n");
 #endif
@@ -577,7 +564,7 @@ void radio_state_machine()
             uint8_t hops = (p->initial_ttl - p->ttl);
 
             // correct and set wake up period.
-            correction = (t + (hops * (/*(p->length * TIME_TO_TRANSMIT_BYTE_1MB)*/ TX_TIME + RX_TX_DISABLE_TIME + TX_ENABLE_TIME)));
+            correction = (t + (hops * ((p->length * TIME_TO_TRANSMIT_BYTE_1MB) + RX_TX_DISABLE_TIME + TX_ENABLE_TIME)));
             current_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction);
             MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         }
