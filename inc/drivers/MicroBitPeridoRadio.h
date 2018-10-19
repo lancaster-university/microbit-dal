@@ -106,16 +106,18 @@ class MicroBitPeridoRadio : public MicroBitComponent
     LowLevelTimer&          timer;
 
     // a fifo array of received packets
+    // the array can hold a maximum of MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS - 1 packets
     PeridoFrameBuffer       *rxArray[MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS];
-    uint8_t                 rxHead;
-    uint8_t                 rxTail;
+    uint8_t                 rxHead; // head points to the first rx'd packet-1
+    uint8_t                 rxTail; // tail points to the last rx'd packet
 
     // a fifo array of transmitted packets
+    // the array can hold a maximum of MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS - 1 packets
     PeridoFrameBuffer       *txArray[MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS];
-    uint8_t                 txHead;
-    uint8_t                 txTail;
-
-    PeridoFrameBuffer       *txBuf;     // A pointer to the buffer being actively used by the RADIO hardware.
+    uint8_t                 txHead; // head points to the first packet to be tx'd
+    uint8_t                 txTail; // head points to the last packet to be tx'd
+.
+    // this member variable is allocated and used whenever a packet is received. The received packet is then copied into the rxArray
     PeridoFrameBuffer       *rxBuf;
 
     static MicroBitPeridoRadio    *instance;  // A singleton reference, used purely by the interrupt service routine.

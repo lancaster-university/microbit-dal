@@ -1000,9 +1000,9 @@ int MicroBitPeridoRadio::copyRxBuf()
     if (rxBuf == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    uint8_t nextHead = (this->rxHead + 1) % MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS;
+    uint8_t nextTail = (this->rxTail + 1) % MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS;
 
-    if (nextHead == this->rxTail)
+    if (nextTail == this->rxHead)
         return MICROBIT_NO_RESOURCES;
 
     // Ensure that a replacement buffer is available before queuing.
@@ -1015,8 +1015,8 @@ int MicroBitPeridoRadio::copyRxBuf()
 
     // add our buffer to the array before updating the head
     // this ensures atomicity.
-    this->rxArray[nextHead] = newRxBuf;
-    this->rxHead = nextHead;
+    this->rxArray[nextTail] = newRxBuf;
+    this->rxTail = nextTail;
 
     // Increase our received packet count
     rxQueueDepth++;
@@ -1059,6 +1059,7 @@ PeridoFrameBuffer* MicroBitPeridoRadio::getCurrentTxBuf()
 int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
 {
     uint8_t nextTail = (this->txTail + 1) % MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS;
+
     if (nextTail == this->txHead)
         return MICROBIT_NO_RESOURCES;
 
