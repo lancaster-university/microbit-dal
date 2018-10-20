@@ -1250,7 +1250,7 @@ PeridoFrameBuffer* MicroBitPeridoRadio::recv()
 
     PeridoFrameBuffer *p = rxArray[nextHead];
     this->rxArray[nextHead] = NULL;
-    this->rxTail = nextHead;
+    this->rxHead = nextHead;
     rxQueueDepth--;
 
     return p;
