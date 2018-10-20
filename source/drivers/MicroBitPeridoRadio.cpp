@@ -976,7 +976,7 @@ int MicroBitPeridoRadio::copyRxBuf()
     if (rxBuf == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    uint8_t nextTail = (this->rxTail + 1) % MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS;
+    uint8_t nextTail = (this->rxTail + 1) % MICROBIT_RADIO_MAXIMUM_RX_BUFFERS;
 
     if (nextTail == this->rxHead)
         return MICROBIT_NO_RESOURCES;
@@ -1243,15 +1243,14 @@ int MicroBitPeridoRadio::dataReady()
   */
 PeridoFrameBuffer* MicroBitPeridoRadio::recv()
 {
-
     if (this->rxTail == this->rxHead)
         return NULL;
 
-    uint8_t nextTail = (this->rxTail + 1) % MICROBIT_RADIO_MAXIMUM_RX_BUFFERS;
+    uint8_t nextHead = (this->rxHead + 1) % MICROBIT_RADIO_MAXIMUM_RX_BUFFERS;
 
-    PeridoFrameBuffer *p = rxArray[nextTail];
-    this->rxArray[nextTail] = NULL;
-    this->rxTail = nextTail;
+    PeridoFrameBuffer *p = rxArray[nextHead];
+    this->rxArray[nextHead] = NULL;
+    this->rxTail = nextHead;
     rxQueueDepth--;
 
     return p;
