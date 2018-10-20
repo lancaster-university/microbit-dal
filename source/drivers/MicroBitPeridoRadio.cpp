@@ -243,10 +243,9 @@ void radio_state_machine()
 #ifdef DEBUG_MODE
             log_string("ten\r\n");
 #endif
-            // set_gpio0(1);
             // WE DON'T WANT THE ADDRESS EVENT
             NRF_RADIO->INTENCLR = 0x0000000A;
-            // NRF_RADIO->INTENSET = 0x00000008;
+            NRF_RADIO->INTENSET = 0x00000008;
             radio_status &= ~(RADIO_STATUS_TX_EN | RADIO_STATUS_DISABLED);
             radio_status |= RADIO_STATUS_TX_RDY;
 
@@ -433,8 +432,6 @@ void radio_state_machine()
             NRF_RADIO->TASKS_START = 1;
             NRF_RADIO->EVENTS_END = 0;
 
-            MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
-
 #ifdef TRACE
             set_gpio2(0);
 #endif
@@ -497,8 +494,6 @@ void radio_state_machine()
 #endif
             NRF_RADIO->TASKS_START = 1;
             NRF_RADIO->EVENTS_END = 0;
-
-            MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_TIME);
 
             radio_status |= RADIO_STATUS_STORE;
         }
