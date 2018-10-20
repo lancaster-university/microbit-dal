@@ -150,7 +150,6 @@ void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
     if (p && (t->request_type & REQUEST_TYPE_BROADCAST || p->status & DATA_PACKET_EXPECT_NO_RESPONSE))
     {
         CloudDataItem *c = removeFromQueue(&txQueue, id);
-        delete c->packet;
         delete c;
         return;
     }
@@ -246,7 +245,6 @@ void PeridoRadioCloud::idleTick()
         {
             if (c->status & DATA_PACKET_EXPECT_NO_RESPONSE)
             {
-                delete c->packet;
                 delete c;
                 return;
             }
@@ -304,7 +302,6 @@ void PeridoRadioCloud::packetReceived()
             p = removeFromTxQueue(packet->id);
             if (p == NULL)
                 while(1);
-            delete p->packet;
             delete p;
         }
         else if (p)
@@ -344,7 +341,6 @@ void PeridoRadioCloud::packetReceived()
             ack->packet = buf;
 
             sendCloudDataItem(ack);
-            delete ack->packet;
             delete ack;
         }
 
@@ -362,10 +358,7 @@ void PeridoRadioCloud::packetReceived()
     CloudDataItem* toDelete = removeFromQueue(&txQueue, packet->id);
 
     if (toDelete)
-    {
-        delete toDelete->packet;
         delete toDelete;
-    }
 
     // add to our RX queue for app handling.
     CloudDataItem* p = new CloudDataItem;
@@ -406,7 +399,6 @@ DynamicType PeridoRadioCloud::recv(uint16_t id)
 #warning potentially bad change here
         dt = DynamicType(c->packet->length - MICROBIT_PERIDO_HEADER_SIZE - CLOUD_HEADER_SIZE, t->payload, 0);
 
-    delete c->packet;
     delete c;
 
     return dt;

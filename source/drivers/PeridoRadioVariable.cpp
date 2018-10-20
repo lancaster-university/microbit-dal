@@ -34,10 +34,7 @@ void PeridoRadioVariable::handleTimeout(uint16_t id)
     CloudDataItem* t = cloud.recvRaw(id);
 
     if (t)
-    {
-        delete t->packet;
         delete t;
-    }
 }
 
 void PeridoRadioVariable::handlePacket(uint16_t id)
@@ -65,7 +62,6 @@ void PeridoRadioVariable::handlePacket(uint16_t id)
             }
         }
 
-        delete c->packet;
         delete c;
     }
 }
