@@ -37,8 +37,6 @@ struct PeridoFrameBuffer;
 #include "HigherLevelTimer.h"
 #include "ManagedString.h"
 #include "PeridoRadioCloud.h"
-#include "PeridoRadioDatagram.h"
-#include "PeridoRadioEvent.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -103,15 +101,12 @@ class MicroBitPeridoRadio : public MicroBitComponent
 
     public:
 
-    PeridoRadioDatagram           datagram;   // A simple datagram service.
-    PeridoRadioEvent              event;      // A simple event handling service.
-    PeridoRadioCloud              cloud;       // A simple REST handling service.
-
     uint8_t                 periodIndex;
     uint8_t                 rxQueueDepth; // The number of packets in the receiver queue.
     uint8_t                 txQueueDepth; // The number of packets in the tx queue.
 
     LowLevelTimer&          timer;
+    PeridoRadioCloud        cloud;       // A simple REST handling service.
 
     // a fifo array of received packets
     // the array can hold a maximum of MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS - 1 packets
@@ -242,6 +237,10 @@ class MicroBitPeridoRadio : public MicroBitComponent
       *       delete the buffer when appropriate.
       */
     PeridoFrameBuffer* recv();
+
+    int setAppId(uint16_t id);
+
+    int getAppId();
 
     /**
       * Transmits the given buffer onto the broadcast radio.

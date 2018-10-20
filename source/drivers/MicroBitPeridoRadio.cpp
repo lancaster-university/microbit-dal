@@ -1022,11 +1022,10 @@ int MicroBitPeridoRadio::copyRxBuf()
     // Increase our received packet count
     rxQueueDepth++;
 
-    MicroBitEvent(MICROBIT_ID_RADIO_RX, newRxBuf->id);
+    // MicroBitEvent(MICROBIT_ID_RADIO_RX, newRxBuf->id);
 
     return MICROBIT_OK;
 }
-
 
 /**
   * Retrieve a pointer to the currently allocated receive buffer. This is the area of memory
@@ -1045,7 +1044,7 @@ int MicroBitPeridoRadio::popTxQueue()
     this->txHead = nextHead;
     txQueueDepth--;
 
-    MicroBitEvent(MICROBIT_ID_RADIO_TX, p->id);
+    // MicroBitEvent(MICROBIT_ID_RADIO_TX, p->id);
 
     delete p;
 
@@ -1131,7 +1130,7 @@ int MicroBitPeridoRadio::enable()
     keep_alive_match = 0;
 
     while (keep_alive_match < 11)
-        keep_alive_match = microbit_random(256);
+        keep_alive_match = microbit_random(256) % 40;
 
     // Enable the High Frequency clock on the processor. This is a pre-requisite for
     // the RADIO module. Without this clock, no communication is possible.
@@ -1271,6 +1270,17 @@ int MicroBitPeridoRadio::setPeriod(uint32_t period_ms)
 uint32_t MicroBitPeridoRadio::getPeriod()
 {
     return periods[periodIndex];
+}
+
+int MicroBitPeridoRadio::setAppId(uint16_t id)
+{
+    this->appId = id;
+    return MICROBIT_OK;
+}
+
+int MicroBitPeridoRadio::getAppId()
+{
+    return this->appId;
 }
 
 /**
