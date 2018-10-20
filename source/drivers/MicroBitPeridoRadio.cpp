@@ -60,6 +60,14 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
+// #define FILTER
+
+#define TRACE_CRC_FAIL
+// #define TRACE_WAKE
+// #define TRACE_TX
+#define TRACE
+
+#ifdef TRACE
 extern void set_gpio0(int);
 extern void set_gpio1(int);
 extern void set_gpio2(int);
@@ -77,6 +85,10 @@ extern void packet_missed(PeridoFrameBuffer *p);
 
 extern void valid_packet_received(PeridoFrameBuffer*);
 extern void increment_counter(int);
+
+extern void log_string(const char * s);
+extern void log_num(int num);
+#endif
 
 // low level states
 #define LOW_LEVEL_STATE_MASK        0x0000FFFF      // a mask for removing or retaining low level state
@@ -206,20 +218,12 @@ volatile uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
 volatile static uint8_t keep_alive_count = 0;
 volatile static uint8_t keep_alive_match = 0;
 
-extern void log_string(const char * s);
-extern void log_num(int num);
-
 uint32_t read_and_restart_wake()
 {
     uint32_t t =  MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL);
     MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
     return t;
 }
-
-#define TRACE_CRC_FAIL
-// #define TRACE_WAKE
-// #define TRACE_TX
-#define TRACE
 
 void radio_state_machine()
 {
@@ -583,7 +587,11 @@ void radio_state_machine()
                 seen = true;
 
         // if seen, queue a new buffer, and mark it as seen
-        if(!seen)
+        if(!seen
+#ifdef FILTER
+        && (MicroBitPeridoRadio::instance->app_id == p->app_id || MicroBitPeridoRadio::instance->app_id == 0)
+#endif
+        )
         {
 #ifdef DEBUG_MODE
             log_string("fn\r\n");
@@ -892,7 +900,7 @@ void timer_callback(uint8_t state)
   * @note This class is demand activated, as a result most resources are only
   *       committed if send/recv or event registrations calls are made.
   */
-MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, uint8_t namespaceId, uint16_t id) : timer(timer)
+MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, uint8_t namespaceId, uint16_t id) : timer(timer), cloud(*this)
 {
     this->id = id;
     this->appId = appId;
@@ -1014,6 +1022,8 @@ int MicroBitPeridoRadio::copyRxBuf()
     // Increase our received packet count
     rxQueueDepth++;
 
+    MicroBitEvent(MICROBIT_ID_RADIO_RX, newRxBuf->id);
+
     return MICROBIT_OK;
 }
 
@@ -1034,6 +1044,8 @@ int MicroBitPeridoRadio::popTxQueue()
     this->txArray[nextHead] = NULL;
     this->txHead = nextHead;
     txQueueDepth--;
+
+    MicroBitEvent(MICROBIT_ID_RADIO_TX, p->id);
 
     delete p;
 
@@ -1073,7 +1085,7 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
 
     txQueueDepth++;
 
-    return MICROBIT_OK;
+    return newTx->id;
 }
 
 int MicroBitPeridoRadio::queueKeepAlive()
