@@ -564,30 +564,25 @@ void radio_state_machine()
             MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         }
 
-        // // check if we've seen this ID before...
-        // for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
-        //     if(last_seen[i] == p->id)
-        //     {
-        //         // log_string("seen\r\n");
-        //         seen = true;
-        //         increment_counter(i);
-        //     }
+        uint32_t combined_id = (p->id << 16) | (p->app_id << 8) | p->namespace_id;
 
-        // // if seen, queue a new buffer, and mark it as seen
-        // if(!seen)
-        // {
+        // check if we've seen this ID before...
+        for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
+            if(last_seen[i] == combined_id)
+                seen = true;
+
+        // if seen, queue a new buffer, and mark it as seen
+        if(!seen)
+        {
 #ifdef DEBUG_MODE
             log_string("fn\r\n");
 #endif
-            // MicroBitPeridoRadio::instance->copyRxBuf();
-            // NRF_RADIO->PACKETPTR = (uint32_t) MicroBitPeridoRadio::instance->rxBuf;
-
+            MicroBitPeridoRadio::instance->copyRxBuf();
             process_packet(MicroBitPeridoRadio::instance->rxBuf);
-            // valid_packet_received(MicroBitPeridoRadio::instance->recv());
 
-        //     last_seen[last_seen_index] = p->id;
-        //     last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
-        // }
+            last_seen[last_seen_index] = combined_id;
+            last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
+        }
 #ifdef TRACE
         set_gpio4(0);
 #endif
