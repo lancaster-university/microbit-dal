@@ -12,6 +12,13 @@ static uint8_t rx_history_index = 0;
 static uint32_t tx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
 static uint8_t tx_history_index = 0;
 
+CloudDataItem::~CloudDataItem()
+{
+#warning check this destructor is called when deleting a CloudDataItem
+    if (packet)
+        delete packet;
+}
+
 PeridoRadioCloud::PeridoRadioCloud(MicroBitPeridoRadio& r) : radio(r), rest(*this), variable(*this)
 {
     this->txQueue = NULL;

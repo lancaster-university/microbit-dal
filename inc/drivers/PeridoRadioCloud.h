@@ -51,12 +51,7 @@ struct CloudDataItem
     uint16_t no_response_count;
     CloudDataItem* next;
 
-    ~CloudDataItem()
-    {
-#warning check this destructor is called when deleting a CloudDataItem
-        if (packet)
-            delete packet;
-    }
+    ~CloudDataItem();
 };
 
 struct DataPacket
