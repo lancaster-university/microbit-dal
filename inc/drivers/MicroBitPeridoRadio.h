@@ -79,6 +79,7 @@ struct PeridoFrameBuffer;
 #define MICROBIT_PERIDO_DEFAULT_NAMESPACE       0
 
 #define MICROBIT_PERIDO_FRAME_PROPOSAL_FLAG     0x01
+#define MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG     0x02
 
 struct PeridoFrameBuffer
 {
@@ -174,6 +175,8 @@ class MicroBitPeridoRadio : public MicroBitComponent
     int queueTxBuf(PeridoFrameBuffer* tx);
 
     PeridoFrameBuffer* getCurrentTxBuf();
+
+    int queueKeepAlive();
 
     /**
       * Initialises the radio for use as a multipoint sender/receiver

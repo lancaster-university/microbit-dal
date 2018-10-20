@@ -201,6 +201,11 @@ volatile static uint32_t correction = 0;
 volatile uint8_t last_seen_index = 0;
 volatile uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
 
+// we maintain the number of wakes where we haven't seen a transmission, if we hit the match variable,
+//we queue a keep alive packet
+volatile static uint8_t keep_alive_count = 0;
+volatile static uint8_t keep_alive_match = 0;
+
 extern void log_string(const char * s);
 extern void log_num(int num);
 
@@ -347,6 +352,9 @@ void radio_state_machine()
 
             if(NRF_RADIO->CRCSTATUS == 1)
             {
+                // reset our keep alive count, a transmission has been seen
+                keep_alive_count = 0;
+
                 // if we've been discovering and are now synced, it's
                 // highly likely that our new wake sleep window
                 // does not align with our previous tx callback check... cancel!
@@ -564,6 +572,9 @@ void radio_state_machine()
             MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         }
 
+        if (p->flags & MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG)
+            seen = true;
+
         uint32_t combined_id = (p->id << 16) | (p->app_id << 8) | p->namespace_id;
 
         // check if we've seen this ID before...
@@ -758,6 +769,12 @@ void go_to_sleep()
 // #endif
     radio_state_machine();
     NVIC_EnableIRQ(RADIO_IRQn);
+
+    if (keep_alive_count >= keep_alive_match)
+    {
+        keep_alive_count = 0;
+        MicroBitPeridoRadio::instance->queueKeepAlive();
+    }
 
 // #ifdef TRACE
 // #ifndef TRACE_WAKE
@@ -1059,6 +1076,23 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
     return MICROBIT_OK;
 }
 
+int MicroBitPeridoRadio::queueKeepAlive()
+{
+    PeridoFrameBuffer buf;
+
+    buf.id = microbit_random(65535);
+    buf.length = 0 + MICROBIT_PERIDO_HEADER_SIZE - 1; // keep alive has no content.
+    buf.app_id = appId;
+    buf.namespace_id = namespaceId;
+    buf.flags |= MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG;
+    buf.ttl = 4;
+    buf.initial_ttl = 4;
+    buf.time_since_wake = 0;
+    buf.period = 0;
+
+    return queueTxBuf(&buf);
+}
+
 /**
   * Initialises the radio for use as a multipoint sender/receiver
   *
@@ -1080,6 +1114,12 @@ int MicroBitPeridoRadio::enable()
 
     if (rxBuf == NULL)
         return MICROBIT_NO_RESOURCES;
+
+    keep_alive_count = 0;
+    keep_alive_match = 0;
+
+    while (keep_alive_match < 11)
+        keep_alive_match = microbit_random(256);
 
     // Enable the High Frequency clock on the processor. This is a pre-requisite for
     // the RADIO module. Without this clock, no communication is possible.
