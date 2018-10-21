@@ -62,10 +62,10 @@ MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
 // #define FILTER
 
-#define TRACE_CRC_FAIL
+// #define TRACE_CRC_FAIL
 // #define TRACE_WAKE
 // #define TRACE_TX
-#define TRACE
+// #define TRACE
 
 #ifdef TRACE
 extern void set_gpio0(int);
@@ -544,8 +544,9 @@ void radio_state_machine()
 #ifdef DEBUG_MODE
                 log_string("POP\r\n");
 #endif
-
+#ifdef TRACE
                 process_packet(tx);
+#endif
                 // only pop our tx buffer if something responds
                 MicroBitPeridoRadio::instance->popTxQueue();
                 last_seen[last_seen_index] = p->id;
@@ -597,7 +598,9 @@ void radio_state_machine()
             log_string("fn\r\n");
 #endif
             MicroBitPeridoRadio::instance->copyRxBuf();
+#ifdef TRACE
             process_packet(MicroBitPeridoRadio::instance->rxBuf);
+#endif
 
             last_seen[last_seen_index] = combined_id;
             last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
@@ -635,7 +638,7 @@ int interrupt_count = 0;
 extern "C" void RADIO_IRQHandler(void)
 {
     interrupt_count++;
-
+#ifdef TRACE
     if (interrupt_count>1000000)
     {
         log_string("radio_state: ");
@@ -654,6 +657,7 @@ extern "C" void RADIO_IRQHandler(void)
             log_string("0");
         log_string("\r\n");
     }
+#endif
 #ifdef DEBUG_MODE
     if(NRF_RADIO->EVENTS_END)
         log_string("1");
@@ -1192,10 +1196,6 @@ int MicroBitPeridoRadio::enable()
 
     NRF_RADIO->EVENTS_READY = 0;
     NRF_RADIO->EVENTS_END = 0;
-
-    log_num(NRF_RADIO->STATE);
-    log_string(" ");
-    log_num(periods[periodIndex] * 1000);
 
     radio_status = RADIO_STATUS_DISABLED | RADIO_STATUS_DISCOVERING | RADIO_STATUS_SLEEPING;
 
