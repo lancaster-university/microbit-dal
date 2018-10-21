@@ -189,9 +189,9 @@ void scheduler_init(EventModel &_messageBus)
     if (fiber_scheduler_running())
         return;
 
-	// Store a reference to the messageBus provided.
-	// This parameter will be NULL if we're being run without a message bus.
-	messageBus = &_messageBus;
+    // Store a reference to the messageBus provided.
+    // This parameter will be NULL if we're being run without a message bus.
+    messageBus = &_messageBus;
 
     // Create a new fiber context
     currentFiber = getFiberContext();
@@ -388,7 +388,7 @@ int fiber_wait_for_event(uint16_t id, uint16_t value)
     if(ret == MICROBIT_OK)
         schedule();
 
-	return ret;
+    return ret;
 }
 
 /**
