@@ -66,7 +66,7 @@ struct PeridoFrameBuffer;
 #define MICROBIT_RADIO_STATUS_INITIALISED       0x0001
 #define MICROBIT_RADIO_DEFAULT_TX_POWER         6
 #define MICROBIT_RADIO_DEFAULT_FREQUENCY        7
-#define MICROBIT_RADIO_BASE_ADDRESS             0x75626974
+#define MICROBIT_RADIO_BASE_ADDRESS             0x75626975
 
 // Default configuration values
 #define MICROBIT_PERIDO_HEADER_SIZE             10
