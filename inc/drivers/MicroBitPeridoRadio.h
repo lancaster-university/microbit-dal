@@ -238,6 +238,10 @@ class MicroBitPeridoRadio : public MicroBitComponent
       */
     PeridoFrameBuffer* recv();
 
+    PeridoFrameBuffer* peakRxQueue();
+
+    void idleTick();
+
     int setAppId(uint16_t id);
 
     int getAppId();

@@ -1204,6 +1204,8 @@ int MicroBitPeridoRadio::enable()
     // Done. Record that our RADIO is configured.
     status |= MICROBIT_RADIO_STATUS_INITIALISED;
 
+    fiber_add_idle_component(this);
+
     return MICROBIT_OK;
 }
 
@@ -1293,6 +1295,15 @@ int MicroBitPeridoRadio::dataReady()
     return rxQueueDepth;
 }
 
+PeridoFrameBuffer* MicroBitPeridoRadio::peakRxQueue()
+{
+    if (this->rxTail == this->rxHead)
+        return NULL;
+
+    uint8_t nextHead = (this->rxHead + 1) % MICROBIT_RADIO_MAXIMUM_RX_BUFFERS;
+    return rxArray[nextHead];
+}
+
 /**
   * Retrieves the next packet from the receive buffer.
   * If a data packet is available, then it will be returned immediately to
@@ -1316,6 +1327,17 @@ PeridoFrameBuffer* MicroBitPeridoRadio::recv()
     rxQueueDepth--;
 
     return p;
+}
+
+void MicroBitPeridoRadio::idleTick()
+{
+    // Walk the list of packets and process each one.
+    while (peakRxQueue())
+    {
+        // we will want to eventually match on namespace and app_id
+        // this'll do for now.
+        cloud.packetReceived();
+    }
 }
 
 
