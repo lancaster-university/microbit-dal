@@ -94,6 +94,8 @@ class PeridoRadioCloud : public MicroBitComponent
 
     int send(uint8_t request_type, uint8_t* buffer, int len);
 
+    int sendAck(uint16_t id, uint8_t app_id, uint8_t namespace_id);
+
     void packetReceived();
     void packetTransmitted(MicroBitEvent);
 
@@ -102,6 +104,8 @@ class PeridoRadioCloud : public MicroBitComponent
     DynamicType recv(uint16_t id);
 
     CloudDataItem* recvRaw(uint16_t id);
+
+    CloudDataItem* recvRaw();
 };
 
 

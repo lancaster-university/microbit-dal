@@ -195,6 +195,30 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
     return buf->id;
 }
 
+int PeridoRadioCloud::sendAck(uint16_t id, uint8_t app_id, uint8_t namespace_id)
+{
+    CloudDataItem* ack = new CloudDataItem;
+    PeridoFrameBuffer* buf = new PeridoFrameBuffer;
+
+    buf->id = id;
+    buf->length = 0 + MICROBIT_PERIDO_HEADER_SIZE - 1;
+    buf->app_id = app_id;
+    buf->namespace_id = namespace_id;
+    buf->ttl = 4;
+    buf->initial_ttl = 4;
+    buf->time_since_wake = 0;
+    buf->period = 0;
+
+    DataPacket* data = (DataPacket*)buf->payload;
+    data->request_type = REQUEST_STATUS_ACK;
+
+    ack->status = 0;
+    ack->packet = buf;
+
+    sendCloudDataItem(ack);
+    delete ack;
+}
+
 void PeridoRadioCloud::idleTick()
 {
     if (txQueue == NULL)
@@ -328,28 +352,7 @@ void PeridoRadioCloud::packetReceived()
     {
         // ack any packets we've previously sent
         if (searchHistory(tx_history, packet->app_id, packet->id))
-        {
-            CloudDataItem* ack = new CloudDataItem;
-            PeridoFrameBuffer* buf = new PeridoFrameBuffer;
-
-            buf->id = packet->id; // perhaps we should spin here, and try to go for uniqueness within the driver.
-            buf->length = 0 + MICROBIT_PERIDO_HEADER_SIZE - 1;
-            buf->app_id = packet->app_id;
-            buf->namespace_id = packet->namespace_id;
-            buf->ttl = 4;
-            buf->initial_ttl = 4;
-            buf->time_since_wake = 0;
-            buf->period = 0;
-
-            DataPacket* data = (DataPacket*)buf->payload;
-            data->request_type = REQUEST_STATUS_ACK;
-
-            ack->status = 0;
-            ack->packet = buf;
-
-            sendCloudDataItem(ack);
-            delete ack;
-        }
+            sendAck(packet->id, packet->app_id, packet->namespace_id);
 
         // ignore previously received packets
         if (searchHistory(rx_history, packet->app_id, packet->id))
@@ -414,4 +417,14 @@ DynamicType PeridoRadioCloud::recv(uint16_t id)
 CloudDataItem* PeridoRadioCloud::recvRaw(uint16_t id)
 {
     return removeFromRxQueue(id);
+}
+
+CloudDataItem* PeridoRadioCloud::recvRaw()
+{
+    CloudDataItem *p = rxQueue;
+
+    if (p)
+        return removeFromRxQueue(p->packet->id);
+
+    return NULL;
 }
