@@ -170,7 +170,7 @@ extern void log_num(int num);
 #define TIME_TO_TRANSMIT_BYTE_1MB   8
 
 #define NO_RESPONSE_THRESHOLD       5
-#define LAST_SEEN_BUFFER_SIZE       3
+#define LAST_SEEN_BUFFER_SIZE       10
 #define OUT_TIME_BUFFER_SIZE        6
 
 #define DISCOVERY_PACKET_THRESHOLD  TX_BACKOFF_TIME + TX_BACKOFF_MIN
@@ -523,6 +523,7 @@ void radio_state_machine()
 
         bool seen = false;
         PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
+        uint32_t combined_id = (p->id << 16) | (p->app_id << 8) | p->namespace_id;
 
 #ifdef DEBUG_MODE
         log_string("stor\r\n");
@@ -549,7 +550,7 @@ void radio_state_machine()
 #endif
                 // only pop our tx buffer if something responds
                 MicroBitPeridoRadio::instance->popTxQueue();
-                last_seen[last_seen_index] = p->id;
+                last_seen[last_seen_index] = combined_id;
                 last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
 
                 // we received a response, reset our counter.
@@ -579,8 +580,6 @@ void radio_state_machine()
 
         if (p->flags & MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG)
             seen = true;
-
-        uint32_t combined_id = (p->id << 16) | (p->app_id << 8) | p->namespace_id;
 
         // check if we've seen this ID before...
         for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
@@ -1048,7 +1047,7 @@ int MicroBitPeridoRadio::popTxQueue()
     this->txHead = nextHead;
     txQueueDepth--;
 
-    // MicroBitEvent(MICROBIT_ID_RADIO_TX, p->id);
+    MicroBitEvent(MICROBIT_ID_RADIO_TX, p->id);
 
     delete p;
 
