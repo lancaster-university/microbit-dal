@@ -230,7 +230,7 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
 
     addToTxQueue(c);
 
-    return buf->id;
+    return data->request_id;
 }
 
 int PeridoRadioCloud::sendAck(uint16_t request_id, uint8_t app_id, uint8_t namespace_id)
@@ -336,20 +336,21 @@ void PeridoRadioCloud::idleTick()
     }
 }
 
-bool PeridoRadioCloud::searchHistory(uint32_t* history, uint16_t app_id, uint16_t id)
+bool PeridoRadioCloud::searchHistory(uint32_t* history, uint16_t request_id, uint8_t app_id, uint8_t namespace_id)
 {
+    uint32_t combined_id = (request_id << 16) | (app_id << 8) | namespace_id;
     for (int idx = 0; idx < RADIO_CLOUD_HISTORY_SIZE; idx++)
     {
-        if (((history[idx] & APP_ID_MSK) >> 16) == app_id && (history[idx] & PACKET_ID_MSK) == id)
+        if (history[idx] == combined_id)
             return true;
     }
 
     return false;
 }
 
-void PeridoRadioCloud::addToHistory(uint32_t* history, uint8_t* history_index, uint16_t app_id, uint16_t id)
+void PeridoRadioCloud::addToHistory(uint32_t* history, uint8_t* history_index, uint16_t request_id, uint8_t app_id, uint8_t namespace_id)
 {
-    history[*history_index] = ((app_id << 16) | id);
+    history[*history_index] = (request_id << 16) | (app_id << 8) | namespace_id;
     *history_index = (*history_index + 1) % RADIO_CLOUD_HISTORY_SIZE;
 }
 
@@ -368,69 +369,58 @@ void PeridoRadioCloud::packetReceived()
     for (int i = 0; i < packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1); i++)
         log_num(packet->payload[i]);
 
-    // there shouldn't be two separate cases for a bridge and non bridge micro:bit...
-
-    // if an ack, update our packet status
+    // first we check if we've received an ack
     if (temp->request_type & REQUEST_STATUS_ACK)
     {
         log_string_ch("ACK!");
         CloudDataItem* p = peakTxQueue(temp->request_id);
 
-        // we don't expect a response from a node here.
-        if (getBridgeMode() && p)
+        if (p)
         {
-            p = removeFromTxQueue(temp->request_id);
-            if (p == NULL)
-                while(1);
-            delete p;
-        }
-        else if (p)
-        {
-            // otherwise in normal mode, we expect a response from a bridged ubit
+            // flag this packet as receiving the ack.
+            // once we do this the idle tick will remove the packet for us.
             p->status &= ~(DATA_PACKET_WAITING_FOR_ACK);
             p->status |= DATA_PACKET_ACK_RECEIVED;
             p->no_response_count = 0;
             p->retry_count = 0;
         }
 
+        // delete the ack packet and return
         delete packet;
         return;
     }
 
-    if (!getBridgeMode())
+    // check if we are the originator of the request or a bridge
+    // if we are, send an ack
+    if (searchHistory(tx_history, temp->request_id, packet->app_id, packet->namespace_id) || getBridgeMode())
     {
-        // ack any packets we've previously sent
-        // if (searchHistory(tx_history, packet->app_id, packet->id))
-            sendAck(temp->request_id, packet->app_id, packet->namespace_id);
-
-        // ignore previously received packets
-        // if (searchHistory(rx_history, packet->app_id, packet->id))
-        // {
-        //     delete packet;
-        //     return;
-        // }
-
-        // addToHistory(rx_history, &rx_history_index, packet->app_id, packet->id);
+        log_string_ch("OUR TX");
+        sendAck(temp->request_id, packet->app_id, packet->namespace_id);
     }
+
+    // check if we've already received the packet:
+    if (searchHistory(rx_history, temp->request_id, packet->app_id, packet->namespace_id))
+    {
+        log_string_ch("ALREADY RX'd");
+        delete packet;
+        return;
+    }
+
+    addToHistory(rx_history, &rx_history_index, temp->request_id, packet->app_id, packet->namespace_id);
+    log_string_ch("ADDING");
 
     // we have received a response, remove any matching packets from the txQueue
     CloudDataItem* p = removeFromQueue(&txQueue, temp->request_id);
+
+    // if null, we're receiving, allocate a new buffer.
     if (p == NULL)
     {
-        log_string_ch("EEK!");
-        return;
+        log_string_ch("NEW BUF");
+        p = new CloudDataItem;
     }
-
-    // some devices want an acknowledgement, but no response (it can be flagged when sending a packet)
-    // if this is the case just delete the packet.
-    if (p->status & DATA_PACKET_EXPECT_NO_RESPONSE)
-    {
-        delete p;
-        return;
-    }
-
-    // delete previous packet.
-    delete p->packet;
+    else
+        // delete previous packet.
+        delete p->packet;
 
     // add to our RX queue for app handling.
     p->packet = packet;
@@ -440,6 +430,8 @@ void PeridoRadioCloud::packetReceived()
     p->next = NULL;
 
     addToQueue(&rxQueue, p);
+
+    log_num(temp->request_id);
 
     // interception event for Bridge.cpp
     MicroBitEvent(MICROBIT_RADIO_ID_CLOUD, temp->request_id);
@@ -459,16 +451,25 @@ DynamicType PeridoRadioCloud::recv(uint16_t id)
     CloudDataItem *c = removeFromRxQueue(id);
     DataPacket* t = (DataPacket*)c->packet->payload;
 
-    if (t == NULL)
+    if (c == NULL)
+    {
+        log_string_ch("recv NULL");
         return DynamicType();
+    }
 
     DynamicType dt;
 
     if (t->request_type & REQUEST_STATUS_ERROR)
+    {
+        log_string_ch("recv ERR");
         dt = DynamicType(7, (uint8_t*)"\01ERROR\0", DYNAMIC_TYPE_STATUS_ERROR);
+    }
     else
+    {
+        log_string_ch("recv OK");
 #warning potentially bad change here
         dt = DynamicType(c->packet->length - MICROBIT_PERIDO_HEADER_SIZE - CLOUD_HEADER_SIZE, t->payload, 0);
+    }
 
     delete c;
 
