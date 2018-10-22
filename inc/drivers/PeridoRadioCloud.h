@@ -12,7 +12,7 @@ class MicroBitPeridoRadio;
 #include "MicroBitConfig.h"
 #include "MicroBitEvent.h"
 
-#define CLOUD_HEADER_SIZE                    1
+#define CLOUD_HEADER_SIZE                    3
 #define MAX_PAYLOAD_SIZE                    (255 - 10 - CLOUD_HEADER_SIZE)
 
 #define REQUEST_TYPE_GET_REQUEST            0x01
@@ -56,6 +56,7 @@ struct CloudDataItem
 
 struct DataPacket
 {
+    uint16_t request_id;
     uint8_t request_type;
     uint8_t payload[MAX_PAYLOAD_SIZE];
 
