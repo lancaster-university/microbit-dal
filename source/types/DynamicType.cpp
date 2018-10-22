@@ -49,6 +49,8 @@ DynamicType& DynamicType::operator = (const DynamicType &p)
     if(ptr == p.ptr)
         return *this;
 
+    status = p.status;
+
     ptr->decr();
     ptr = p.ptr;
     ptr->incr();
