@@ -29,6 +29,8 @@ PeridoRadioCloud::PeridoRadioCloud(MicroBitPeridoRadio& r) : radio(r), rest(*thi
     fiber_add_idle_component(this);
 
     // listen for packet received and transmitted events (two separate IDs)
+    if (EventModel::defaultEventBus)
+        EventModel::defaultEventBus->listen(MICROBIT_ID_RADIO_TX, MICROBIT_EVT_ANY, this, &PeridoRadioCloud::packetTransmitted);
 }
 
 int PeridoRadioCloud::setBridgeMode(bool state)
@@ -146,6 +148,8 @@ void PeridoRadioCloud::sendCloudDataItem(CloudDataItem* p)
     radio.send(p->packet);
 }
 
+extern void change_display();
+extern void log_string_ch(const char*);
 void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
 {
     uint16_t id = evt.value;
@@ -154,19 +158,24 @@ void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
     DataPacket* t = (DataPacket*)p->packet->payload;
 
     // if it's broadcast just delete from the tx queue once it has been sent
-    if (p && (t->request_type & REQUEST_TYPE_BROADCAST || p->status & DATA_PACKET_EXPECT_NO_RESPONSE))
+    if (p)
     {
-        CloudDataItem *c = removeFromQueue(&txQueue, id);
-        delete c;
-        return;
+        if ((t->request_type & REQUEST_TYPE_BROADCAST || p->status & DATA_PACKET_EXPECT_NO_RESPONSE))
+        {
+            CloudDataItem *c = removeFromQueue(&txQueue, id);
+            delete c;
+            return;
+        }
+
+        // evt.value... get packet and flag correctly.
+        // packet transmitted, flag as waiting for ACK.
+        p->no_response_count = 0;
+        p->retry_count = 0;
+
+        p->status |= (DATA_PACKET_WAITING_FOR_ACK);
+
+        change_display();
     }
-
-    // evt.value... get packet and flag correctly.
-    // packet transmitted, flag as waiting for ACK.
-    p->no_response_count = 0;
-    p->retry_count = 0;
-
-    p->status |= (DATA_PACKET_WAITING_FOR_ACK);
 }
 
 int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
@@ -175,7 +184,7 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
     PeridoFrameBuffer* buf = new PeridoFrameBuffer;
 
     buf->id = microbit_random(65535); // perhaps we should spin here, and try to go for uniqueness within the driver.
-    buf->length = len + MICROBIT_PERIDO_HEADER_SIZE - 1;
+    buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE; // add 1 for request type
     buf->app_id = radio.getAppId();
     buf->namespace_id = 0;
     buf->ttl = 4;
@@ -248,7 +257,7 @@ void PeridoRadioCloud::idleTick()
                 // if we've exceeded our retry threshold, we  break and remove from the tx queue, flagging an error
                 if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
                     break;
-
+                log_string_ch("RESEND");
                 // resend
                 sendCloudDataItem(p);
                 p->no_response_count = 0;
@@ -317,10 +326,18 @@ void PeridoRadioCloud::addToHistory(uint32_t* history, uint8_t* history_index, u
   *
   * This function process this packet, and queues it for user reception.
   */
+
+extern void log_string_ch(const char*);
+extern void log_num(int);
 void PeridoRadioCloud::packetReceived()
 {
+    log_string_ch("PKT!");
     PeridoFrameBuffer* packet = radio.recv();
     DataPacket* temp = (DataPacket*)packet->payload;
+
+    log_num(packet->length);
+    for (int i = 0; i < packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1); i++)
+        log_num(packet->payload[i]);
 
     // if an ack, update our packet status
     if (temp->request_type & REQUEST_STATUS_ACK)
@@ -403,7 +420,7 @@ DynamicType PeridoRadioCloud::recv(uint16_t id)
 
     DynamicType dt;
 
-    if (t->request_type == REQUEST_STATUS_ERROR)
+    if (t->request_type & REQUEST_STATUS_ERROR)
         dt = DynamicType(7, (uint8_t*)"\01ERROR\0", DYNAMIC_TYPE_STATUS_ERROR);
     else
 #warning potentially bad change here

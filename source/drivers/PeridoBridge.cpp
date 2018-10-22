@@ -55,7 +55,7 @@ void PeridoBridge::onRadioPacket(MicroBitEvent e)
         memcpy(serialPacket.payload, packet->payload, packet->length - MICROBIT_PERIDO_HEADER_SIZE);
 
         uint8_t* packetPtr = (uint8_t *)&serialPacket;
-        uint16_t len = packet->length - MICROBIT_PERIDO_HEADER_SIZE + BRIDGE_SERIAL_PACKET_HEADER_SIZE;
+        uint16_t len = (packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)) + BRIDGE_SERIAL_PACKET_HEADER_SIZE;
 
         bool seen = searchHistory(packet->app_id, packet->id);
 
@@ -90,6 +90,7 @@ void PeridoBridge::onRadioPacket(MicroBitEvent e)
     }
 }
 
+extern void change_display();
 void PeridoBridge::onSerialPacket(MicroBitEvent)
 {
     uint8_t* packetPtr = (uint8_t*)&serialPacket;
@@ -131,7 +132,7 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
     PeridoFrameBuffer* buf = new PeridoFrameBuffer;
 
     buf->id = serialPacket.id;
-    buf->length = len + MICROBIT_PERIDO_HEADER_SIZE - 1;
+    buf->length = len + MICROBIT_PERIDO_HEADER_SIZE - 1 + CLOUD_HEADER_SIZE;
     buf->app_id = serialPacket.app_id;
     buf->namespace_id = serialPacket.namespace_id;
     buf->ttl = 4;
@@ -143,8 +144,9 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
     cloudData->packet = buf;
     cloudData->status = DATA_PACKET_WAITING_FOR_SEND;
 
-    int ret = radio.cloud.addToTxQueue(cloudData);
-    delete cloudData; // includes deletion of buf.
+    // cloud data will be deleted automatically.
+    radio.cloud.addToTxQueue(cloudData);
+    change_display();
 }
 
 PeridoBridge::PeridoBridge(MicroBitPeridoRadio& r, MicroBitSerial& s, MicroBitMessageBus& b) : radio(r), serial(s)

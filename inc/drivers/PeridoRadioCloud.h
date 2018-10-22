@@ -13,7 +13,7 @@ class MicroBitPeridoRadio;
 #include "MicroBitEvent.h"
 
 #define CLOUD_HEADER_SIZE                    1
-#define MAX_PAYLOAD_SIZE                    (254 - 4 - CLOUD_HEADER_SIZE)
+#define MAX_PAYLOAD_SIZE                    (255 - 10 - CLOUD_HEADER_SIZE)
 
 #define REQUEST_TYPE_GET_REQUEST            0x01
 #define REQUEST_TYPE_POST_REQUEST           0x02

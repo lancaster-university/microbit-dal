@@ -50,7 +50,7 @@ DynamicType PeridoRadioREST::postRequest(ManagedString url, DynamicType& paramet
     uint8_t* urlBuf = (uint8_t *)malloc(bufLen);
     urlBuf[0] = SUBTYPE_STRING;
 
-    memcpy(urlBuf + 1,url.toCharArray(), strLen);
+    memcpy(urlBuf + 1, url.toCharArray(), strLen);
     memcpy(urlBuf + 1 + strLen, parameters.getBytes(), parameters.length());
 
     int ret = cloud.send(REQUEST_TYPE_POST_REQUEST, urlBuf, bufLen);
