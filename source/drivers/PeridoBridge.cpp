@@ -17,6 +17,25 @@
 static uint32_t id_history[HISTORY_COUNT] = { 0 };
 static uint16_t historyIndexHead = 0;
 
+const char* SCHOOL_ID = "ABCDEFGHIJKL";
+const char* HUB_ID = "ABCDEFGHIJKL";
+
+void PeridoBridge::sendHelloPacket()
+{
+    DynamicType t;
+
+    t.appendString(SCHOOL_ID);
+    t.appendString(HUB_ID);
+
+    serialPacket.request_id = 0;
+    serialPacket.app_id = 0;
+    serialPacket.namespace_id = 0;
+    serialPacket.payload[0] = REQUEST_TYPE_HELLO;
+
+    memcpy(&serialPacket.payload[1], t.getBytes(), t.length());
+    sendSerialPacket(t.length() + BRIDGE_SERIAL_PACKET_HEADER_SIZE + 2); // +2 for the id (which is normally included in perido frame buffer)
+}
+
 bool PeridoBridge::searchHistory(uint16_t app_id, uint16_t id)
 {
     for (int idx = 0; idx < HISTORY_COUNT; idx++)
@@ -34,9 +53,30 @@ void PeridoBridge::addToHistory(uint16_t app_id, uint16_t id)
     historyIndexHead = (historyIndexHead + 1) % HISTORY_COUNT;
 }
 
-void PeridoBridge::test_send(DataPacket*)
+void PeridoBridge::sendSerialPacket(uint16_t len)
 {
+    uint8_t* packetPtr = (uint8_t *)&serialPacket;
 
+    for (uint16_t i = 0; i < len; i++)
+    {
+        if (packetPtr[i] == SLIP_ESC)
+        {
+            serial.putc(SLIP_ESC);
+            serial.putc(SLIP_ESC_ESC);
+            continue;
+        }
+
+        if(packetPtr[i] == SLIP_END)
+        {
+            serial.putc(SLIP_ESC);
+            serial.putc(SLIP_ESC_END);
+            continue;
+        }
+
+        serial.putc(packetPtr[i]);
+    }
+
+    serial.putc(SLIP_END);
 }
 
 void PeridoBridge::onRadioPacket(MicroBitEvent)
@@ -55,35 +95,11 @@ void PeridoBridge::onRadioPacket(MicroBitEvent)
         // first two bytes of the payload nicely contain the id.
         memcpy(&serialPacket.request_id, packet->payload, packet->length - MICROBIT_PERIDO_HEADER_SIZE);
 
-        uint8_t* packetPtr = (uint8_t *)&serialPacket;
-        uint16_t len = (packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)) + BRIDGE_SERIAL_PACKET_HEADER_SIZE;
-
-        bool seen = searchHistory(packet->app_id, packet->id);
-
-        if (!seen)
+        // if we haven't seen this packet before
+        if (!searchHistory(packet->app_id, packet->id))
         {
             addToHistory(packet->app_id, packet->id);
-
-            for (uint16_t i = 0; i < len; i++)
-            {
-                if (packetPtr[i] == SLIP_ESC)
-                {
-                    serial.putc(SLIP_ESC);
-                    serial.putc(SLIP_ESC_ESC);
-                    continue;
-                }
-
-                if(packetPtr[i] == SLIP_END)
-                {
-                    serial.putc(SLIP_ESC);
-                    serial.putc(SLIP_ESC_END);
-                    continue;
-                }
-
-                serial.putc(packetPtr[i]);
-            }
-
-            serial.putc(SLIP_END);
+            sendSerialPacket((packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)) + BRIDGE_SERIAL_PACKET_HEADER_SIZE);
         }
 
         // we are now finished with the packet..
@@ -152,7 +168,7 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
 
 PeridoBridge::PeridoBridge(MicroBitPeridoRadio& r, MicroBitSerial& s, MicroBitMessageBus& b) : radio(r), serial(s)
 {
-    s.putc(SLIP_END);
+    sendHelloPacket();
 
     memset(id_history, 0, sizeof(uint32_t) * HISTORY_COUNT);
 

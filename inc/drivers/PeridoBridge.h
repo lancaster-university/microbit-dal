@@ -24,13 +24,13 @@ class PeridoBridge
 
     PeridoBridgeSerialPacket serialPacket; // holds data to be transmitted or received
 
+    void sendHelloPacket();
+    void sendSerialPacket(uint16_t len);
     void onRadioPacket(MicroBitEvent e);
     void onSerialPacket(MicroBitEvent e);
 
     bool searchHistory(uint16_t app_id, uint16_t id);
     void addToHistory(uint16_t app_id, uint16_t id);
-
-    void test_send(DataPacket* p);
 
     public:
 

@@ -20,6 +20,7 @@ class MicroBitPeridoRadio;
 #define REQUEST_TYPE_CLOUD_VARIABLE         0x04
 #define REQUEST_TYPE_BROADCAST              0x08
 
+#define REQUEST_TYPE_HELLO                  0x10
 #define REQUEST_STATUS_ACK                  0x20
 #define REQUEST_STATUS_ERROR                0x40
 #define REQUEST_STATUS_OK                   0x80
