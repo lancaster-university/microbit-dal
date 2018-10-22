@@ -5,13 +5,14 @@
 #include "MicroBitSerial.h"
 #include "MicroBitMessageBus.h"
 
-#define BRIDGE_SERIAL_PACKET_HEADER_SIZE        4
+// the header is only the first two bytes, as the id is placed inside the payload
+#define BRIDGE_SERIAL_PACKET_HEADER_SIZE        2
 
 struct PeridoBridgeSerialPacket
 {
     uint8_t app_id;
     uint8_t namespace_id;
-    uint16_t id;
+    uint16_t request_id;
 
     uint8_t payload[MICROBIT_PERIDO_MAX_PACKET_SIZE];
 }__attribute((packed));

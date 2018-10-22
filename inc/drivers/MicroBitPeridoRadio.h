@@ -283,6 +283,12 @@ class MicroBitPeridoRadio : public MicroBitComponent
       *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
       */
     int send(ManagedString data);
+
+    /**
+     * Generates an id based on historic information.
+     **/
+    uint16_t generateId(uint8_t app_id, uint8_t namespace_id);
+
 };
 
 #endif

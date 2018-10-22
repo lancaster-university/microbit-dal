@@ -39,20 +39,21 @@ void PeridoBridge::test_send(DataPacket*)
 
 }
 
-void PeridoBridge::onRadioPacket(MicroBitEvent e)
+void PeridoBridge::onRadioPacket(MicroBitEvent)
 {
     CloudDataItem* r = NULL;
 
     while((r = radio.cloud.recvRaw()))
     {
         PeridoFrameBuffer* packet = r->packet;
-        radio.cloud.sendAck(packet->id, packet->app_id, packet->namespace_id);
+        DataPacket* data = (DataPacket*)packet->payload;
+
+        radio.cloud.sendAck(data->request_id, packet->app_id, packet->namespace_id);
 
         serialPacket.app_id = packet->app_id;
         serialPacket.namespace_id = packet->namespace_id;
-        serialPacket.id = packet->id;
-
-        memcpy(serialPacket.payload, packet->payload, packet->length - MICROBIT_PERIDO_HEADER_SIZE);
+        // first two bytes of the payload nicely contain the id.
+        memcpy(&serialPacket.request_id, packet->payload, packet->length - MICROBIT_PERIDO_HEADER_SIZE);
 
         uint8_t* packetPtr = (uint8_t *)&serialPacket;
         uint16_t len = (packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)) + BRIDGE_SERIAL_PACKET_HEADER_SIZE;
@@ -131,15 +132,15 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
     CloudDataItem* cloudData = new CloudDataItem;
     PeridoFrameBuffer* buf = new PeridoFrameBuffer;
 
-    buf->id = serialPacket.id;
-    buf->length = len + MICROBIT_PERIDO_HEADER_SIZE - 1 + CLOUD_HEADER_SIZE;
+    buf->id = radio.generateId(serialPacket.app_id, serialPacket.namespace_id);
+    buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1);
     buf->app_id = serialPacket.app_id;
     buf->namespace_id = serialPacket.namespace_id;
     buf->ttl = 4;
     buf->initial_ttl = 4;
     buf->time_since_wake = 0;
     buf->period = 0;
-    memcpy(buf->payload, serialPacket.payload, len);
+    memcpy(buf->payload, &serialPacket.request_id, len);
 
     cloudData->packet = buf;
     cloudData->status = DATA_PACKET_WAITING_FOR_SEND;

@@ -72,6 +72,7 @@ class PeridoRadioCloud : public MicroBitComponent
     int addToQueue(CloudDataItem** queue, CloudDataItem* packet);
     CloudDataItem* removeFromQueue(CloudDataItem** queue, uint16_t id);
     CloudDataItem* peakQueue(CloudDataItem** queue, uint16_t id);
+    CloudDataItem* peakQueuePacketId(CloudDataItem** queue, uint16_t id);
 
     bool searchHistory(uint32_t* history, uint16_t app_id, uint16_t id);
     void addToHistory(uint32_t* history, uint8_t* history_index, uint16_t app_id, uint16_t id);
@@ -107,6 +108,8 @@ class PeridoRadioCloud : public MicroBitComponent
     CloudDataItem* recvRaw(uint16_t id);
 
     CloudDataItem* recvRaw();
+
+    uint16_t generateId();
 };
 
 

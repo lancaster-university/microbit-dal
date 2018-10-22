@@ -118,6 +118,7 @@ extern void log_num(int num);
 #define RADIO_STATUS_FIRST_PACKET           0x02000000
 #define RADIO_STATUS_SAMPLING               0x04000000
 #define RADIO_STATUS_DIRECTING              0x08000000
+#define RADIO_STATUS_QUEUE_KEEP_ALIVE       0x10000000
 
 // #define DEBUG_MODE
 
@@ -784,7 +785,7 @@ void go_to_sleep()
     if (keep_alive_count >= keep_alive_match)
     {
         keep_alive_count = 0;
-        MicroBitPeridoRadio::instance->queueKeepAlive();
+        radio_status |= RADIO_STATUS_QUEUE_KEEP_ALIVE;
     }
 
 // #ifdef TRACE
@@ -1330,6 +1331,12 @@ PeridoFrameBuffer* MicroBitPeridoRadio::recv()
 
 void MicroBitPeridoRadio::idleTick()
 {
+    if (radio_status & RADIO_STATUS_QUEUE_KEEP_ALIVE)
+    {
+        queueKeepAlive();
+        radio_status &= ~RADIO_STATUS_QUEUE_KEEP_ALIVE;
+    }
+
     // Walk the list of packets and process each one.
     while (peakRxQueue())
     {
@@ -1417,6 +1424,41 @@ int MicroBitPeridoRadio::send(PacketBuffer data)
 int MicroBitPeridoRadio::send(ManagedString data)
 {
     return send((uint8_t *)data.toCharArray(), data.length());
+}
+extern void log_string_ch(const char*);
+extern void log_num(int);
+uint16_t MicroBitPeridoRadio::generateId(uint8_t app_id, uint8_t namespace_id)
+{
+    log_string_ch("GEN_ID: ");
+    uint16_t new_id;
+    bool seenBefore = true;
+
+    while (seenBefore)
+    {
+        seenBefore = false;
+        new_id = microbit_random(65535);
+
+        for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
+        {
+            if (last_seen[i] > 0)
+            {
+                uint8_t seen_namespace_id = last_seen[i];
+                uint8_t seen_app_id = last_seen[i] >> 8;
+
+                // we can exit early here as if the namespaces don't match we're not interested.
+                if (namespace_id != seen_namespace_id || app_id != seen_app_id)
+                    continue;
+
+                uint16_t packet_id = (last_seen[i] >> 16);
+                if (packet_id == new_id)
+                    seenBefore = true;
+            }
+        }
+    }
+
+    log_num(new_id);
+
+    return new_id;
 }
 
 #endif
