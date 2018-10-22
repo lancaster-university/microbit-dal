@@ -68,6 +68,8 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_ID_MULTIBUTTON_ATTACH  31
 #define MICROBIT_ID_SERIAL              32
 
+#define MICROBIT_ID_RADIO_TX            33
+
 #define MICROBIT_ID_MESSAGE_BUS_LISTENER            1021          // Message bus indication that a handler for a given ID has been registered.
 #define MICROBIT_ID_NOTIFY_ONE                      1022          // Notfication channel, for general purpose synchronisation
 #define MICROBIT_ID_NOTIFY                          1023          // Notfication channel, for general purpose synchronisation
@@ -81,17 +83,17 @@ DEALINGS IN THE SOFTWARE.
   *
   * All components should inherit from this class.
   *
-  * If a component requires regular updates, then that component can be added to the 
+  * If a component requires regular updates, then that component can be added to the
   * to the systemTick and/or idleTick queues. This provides a simple, extensible mechanism
   * for code that requires periodic/occasional background processing but does not warrant
-  * the complexity of maintaining its own thread. 
+  * the complexity of maintaining its own thread.
   *
-  * Two levels of support are available. 
+  * Two levels of support are available.
   *
   * systemTick() provides a periodic callback during the
   * micro:bit's system timer interrupt. This provides a guaranteed periodic callback, but in interrupt context
   * and is suitable for code with lightweight processing requirements, but strict time constraints.
-  * 
+  *
   * idleTick() provides a periodic callback whenever the scheduler is idle. This provides occasional, callbacks
   * in the main thread context, but with no guarantees of frequency. This is suitable for non-urgent background tasks.
   *
@@ -128,7 +130,7 @@ class MicroBitComponent
 
     /**
       * The idle thread will call this member function once the component has been added to the array
-      * of idle components using fiber_add_idle_component. 
+      * of idle components using fiber_add_idle_component.
       */
     virtual void idleTick()
     {
