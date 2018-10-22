@@ -10,13 +10,6 @@
 #define SLIP_ESC_END            0xDC
 #define SLIP_ESC_ESC            0xDD
 
-#define HISTORY_COUNT           20
-#define APP_ID_MSK              0xFFFF0000
-#define PACKET_ID_MSK           0x0000FFFF
-
-static uint32_t id_history[HISTORY_COUNT] = { 0 };
-static uint16_t historyIndexHead = 0;
-
 const char* SCHOOL_ID = "ABCDEFGHIJKL";
 const char* HUB_ID = "ABCDEFGHIJKL";
 
@@ -34,23 +27,6 @@ void PeridoBridge::sendHelloPacket()
 
     memcpy(&serialPacket.payload[1], t.getBytes(), t.length());
     sendSerialPacket(t.length() + BRIDGE_SERIAL_PACKET_HEADER_SIZE + 2); // +2 for the id (which is normally included in perido frame buffer)
-}
-
-bool PeridoBridge::searchHistory(uint16_t app_id, uint16_t id)
-{
-    for (int idx = 0; idx < HISTORY_COUNT; idx++)
-    {
-        if (((id_history[idx] & APP_ID_MSK) >> 16) == app_id && (id_history[idx] & PACKET_ID_MSK) == id)
-            return true;
-    }
-
-    return false;
-}
-
-void PeridoBridge::addToHistory(uint16_t app_id, uint16_t id)
-{
-    id_history[historyIndexHead] = ((app_id << 16) | id);
-    historyIndexHead = (historyIndexHead + 1) % HISTORY_COUNT;
 }
 
 void PeridoBridge::sendSerialPacket(uint16_t len)
@@ -95,12 +71,8 @@ void PeridoBridge::onRadioPacket(MicroBitEvent)
         // first two bytes of the payload nicely contain the id.
         memcpy(&serialPacket.request_id, packet->payload, packet->length - MICROBIT_PERIDO_HEADER_SIZE);
 
-        // if we haven't seen this packet before
-        if (!searchHistory(packet->app_id, packet->id))
-        {
-            addToHistory(packet->app_id, packet->id);
-            sendSerialPacket((packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)) + BRIDGE_SERIAL_PACKET_HEADER_SIZE);
-        }
+        // forward the packet over serial
+        sendSerialPacket((packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)) + BRIDGE_SERIAL_PACKET_HEADER_SIZE);
 
         // we are now finished with the packet..
         delete r;
@@ -169,8 +141,6 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
 PeridoBridge::PeridoBridge(MicroBitPeridoRadio& r, MicroBitSerial& s, MicroBitMessageBus& b) : radio(r), serial(s)
 {
     sendHelloPacket();
-
-    memset(id_history, 0, sizeof(uint32_t) * HISTORY_COUNT);
 
     // listen to everything.
     r.cloud.setBridgeMode(true);
