@@ -6,8 +6,14 @@
 #define APP_ID_MSK              0xFFFF0000
 #define PACKET_ID_MSK           0x0000FFFF
 
-#define LOG_STRING(...) ((void)0)
-#define LOG_NUM(...) ((void)0)
+extern void log_string_ch(const char*);
+extern void log_num(int);
+
+#define LOG_STRING(str) (log_string_ch(str))
+#define LOG_NUM(str) (log_num(str))
+
+// #define LOG_STRING(...) ((void)0)
+// #define LOG_NUM(...) ((void)0)
 
 static uint32_t rx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
 static uint8_t rx_history_index = 0;
@@ -282,8 +288,13 @@ void PeridoRadioCloud::idleTick()
 
                 // if we've exceeded our retry threshold, we  break and remove from the tx queue, flagging an error
                 if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
+                {
+                    LOG_STRING("ACK TIMEOUT");
                     break;
+                }
+
                 LOG_STRING("RESEND");
+
                 // resend
                 sendCloudDataItem(p);
                 p->no_response_count = 0;
@@ -296,7 +307,10 @@ void PeridoRadioCloud::idleTick()
             p->no_response_count++;
 
             if (p->no_response_count > CLOUD_RADIO_NO_RESPONSE_THRESHOLD || p->status & DATA_PACKET_EXPECT_NO_RESPONSE)
+            {
+                LOG_STRING("RESPONSE TIMEOUT");
                 break;
+            }
         }
 
         p = p->next;
@@ -305,8 +319,9 @@ void PeridoRadioCloud::idleTick()
     // if we've iterated over the full list without a break, p will be null.
     if (p)
     {
-        CloudDataItem *c = removeFromQueue(&txQueue, p->packet->id);
-        DataPacket *t = (DataPacket*)c->packet->payload;
+        DataPacket *t = (DataPacket*)p->packet->payload;
+        CloudDataItem *c = removeFromQueue(&txQueue, t->request_id);
+
         if (c)
         {
             if (c->status & DATA_PACKET_EXPECT_NO_RESPONSE)
@@ -386,7 +401,7 @@ void PeridoRadioCloud::packetReceived()
 
     // check if we are the originator of the request or a bridge
     // if we are, send an ack
-    if (searchHistory(tx_history, temp->request_id, packet->app_id, packet->namespace_id) || getBridgeMode())
+    if (peakTxQueue(temp->request_id) || getBridgeMode())
     {
         LOG_STRING("OUR TX");
         sendAck(temp->request_id, packet->app_id, packet->namespace_id);
@@ -406,15 +421,26 @@ void PeridoRadioCloud::packetReceived()
     // we have received a response, remove any matching packets from the txQueue
     CloudDataItem* p = removeFromQueue(&txQueue, temp->request_id);
 
-    // if null, we're receiving, allocate a new buffer.
-    if (p == NULL)
+    // if we're a bridge, we receive all packets, re-use existing packet
+    // or allocate a new one
+    if (getBridgeMode())
     {
-        LOG_STRING("NEW BUF");
-        p = new CloudDataItem;
+        // if null, we're receiving, allocate a new buffer.
+        if (p == NULL)
+        {
+            LOG_STRING("NEW BUF");
+            p = new CloudDataItem;
+        }
+        else
+            // delete previous packet.
+            delete p->packet;
     }
-    else
-        // delete previous packet.
-        delete p->packet;
+    // otherwise, if it's not in our txqueue, so we shan't store it.
+    else if (!p)
+    {
+        delete packet;
+        return;
+    }
 
     // add to our RX queue for app handling.
     p->packet = packet;
@@ -425,7 +451,10 @@ void PeridoRadioCloud::packetReceived()
 
     addToQueue(&rxQueue, p);
 
+
     LOG_NUM(temp->request_id);
+    LOG_STRING("STATUS: ");
+    LOG_NUM(p->status);
 
     // interception event for Bridge.cpp
     MicroBitEvent(MICROBIT_RADIO_ID_CLOUD, temp->request_id);
