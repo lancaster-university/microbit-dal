@@ -11,9 +11,7 @@
 #define SLIP_ESC_ESC            0xDD
 
 const char* HUB_ID = "M1cR0B1THuBs";
-const char* HACK_STRIN2 = "ABC123_TO_PUSH";
 const char* SCHOOL_ID = "M1cR0B1TSCHO";
-const char* HACK_STRING = "HACK_STRING_TO_PUSH";
 
 void PeridoBridge::sendHelloPacket()
 {
