@@ -6,6 +6,9 @@
 #define APP_ID_MSK              0xFFFF0000
 #define PACKET_ID_MSK           0x0000FFFF
 
+#define LOG_STRING(...) ((void)0)
+#define LOG_NUM(...) ((void)0)
+
 static uint32_t rx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
 static uint8_t rx_history_index = 0;
 
@@ -18,9 +21,6 @@ CloudDataItem::~CloudDataItem()
     if (packet)
         delete packet;
 }
-
-extern void log_string_ch(const char*);
-extern void log_num(int);
 
 PeridoRadioCloud::PeridoRadioCloud(MicroBitPeridoRadio& r) : radio(r), rest(*this), variable(*this)
 {
@@ -171,8 +171,6 @@ void PeridoRadioCloud::sendCloudDataItem(CloudDataItem* p)
     radio.send(p->packet);
 }
 
-extern void change_display();
-extern void log_string_ch(const char*);
 void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
 {
     uint16_t id = evt.value;
@@ -196,19 +194,15 @@ void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
         p->retry_count = 0;
 
         p->status |= (DATA_PACKET_WAITING_FOR_ACK);
-
-        change_display();
     }
 }
-extern void change_display();
-extern void log_string_ch(const char*);
-extern void log_num(int);
+
 int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
 {
     CloudDataItem* c = new CloudDataItem;
     PeridoFrameBuffer* buf = new PeridoFrameBuffer;
 
-    log_string_ch("SEND");
+    LOG_STRING("SEND");
     buf->id = radio.generateId(radio.getAppId(), 0);
     buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE; // add 1 for request type
     buf->app_id = radio.getAppId();
@@ -226,7 +220,7 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
     c->status = DATA_PACKET_WAITING_FOR_SEND;
     c->packet = buf;
 
-    log_string_ch("ADDING TO Q");
+    LOG_STRING("ADDING TO Q");
 
     addToTxQueue(c);
 
@@ -289,7 +283,7 @@ void PeridoRadioCloud::idleTick()
                 // if we've exceeded our retry threshold, we  break and remove from the tx queue, flagging an error
                 if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
                     break;
-                log_string_ch("RESEND");
+                LOG_STRING("RESEND");
                 // resend
                 sendCloudDataItem(p);
                 p->no_response_count = 0;
@@ -361,18 +355,18 @@ void PeridoRadioCloud::addToHistory(uint32_t* history, uint8_t* history_index, u
   */
 void PeridoRadioCloud::packetReceived()
 {
-    log_string_ch("PKT!");
+    LOG_STRING("PKT!");
     PeridoFrameBuffer* packet = radio.recv();
     DataPacket* temp = (DataPacket*)packet->payload;
 
-    log_num(packet->length);
+    LOG_NUM(packet->length);
     for (int i = 0; i < packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1); i++)
-        log_num(packet->payload[i]);
+        LOG_NUM(packet->payload[i]);
 
     // first we check if we've received an ack
     if (temp->request_type & REQUEST_STATUS_ACK)
     {
-        log_string_ch("ACK!");
+        LOG_STRING("ACK!");
         CloudDataItem* p = peakTxQueue(temp->request_id);
 
         if (p)
@@ -394,20 +388,20 @@ void PeridoRadioCloud::packetReceived()
     // if we are, send an ack
     if (searchHistory(tx_history, temp->request_id, packet->app_id, packet->namespace_id) || getBridgeMode())
     {
-        log_string_ch("OUR TX");
+        LOG_STRING("OUR TX");
         sendAck(temp->request_id, packet->app_id, packet->namespace_id);
     }
 
     // check if we've already received the packet:
     if (searchHistory(rx_history, temp->request_id, packet->app_id, packet->namespace_id))
     {
-        log_string_ch("ALREADY RX'd");
+        LOG_STRING("ALREADY RX'd");
         delete packet;
         return;
     }
 
     addToHistory(rx_history, &rx_history_index, temp->request_id, packet->app_id, packet->namespace_id);
-    log_string_ch("ADDING");
+    LOG_STRING("ADDING");
 
     // we have received a response, remove any matching packets from the txQueue
     CloudDataItem* p = removeFromQueue(&txQueue, temp->request_id);
@@ -415,7 +409,7 @@ void PeridoRadioCloud::packetReceived()
     // if null, we're receiving, allocate a new buffer.
     if (p == NULL)
     {
-        log_string_ch("NEW BUF");
+        LOG_STRING("NEW BUF");
         p = new CloudDataItem;
     }
     else
@@ -431,7 +425,7 @@ void PeridoRadioCloud::packetReceived()
 
     addToQueue(&rxQueue, p);
 
-    log_num(temp->request_id);
+    LOG_NUM(temp->request_id);
 
     // interception event for Bridge.cpp
     MicroBitEvent(MICROBIT_RADIO_ID_CLOUD, temp->request_id);
@@ -453,7 +447,7 @@ DynamicType PeridoRadioCloud::recv(uint16_t id)
 
     if (c == NULL)
     {
-        log_string_ch("recv NULL");
+        LOG_STRING("recv NULL");
         return DynamicType();
     }
 
@@ -461,12 +455,12 @@ DynamicType PeridoRadioCloud::recv(uint16_t id)
 
     if (t->request_type & REQUEST_STATUS_ERROR)
     {
-        log_string_ch("recv ERR");
+        LOG_STRING("recv ERR");
         dt = DynamicType(7, (uint8_t*)"\01ERROR\0", DYNAMIC_TYPE_STATUS_ERROR);
     }
     else
     {
-        log_string_ch("recv OK");
+        LOG_STRING("recv OK");
 #warning potentially bad change here
         dt = DynamicType(c->packet->length - MICROBIT_PERIDO_HEADER_SIZE - CLOUD_HEADER_SIZE, t->payload, 0);
     }
@@ -494,7 +488,7 @@ CloudDataItem* PeridoRadioCloud::recvRaw()
 
 uint16_t PeridoRadioCloud::generateId()
 {
-    log_string_ch("GEN ID:");
+    LOG_STRING("GEN ID:");
     uint16_t new_id;
     bool seenBefore = true;
 
@@ -509,7 +503,7 @@ uint16_t PeridoRadioCloud::generateId()
         if (txItem || rxItem)
             seenBefore = true;
     }
-    log_num(new_id);
+    LOG_NUM(new_id);
 
     return new_id;
 

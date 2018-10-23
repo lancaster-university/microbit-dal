@@ -27,6 +27,9 @@ DEALINGS IN THE SOFTWARE.
 
 #if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_PERIDO
 
+#define LOG_STRING(...) ((void)0)
+#define LOG_NUM(...) ((void)0)
+
 #include "MicroBitPeridoRadio.h"
 #include "MicroBitComponent.h"
 #include "EventModel.h"
@@ -1425,11 +1428,10 @@ int MicroBitPeridoRadio::send(ManagedString data)
 {
     return send((uint8_t *)data.toCharArray(), data.length());
 }
-extern void log_string_ch(const char*);
-extern void log_num(int);
+
 uint16_t MicroBitPeridoRadio::generateId(uint8_t app_id, uint8_t namespace_id)
 {
-    log_string_ch("GEN_ID: ");
+    LOG_STRING("GEN_ID: ");
     uint16_t new_id;
     bool seenBefore = true;
 
@@ -1456,7 +1458,7 @@ uint16_t MicroBitPeridoRadio::generateId(uint8_t app_id, uint8_t namespace_id)
         }
     }
 
-    log_num(new_id);
+    LOG_NUM(new_id);
 
     return new_id;
 }

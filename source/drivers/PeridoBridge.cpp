@@ -10,8 +10,8 @@
 #define SLIP_ESC_END            0xDC
 #define SLIP_ESC_ESC            0xDD
 
-const char* SCHOOL_ID = "ABCDEFGHIJKL";
-const char* HUB_ID = "ABCDEFGHIJKL";
+const char* SCHOOL_ID = "M1cR0B1TSCHO";
+const char* HUB_ID = "M1cR0B1THuBs";
 
 void PeridoBridge::sendHelloPacket()
 {
