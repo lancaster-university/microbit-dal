@@ -112,7 +112,8 @@ MicroBitAccelerometer& MicroBitAccelerometer::autoDetect(MicroBitI2C &i2c)
 
         else
         {
-            microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE_ACC);
+            MicroBitAccelerometer *unavailable =  new MicroBitAccelerometer(coordinateSpace, MICROBIT_ID_ACCELEROMETER);
+            MicroBitAccelerometer::detectedAccelerometer = unavailable;
         }
     }
 
@@ -438,6 +439,7 @@ int MicroBitAccelerometer::configure()
  */
 int MicroBitAccelerometer::requestUpdate()
 {
+    microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE_ACC);
     return MICROBIT_NOT_SUPPORTED;
 }
 
