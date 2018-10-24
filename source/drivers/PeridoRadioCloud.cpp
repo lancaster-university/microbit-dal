@@ -6,14 +6,14 @@
 #define APP_ID_MSK              0xFFFF0000
 #define PACKET_ID_MSK           0x0000FFFF
 
-extern void log_string_ch(const char*);
-extern void log_num(int);
+// extern void log_string_ch(const char*);
+// extern void log_num(int);
 
-#define LOG_STRING(str) (log_string_ch(str))
-#define LOG_NUM(str) (log_num(str))
+// #define LOG_STRING(str) (log_string_ch(str))
+// #define LOG_NUM(str) (log_num(str))
 
-// #define LOG_STRING(...) ((void)0)
-// #define LOG_NUM(...) ((void)0)
+#define LOG_STRING(...) ((void)0)
+#define LOG_NUM(...) ((void)0)
 
 static uint32_t rx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
 static uint8_t rx_history_index = 0;
