@@ -40,10 +40,8 @@ DEALINGS IN THE SOFTWARE.
 #define RANGE_MAX                                  160000
 #define WATTAGE_MAX                                3000
 
-#define MICROBIT_ID_ELECTRICAL_POWER               0xDAB // 3499
-
-#define MICROBIT_ELECTRICAL_POWER_EVT_ON           1
-#define MICROBIT_ELECTRICAL_POWER_EVT_OFF          2
+#define MICROBIT_EVT_ELECTRICAL_POWER_EVT_ON       1
+#define MICROBIT_EVT_ELECTRICAL_POWER_EVT_OFF      2
 
 #define MICROBIT_ELECTRICAL_POWER_STATE            1
 
@@ -72,7 +70,7 @@ class MicroBitEnergyMonitor : public MicroBitComponent
           * energyMonitor();
           * @endcode
           */
-        MicroBitEnergyMonitor(MicroBitCompass &magnetometer);
+        MicroBitEnergyMonitor(MicroBitCompass &magnetometer, uint16_t id = MICROBIT_ID_ENERGY_MONITOR);
 
         /**
           * Periodic callback from MicroBit idle thread.

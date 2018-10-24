@@ -37,10 +37,10 @@ DEALINGS IN THE SOFTWARE.
   * monitor.getEnergyUsage();
   * @endcode
   */
-MicroBitEnergyMonitor::MicroBitEnergyMonitor(MicroBitCompass &magnetometer) : magnetometer(magnetometer)
+MicroBitEnergyMonitor::MicroBitEnergyMonitor(MicroBitCompass &magnetometer, uint16_t id) : magnetometer(magnetometer)
 {
     this->magnetometer.setPeriod(1);
-
+    this->id = id;
     this->status = 0x00;
     this->sample = 0;
     this->watts = 0;
@@ -90,7 +90,7 @@ int MicroBitEnergyMonitor::updateSamples()
     {
         // record we have a state change, and raise an event
         status |= MICROBIT_ELECTRICAL_POWER_STATE;
-        MicroBitEvent evt(MICROBIT_ID_ELECTRICAL_POWER, MICROBIT_ELECTRICAL_POWER_EVT_ON);
+        MicroBitEvent evt(this->id, MICROBIT_EVT_ELECTRICAL_POWER_EVT_ON);
     }
 
     // check to see if we have on->off state change
@@ -98,7 +98,7 @@ int MicroBitEnergyMonitor::updateSamples()
     {
         // record state change, and raise an event
         status = 0;
-        MicroBitEvent evt(MICROBIT_ID_ELECTRICAL_POWER, MICROBIT_ELECTRICAL_POWER_EVT_OFF);
+        MicroBitEvent evt(this->id, MICROBIT_EVT_ELECTRICAL_POWER_EVT_OFF);
     }
 
     return MICROBIT_OK;
