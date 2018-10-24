@@ -33,6 +33,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitCompass.cpp"
     "drivers/MicroBitCompassCalibrator.cpp"
     "drivers/MicroBitDisplay.cpp"
+    "drivers/MicroBitEnergyMonitor.cpp"
     "drivers/MicroBitI2C.cpp"
     "drivers/MicroBitIO.cpp"
     "drivers/MicroBitLightSensor.cpp"
