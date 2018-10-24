@@ -37,6 +37,7 @@ DEALINGS IN THE SOFTWARE.
 #include "ErrorNo.h"
 #include "MicroBitFiber.h"
 #include "MicroBitBLEManager.h"
+#include "MicroBitHeapAllocator.h"
 
 /**
   * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -1028,8 +1029,6 @@ int MicroBitPeridoRadio::copyRxBuf()
 
     // Increase our received packet count
     rxQueueDepth++;
-
-    // MicroBitEvent(MICROBIT_ID_RADIO_RX, newRxBuf->id);
 
     return MICROBIT_OK;
 }

@@ -13,10 +13,17 @@
 const char* HUB_ID = "M1cR0B1THuBs";
 const char* SCHOOL_ID = "M1cR0B1TSCHO";
 
+const MicroBitImage line = MicroBitImage("0, 0, 0\n255, 255, 255\n0, 0, 0\n");
+
+const MicroBitImage tick = MicroBitImage("0, 0, 0, 255\n255, 0, 255, 0\n0, 255, 0, 0\n");
+
+const MicroBitImage cross = MicroBitImage("255, 0, 255\n 0, 255, 0\n 255, 0, 255\n");
+
 void PeridoBridge::sendHelloPacket()
 {
     DynamicType t;
 
+    t.appendInteger(0); // status ok! change in future if things aren't ok...
     t.appendString(SCHOOL_ID);
     t.appendString(HUB_ID);
 
@@ -27,6 +34,48 @@ void PeridoBridge::sendHelloPacket()
 
     memcpy(&serialPacket.payload[1], t.getBytes(), t.length());
     sendSerialPacket(t.length() + BRIDGE_SERIAL_PACKET_HEADER_SIZE + 2); // +2 for the id (which is normally included in perido frame buffer)
+}
+
+void PeridoBridge::handleHelloPacket(DataPacket* pkt, uint16_t len)
+{
+    DynamicType dt = DynamicType(len - CLOUD_HEADER_SIZE, pkt->payload, 0);
+
+    int status = dt.getInteger(0);
+
+    // clear the pixels using the biggest image
+    for (int j = 0; j < tick.getHeight(); j++)
+        for (int i = 0; i < tick.getWidth(); i++)
+            display.image.setPixelValue(i, j, 0);
+
+    if (status == MICROBIT_OK)
+        display.print(tick);
+    else
+        display.print(cross);
+}
+
+void PeridoBridge::updatePacketCount()
+{
+    uint8_t countImageData[PACKET_COUNT_BIT_RESOLUTION] = { 0 };
+
+    int arrayCount = 0;
+    for (int i = PACKET_COUNT_BIT_RESOLUTION-1; i > -1; i--)
+    {
+        countImageData[i] = (packetCount & (1 << arrayCount)) ? 255 : 0;
+        arrayCount++;
+    }
+
+    // reset packet count if it's off the end of the display
+    if (this->packetCount > PACKET_COUNT_DISPLAY_RESOLUTION)
+        this->packetCount = 0;
+
+    MicroBitImage count(5, 1, countImageData);
+
+    // clear pixels
+    for (int i = 0; i < MICROBIT_DISPLAY_WIDTH; i++)
+        display.image.setPixelValue(i, PACKET_COUNT_PASTE_ROW, 0);
+
+    // paste our new count
+    display.image.paste(count, PACKET_COUNT_PASTE_COLUMN, PACKET_COUNT_PASTE_ROW);
 }
 
 void PeridoBridge::sendSerialPacket(uint16_t len)
@@ -76,7 +125,11 @@ void PeridoBridge::onRadioPacket(MicroBitEvent)
 
         // we are now finished with the packet..
         delete r;
+
+        this->packetCount++;
     }
+
+    updatePacketCount();
 }
 
 extern void change_display();
@@ -114,45 +167,61 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
         *packetPtr++ = c;
     }
 
+    DataPacket* temp = (DataPacket*)&serialPacket.request_id;
+
     // calculate the pure packet length.
     len -= BRIDGE_SERIAL_PACKET_HEADER_SIZE;
 
-    CloudDataItem* cloudData = new CloudDataItem;
-    PeridoFrameBuffer* buf = new PeridoFrameBuffer;
+    if (temp->request_type & REQUEST_TYPE_HELLO)
+    {
+        handleHelloPacket(temp, len);
+    }
+    else
+    {
+        CloudDataItem* cloudData = new CloudDataItem;
+        PeridoFrameBuffer* buf = new PeridoFrameBuffer;
 
-    buf->id = radio.generateId(serialPacket.app_id, serialPacket.namespace_id);
-    buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1);
-    buf->app_id = serialPacket.app_id;
-    buf->namespace_id = serialPacket.namespace_id;
-    buf->ttl = 4;
-    buf->initial_ttl = 4;
-    buf->time_since_wake = 0;
-    buf->period = 0;
-    memcpy(buf->payload, &serialPacket.request_id, len);
+        buf->id = radio.generateId(serialPacket.app_id, serialPacket.namespace_id);
+        buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1);
+        buf->app_id = serialPacket.app_id;
+        buf->namespace_id = serialPacket.namespace_id;
+        buf->ttl = 4;
+        buf->initial_ttl = 4;
+        buf->time_since_wake = 0;
+        buf->period = 0;
+        memcpy(buf->payload, &serialPacket.request_id, len);
 
-    cloudData->packet = buf;
-    cloudData->status = DATA_PACKET_WAITING_FOR_SEND | DATA_PACKET_EXPECT_NO_RESPONSE;
+        cloudData->packet = buf;
+        cloudData->status = DATA_PACKET_WAITING_FOR_SEND | DATA_PACKET_EXPECT_NO_RESPONSE;
 
-    // cloud data will be deleted automatically.
-    radio.cloud.addToTxQueue(cloudData);
+        // cloud data will be deleted automatically.
+        radio.cloud.addToTxQueue(cloudData);
+    }
+
     change_display();
 }
 
-PeridoBridge::PeridoBridge(MicroBitPeridoRadio& r, MicroBitSerial& s, MicroBitMessageBus& b) : radio(r), serial(s)
+void PeridoBridge::enable()
 {
+    display.print(line);
+
+    // max size of a DataPacket
+    serial.setRxBufferSize(254);
+
+    // configure an event for SLIP_END
+    serial.eventOn((char)SLIP_END);
+
     sendHelloPacket();
 
     // listen to everything.
-    r.cloud.setBridgeMode(true);
+    radio.cloud.setBridgeMode(true);
+}
 
+PeridoBridge::PeridoBridge(MicroBitPeridoRadio& r, MicroBitSerial& s, MicroBitMessageBus& b, MicroBitDisplay& display) : radio(r), serial(s), display(display)
+{
+    this->packetCount = 0;
     b.listen(MICROBIT_RADIO_ID_CLOUD, MICROBIT_EVT_ANY, this, &PeridoBridge::onRadioPacket, MESSAGE_BUS_LISTENER_IMMEDIATE);
     b.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, this, &PeridoBridge::onSerialPacket);
-
-    // max size of a DataPacket
-    s.setRxBufferSize(254);
-
-    // configure an event for SLIP_END
-    s.eventOn((char)SLIP_END);
 }
 
 #endif

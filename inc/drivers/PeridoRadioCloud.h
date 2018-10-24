@@ -25,9 +25,9 @@ class MicroBitPeridoRadio;
 #define REQUEST_STATUS_ERROR                0x40
 #define REQUEST_STATUS_OK                   0x80
 
-#define CLOUD_RADIO_NO_ACK_THRESHOLD        90
+#define CLOUD_RADIO_NO_ACK_THRESHOLD        1500   // about 2 seconds
 #define CLOUD_RADIO_NO_RESPONSE_THRESHOLD   3000 // about 4 seconds
-#define CLOUD_RADIO_RETRY_THRESHOLD         15
+#define CLOUD_RADIO_RETRY_THRESHOLD         3    // resend packet
 
 #define DATA_PACKET_WAITING_FOR_SEND        0x01
 #define DATA_PACKET_WAITING_FOR_ACK         0x02

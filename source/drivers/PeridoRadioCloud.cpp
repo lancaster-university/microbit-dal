@@ -23,7 +23,6 @@ static uint8_t tx_history_index = 0;
 
 CloudDataItem::~CloudDataItem()
 {
-#warning check this destructor is called when deleting a CloudDataItem
     if (packet)
         delete packet;
 }
@@ -187,6 +186,7 @@ void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
     // if it's broadcast just delete from the tx queue once it has been sent
     if (p)
     {
+        LOG_STRING("PACKET_TRANS");
         if ((t->request_type & REQUEST_TYPE_BROADCAST || p->status & DATA_PACKET_EXPECT_NO_RESPONSE))
         {
             CloudDataItem *c = removeFromQueue(&txQueue, t->request_id);
@@ -235,28 +235,25 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
 
 int PeridoRadioCloud::sendAck(uint16_t request_id, uint8_t app_id, uint8_t namespace_id)
 {
-    CloudDataItem* ack = new CloudDataItem;
-    PeridoFrameBuffer* buf = new PeridoFrameBuffer;
+    LOG_STRING("SEND_ACK");
+    PeridoFrameBuffer buf;
 
-    buf->id = radio.generateId(app_id, namespace_id);
-    buf->length = 0 + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE;
-    buf->app_id = app_id;
-    buf->namespace_id = namespace_id;
-    buf->ttl = 4;
-    buf->initial_ttl = 4;
-    buf->time_since_wake = 0;
-    buf->period = 0;
+    buf.id = radio.generateId(app_id, namespace_id);
+    LOG_STRING("GENNED ID");
+    buf.length = 0 + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE;
+    buf.app_id = app_id;
+    buf.namespace_id = namespace_id;
+    buf.ttl = 4;
+    buf.initial_ttl = 4;
+    buf.time_since_wake = 0;
+    buf.period = 0;
 
-    DataPacket* data = (DataPacket*)buf->payload;
+    DataPacket* data = (DataPacket*)buf.payload;
     data->request_id = request_id;
     data->request_type = REQUEST_STATUS_ACK;
 
-    ack->status = 0;
-    ack->packet = buf;
-
-    sendCloudDataItem(ack);
-    delete ack;
-
+    radio.send(&buf);
+    LOG_STRING("OUT");
     return MICROBIT_OK;
 }
 
@@ -374,9 +371,9 @@ void PeridoRadioCloud::packetReceived()
     PeridoFrameBuffer* packet = radio.recv();
     DataPacket* temp = (DataPacket*)packet->payload;
 
-    LOG_NUM(packet->length);
-    for (int i = 0; i < packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1); i++)
-        LOG_NUM(packet->payload[i]);
+    // LOG_NUM(packet->length);
+    // for (int i = 0; i < packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1); i++)
+    //     LOG_NUM(packet->payload[i]);
 
     // first we check if we've received an ack
     if (temp->request_type & REQUEST_STATUS_ACK)
@@ -421,23 +418,23 @@ void PeridoRadioCloud::packetReceived()
     // we have received a response, remove any matching packets from the txQueue
     CloudDataItem* p = removeFromQueue(&txQueue, temp->request_id);
 
-    // if we're a bridge, we receive all packets, re-use existing packet
-    // or allocate a new one
-    if (getBridgeMode())
+    // if we're a bridge, we receive all packets allocate a new data item for rx (unless we sent a packet).
+    if (getBridgeMode() && p == NULL)
     {
-        // if null, we're receiving, allocate a new buffer.
-        if (p == NULL)
-        {
-            LOG_STRING("NEW BUF");
-            p = new CloudDataItem;
-        }
-        else
-            // delete previous packet.
-            delete p->packet;
+        LOG_STRING("NEW BUF");
+        p = new CloudDataItem;
+    }
+    // if it's in our tx queue and we're either a bridge or a normal device
+    // delete the previously held packet used for tx.
+    else if (p)
+    {
+        delete p->packet;
+        LOG_STRING("DELETE OLD");
     }
     // otherwise, if it's not in our txqueue, so we shan't store it.
-    else if (!p)
+    else
     {
+        LOG_STRING("IGNORE, delete packet");
         delete packet;
         return;
     }
@@ -449,6 +446,7 @@ void PeridoRadioCloud::packetReceived()
     p->retry_count = 0;
     p->next = NULL;
 
+    LOG_STRING("ADDING TO RX Q");
     addToQueue(&rxQueue, p);
 
 
@@ -468,7 +466,7 @@ void PeridoRadioCloud::packetReceived()
         variable.handlePacket(temp->request_id);
 }
 
-
+extern void log_string(char c);
 DynamicType PeridoRadioCloud::recv(uint16_t id)
 {
     CloudDataItem *c = removeFromRxQueue(id);
@@ -490,8 +488,7 @@ DynamicType PeridoRadioCloud::recv(uint16_t id)
     else
     {
         LOG_STRING("recv OK");
-#warning potentially bad change here
-        dt = DynamicType(c->packet->length - MICROBIT_PERIDO_HEADER_SIZE - CLOUD_HEADER_SIZE, t->payload, 0);
+        dt = DynamicType(c->packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1) - CLOUD_HEADER_SIZE, t->payload, 0);
     }
 
     delete c;

@@ -2,11 +2,12 @@
 #include "ErrorNo.h"
 #include "MicroBitConfig.h"
 
-extern void log_string(const char *);
+extern void log_string_ch(const char *);
 extern void log_num(int);
 
 void DynamicType::init(uint8_t len, uint8_t* payload, bool resize)
 {
+    log_num(len);
     if (resize)
         free(this->ptr);
 
@@ -22,18 +23,21 @@ void DynamicType::init(uint8_t len, uint8_t* payload, bool resize)
 
 DynamicType::DynamicType()
 {
+    log_string_ch("DYN CB:");
     status = DYNAMIC_TYPE_STATUS_NOT_CONFIGURED;
     this->init(0, NULL);
 }
 
 DynamicType::DynamicType(uint8_t len, uint8_t* payload, uint8_t status)
 {
+    log_string_ch("DYN C:");
     status = (status > 0) ? DYNAMIC_TYPE_STATUS_ERROR : MICROBIT_OK;
     this->init(len, payload);
 }
 
 DynamicType::DynamicType(const DynamicType &buffer)
 {
+    log_string_ch("DYN CO:");
     ptr = buffer.ptr;
     status = buffer.status;
     ptr->incr();
@@ -46,6 +50,7 @@ DynamicType::~DynamicType()
 
 DynamicType& DynamicType::operator = (const DynamicType &p)
 {
+    log_string_ch("DYN A:");
     if(ptr == p.ptr)
         return *this;
 
@@ -148,6 +153,7 @@ float DynamicType::getFloat(int index)
 
 int DynamicType::grow(uint8_t size, uint8_t subtype, uint8_t* data)
 {
+    log_string_ch("DYN GROW:");
     int len = length();
     int newSize = len + size + 1;
 
