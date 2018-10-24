@@ -24,8 +24,6 @@ const unsigned char hashTable[256] = {
     149, 80, 170, 68, 6, 169, 234, 151
 };
 
-extern void log_num(int);
-
 // REF: https://en.wikipedia.org/wiki/Pearson_hashing
 inline unsigned char eightBitHash(const char* s)
 {

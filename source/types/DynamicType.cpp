@@ -4,7 +4,6 @@
 
 void DynamicType::init(uint8_t len, uint8_t* payload, bool resize)
 {
-    log_num(len);
     if (resize)
         free(this->ptr);
 
