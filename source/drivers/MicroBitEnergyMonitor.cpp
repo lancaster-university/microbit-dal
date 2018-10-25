@@ -52,10 +52,10 @@ MicroBitEnergyMonitor::MicroBitEnergyMonitor(MicroBitCompass &magnetometer, uint
 int MicroBitEnergyMonitor::updateSamples()
 {
     // if calibration is in progress, leave
-    if(magnetometer->isCalibrating())
+    if(magnetometer.isCalibrating())
         return MICROBIT_CALIBRATION_IN_PROGRESS;
     
-    int fieldStrength = magnetometer->getZ();
+    int fieldStrength = magnetometer.getZ();
     
     // update sample min and max
     maxFieldStrength = max(maxFieldStrength, fieldStrength);
@@ -82,7 +82,7 @@ int MicroBitEnergyMonitor::updateSamples()
     {
         // record we have a state change, and raise an event
         status |= MICROBIT_ELECTRICAL_POWER_STATE;
-        MicroBitEvent evt(MICROBIT_ID_ELECTRICAL_POWER, MICROBIT_ELECTRICAL_POWER_EVT_ON);
+        MicroBitEvent evt(this->id, MICROBIT_ELECTRICAL_POWER_EVT_ON);
     }
     
     // check to see if we have on->off state change
@@ -90,7 +90,7 @@ int MicroBitEnergyMonitor::updateSamples()
     {
         // record state change, and raise an event
         status = 0;
-        MicroBitEvent evt(MICROBIT_ID_ELECTRICAL_POWER, MICROBIT_ELECTRICAL_POWER_EVT_OFF);
+        MicroBitEvent evt(this->id, MICROBIT_ELECTRICAL_POWER_EVT_OFF);
     }
     
     return MICROBIT_OK;
