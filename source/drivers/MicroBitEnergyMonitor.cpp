@@ -82,7 +82,7 @@ int MicroBitEnergyMonitor::updateSamples()
     {
         // record we have a state change, and raise an event
         status |= MICROBIT_ELECTRICAL_POWER_STATE;
-        MicroBitEvent evt(this->id, MICROBIT_EVT_ELECTRICAL_POWER_EVT_ON);
+        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_POWER_ON);
     }
 
     // check to see if we have on->off state change
@@ -90,7 +90,7 @@ int MicroBitEnergyMonitor::updateSamples()
     {
         // record state change, and raise an event
         status = 0;
-        MicroBitEvent evt(this->id, MICROBIT_EVT_ELECTRICAL_POWER_EVT_OFF);
+        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_POWER_OFF);
     }
 
     return MICROBIT_OK;

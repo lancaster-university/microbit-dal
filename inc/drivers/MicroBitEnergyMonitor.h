@@ -42,8 +42,8 @@ DEALINGS IN THE SOFTWARE.
 
 #define MICROBIT_ID_ELECTRICAL_POWER               0xDAB        // microbit event ID = 3499
 
-#define MICROBIT_EVT_ELECTRICAL_POWER_EVT_ON       1            // event for power on detected
-#define MICROBIT_EVT_ELECTRICAL_POWER_EVT_OFF      2            // event for power off detected
+#define MICROBIT_ENERGY_MONITOR_EVT_POWER_ON       1            // event for power on detected
+#define MICROBIT_ENERGY_MONITOR_EVT_POWER_OFF      2            // event for power off detected
 
 #define MICROBIT_ELECTRICAL_POWER_STATE            1            // used for indicating an on->off/off->on status change
 
