@@ -34,16 +34,18 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitFiber.h"
 
 
-#define SAMPLES                                    250
+#define SAMPLES                                    25           // number of samples required to calculate amplitude and watts
+	
+#define RANGE_MIN                                  4000         // the value that represents 0 watts in the range of amplitudes
+#define RANGE_MAX                                  350000       // the value that represents 2700 watts in the range of amplitudes
+#define WATTAGE_MAX                                2700         // the wattage that RANGE_MAX refers to
 
-#define RANGE_MIN                                  4000
-#define RANGE_MAX                                  160000
-#define WATTAGE_MAX                                3000
+#define MICROBIT_ID_ELECTRICAL_POWER               0xDAB        // microbit event ID = 3499
 
-#define MICROBIT_EVT_ELECTRICAL_POWER_EVT_ON       1
-#define MICROBIT_EVT_ELECTRICAL_POWER_EVT_OFF      2
+#define MICROBIT_ELECTRICAL_POWER_EVT_ON           1            // event for power on detected
+#define MICROBIT_ELECTRICAL_POWER_EVT_OFF          2            // event for power off detected
 
-#define MICROBIT_ELECTRICAL_POWER_STATE            1
+#define MICROBIT_ELECTRICAL_POWER_STATE            1            // used for indicating an on->off/off->on status change
 
 // @author: Taylor Woodcock
 class MicroBitEnergyMonitor : public MicroBitComponent
@@ -146,17 +148,6 @@ class MicroBitEnergyMonitor : public MicroBitComponent
           * than 0, or 0 if the value is less than or equal to 0.
           */
         int map(int value, int fromLow, int fromHigh, int toLow, int toHigh);
-
-        /**
-          * Approaches a goal value by incrementing the current value by delta.
-          *
-          * @param goal the goal value to approach
-          * @param current the current value being incremented
-          * @param delta the amount to increment the current value by to reach the goal
-          *
-          * @return the current value + the delta, or the goal if the goal is met
-          */
-        int approach(int goal, int current, int delta);
 };
 
 #endif

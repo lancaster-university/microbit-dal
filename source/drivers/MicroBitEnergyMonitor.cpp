@@ -52,55 +52,47 @@ MicroBitEnergyMonitor::MicroBitEnergyMonitor(MicroBitCompass &magnetometer, uint
 int MicroBitEnergyMonitor::updateSamples()
 {
     // if calibration is in progress, leave
-    if(magnetometer.isCalibrating())
+    if(magnetometer->isCalibrating())
         return MICROBIT_CALIBRATION_IN_PROGRESS;
-
-    // if the compass isn't calibrated, calibrate it
-    if(!magnetometer.isCalibrated())
-    {
-        magnetometer.calibrate();
-        return MICROBIT_CALIBRATION_REQUIRED;
-    }
-
-    int fieldStrength = magnetometer.getFieldStrength();
-
+    
+    int fieldStrength = magnetometer->getZ();
+    
     // update sample min and max
-    if(fieldStrength > maxFieldStrength)
-        maxFieldStrength = fieldStrength;
-
-    if(fieldStrength < minFieldStrength || minFieldStrength == 0)
-        minFieldStrength = fieldStrength;
-
+    maxFieldStrength = max(maxFieldStrength, fieldStrength);
+    minFieldStrength = min(minFieldStrength, fieldStrength);
+    
     sample++;
-
+    
     // if not enough samples have been processed, leave
     if(sample < SAMPLES)
         return MICROBIT_OK;
-
+    
     // when enough sampels have been gathered, calculate the amplitude and watts
     amplitude = maxFieldStrength - minFieldStrength; // get the amplitude of the current values
+    
+    // map the amplitude to watts
     watts = map(amplitude, RANGE_MIN, RANGE_MAX, 0, WATTAGE_MAX); // updates usage
-
+    
     sample = 0; // reset sasmple counter
-    minFieldStrength = 0; // reset minFieldStrength value
-    maxFieldStrength = 0; // reset maxFieldStrength value
-
+    minFieldStrength = 2147483647; // reset minFieldStrength value to "infinity"
+    maxFieldStrength = -2147483646; // reset maxFieldStrength value to "-infinity"
+    
     // check to see if we have off->on state change
     if(isElectricalPowerOn() && !(status & MICROBIT_ELECTRICAL_POWER_STATE))
     {
         // record we have a state change, and raise an event
         status |= MICROBIT_ELECTRICAL_POWER_STATE;
-        MicroBitEvent evt(this->id, MICROBIT_EVT_ELECTRICAL_POWER_EVT_ON);
+        MicroBitEvent evt(MICROBIT_ID_ELECTRICAL_POWER, MICROBIT_ELECTRICAL_POWER_EVT_ON);
     }
-
+    
     // check to see if we have on->off state change
     if(!isElectricalPowerOn() && (status & MICROBIT_ELECTRICAL_POWER_STATE))
     {
         // record state change, and raise an event
         status = 0;
-        MicroBitEvent evt(this->id, MICROBIT_EVT_ELECTRICAL_POWER_EVT_OFF);
+        MicroBitEvent evt(MICROBIT_ID_ELECTRICAL_POWER, MICROBIT_ELECTRICAL_POWER_EVT_OFF);
     }
-
+    
     return MICROBIT_OK;
 }
 
