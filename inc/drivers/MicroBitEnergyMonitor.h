@@ -35,15 +35,13 @@ DEALINGS IN THE SOFTWARE.
 
 
 #define SAMPLES                                    25           // number of samples required to calculate amplitude and watts
-	
+
 #define RANGE_MIN                                  4000         // the value that represents 0 watts in the range of amplitudes
 #define RANGE_MAX                                  350000       // the value that represents 2700 watts in the range of amplitudes
 #define WATTAGE_MAX                                2700         // the wattage that RANGE_MAX refers to
 
-#define MICROBIT_ID_ENERGY_MONITOR                 0xDAB        // microbit event ID = 3499
-
-#define MICROBIT_ENERGY_MONITOR_EVT_ON             1            // event for power on detected
-#define MICROBIT_ENERGY_MONITOR_EVT_OFF            2            // event for power off detected
+#define MICROBIT_ENERGY_MONITOR_EVT_POWER_ON       1            // event for power on detected
+#define MICROBIT_ENERGY_MONITOR_EVT_POWER_OFF      2            // event for power off detected
 #define MICROBIT_ENERGY_MONITOR_EVT_CALIBRATE      4            // event to trigger calibration
 
 #define MICROBIT_ENERGY_MONITOR_STATE              1            // used for indicating an on->off/off->on status change
@@ -88,7 +86,7 @@ class MicroBitEnergyMonitor : public MicroBitComponent
           * @return the current sample count
           */
         int updateSamples();
-        
+
         /**
           * Checks for state changes of the electrical power and fires various events on a state change.
           */
@@ -118,27 +116,27 @@ class MicroBitEnergyMonitor : public MicroBitComponent
           */
         int getEnergyUsage();
 
-        
+
         /**
           * Used for debug purposes for sampling the amplitude of the magnetometer samples.
           *
           * @returns the amplitude of the current sample set
           */
         int getAmplitude();
-        
+
         /**
           * Assists in calibrating the position of the microbit to best sense electrical power.
           */
         void calibrate();
-        
+
         /**
           * Returns whether or not the energy monitor is being calibrated.
           */
         bool isCalibrating();
-        
+
         /**
           * Removes the calibration status flag.
-          * 
+          *
           * @code
           * monitor.stopCalibration();
           * @endcode
@@ -163,7 +161,7 @@ class MicroBitEnergyMonitor : public MicroBitComponent
           * than 0, or 0 if the value is less than or equal to 0.
           */
         int map(int value, int fromLow, int fromHigh, int toLow, int toHigh);
-        
+
         /**
           * Destructor for MicroBitEnergyMonitor, where we deregister this instance from the array of fiber components.
           */

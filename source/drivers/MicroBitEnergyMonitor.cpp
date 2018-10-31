@@ -66,31 +66,31 @@ void MicroBitEnergyMonitor::idleTick()
   * @return the current sample count
   */
 int MicroBitEnergyMonitor::updateSamples()
-{    
+{
     int fieldStrength = magnetometer.getZ();
-    
+
     // update sample min and max
     minFieldStrength = min(minFieldStrength, fieldStrength);
     maxFieldStrength = max(maxFieldStrength, fieldStrength);
-    
+
     sample++;
-    
+
     // if not enough samples have been processed, leave
     if(sample < SAMPLES)
         return sample;
-    
+
     // when enough sampels have been gathered, calculate the amplitude and watts
     amplitude = maxFieldStrength - minFieldStrength; // get the amplitude of the current values
-    
+
     // map the amplitude to watts
     watts = map(amplitude, RANGE_MIN, RANGE_MAX, 0, WATTAGE_MAX); // updates usage
-    
+
     sample = 0; // reset sasmple counter
     minFieldStrength = 2147483647; // reset minFieldStrength value to "infinity"
     maxFieldStrength = -2147483646; // reset maxFieldStrength value to "-infinity"
-    
+
     updateEvents();
-    
+
     return sample;
 }
 
@@ -101,23 +101,23 @@ int MicroBitEnergyMonitor::updateEvents()
 {
     if(isCalibrating())
         return MICROBIT_ENERGY_MONITOR_CALIBRATING;
-    
+
     // check to see if we have off->on state change
     if(isElectricalPowerOn() && !(status & MICROBIT_ENERGY_MONITOR_STATE))
     {
         // record we have a state change, and raise an event
         status |= MICROBIT_ENERGY_MONITOR_STATE;
-        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_ON);
+        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_POWER_ON);
     }
-    
+
     // check to see if we have on->off state change
     if(!isElectricalPowerOn() && (status & MICROBIT_ENERGY_MONITOR_STATE))
     {
         // record state change, and raise an event
         status = 0;
-        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_OFF);
+        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_POWER_OFF);
     }
-    
+
     return MICROBIT_OK;
 }
 
@@ -179,7 +179,7 @@ void MicroBitEnergyMonitor::calibrate()
 
 /**
   * Returns whether or not the energy monitor is being calibrated.
-  * 
+  *
   * @code
   * if(monitor.isCalibrating())
   *   serial.send("Energy Monitor is calibrating!");
@@ -192,7 +192,7 @@ bool MicroBitEnergyMonitor::isCalibrating()
 
 /**
   * Removes the calibration status flag.
-  * 
+  *
   * @code
   * monitor.stopCalibration();
   * @endcode
