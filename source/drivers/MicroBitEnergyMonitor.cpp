@@ -24,8 +24,8 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "MicroBitConfig.h"
-#include "MicroBitEnergyMonitor.h"
 #include "MicroBitSystemTimer.h"
+#include "MicroBitEnergyMonitor.h"
 
 /**
   * Constructor that initialises the micro:bit magnetometer, the default status, and initialises the idleTick.
@@ -45,55 +45,10 @@ MicroBitEnergyMonitor::MicroBitEnergyMonitor(MicroBitCompass &magnetometer, uint
     this->sample = 0;
     this->watts = 0;
     this->amplitude = 0;
+    this->minFieldStrength = 2147483647; // set minFieldStrength value to "infinity"
+    this->maxFieldStrength = -2147483646; // set maxFieldStrength value to "-infinity"
 
     fiber_add_idle_component(this);
-}
-
-int MicroBitEnergyMonitor::updateSamples()
-{
-    // if calibration is in progress, leave
-    if(magnetometer.isCalibrating())
-        return MICROBIT_CALIBRATION_IN_PROGRESS;
-
-    int fieldStrength = magnetometer.getZ();
-
-    // update sample min and max
-    maxFieldStrength = max(maxFieldStrength, fieldStrength);
-    minFieldStrength = min(minFieldStrength, fieldStrength);
-
-    sample++;
-
-    // if not enough samples have been processed, leave
-    if(sample < SAMPLES)
-        return MICROBIT_OK;
-
-    // when enough sampels have been gathered, calculate the amplitude and watts
-    amplitude = maxFieldStrength - minFieldStrength; // get the amplitude of the current values
-
-    // map the amplitude to watts
-    watts = map(amplitude, RANGE_MIN, RANGE_MAX, 0, WATTAGE_MAX); // updates usage
-
-    sample = 0; // reset sasmple counter
-    minFieldStrength = 2147483647; // reset minFieldStrength value to "infinity"
-    maxFieldStrength = -2147483646; // reset maxFieldStrength value to "-infinity"
-
-    // check to see if we have off->on state change
-    if(isElectricalPowerOn() && !(status & MICROBIT_ELECTRICAL_POWER_STATE))
-    {
-        // record we have a state change, and raise an event
-        status |= MICROBIT_ELECTRICAL_POWER_STATE;
-        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_POWER_ON);
-    }
-
-    // check to see if we have on->off state change
-    if(!isElectricalPowerOn() && (status & MICROBIT_ELECTRICAL_POWER_STATE))
-    {
-        // record state change, and raise an event
-        status = 0;
-        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_POWER_OFF);
-    }
-
-    return MICROBIT_OK;
 }
 
 /**
@@ -102,6 +57,67 @@ int MicroBitEnergyMonitor::updateSamples()
 void MicroBitEnergyMonitor::idleTick()
 {
     updateSamples();
+    updateEvents();
+}
+
+/**
+  * Processes one sample from the magnetometer and calculates the energy usage (watts) when a set
+  * amount of samples have been processed.
+  *
+  * @return the current sample count
+  */
+int MicroBitEnergyMonitor::updateSamples()
+{    
+    int fieldStrength = magnetometer.getZ();
+    
+    // update sample min and max
+    minFieldStrength = min(minFieldStrength, fieldStrength);
+    maxFieldStrength = max(maxFieldStrength, fieldStrength);
+    
+    sample++;
+    
+    // if not enough samples have been processed, leave
+    if(sample < SAMPLES)
+        return sample;
+    
+    // when enough sampels have been gathered, calculate the amplitude and watts
+    amplitude = maxFieldStrength - minFieldStrength; // get the amplitude of the current values
+    
+    // map the amplitude to watts
+    watts = map(amplitude, RANGE_MIN, RANGE_MAX, 0, WATTAGE_MAX); // updates usage
+    
+    sample = 0; // reset sasmple counter
+    minFieldStrength = 2147483647; // reset minFieldStrength value to "infinity"
+    maxFieldStrength = -2147483646; // reset maxFieldStrength value to "-infinity"
+    
+    return sample;
+}
+
+/**
+  * Checks for state changes of the electrical power and fires various events on a state change.
+  */
+int MicroBitEnergyMonitor::updateEvents()
+{
+    if(isCalibrating())
+        return MICROBIT_ENERGY_MONITOR_CALIBRATING;
+    
+    // check to see if we have off->on state change
+    if(isElectricalPowerOn() && !(status & MICROBIT_ENERGY_MONITOR_STATE))
+    {
+        // record we have a state change, and raise an event
+        status |= MICROBIT_ENERGY_MONITOR_STATE;
+        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_ON);
+    }
+    
+    // check to see if we have on->off state change
+    if(!isElectricalPowerOn() && (status & MICROBIT_ENERGY_MONITOR_STATE))
+    {
+        // record state change, and raise an event
+        status = 0;
+        MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_OFF);
+    }
+    
+    return MICROBIT_OK;
 }
 
 /**
@@ -134,25 +150,56 @@ int MicroBitEnergyMonitor::getEnergyUsage()
     return watts;
 }
 
-
 /**
-  * Calibrates the magnetometer by calling the standard calibration function from the MicroBitCompass component.
-  *
-  * NOTE: Ensure micro:bit is not near an in-use cable when calibrating.
-  */
-void MicroBitEnergyMonitor::calibrate()
-{
-    magnetometer.calibrate();
-}
-
-/**
-  * Used for debug purposes for sampling the amplitude of the magnetometer samples.
+  * Used for for sampling the amplitude of the magnetometer samples.
   *
   * @returns the amplitude of the current sample set
   */
 int MicroBitEnergyMonitor::getAmplitude()
 {
     return amplitude;
+}
+
+/**
+  * Assists in calibrating the position of the microbit to best sense electrical power.
+  *
+  * @code
+  * monitor.calibrate();
+  * @endcode
+  */
+void MicroBitEnergyMonitor::calibrate()
+{
+    // record that we've started calibrating
+    status |= MICROBIT_ENERGY_MONITOR_CALIBRATING;
+
+    // launch any registred calibration alogrithm
+    MicroBitEvent evt(this->id, MICROBIT_ENERGY_MONITOR_EVT_CALIBRATE);
+}
+
+/**
+  * Returns whether or not the energy monitor is being calibrated.
+  * 
+  * @code
+  * if(monitor.isCalibrating())
+  *   serial.send("Energy Monitor is calibrating!");
+  * @endcode
+  */
+bool MicroBitEnergyMonitor::isCalibrating()
+{
+    return (status & MICROBIT_ENERGY_MONITOR_CALIBRATING);
+}
+
+/**
+  * Removes the calibration status flag.
+  * 
+  * @code
+  * monitor.stopCalibration();
+  * @endcode
+  */
+void MicroBitEnergyMonitor::stopCalibration()
+{
+    // record that we've finished calibrating
+    status &= ~MICROBIT_ENERGY_MONITOR_CALIBRATING;
 }
 
 /**
