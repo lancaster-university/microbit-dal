@@ -101,7 +101,7 @@ void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
     // display a smiley face to indicate the end of the calibration process
     display.clear();
     display.printAsync(smiley, 0, 0, 0, 1500);
-    wait_ms(1000);
+    wait_ms(2000);
     display.clear();
 
     button1.enableEvents();
