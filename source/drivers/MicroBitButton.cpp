@@ -122,7 +122,7 @@ void MicroBitButton::systemTick()
     // Check to see if we have on->off state change.
     if(sigma < MICROBIT_BUTTON_SIGMA_THRESH_LO && (status & MICROBIT_BUTTON_STATE))
     {
-        status = 0;
+        status = status & MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS;
         fireEvent(MICROBIT_BUTTON_EVT_UP);
 
        if (eventConfiguration == MICROBIT_BUTTON_ALL_EVENTS)
@@ -163,11 +163,13 @@ int MicroBitButton::isPressed()
 
 int MicroBitButton::disableEvents()
 {
+    log_string("EVT DIS");
     status |= MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS;
 }
 
 int MicroBitButton::enableEvents()
 {
+    log_string("EVT EN");
     status &=~ MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS;
 }
 
