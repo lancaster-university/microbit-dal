@@ -27,7 +27,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_ENERGY_MONITOR_CALIBRATOR_H
 
 #include "MicroBitConfig.h"
-#include "MicroBitButton.h"
+#include "MicroBitMultiButton.h"
 #include "MicroBitDisplay.h"
 #include "MicroBitEnergyMonitor.h"
 
@@ -45,12 +45,12 @@ DEALINGS IN THE SOFTWARE.
 class MicroBitEnergyMonitorCalibrator
 {
     protected:
-    
+
         MicroBitEnergyMonitor&  monitor;
         MicroBitDisplay&        display;
-
+        MicroBitMultiButton&    button;
     public:
-	
+
 		/**
 		  * Constructor.
 		  *
@@ -65,20 +65,13 @@ class MicroBitEnergyMonitorCalibrator
 		  * @param monitor The energy monitor driver
 		  * @param display The LED matrix to display user feedback on
 		  */
-		MicroBitEnergyMonitorCalibrator(MicroBitEnergyMonitor& _monitor, MicroBitDisplay& _display);
-		
+		MicroBitEnergyMonitorCalibrator(MicroBitEnergyMonitor& _monitor, MicroBitDisplay& _display, MicroBitMultiButton& _button);
+
 		 /**
 		  * Performs a simple game that in parallel, calibrates the position of the microbit for more
           * accurate energy monitoring.
 		  */
 		void calibrateUX(MicroBitEvent);
-        
-    private:
-    
-        /**
-          * Calls the stopCalibration() method from the energy monitor driver to remove the calibration status flag.
-          */
-        void stopCalibration(MicroBitEvent);
 };
 
 #endif

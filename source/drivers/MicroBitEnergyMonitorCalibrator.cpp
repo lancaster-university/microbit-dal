@@ -42,12 +42,10 @@ DEALINGS IN THE SOFTWARE.
   * @param monitor The energy monitor driver
   * @param display The LED matrix to display user feedback on
   */
-MicroBitEnergyMonitorCalibrator::MicroBitEnergyMonitorCalibrator(MicroBitEnergyMonitor& _monitor, MicroBitDisplay& _display) : monitor(_monitor), display(_display)
+MicroBitEnergyMonitorCalibrator::MicroBitEnergyMonitorCalibrator(MicroBitEnergyMonitor& _monitor, MicroBitDisplay& _display, MicroBitMultiButton& _button) : monitor(_monitor), display(_display), button(_button)
 {
     if (EventModel::defaultEventBus)
-    {
         EventModel::defaultEventBus->listen(MICROBIT_ID_ENERGY_MONITOR, MICROBIT_ENERGY_MONITOR_EVT_CALIBRATE, this, &MicroBitEnergyMonitorCalibrator::calibrateUX);
-    }
 }
 
 /**
@@ -56,48 +54,46 @@ MicroBitEnergyMonitorCalibrator::MicroBitEnergyMonitorCalibrator(MicroBitEnergyM
   */
 void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
 {
-    // listen on A + B click event to end the calibration sequence
-    if (EventModel::defaultEventBus)
-        EventModel::defaultEventBus->listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, this, &MicroBitEnergyMonitorCalibrator::stopCalibration, MESSAGE_BUS_LISTENER_IMMEDIATE);
-        
     MicroBitImage smiley("0,255,0,255,0\n0,255,0,255,0\n0,0,0,0,0\n255,0,0,0,255\n0,255,255,255,0\n");
-    
+
     int displayBrightness = display.getBrightness();
-    
+
     int minAmplitude = 2147483647;
     int maxAmplitude = -2147483646;
     int amplitude = monitor.getAmplitude();
     int strength = 0;
     int lastStrength = -1;
-    
+
     wait_ms(1000);
-    
+
     // firstly, we need to take over the display. Ensure all active animations are paused.
     display.stopAnimation();
     display.setBrightness(255); // max brightness
-    
+
     display.scroll("TURN SLOWLY"); // basic instructions to not hold up the display
 
-    while(monitor.isCalibrating())
+    while(!button.isPressed())
     {
         while(monitor.updateSamples() != 0); // force update the samples in the monitor driver (take over idleTick)
-        
-        amplitude = monitor.getAmplitude();        
+
+        amplitude = monitor.getAmplitude();
         minAmplitude = min(minAmplitude, amplitude);
         maxAmplitude = max(maxAmplitude, amplitude);
         strength = monitor.map(amplitude, minAmplitude, maxAmplitude, 0, 4); // update the strength to 0-4
-        
+
         // only update display if the strength has changed (prevents lots of display updating)
         if(lastStrength != strength)
         {
             display.clear();
-            
+
             for(int x = 0; x < 5; x++)
                 display.image.setPixelValue(x, 4 - strength, 255); // draw line accross display at current strength
         }
-        
+
         lastStrength = strength;
     }
+
+    monitor.stopCalibration();
 
     // display a smiley face to indicate the end of the calibration process
     display.clear();
@@ -107,16 +103,4 @@ void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
 
     // retore the display brightness to the level it was at before this function was called.
     display.setBrightness(displayBrightness);
-    
-    // remove A + B event callback
-    if (EventModel::defaultEventBus)
-        EventModel::defaultEventBus->ignore(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, this, &MicroBitEnergyMonitorCalibrator::stopCalibration);
-}
-
-/**
-  * Calls the stopCalibration() method from the energy monitor driver to remove the calibration status flag.
-  */
-void MicroBitEnergyMonitorCalibrator::stopCalibration(MicroBitEvent)
-{
-    monitor.stopCalibration();
 }
