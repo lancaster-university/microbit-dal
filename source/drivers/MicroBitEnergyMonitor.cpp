@@ -77,7 +77,7 @@ int MicroBitEnergyMonitor::updateSamples()
 
     // if not enough samples have been processed, leave
     if(sample < SAMPLES)
-        return sample;
+        return MICROBIT_NOT_SUPPORTED;
 
     // when enough sampels have been gathered, calculate the amplitude and watts
     amplitude = maxFieldStrength - minFieldStrength; // get the amplitude of the current values
@@ -91,7 +91,7 @@ int MicroBitEnergyMonitor::updateSamples()
 
     updateEvents();
 
-    return sample;
+    return MICROBIT_OK;
 }
 
 /**

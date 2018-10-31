@@ -77,9 +77,14 @@ void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
 
     while(!(button1.isPressed() && button2.isPressed()))
     {
-        while(monitor.updateSamples() != 0); // force update the samples in the monitor driver (take over idleTick)
+        while(monitor.updateSamples() != MICROBIT_OK)
+        {
+            // force update the samples in the monitor driver (take over idleTick)
+            wait_ms(2);
+        }
 
         amplitude = monitor.getAmplitude();
+
         minAmplitude = min(minAmplitude, amplitude);
         maxAmplitude = max(maxAmplitude, amplitude);
         strength = monitor.map(amplitude, minAmplitude, maxAmplitude, 0, 4); // update the strength to 0-4
@@ -94,6 +99,7 @@ void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
         }
 
         lastStrength = strength;
+        wait_ms(100);
     }
 
     monitor.stopCalibration();
