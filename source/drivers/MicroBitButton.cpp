@@ -163,13 +163,11 @@ int MicroBitButton::isPressed()
 
 int MicroBitButton::disableEvents()
 {
-    log_string("EVT DIS");
     status |= MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS;
 }
 
 int MicroBitButton::enableEvents()
 {
-    log_string("EVT EN");
     status &=~ MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS;
 }
 
