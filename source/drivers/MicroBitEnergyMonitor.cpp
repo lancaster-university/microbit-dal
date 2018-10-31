@@ -57,7 +57,6 @@ MicroBitEnergyMonitor::MicroBitEnergyMonitor(MicroBitCompass &magnetometer, uint
 void MicroBitEnergyMonitor::idleTick()
 {
     updateSamples();
-    updateEvents();
 }
 
 /**
@@ -89,6 +88,8 @@ int MicroBitEnergyMonitor::updateSamples()
     sample = 0; // reset sasmple counter
     minFieldStrength = 2147483647; // reset minFieldStrength value to "infinity"
     maxFieldStrength = -2147483646; // reset maxFieldStrength value to "-infinity"
+    
+    updateEvents();
     
     return sample;
 }
