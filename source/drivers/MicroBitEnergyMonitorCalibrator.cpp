@@ -42,7 +42,7 @@ DEALINGS IN THE SOFTWARE.
   * @param monitor The energy monitor driver
   * @param display The LED matrix to display user feedback on
   */
-MicroBitEnergyMonitorCalibrator::MicroBitEnergyMonitorCalibrator(MicroBitEnergyMonitor& _monitor, MicroBitDisplay& _display, MicroBitMultiButton& _button) : monitor(_monitor), display(_display), button(_button)
+MicroBitEnergyMonitorCalibrator::MicroBitEnergyMonitorCalibrator(MicroBitEnergyMonitor& _monitor, MicroBitDisplay& _display, MicroBitButton& _button1, MicroBitButton& _button2) : monitor(_monitor), display(_display), button1(_button1), button2(_button2)
 {
     if (EventModel::defaultEventBus)
         EventModel::defaultEventBus->listen(MICROBIT_ID_ENERGY_MONITOR, MICROBIT_ENERGY_MONITOR_EVT_CALIBRATE, this, &MicroBitEnergyMonitorCalibrator::calibrateUX);
@@ -54,6 +54,9 @@ MicroBitEnergyMonitorCalibrator::MicroBitEnergyMonitorCalibrator(MicroBitEnergyM
   */
 void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
 {
+    button1.disableEvents();
+    button2.disableEvents();
+
     MicroBitImage smiley("0,255,0,255,0\n0,255,0,255,0\n0,0,0,0,0\n255,0,0,0,255\n0,255,255,255,0\n");
 
     int displayBrightness = display.getBrightness();
@@ -72,7 +75,7 @@ void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
 
     display.scroll("TURN SLOWLY"); // basic instructions to not hold up the display
 
-    while(!button.isPressed())
+    while(!(button1.isPressed() && button2.isPressed()))
     {
         while(monitor.updateSamples() != 0); // force update the samples in the monitor driver (take over idleTick)
 
@@ -94,6 +97,8 @@ void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
     }
 
     monitor.stopCalibration();
+    button1.enableEvents();
+    button2.enableEvents();
 
     // display a smiley face to indicate the end of the calibration process
     display.clear();

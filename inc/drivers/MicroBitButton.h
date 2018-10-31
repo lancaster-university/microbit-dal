@@ -49,6 +49,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_BUTTON_STATE_HOLD_TRIGGERED    2
 #define MICROBIT_BUTTON_STATE_CLICK             4
 #define MICROBIT_BUTTON_STATE_LONG_CLICK        8
+#define MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS    0x10
 
 #define MICROBIT_BUTTON_SIGMA_MIN               0
 #define MICROBIT_BUTTON_SIGMA_MAX               12
@@ -76,6 +77,8 @@ class MicroBitButton : public MicroBitComponent
     unsigned long downStartTime;                            // used to store the current system clock when a button down event occurs
     uint8_t sigma;                                          // integration of samples over time. We use this for debouncing, and noise tolerance for touch sensing
     MicroBitButtonEventConfiguration eventConfiguration;    // Do we want to generate high level event (clicks), or defer this to another service.
+
+    void fireEvent(uint16_t eventCode);
 
     public:
 
@@ -110,6 +113,10 @@ class MicroBitButton : public MicroBitComponent
       * @return 1 if this button is pressed, 0 otherwise.
       */
     int isPressed();
+
+    int disableEvents();
+
+    int enableEvents();
 
     /**
       * Changes the event configuration used by this button to the given MicroBitButtonEventConfiguration.

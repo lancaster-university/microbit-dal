@@ -27,6 +27,14 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitButton.h"
 #include "MicroBitSystemTimer.h"
 
+void MicroBitButton::fireEvent(uint16_t eventCode)
+{
+    if (status & MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS)
+        return;
+
+    MicroBitEvent(id, eventCode);
+}
+
 /**
   * Constructor.
   *
@@ -105,7 +113,7 @@ void MicroBitButton::systemTick()
     {
         // Record we have a state change, and raise an event.
         status |= MICROBIT_BUTTON_STATE;
-        MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_DOWN);
+        fireEvent(MICROBIT_BUTTON_EVT_DOWN);
 
         //Record the time the button was pressed.
         downStartTime = system_timer_current_time();
@@ -115,15 +123,15 @@ void MicroBitButton::systemTick()
     if(sigma < MICROBIT_BUTTON_SIGMA_THRESH_LO && (status & MICROBIT_BUTTON_STATE))
     {
         status = 0;
-        MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_UP);
+        fireEvent(MICROBIT_BUTTON_EVT_UP);
 
        if (eventConfiguration == MICROBIT_BUTTON_ALL_EVENTS)
        {
            //determine if this is a long click or a normal click and send event
            if((system_timer_current_time() - downStartTime) >= MICROBIT_BUTTON_LONG_CLICK_TIME)
-               MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_LONG_CLICK);
+               fireEvent(MICROBIT_BUTTON_EVT_LONG_CLICK);
            else
-               MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_CLICK);
+               fireEvent(MICROBIT_BUTTON_EVT_CLICK);
        }
     }
 
@@ -134,7 +142,7 @@ void MicroBitButton::systemTick()
         status |= MICROBIT_BUTTON_STATE_HOLD_TRIGGERED;
 
         //fire hold event
-        MicroBitEvent evt(id,MICROBIT_BUTTON_EVT_HOLD);
+        fireEvent(MICROBIT_BUTTON_EVT_HOLD);
     }
 }
 
@@ -151,6 +159,16 @@ void MicroBitButton::systemTick()
 int MicroBitButton::isPressed()
 {
     return status & MICROBIT_BUTTON_STATE ? 1 : 0;
+}
+
+int MicroBitButton::disableEvents()
+{
+    status |= MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS;
+}
+
+int MicroBitButton::enableEvents()
+{
+    status &=~ MICROBIT_BUTTON_STATE_SUPPRESS_EVENTS;
 }
 
 /**
