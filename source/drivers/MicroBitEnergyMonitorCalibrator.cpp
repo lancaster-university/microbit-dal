@@ -97,14 +97,15 @@ void MicroBitEnergyMonitorCalibrator::calibrateUX(MicroBitEvent)
     }
 
     monitor.stopCalibration();
-    button1.enableEvents();
-    button2.enableEvents();
 
     // display a smiley face to indicate the end of the calibration process
     display.clear();
     display.printAsync(smiley, 0, 0, 0, 1500);
     wait_ms(1000);
     display.clear();
+
+    button1.enableEvents();
+    button2.enableEvents();
 
     // retore the display brightness to the level it was at before this function was called.
     display.setBrightness(displayBrightness);
