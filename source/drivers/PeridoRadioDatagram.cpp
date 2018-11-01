@@ -173,13 +173,10 @@ int PeridoRadioDatagram::send(ManagedString data)
   *
   * This function process this packet, and queues it for user reception.
   */
-extern void log_string_ch(const char *);
 void PeridoRadioDatagram::packetReceived()
 {
     uint8_t nextTail = (this->rxTail + 1) % PERIDO_RADIO_DATAGRAM_MAX_PACKETS;
     PeridoFrameBuffer *packet = radio.recv();
-
-    log_string_ch("DATAGRAM REC");
 
     // no room
     if (nextTail == this->rxHead)
