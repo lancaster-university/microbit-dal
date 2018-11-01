@@ -249,8 +249,6 @@ class MicroBitPeridoRadio : public MicroBitComponent
 
     int setAppId(uint16_t id);
 
-    int setGroup(uint16_t id);
-
     int getAppId();
 
     /**
