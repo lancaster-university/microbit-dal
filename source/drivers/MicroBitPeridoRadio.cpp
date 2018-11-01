@@ -1281,7 +1281,7 @@ uint32_t MicroBitPeridoRadio::getPeriod()
     return periods[periodIndex];
 }
 
-int MicroBitPeridoRadio::setGroup(uint16_t id)
+int MicroBitPeridoRadio::setGroup(uint8_t id)
 {
     return setAppId(id);
 }
