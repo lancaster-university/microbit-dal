@@ -27,6 +27,12 @@ DEALINGS IN THE SOFTWARE.
 
 #if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_PERIDO
 
+// extern void log_string_ch(const char*);
+// extern void log_num(int);
+
+// #define LOG_STRING(str) (log_string_ch(str))
+// #define LOG_NUM(str) (log_num(str))
+
 #define LOG_STRING(...) ((void)0)
 #define LOG_NUM(...) ((void)0)
 
@@ -908,11 +914,10 @@ void timer_callback(uint8_t state)
   * @note This class is demand activated, as a result most resources are only
   *       committed if send/recv or event registrations calls are made.
   */
-MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, uint8_t namespaceId, uint16_t id) : timer(timer), cloud(*this)
+MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, uint16_t id) : timer(timer), cloud(*this, MICROBIT_PERIDO_CLOUD_NAMESPACE), datagram(*this, MICROBIT_PERIDO_DATAGRAM_NAMESPACE)
 {
     this->id = id;
     this->appId = appId;
-    this->namespaceId = namespaceId;
     this->status = 0;
     this->rxQueueDepth = 0;
     this->txQueueDepth = 0;
@@ -1100,7 +1105,7 @@ int MicroBitPeridoRadio::queueKeepAlive()
     buf.id = microbit_random(65535);
     buf.length = 0 + MICROBIT_PERIDO_HEADER_SIZE - 1; // keep alive has no content.
     buf.app_id = appId;
-    buf.namespace_id = namespaceId;
+    buf.namespace_id = 0;
     buf.flags |= MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG;
     buf.ttl = 4;
     buf.initial_ttl = 4;
@@ -1276,6 +1281,11 @@ uint32_t MicroBitPeridoRadio::getPeriod()
     return periods[periodIndex];
 }
 
+int MicroBitPeridoRadio::setGroup(uint16_t id)
+{
+    return setAppId(id);
+}
+
 int MicroBitPeridoRadio::setAppId(uint16_t id)
 {
     this->appId = id;
@@ -1339,12 +1349,22 @@ void MicroBitPeridoRadio::idleTick()
         radio_status &= ~RADIO_STATUS_QUEUE_KEEP_ALIVE;
     }
 
+    PeridoFrameBuffer* p = NULL;
+
     // Walk the list of packets and process each one.
-    while (peakRxQueue())
+    while ((p = peakRxQueue()) != NULL)
     {
-        // we will want to eventually match on namespace and app_id
-        // this'll do for now.
-        cloud.packetReceived();
+
+        LOG_STRING("PACKET REC");
+        LOG_NUM(p->namespace_id);
+        if (p->namespace_id == cloud.getNamespaceId())
+            cloud.packetReceived();
+
+        else if (p->namespace_id == datagram.getNamespaceId())
+            datagram.packetReceived();
+
+        else
+            delete recv();
     }
 }
 
@@ -1376,8 +1396,9 @@ int MicroBitPeridoRadio::send(PeridoFrameBuffer* buffer)
   * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
   *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
   */
-int MicroBitPeridoRadio::send(uint8_t *buffer, int len)
+int MicroBitPeridoRadio::send(uint8_t *buffer, int len, uint8_t namespaceId)
 {
+    LOG_STRING("SEND BUFFFF ");
     if (buffer == NULL || len < 0 || len > MICROBIT_PERIDO_MAX_PACKET_SIZE + MICROBIT_PERIDO_HEADER_SIZE - 1)
         return MICROBIT_INVALID_PARAMETER;
 
@@ -1393,39 +1414,9 @@ int MicroBitPeridoRadio::send(uint8_t *buffer, int len)
     buf.period = 0;
     memcpy(buf.payload, buffer, len);
 
+    LOG_STRING("OUT");
+
     return send(&buf);
-}
-
-/**
-  * Transmits the given string onto the broadcast radio.
-  *
-  * This is a synchronous call that will wait until the transmission of the packet
-  * has completed before returning.
-  *
-  * @param data The packet contents to transmit.
-  *
-  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
-  *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
-  */
-int MicroBitPeridoRadio::send(PacketBuffer data)
-{
-    return send((uint8_t *)data.getBytes(), data.length());
-}
-
-/**
-  * Transmits the given string onto the broadcast radio.
-  *
-  * This is a synchronous call that will wait until the transmission of the packet
-  * has completed before returning.
-  *
-  * @param data The packet contents to transmit.
-  *
-  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
-  *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
-  */
-int MicroBitPeridoRadio::send(ManagedString data)
-{
-    return send((uint8_t *)data.toCharArray(), data.length());
 }
 
 uint16_t MicroBitPeridoRadio::generateId(uint8_t app_id, uint8_t namespace_id)

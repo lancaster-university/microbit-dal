@@ -66,6 +66,7 @@ struct DataPacket
 class PeridoRadioCloud : public MicroBitComponent
 {
     MicroBitPeridoRadio& radio;
+    uint8_t namespaceId;
 
     CloudDataItem* txQueue;
     CloudDataItem* rxQueue;
@@ -83,7 +84,7 @@ class PeridoRadioCloud : public MicroBitComponent
     PeridoRadioREST rest;
     PeridoRadioVariable variable;
 
-    PeridoRadioCloud(MicroBitPeridoRadio& r);
+    PeridoRadioCloud(MicroBitPeridoRadio& r, uint8_t namespaceId);
 
     int setBridgeMode(bool state);
     bool getBridgeMode();
@@ -109,6 +110,8 @@ class PeridoRadioCloud : public MicroBitComponent
     CloudDataItem* recvRaw(uint16_t id);
 
     CloudDataItem* recvRaw();
+
+    uint8_t getNamespaceId();
 
     uint16_t generateId();
 };

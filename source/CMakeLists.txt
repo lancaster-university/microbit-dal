@@ -55,6 +55,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/PeridoBridge.cpp"
     "drivers/PeridoRadioCloud.cpp"
     "drivers/PeridoRadioREST.cpp"
+    "drivers/PeridoRadioDatagram.cpp"
     "drivers/PeridoRadioVariable.cpp"
 
     "drivers/MicroBitSerial.cpp"

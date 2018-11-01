@@ -37,6 +37,7 @@ struct PeridoFrameBuffer;
 #include "HigherLevelTimer.h"
 #include "ManagedString.h"
 #include "PeridoRadioCloud.h"
+#include "PeridoRadioDatagram.h"
 
 /**
  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
@@ -77,10 +78,14 @@ struct PeridoFrameBuffer;
 #define MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS      10
 
 #define MICROBIT_PERIDO_DEFAULT_APP_ID          0
-#define MICROBIT_PERIDO_DEFAULT_NAMESPACE       0
+
+#define MICROBIT_PERIDO_CLOUD_NAMESPACE         1
+#define MICROBIT_PERIDO_DATAGRAM_NAMESPACE      2
 
 #define MICROBIT_PERIDO_FRAME_PROPOSAL_FLAG     0x01
 #define MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG     0x02
+
+#define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received. COMPATIBILITY!
 
 struct PeridoFrameBuffer
 {
@@ -97,7 +102,6 @@ struct PeridoFrameBuffer
 class MicroBitPeridoRadio : public MicroBitComponent
 {
     uint8_t                appId;
-    uint8_t                namespaceId;
 
     public:
 
@@ -107,6 +111,7 @@ class MicroBitPeridoRadio : public MicroBitComponent
 
     LowLevelTimer&          timer;
     PeridoRadioCloud        cloud;       // A simple REST handling service.
+    PeridoRadioDatagram        datagram;       // A simple REST handling service.
 
     // a fifo array of received packets
     // the array can hold a maximum of MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS - 1 packets
@@ -133,7 +138,7 @@ class MicroBitPeridoRadio : public MicroBitComponent
       * @note This class is demand activated, as a result most resources are only
       *       committed if send/recv or event registrations calls are made.
       */
-    MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId = MICROBIT_PERIDO_DEFAULT_APP_ID, uint8_t namespaceId = MICROBIT_PERIDO_DEFAULT_NAMESPACE, uint16_t id = MICROBIT_ID_RADIO);
+    MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId = MICROBIT_PERIDO_DEFAULT_APP_ID, uint16_t id = MICROBIT_ID_RADIO);
 
     /**
       * Change the output power level of the transmitter to the given value.
@@ -244,6 +249,8 @@ class MicroBitPeridoRadio : public MicroBitComponent
 
     int setAppId(uint16_t id);
 
+    int setGroup(uint16_t id);
+
     int getAppId();
 
     /**
@@ -256,33 +263,7 @@ class MicroBitPeridoRadio : public MicroBitComponent
       */
     int send(PeridoFrameBuffer* buffer);
 
-    int send(uint8_t *buffer, int len);
-
-    /**
-      * Transmits the given string onto the broadcast radio.
-      *
-      * This is a synchronous call that will wait until the transmission of the packet
-      * has completed before returning.
-      *
-      * @param data The packet contents to transmit.
-      *
-      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
-      *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
-      */
-    int send(PacketBuffer data);
-
-    /**
-      * Transmits the given string onto the broadcast radio.
-      *
-      * This is a synchronous call that will wait until the transmission of the packet
-      * has completed before returning.
-      *
-      * @param data The packet contents to transmit.
-      *
-      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the buffer is invalid,
-      *         or the number of bytes to transmit is greater than `MICROBIT_RADIO_MAX_PACKET_SIZE + MICROBIT_RADIO_HEADER_SIZE`.
-      */
-    int send(ManagedString data);
+    int send(uint8_t *buffer, int len, uint8_t namespaceId);
 
     /**
      * Generates an id based on historic information.

@@ -27,8 +27,9 @@ CloudDataItem::~CloudDataItem()
         delete packet;
 }
 
-PeridoRadioCloud::PeridoRadioCloud(MicroBitPeridoRadio& r) : radio(r), rest(*this), variable(*this)
+PeridoRadioCloud::PeridoRadioCloud(MicroBitPeridoRadio& r, uint8_t namespaceId) : radio(r), rest(*this), variable(*this)
 {
+    this->namespaceId = namespaceId;
     this->txQueue = NULL;
     this->rxQueue = NULL;
     rx_history_index = 0;
@@ -212,7 +213,7 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
     buf->id = radio.generateId(radio.getAppId(), 0);
     buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE; // add 1 for request type
     buf->app_id = radio.getAppId();
-    buf->namespace_id = 0;
+    buf->namespace_id = this->namespaceId;
     buf->ttl = 4;
     buf->initial_ttl = 4;
     buf->time_since_wake = 0;
@@ -466,7 +467,6 @@ void PeridoRadioCloud::packetReceived()
         variable.handlePacket(temp->request_id);
 }
 
-extern void log_string(char c);
 DynamicType PeridoRadioCloud::recv(uint16_t id)
 {
     CloudDataItem *c = removeFromRxQueue(id);
@@ -532,6 +532,10 @@ uint16_t PeridoRadioCloud::generateId()
     LOG_NUM(new_id);
 
     return new_id;
+}
 
+uint8_t PeridoRadioCloud::getNamespaceId()
+{
+    return this->namespaceId;
 }
 
