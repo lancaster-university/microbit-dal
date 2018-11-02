@@ -196,10 +196,9 @@ void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
         }
 
         // evt.value... get packet and flag correctly.
-        // packet transmitted, flag as waiting for ACK.
-        p->no_response_count = 0;
-        p->retry_count = 0;
 
+
+        // packet transmitted, flag as waiting for ACK.
         p->status |= (DATA_PACKET_WAITING_FOR_ACK);
     }
 }
@@ -226,6 +225,8 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
 
     c->status = DATA_PACKET_WAITING_FOR_SEND;
     c->packet = buf;
+    c->retry_count = 0;
+    c->no_response_count = 0;
 
     LOG_STRING("ADDING TO Q");
 
