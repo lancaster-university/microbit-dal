@@ -70,7 +70,7 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
-// #define FILTER
+#define FILTER
 
 // #define TRACE_CRC_FAIL
 // #define TRACE_WAKE
@@ -154,7 +154,7 @@ extern void log_num(int num);
 
 // #else
 
-#define DISCOVERY_TX_BACKOFF_TIME   10000000
+#define DISCOVERY_TX_BACKOFF_TIME   2000000
 #define DISCOVERY_BACKOFF_TIME      (DISCOVERY_TX_BACKOFF_TIME * 2)
 
 #define DISCOVERY_TX_BACKOFF_TIME_RUNNING   40000
