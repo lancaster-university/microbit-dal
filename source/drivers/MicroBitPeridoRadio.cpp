@@ -914,7 +914,7 @@ void timer_callback(uint8_t state)
   * @note This class is demand activated, as a result most resources are only
   *       committed if send/recv or event registrations calls are made.
   */
-MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, uint16_t id) : timer(timer), cloud(*this, MICROBIT_PERIDO_CLOUD_NAMESPACE), datagram(*this, MICROBIT_PERIDO_DATAGRAM_NAMESPACE)
+MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, uint16_t id) : timer(timer), cloud(*this, MICROBIT_PERIDO_CLOUD_NAMESPACE), datagram(*this, MICROBIT_PERIDO_DATAGRAM_NAMESPACE), event(*this, MICROBIT_PERIDO_EVENT_NAMESPACE)
 {
     this->id = id;
     this->appId = appId;
