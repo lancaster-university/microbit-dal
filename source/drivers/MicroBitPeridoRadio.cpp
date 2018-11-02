@@ -608,7 +608,7 @@ void radio_state_machine()
         // if seen, queue a new buffer, and mark it as seen
         if(!seen
 #ifdef FILTER
-        && (MicroBitPeridoRadio::instance->app_id == p->app_id || MicroBitPeridoRadio::instance->app_id == 0)
+        && (MicroBitPeridoRadio::instance->appId == p->app_id || MicroBitPeridoRadio::instance->appId == 0)
 #endif
         )
         {

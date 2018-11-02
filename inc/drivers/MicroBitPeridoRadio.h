@@ -103,10 +103,8 @@ struct PeridoFrameBuffer
 
 class MicroBitPeridoRadio : public MicroBitComponent
 {
-    uint8_t                appId;
-
     public:
-
+    uint8_t                appId;
     uint8_t                 periodIndex;
     uint8_t                 rxQueueDepth; // The number of packets in the receiver queue.
     uint8_t                 txQueueDepth; // The number of packets in the tx queue.
