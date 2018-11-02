@@ -74,7 +74,7 @@ struct PeridoFrameBuffer;
 #define MICROBIT_PERIDO_HEADER_SIZE             10
 #define MICROBIT_PERIDO_DEFAULT_SLEEP           600
 
-#define MICROBIT_PERIDO_MAX_PACKET_SIZE         200
+#define MICROBIT_PERIDO_MAX_PACKET_SIZE         100
 
 #define MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS      10
 
