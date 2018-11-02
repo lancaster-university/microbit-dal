@@ -1371,6 +1371,9 @@ void MicroBitPeridoRadio::idleTick()
         else if (p->namespace_id == datagram.getNamespaceId())
             datagram.packetReceived();
 
+        else if (p->namespace_id == event.getNamespaceId())
+            event.packetReceived();
+
         else
             delete recv();
     }
