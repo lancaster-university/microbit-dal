@@ -192,7 +192,8 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
         memcpy(buf->payload, &serialPacket.request_id, len);
 
         cloudData->packet = buf;
-        cloudData->status = DATA_PACKET_WAITING_FOR_SEND | DATA_PACKET_EXPECT_NO_RESPONSE;
+        // we queue and flag the packet as waiting to send, it expects and ack, but no response
+        cloudData->status = DATA_PACKET_WAITING_FOR_SEND | DATA_PACKET_WAITING_FOR_ACK | DATA_PACKET_EXPECT_NO_RESPONSE;
 
         // cloud data will be deleted automatically.
         radio.cloud.addToTxQueue(cloudData);
