@@ -92,7 +92,6 @@ void PeridoBridge::onRadioPacket(MicroBitEvent)
     while((r = radio.cloud.recvRaw()))
     {
         PeridoFrameBuffer* packet = r->packet;
-        DataPacket* data = (DataPacket*)packet->payload;
 
         serialPacket.app_id = packet->app_id;
         serialPacket.namespace_id = packet->namespace_id;
