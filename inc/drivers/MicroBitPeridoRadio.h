@@ -63,8 +63,6 @@ struct PeridoFrameBuffer;
  * For serious applications, BLE should be considered a substantially more secure alternative.
  */
 
-
-#define MICROBIT_RADIO_MAXIMUM_RX_BUFFERS       4
 #define MICROBIT_RADIO_STATUS_INITIALISED       0x0001
 #define MICROBIT_RADIO_DEFAULT_TX_POWER         6
 #define MICROBIT_RADIO_DEFAULT_FREQUENCY        7
@@ -76,7 +74,13 @@ struct PeridoFrameBuffer;
 
 #define MICROBIT_PERIDO_MAX_PACKET_SIZE         100
 
+#ifndef MICROBIT_RADIO_MAXIMUM_RX_BUFFERS
+#define MICROBIT_RADIO_MAXIMUM_RX_BUFFERS       10
+#endif
+
+#ifndef MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS
 #define MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS      10
+#endif
 
 #define MICROBIT_PERIDO_DEFAULT_APP_ID          0
 

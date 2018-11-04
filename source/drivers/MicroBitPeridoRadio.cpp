@@ -596,6 +596,8 @@ void radio_state_machine()
 
             correction %= period;
 
+// this will fire if someone sends a time_since_wake that is greater than the current period
+#ifdef TRAP_PERIOD_EXTENSION
             if (p->time_since_wake > period || correction > period)
                 while(1)
                 {
@@ -608,8 +610,10 @@ void radio_state_machine()
                     LOG_NUM(p->length);
                     LOG_STRING("CORRECTION: ");
                     LOG_NUM(correction);
+                    microbit_panic(890);
                     wait_ms(1000);
                 }
+#endif
 
             current_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction);
             MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
