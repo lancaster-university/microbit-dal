@@ -55,7 +55,7 @@ int MicroBitSerial::baudrate = 0;
   *
   *       Buffers aren't allocated until the first send or receive respectively.
   */
-MicroBitSerial::MicroBitSerial(PinName tx, PinName rx, uint8_t rxBufferSize, uint8_t txBufferSize) : RawSerial(tx,rx), delimeters()
+MicroBitSerial::MicroBitSerial(PinName tx, PinName rx, uint16_t rxBufferSize, uint16_t txBufferSize) : RawSerial(tx,rx), delimeters()
 {
     // + 1 so there is a usable buffer size, of the size the user requested.
     this->rxBuffSize = rxBufferSize + 1;
@@ -959,7 +959,7 @@ int MicroBitSerial::isWriteable()
   * @return MICROBIT_SERIAL_IN_USE if another fiber is currently using this instance
   *         for reception, otherwise MICROBIT_OK.
   */
-int MicroBitSerial::setRxBufferSize(uint8_t size)
+int MicroBitSerial::setRxBufferSize(uint16_t size)
 {
     if(rxInUse())
         return MICROBIT_SERIAL_IN_USE;
@@ -984,7 +984,7 @@ int MicroBitSerial::setRxBufferSize(uint8_t size)
   * @return MICROBIT_SERIAL_IN_USE if another fiber is currently using this instance
   *         for transmission, otherwise MICROBIT_OK.
   */
-int MicroBitSerial::setTxBufferSize(uint8_t size)
+int MicroBitSerial::setTxBufferSize(uint16_t size)
 {
     if(txInUse())
         return MICROBIT_SERIAL_IN_USE;

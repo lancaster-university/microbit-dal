@@ -70,13 +70,13 @@ class MicroBitSerial : public RawSerial
     int rxBuffHeadMatch;
 
     uint8_t *rxBuff;
-    uint8_t rxBuffSize;
+    uint16_t rxBuffSize;
     volatile uint16_t rxBuffHead;
     uint16_t rxBuffTail;
 
 
     uint8_t *txBuff;
-    uint8_t txBuffSize;
+    uint16_t txBuffSize;
     uint16_t txBuffHead;
     volatile uint16_t txBuffTail;
 
@@ -507,7 +507,7 @@ class MicroBitSerial : public RawSerial
       * @return MICROBIT_SERIAL_IN_USE if another fiber is currently using this instance
       *         for reception, otherwise MICROBIT_OK.
       */
-    int setRxBufferSize(uint8_t size);
+    int setRxBufferSize(uint16_t size);
 
     /**
       * Reconfigures the size of our txBuff
@@ -517,7 +517,7 @@ class MicroBitSerial : public RawSerial
       * @return MICROBIT_SERIAL_IN_USE if another fiber is currently using this instance
       *         for transmission, otherwise MICROBIT_OK.
       */
-    int setTxBufferSize(uint8_t size);
+    int setTxBufferSize(uint16_t size);
 
     /**
       * The size of our rx buffer in bytes.
