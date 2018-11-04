@@ -42,6 +42,7 @@ class PeridoBridge : public MicroBitComponent
     void sendSerialPacket(uint16_t len);
     void onRadioPacket(MicroBitEvent e);
     void onSerialPacket(MicroBitEvent e);
+    void queueTestResponse();
 
     public:
 

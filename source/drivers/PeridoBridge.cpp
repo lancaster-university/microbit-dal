@@ -2,6 +2,15 @@
 
 #if MICROBIT_RADIO_VERSION == MICROBIT_RADIO_PERIDO
 
+// extern void log_string_ch(const char*);
+// extern void log_num(int);
+
+// #define LOG_STRING(str) (log_string_ch(str))
+// #define LOG_NUM(str) (log_num(str))
+
+#define LOG_STRING(...) ((void)0)
+#define LOG_NUM(...) ((void)0)
+
 #include "PeridoBridge.h"
 #include "EventModel.h"
 
@@ -19,6 +28,51 @@ const MicroBitImage neutral_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255
 const MicroBitImage neutral_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n255, 255, 255, 255, 255\n0, 0, 0, 0, 0\n");
 const MicroBitImage sad_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 0, 0, 0, 255\n");
 const MicroBitImage sad_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 255, 255, 255, 255\n");
+
+bool test_mode = true;
+
+void PeridoBridge::queueTestResponse()
+{
+    LOG_STRING("Q TEST RESP");
+    CloudDataItem* cloudData = new CloudDataItem;
+    PeridoFrameBuffer* buf = new PeridoFrameBuffer;
+
+    DataPacket* dp = (DataPacket*)&serialPacket.request_id;
+
+    DynamicType response;
+    response.appendString("99");
+
+
+    LOG_STRING("APPEND DUMMY");
+
+    int len = CLOUD_HEADER_SIZE + response.length();
+    memcpy(dp->payload, response.getBytes(), response.length());
+
+    buf->id = radio.generateId(serialPacket.app_id, serialPacket.namespace_id);
+    buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1);
+    buf->app_id = serialPacket.app_id;
+    buf->namespace_id = serialPacket.namespace_id;
+    buf->ttl = 4;
+    buf->initial_ttl = 4;
+    buf->time_since_wake = 0;
+    buf->period = 0;
+
+    LOG_STRING("COPY!");
+    memcpy(buf->payload, &serialPacket.request_id, len);
+
+    cloudData->packet = buf;
+    // we queue and flag the packet as waiting to send, it expects and ack, but no response
+    cloudData->status = DATA_PACKET_WAITING_FOR_SEND | DATA_PACKET_EXPECT_NO_RESPONSE;
+    cloudData->no_response_count = 0;
+    cloudData->retry_count = 0;
+
+    LOG_STRING("ADD TX QUEUE:");
+    LOG_NUM(buf->app_id);
+    LOG_NUM(buf->namespace_id);
+    LOG_NUM(((DataPacket*)buf->payload)->request_id);
+    // cloud data will be deleted automatically.
+    radio.cloud.addToTxQueue(cloudData);
+}
 
 void PeridoBridge::sendHelloPacket()
 {
@@ -98,8 +152,16 @@ void PeridoBridge::onRadioPacket(MicroBitEvent)
         // first two bytes of the payload nicely contain the id.
         memcpy(&serialPacket.request_id, packet->payload, packet->length - MICROBIT_PERIDO_HEADER_SIZE);
 
-        // forward the packet over serial
-        sendSerialPacket((packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)) + BRIDGE_SERIAL_PACKET_HEADER_SIZE);
+        LOG_STRING("RX PACKET: ");
+        LOG_NUM(serialPacket.app_id);
+        LOG_NUM(serialPacket.namespace_id);
+        LOG_NUM(serialPacket.request_id);
+
+        if (test_mode)
+            queueTestResponse();
+        else
+            // forward the packet over serial
+            sendSerialPacket((packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)) + BRIDGE_SERIAL_PACKET_HEADER_SIZE);
 
         // we are now finished with the packet..
         delete r;
@@ -211,7 +273,10 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
 
         cloudData->packet = buf;
         // we queue and flag the packet as waiting to send, it expects and ack, but no response
-        cloudData->status = DATA_PACKET_WAITING_FOR_SEND | DATA_PACKET_WAITING_FOR_ACK | DATA_PACKET_EXPECT_NO_RESPONSE;
+        cloudData->status = DATA_PACKET_WAITING_FOR_SEND | DATA_PACKET_EXPECT_NO_RESPONSE;
+
+        cloudData->no_response_count = 0;
+        cloudData->retry_count = 0;
 
         // cloud data will be deleted automatically.
         radio.cloud.addToTxQueue(cloudData);
