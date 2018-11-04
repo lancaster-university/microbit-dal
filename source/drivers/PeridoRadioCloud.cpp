@@ -2,6 +2,7 @@
 #include "MicroBitPeridoRadio.h"
 #include "MicroBitConfig.h"
 #include "MicroBitFiber.h"
+#include "MicroBitSystemTimer.h"
 
 #define APP_ID_MSK              0xFFFF0000
 #define PACKET_ID_MSK           0x0000FFFF
@@ -18,9 +19,6 @@
 static uint32_t rx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
 static uint8_t rx_history_index = 0;
 
-static uint32_t tx_history[RADIO_CLOUD_HISTORY_SIZE] = { 0 };
-static uint8_t tx_history_index = 0;
-
 CloudDataItem::~CloudDataItem()
 {
     if (packet)
@@ -33,9 +31,8 @@ PeridoRadioCloud::PeridoRadioCloud(MicroBitPeridoRadio& r, uint8_t namespaceId) 
     this->txQueue = NULL;
     this->rxQueue = NULL;
     rx_history_index = 0;
-    tx_history_index = 0;
 
-    fiber_add_idle_component(this);
+    system_timer_add_component(this);
 
     // listen for packet received and transmitted events (two separate IDs)
     if (EventModel::defaultEventBus)
@@ -124,14 +121,22 @@ CloudDataItem* PeridoRadioCloud::peakQueuePacketId(CloudDataItem** queue, uint16
 {
     CloudDataItem *p = *queue;
 
+    LOG_STRING("search:");
+    LOG_NUM(id);
+
     while (p != NULL)
     {
+        // LOG_STRING("ITER");
+        // LOG_NUM(p->packet->id);
         if (id == p->packet->id)
+        {
+            LOG_STRING("FOUND");
             return p;
+        }
 
         p = p->next;
     }
-
+    LOG_STRING("NOT FOUND");
     return NULL;
 }
 
@@ -154,22 +159,34 @@ CloudDataItem* PeridoRadioCloud::peakQueue(CloudDataItem** queue, uint16_t id)
 
 int PeridoRadioCloud::addToTxQueue(CloudDataItem* p)
 {
-    return addToQueue(&txQueue, p);
+    NVIC_DisableIRQ(TIMER1_IRQn);
+    int ret = addToQueue(&txQueue, p);
+    NVIC_EnableIRQ(TIMER1_IRQn);
+    return ret;
 }
 
 CloudDataItem* PeridoRadioCloud::removeFromTxQueue(uint16_t id)
 {
-    return removeFromQueue(&txQueue, id);
+    NVIC_DisableIRQ(TIMER1_IRQn);
+    CloudDataItem* ret = removeFromQueue(&txQueue, id);
+    NVIC_EnableIRQ(TIMER1_IRQn);
+    return ret;
 }
 
 CloudDataItem* PeridoRadioCloud::removeFromRxQueue(uint16_t id)
 {
-    return removeFromQueue(&rxQueue, id);
+    NVIC_DisableIRQ(TIMER1_IRQn);
+    CloudDataItem* ret = removeFromQueue(&rxQueue, id);
+    NVIC_EnableIRQ(TIMER1_IRQn);
+    return ret;
 }
 
 CloudDataItem* PeridoRadioCloud::peakTxQueue(uint16_t id)
 {
-    return peakQueue(&txQueue, id);
+    NVIC_DisableIRQ(TIMER1_IRQn);
+    CloudDataItem* ret = peakQueue(&txQueue, id);
+    NVIC_EnableIRQ(TIMER1_IRQn);
+    return ret;
 }
 
 int PeridoRadioCloud::sendCloudDataItem(CloudDataItem* p)
@@ -182,21 +199,19 @@ void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
     uint16_t id = evt.value;
 
     CloudDataItem* p = peakQueuePacketId(&txQueue, id);
-    DataPacket* t = (DataPacket*)p->packet->payload;
 
     // if it's broadcast just delete from the tx queue once it has been sent
-    if (p)
+    if (p != NULL)
     {
-        LOG_STRING("PACKET_TRANS");
-        if ((t->request_type & REQUEST_TYPE_BROADCAST || p->status & DATA_PACKET_EXPECT_NO_RESPONSE))
+        DataPacket* t = (DataPacket*)p->packet->payload;
+        LOG_STRING("PACKET_TRANS: ");
+        LOG_NUM(t->request_id);
+        if (t->request_type & REQUEST_TYPE_BROADCAST)
         {
             CloudDataItem *c = removeFromQueue(&txQueue, t->request_id);
             delete c;
             return;
         }
-
-        // evt.value... get packet and flag correctly.
-
 
         // packet transmitted, flag as waiting for ACK.
         p->status |= (DATA_PACKET_WAITING_FOR_ACK);
@@ -208,7 +223,7 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
     CloudDataItem* c = new CloudDataItem;
     PeridoFrameBuffer* buf = new PeridoFrameBuffer;
 
-    LOG_STRING("SEND");
+    // LOG_STRING("SEND");
     buf->id = radio.generateId(radio.getAppId(), 0);
     buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE; // add 1 for request type
     buf->app_id = radio.getAppId();
@@ -228,7 +243,7 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
     c->retry_count = 0;
     c->no_response_count = 0;
 
-    LOG_STRING("ADDING TO Q");
+    // LOG_STRING("ADDING TO Q");
 
     addToTxQueue(c);
 
@@ -237,11 +252,11 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
 
 int PeridoRadioCloud::sendAck(uint16_t request_id, uint8_t app_id, uint8_t namespace_id)
 {
-    LOG_STRING("SEND_ACK");
+    LOG_STRING("SEND_ACK for rid: ");
+    LOG_NUM(request_id);
     PeridoFrameBuffer buf;
 
     buf.id = radio.generateId(app_id, namespace_id);
-    LOG_STRING("GENNED ID");
     buf.length = 0 + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE;
     buf.app_id = app_id;
     buf.namespace_id = namespace_id;
@@ -255,32 +270,54 @@ int PeridoRadioCloud::sendAck(uint16_t request_id, uint8_t app_id, uint8_t names
     data->request_type = REQUEST_STATUS_ACK;
 
     radio.send(&buf);
-    LOG_STRING("OUT");
     return MICROBIT_OK;
 }
 
-void PeridoRadioCloud::idleTick()
+void PeridoRadioCloud::handleError(DataPacket* t)
+{
+    CloudDataItem *c = removeFromQueue(&txQueue, t->request_id);
+
+    if (c)
+    {
+        if (c->status & DATA_PACKET_EXPECT_NO_RESPONSE)
+        {
+            delete c;
+            return;
+        }
+
+        uint8_t rt = t->request_type;
+        t->request_type = REQUEST_STATUS_ERROR;
+
+        // expect client code to check for errors...
+        addToQueue(&rxQueue, c);
+
+        if (rt & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_POST_REQUEST))
+            rest.handleTimeout(t->request_id);
+
+        if (rt & REQUEST_TYPE_CLOUD_VARIABLE)
+            variable.handleTimeout(t->request_id);
+    }
+}
+
+void PeridoRadioCloud::systemTick()
 {
     if (txQueue == NULL)
         return;
 
     // walk the txqueue and check to see if any have exceeded our retransmit time
-    bool transmitted = false;
-
     CloudDataItem* p = txQueue;
     while(p != NULL)
     {
-        // only transmit once every idle tick
-        if (p->status & DATA_PACKET_WAITING_FOR_SEND && !transmitted)
+        DataPacket *t = (DataPacket*)p->packet->payload;
+
+        if (p->status & DATA_PACKET_WAITING_FOR_SEND)
         {
             int ret = sendCloudDataItem(p);
-            LOG_STRING("RET: ");
-            LOG_NUM(ret);
 
             if (ret == MICROBIT_OK)
             {
-                LOG_STRING("SENT");
-                transmitted = true;
+                LOG_STRING("SENT: ");
+                LOG_NUM(t->request_id);
                 p->status &=~(DATA_PACKET_WAITING_FOR_SEND);
             }
         }
@@ -288,24 +325,27 @@ void PeridoRadioCloud::idleTick()
         {
              p->no_response_count++;
 
-            if (p->no_response_count > CLOUD_RADIO_NO_ACK_THRESHOLD && !transmitted)
+            if (p->no_response_count > CLOUD_RADIO_NO_ACK_THRESHOLD)
             {
-                p->retry_count++;
-
                 // if we've exceeded our retry threshold, we  break and remove from the tx queue, flagging an error
                 if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
                 {
-                    LOG_STRING("ACK TIMEOUT");
-                    break;
+                    LOG_STRING("MAX_RETRIES_EXCEEDED");
+                    handleError(t);
                 }
 
-                LOG_STRING("RESEND");
+                LOG_STRING("RESEND: ");
+                LOG_NUM(t->request_id);
 
                 // resend
                 int ret = sendCloudDataItem(p);
 
-                p->no_response_count = 0;
-                transmitted = true;
+                // if the packet was queued, reset our counts
+                if (ret == MICROBIT_OK)
+                {
+                    p->retry_count++;
+                    p->no_response_count = 0;
+                }
             }
         }
         // if we've received an ack, time out if we never actually receive a reply.
@@ -315,40 +355,12 @@ void PeridoRadioCloud::idleTick()
 
             if (p->no_response_count > CLOUD_RADIO_NO_RESPONSE_THRESHOLD || p->status & DATA_PACKET_EXPECT_NO_RESPONSE)
             {
-                LOG_STRING("RESPONSE TIMEOUT");
-                break;
+                LOG_STRING("RESPONSE TIMEOUT / ACK RECEIVED");
+                handleError(t);
             }
         }
 
         p = p->next;
-    }
-
-    // if we've iterated over the full list without a break, p will be null.
-    if (p)
-    {
-        DataPacket *t = (DataPacket*)p->packet->payload;
-        CloudDataItem *c = removeFromQueue(&txQueue, t->request_id);
-
-        if (c)
-        {
-            if (c->status & DATA_PACKET_EXPECT_NO_RESPONSE)
-            {
-                delete c;
-                return;
-            }
-
-            uint8_t rt = t->request_type;
-            t->request_type = REQUEST_STATUS_ERROR;
-
-            // expect client code to check for errors...
-            addToQueue(&rxQueue, c);
-
-            if (rt & (REQUEST_TYPE_GET_REQUEST | REQUEST_TYPE_POST_REQUEST))
-                rest.handleTimeout(t->request_id);
-
-            if (rt & REQUEST_TYPE_CLOUD_VARIABLE)
-                variable.handleTimeout(t->request_id);
-        }
     }
 }
 
@@ -412,14 +424,14 @@ void PeridoRadioCloud::packetReceived()
     // if we are, send an ack
     if (peakTxQueue(temp->request_id) || getBridgeMode())
     {
-        LOG_STRING("OUR TX");
+        // LOG_STRING("OUR TX");
         sendAck(temp->request_id, packet->app_id, packet->namespace_id);
     }
 
     // check if we've already received the packet:
     if (searchHistory(rx_history, temp->request_id, packet->app_id, packet->namespace_id))
     {
-        LOG_STRING("ALREADY RX'd");
+        // LOG_STRING("ALREADY RX'd");
         delete packet;
         return;
     }

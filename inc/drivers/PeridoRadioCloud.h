@@ -25,8 +25,8 @@ class MicroBitPeridoRadio;
 #define REQUEST_STATUS_ERROR                0x40
 #define REQUEST_STATUS_OK                   0x80
 
-#define CLOUD_RADIO_NO_ACK_THRESHOLD        1500   // about 2 seconds
-#define CLOUD_RADIO_NO_RESPONSE_THRESHOLD   3000 // about 4 seconds
+#define CLOUD_RADIO_NO_ACK_THRESHOLD        334   // 334 * 6 (scheduling quantum) == 2000 ms
+#define CLOUD_RADIO_NO_RESPONSE_THRESHOLD   668   // 668 * 6 (scheduling quantum) == 4000 ms
 #define CLOUD_RADIO_RETRY_THRESHOLD         2    // resend packet, equates to 3 resends...
 
 #define DATA_PACKET_WAITING_FOR_SEND        0x01
@@ -76,6 +76,8 @@ class PeridoRadioCloud : public MicroBitComponent
     CloudDataItem* peakQueue(CloudDataItem** queue, uint16_t id);
     CloudDataItem* peakQueuePacketId(CloudDataItem** queue, uint16_t id);
 
+    void handleError(DataPacket* t);
+
     bool searchHistory(uint32_t* history, uint16_t request_id, uint8_t app_id, uint8_t namespace_id);
     void addToHistory(uint32_t* history, uint8_t* history_index, uint16_t request_id, uint8_t app_id, uint8_t namespace_id);
 
@@ -103,7 +105,7 @@ class PeridoRadioCloud : public MicroBitComponent
     void packetReceived();
     void packetTransmitted(MicroBitEvent);
 
-    virtual void idleTick();
+    virtual void systemTick();
 
     DynamicType recv(uint16_t id);
 
