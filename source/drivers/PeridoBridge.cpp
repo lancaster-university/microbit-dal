@@ -94,8 +94,6 @@ void PeridoBridge::onRadioPacket(MicroBitEvent)
         PeridoFrameBuffer* packet = r->packet;
         DataPacket* data = (DataPacket*)packet->payload;
 
-        radio.cloud.sendAck(data->request_id, packet->app_id, packet->namespace_id);
-
         serialPacket.app_id = packet->app_id;
         serialPacket.namespace_id = packet->namespace_id;
         // first two bytes of the payload nicely contain the id.
@@ -226,7 +224,7 @@ void PeridoBridge::enable()
     display.print(neutral_big);
 
     // max size of a DataPacket
-    serial.setRxBufferSize(254);
+    serial.setRxBufferSize(512);
 
     // configure an event for SLIP_END
     serial.eventOn((char)SLIP_END);
