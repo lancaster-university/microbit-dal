@@ -218,7 +218,7 @@ class MicroBitSerial : public RawSerial
       *
       *       Buffers aren't allocated until the first send or receive respectively.
       */
-    MicroBitSerial(PinName tx, PinName rx, uint8_t rxBufferSize = MICROBIT_SERIAL_DEFAULT_BUFFER_SIZE, uint8_t txBufferSize = MICROBIT_SERIAL_DEFAULT_BUFFER_SIZE);
+    MicroBitSerial(PinName tx, PinName rx, uint16_t rxBufferSize = MICROBIT_SERIAL_DEFAULT_BUFFER_SIZE, uint16_t txBufferSize = MICROBIT_SERIAL_DEFAULT_BUFFER_SIZE);
 
     /**
       * Sends a single character over the serial line.
