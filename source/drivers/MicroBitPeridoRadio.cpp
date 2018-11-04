@@ -74,7 +74,7 @@ MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
 // #define TRACE_CRC_FAIL
 // #define TRACE_WAKE
-// #define TRACE_TX
+// #define TRACE_TX // if enabled, disabled debug will be lost
 // #define TRACE
 
 #ifdef TRACE
@@ -593,6 +593,24 @@ void radio_state_machine()
 
             // correct and set wake up period.
             correction = (t + (hops * ((p->length * TIME_TO_TRANSMIT_BYTE_1MB) + RX_TX_DISABLE_TIME + TX_ENABLE_TIME)));
+
+            correction %= period;
+
+            if (p->time_since_wake > period || correction > period)
+                while(1)
+                {
+                    #warning remove eventually
+                    LOG_STRING("TSC: ");
+                    LOG_NUM(p->time_since_wake);
+                    LOG_STRING("HOPS: ");
+                    LOG_NUM(hops);
+                    LOG_STRING("LENGTH: ");
+                    LOG_NUM(p->length);
+                    LOG_STRING("CORRECTION: ");
+                    LOG_NUM(correction);
+                    wait_ms(1000);
+                }
+
             current_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction);
             MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         }
@@ -1103,7 +1121,7 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
 
     txQueueDepth++;
 
-    return newTx->id;
+    return MICROBIT_OK;
 }
 
 int MicroBitPeridoRadio::queueKeepAlive()
@@ -1363,7 +1381,7 @@ void MicroBitPeridoRadio::idleTick()
     while ((p = peakRxQueue()) != NULL)
     {
 
-        LOG_STRING("PACKET REC");
+        LOG_STRING("PACKET REC. NAMESPACE:");
         LOG_NUM(p->namespace_id);
         if (p->namespace_id == cloud.getNamespaceId())
             cloud.packetReceived();
