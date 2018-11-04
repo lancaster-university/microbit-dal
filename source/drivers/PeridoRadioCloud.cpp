@@ -172,9 +172,9 @@ CloudDataItem* PeridoRadioCloud::peakTxQueue(uint16_t id)
     return peakQueue(&txQueue, id);
 }
 
-void PeridoRadioCloud::sendCloudDataItem(CloudDataItem* p)
+int PeridoRadioCloud::sendCloudDataItem(CloudDataItem* p)
 {
-    radio.send(p->packet);
+    return radio.send(p->packet);
 }
 
 void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
@@ -273,9 +273,16 @@ void PeridoRadioCloud::idleTick()
         // only transmit once every idle tick
         if (p->status & DATA_PACKET_WAITING_FOR_SEND && !transmitted)
         {
-            transmitted = true;
-            sendCloudDataItem(p);
-            p->status &=~(DATA_PACKET_WAITING_FOR_SEND);
+            int ret = sendCloudDataItem(p);
+            LOG_STRING("RET: ");
+            LOG_NUM(ret);
+
+            if (ret == MICROBIT_OK)
+            {
+                LOG_STRING("SENT");
+                transmitted = true;
+                p->status &=~(DATA_PACKET_WAITING_FOR_SEND);
+            }
         }
         else if (p->status & DATA_PACKET_WAITING_FOR_ACK)
         {
@@ -295,7 +302,8 @@ void PeridoRadioCloud::idleTick()
                 LOG_STRING("RESEND");
 
                 // resend
-                sendCloudDataItem(p);
+                int ret = sendCloudDataItem(p);
+
                 p->no_response_count = 0;
                 transmitted = true;
             }
@@ -369,9 +377,11 @@ void PeridoRadioCloud::addToHistory(uint32_t* history, uint8_t* history_index, u
   */
 void PeridoRadioCloud::packetReceived()
 {
-    LOG_STRING("PKT!");
     PeridoFrameBuffer* packet = radio.recv();
     DataPacket* temp = (DataPacket*)packet->payload;
+
+    LOG_STRING("PKT_REC:");
+    LOG_NUM(temp->request_id);
 
     // LOG_NUM(packet->length);
     // for (int i = 0; i < packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1); i++)
@@ -380,11 +390,11 @@ void PeridoRadioCloud::packetReceived()
     // first we check if we've received an ack
     if (temp->request_type & REQUEST_STATUS_ACK)
     {
-        LOG_STRING("ACK!");
         CloudDataItem* p = peakTxQueue(temp->request_id);
 
         if (p)
         {
+            LOG_STRING("ACK!");
             // flag this packet as receiving the ack.
             // once we do this the idle tick will remove the packet for us.
             p->status &= ~(DATA_PACKET_WAITING_FOR_ACK);
@@ -415,7 +425,7 @@ void PeridoRadioCloud::packetReceived()
     }
 
     addToHistory(rx_history, &rx_history_index, temp->request_id, packet->app_id, packet->namespace_id);
-    LOG_STRING("ADDING");
+    LOG_STRING("ADDING to RX HIST");
 
     // we have received a response, remove any matching packets from the txQueue
     CloudDataItem* p = removeFromQueue(&txQueue, temp->request_id);

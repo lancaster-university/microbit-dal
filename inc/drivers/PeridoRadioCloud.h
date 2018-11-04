@@ -94,7 +94,7 @@ class PeridoRadioCloud : public MicroBitComponent
     CloudDataItem* removeFromRxQueue(uint16_t id);
     CloudDataItem* peakTxQueue(uint16_t id);
 
-    void sendCloudDataItem(CloudDataItem* p);
+    int sendCloudDataItem(CloudDataItem* p);
 
     int send(uint8_t request_type, uint8_t* buffer, int len);
 
