@@ -13,11 +13,12 @@
 const char* HUB_ID = "M1cR0B1THuBs";
 const char* SCHOOL_ID = "M1cR0B1TSCHO";
 
-const MicroBitImage line = MicroBitImage("0, 0, 0\n255, 255, 255\n0, 0, 0\n");
-
-const MicroBitImage tick = MicroBitImage("0, 0, 0, 255\n255, 0, 255, 0\n0, 255, 0, 0\n");
-
-const MicroBitImage cross = MicroBitImage("255, 0, 255\n 0, 255, 0\n 255, 0, 255\n");
+const MicroBitImage smile_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n255, 0, 0, 0, 255\n0, 255, 255, 255, 0\n");
+const MicroBitImage smile_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n255, 255, 255, 255, 255\n0, 255, 255, 255, 0\n");
+const MicroBitImage neutral_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n0, 255, 255, 255, 0\n");
+const MicroBitImage neutral_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n255, 255, 255, 255, 255\n0, 0, 0, 0, 0\n");
+const MicroBitImage sad_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 0, 0, 0, 255\n");
+const MicroBitImage sad_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 255, 255, 255, 255\n");
 
 void PeridoBridge::sendHelloPacket()
 {
@@ -42,40 +43,20 @@ void PeridoBridge::handleHelloPacket(DataPacket* pkt, uint16_t len)
 
     int status = dt.getInteger(0);
 
-    // clear the pixels using the biggest image
-    for (int j = 0; j < tick.getHeight(); j++)
-        for (int i = 0; i < tick.getWidth(); i++)
-            display.image.setPixelValue(i, j, 0);
+    display.clear();
 
     if (status == MICROBIT_OK)
-        display.print(tick);
-    else
-        display.print(cross);
-}
-
-void PeridoBridge::updatePacketCount()
-{
-    uint8_t countImageData[PACKET_COUNT_BIT_RESOLUTION] = { 0 };
-
-    int arrayCount = 0;
-    for (int i = PACKET_COUNT_BIT_RESOLUTION-1; i > -1; i--)
     {
-        countImageData[i] = (packetCount & (1 << arrayCount)) ? 255 : 0;
-        arrayCount++;
+        this->status = BRIDGE_STATUS_OK;
+        display.print(smile_small);
+    }
+    else
+    {
+        this->status = BRIDGE_STATUS_ERROR;
+        display.print(sad_small);
     }
 
-    // reset packet count if it's off the end of the display
-    if (this->packetCount > PACKET_COUNT_DISPLAY_RESOLUTION)
-        this->packetCount = 0;
-
-    MicroBitImage count(5, 1, countImageData);
-
-    // clear pixels
-    for (int i = 0; i < MICROBIT_DISPLAY_WIDTH; i++)
-        display.image.setPixelValue(i, PACKET_COUNT_PASTE_ROW, 0);
-
-    // paste our new count
-    display.image.paste(count, PACKET_COUNT_PASTE_COLUMN, PACKET_COUNT_PASTE_ROW);
+    status |= BRIDGE_DISPLAY_BIG;
 }
 
 void PeridoBridge::sendSerialPacket(uint16_t len)
@@ -129,10 +110,50 @@ void PeridoBridge::onRadioPacket(MicroBitEvent)
         this->packetCount++;
     }
 
-    updatePacketCount();
+    display.clear();
+
+    // big smile
+    if (this->status & BRIDGE_STATUS_OK)
+    {
+        if (this->status & BRIDGE_DISPLAY_BIG)
+        {
+            display.image.paste(smile_small);
+            this->status &= ~BRIDGE_DISPLAY_BIG;
+        }
+        else
+        {
+            display.image.paste(smile_big);
+            this->status |= BRIDGE_DISPLAY_BIG;
+        }
+    }
+    else if (this->status & BRIDGE_STATUS_ERROR)
+    {
+        if (this->status & BRIDGE_DISPLAY_BIG)
+        {
+            display.image.paste(sad_small);
+            this->status &= ~BRIDGE_DISPLAY_BIG;
+        }
+        else
+        {
+            display.image.paste(sad_big);
+            this->status |= BRIDGE_DISPLAY_BIG;
+        }
+    }
+    else
+    {
+        if (this->status & BRIDGE_DISPLAY_BIG)
+        {
+            display.image.paste(neutral_small);
+            this->status &= ~BRIDGE_DISPLAY_BIG;
+        }
+        else
+        {
+            display.image.paste(neutral_big);
+            this->status |= BRIDGE_DISPLAY_BIG;
+        }
+    }
 }
 
-extern void change_display();
 void PeridoBridge::onSerialPacket(MicroBitEvent)
 {
     uint8_t* packetPtr = (uint8_t*)&serialPacket;
@@ -198,13 +219,11 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
         // cloud data will be deleted automatically.
         radio.cloud.addToTxQueue(cloudData);
     }
-
-    change_display();
 }
 
 void PeridoBridge::enable()
 {
-    display.print(line);
+    display.print(neutral_big);
 
     // max size of a DataPacket
     serial.setRxBufferSize(254);
@@ -221,6 +240,7 @@ void PeridoBridge::enable()
 PeridoBridge::PeridoBridge(MicroBitPeridoRadio& r, MicroBitSerial& s, MicroBitMessageBus& b, MicroBitDisplay& display) : radio(r), serial(s), display(display)
 {
     this->packetCount = 0;
+    this->status = 0;
     b.listen(MICROBIT_RADIO_ID_CLOUD, MICROBIT_EVT_ANY, this, &PeridoBridge::onRadioPacket, MESSAGE_BUS_LISTENER_IMMEDIATE);
     b.listen(MICROBIT_ID_SERIAL, MICROBIT_SERIAL_EVT_DELIM_MATCH, this, &PeridoBridge::onSerialPacket);
 }
