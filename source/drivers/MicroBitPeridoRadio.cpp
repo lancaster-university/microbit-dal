@@ -521,7 +521,7 @@ void radio_state_machine()
 
 #ifndef DISABLE_SLEEP
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
-#ifndef
+#endif
         }
 
         if(radio_status & RADIO_STATUS_TX_RDY)
