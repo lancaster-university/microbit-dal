@@ -33,10 +33,6 @@ PeridoRadioCloud::PeridoRadioCloud(MicroBitPeridoRadio& r, uint8_t namespaceId) 
     rx_history_index = 0;
 
     system_timer_add_component(this);
-
-    // listen for packet received and transmitted events (two separate IDs)
-    if (EventModel::defaultEventBus)
-        EventModel::defaultEventBus->listen(MICROBIT_ID_RADIO_TX, MICROBIT_EVT_ANY, this, &PeridoRadioCloud::packetTransmitted);
 }
 
 int PeridoRadioCloud::setBridgeMode(bool state)
@@ -194,12 +190,10 @@ int PeridoRadioCloud::sendCloudDataItem(CloudDataItem* p)
     return radio.send(p->packet);
 }
 
-void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
+void PeridoRadioCloud::packetTransmitted(uint16_t id)
 {
-    uint16_t id = evt.value;
-
     CloudDataItem* p = peakQueuePacketId(&txQueue, id);
-
+    NVIC_DisableIRQ(TIMER1_IRQn);
     // if it's broadcast just delete from the tx queue once it has been sent
     if (p != NULL)
     {
@@ -214,8 +208,10 @@ void PeridoRadioCloud::packetTransmitted(MicroBitEvent evt)
         }
 
         // packet transmitted, flag as waiting for ACK.
+        p->status &= ~(DATA_PACKET_WAITING_FOR_SEND);
         p->status |= (DATA_PACKET_WAITING_FOR_ACK);
     }
+    NVIC_EnableIRQ(TIMER1_IRQn);
 }
 
 int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
@@ -327,22 +323,18 @@ void PeridoRadioCloud::systemTick()
 
             if (p->no_response_count > CLOUD_RADIO_NO_ACK_THRESHOLD)
             {
-                // if we've exceeded our retry threshold, we  break and remove from the tx queue, flagging an error
+                // if we've exceeded our retry threshold, we remove from the tx queue, flagging an error
                 if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
                 {
                     LOG_STRING("MAX_RETRIES_EXCEEDED");
                     handleError(t);
                 }
-
-                LOG_STRING("RESEND: ");
-                LOG_NUM(t->request_id);
-
-                // resend
-                int ret = sendCloudDataItem(p);
-
-                // if the packet was queued, reset our counts
-                if (ret == MICROBIT_OK)
+                else
                 {
+                    LOG_STRING("RESENT: ");
+                    LOG_NUM(t->request_id);
+                    p->status &= ~DATA_PACKET_WAITING_FOR_ACK;
+                    p->status |= DATA_PACKET_WAITING_FOR_SEND;
                     p->retry_count++;
                     p->no_response_count = 0;
                 }
@@ -409,7 +401,7 @@ void PeridoRadioCloud::packetReceived()
             LOG_STRING("ACK!");
             // flag this packet as receiving the ack.
             // once we do this the idle tick will remove the packet for us.
-            p->status &= ~(DATA_PACKET_WAITING_FOR_ACK);
+            p->status &= ~(DATA_PACKET_WAITING_FOR_ACK | DATA_PACKET_WAITING_FOR_SEND);
             p->status |= DATA_PACKET_ACK_RECEIVED;
             p->no_response_count = 0;
             p->retry_count = 0;

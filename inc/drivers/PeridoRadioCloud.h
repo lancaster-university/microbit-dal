@@ -103,7 +103,7 @@ class PeridoRadioCloud : public MicroBitComponent
     int sendAck(uint16_t id, uint8_t app_id, uint8_t namespace_id);
 
     void packetReceived();
-    void packetTransmitted(MicroBitEvent);
+    void packetTransmitted(uint16_t id);
 
     virtual void systemTick();
 
