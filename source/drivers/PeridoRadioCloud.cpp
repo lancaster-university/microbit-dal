@@ -315,6 +315,7 @@ void PeridoRadioCloud::systemTick()
                 LOG_NUM(t->request_id);
                 p->status &= ~DATA_PACKET_AWAITING_RESPONSE;
                 p->status |= DATA_PACKET_WAITING_FOR_SEND;
+                // TODO: on retry, regenerate packet id....
                 p->retry_count++;
                 p->no_response_count = 0;
             }
@@ -363,6 +364,8 @@ void PeridoRadioCloud::packetReceived()
     if (searchHistory(rx_history, temp->request_id, packet->app_id, packet->namespace_id))
     {
         // LOG_STRING("ALREADY RX'd");
+
+        // here we should cache N responses, if it's not in the cache, RX again (only in bridge mode)
         delete packet;
         return;
     }
