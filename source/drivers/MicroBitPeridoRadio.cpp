@@ -892,12 +892,15 @@ void wake_up()
     }
     else
     {
+        // 3 / 4 of the period.
+        uint32_t max_sleep = ((periods[network_period_idx] / 4) * 3000);
         uint32_t tx_backoff = PERIDO_WAKE_THRESHOLD_MID;
-        tx_backoff +=  microbit_random(2500);
+
+        tx_backoff +=  microbit_random(max_sleep);
 
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + tx_backoff);
 #ifndef DISABLE_SLEEP
-        MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + ((periods[network_period_idx] / 4) * 3000));
+        MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + max_sleep);
 #endif
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
     }
