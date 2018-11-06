@@ -303,23 +303,20 @@ void PeridoRadioCloud::systemTick()
                 LOG_STRING("EXPECT NO RESP");
                 handleError(t);
             }
+            else if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
+            {
+                // if we've exceeded our retry count, remove from the queue.
+                LOG_STRING("MAX_RETRIES_EXCEEDED");
+                handleError(t);
+            }
             else if (p->no_response_count > CLOUD_RADIO_NO_RESPONSE_THRESHOLD)
             {
-                // if we've exceeded our retry threshold, we remove from the tx queue, flagging an error
-                if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
-                {
-                    LOG_STRING("MAX_RETRIES_EXCEEDED");
-                    handleError(t);
-                }
-                else
-                {
-                    LOG_STRING("RESENT: ");
-                    LOG_NUM(t->request_id);
-                    p->status &= ~DATA_PACKET_AWAITING_RESPONSE;
-                    p->status |= DATA_PACKET_WAITING_FOR_SEND;
-                    p->retry_count++;
-                    p->no_response_count = 0;
-                }
+                LOG_STRING("RESENT: ");
+                LOG_NUM(t->request_id);
+                p->status &= ~DATA_PACKET_AWAITING_RESPONSE;
+                p->status |= DATA_PACKET_WAITING_FOR_SEND;
+                p->retry_count++;
+                p->no_response_count = 0;
             }
         }
 
