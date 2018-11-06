@@ -34,11 +34,11 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitSystemTimer.h"
 
 
-#define SAMPLES                                    25           // number of samples required to calculate amplitude and watts
+#define SAMPLES                                    75           // number of samples required to calculate amplitude and watts
 
-#define RANGE_MIN                                  4000         // the value that represents 0 watts in the range of amplitudes
-#define RANGE_MAX                                  220000       // the value that represents 2700 watts in the range of amplitudes
-#define WATTAGE_MAX                                2700         // the wattage that RANGE_MAX refers to
+#define RANGE_MIN                                  3000         // the value that represents 0 watts in the range of amplitudes
+#define RANGE_MAX                                  235000       // the value that represents 2700 watts in the range of amplitudes
+#define WATTAGE_MAX                                2600         // the wattage that RANGE_MAX refers to
 
 #define MICROBIT_ENERGY_MONITOR_EVT_POWER_ON       1            // event for power on detected
 #define MICROBIT_ENERGY_MONITOR_EVT_POWER_OFF      2            // event for power off detected
