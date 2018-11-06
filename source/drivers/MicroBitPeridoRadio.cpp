@@ -204,6 +204,8 @@ extern void log_num(int num);
 #define SPEED_THRESHOLD_MAX         5
 #define SPEED_THRESHOLD_MIN         -5
 
+#define TX_PACKETS_SIZE             (2 * MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS)
+
 uint16_t periods[PERIOD_COUNT] = {10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960};
 
 volatile uint32_t radio_status = 0;
@@ -223,6 +225,10 @@ volatile static uint32_t correction = 0;
 
 volatile uint8_t last_seen_index = 0;
 volatile uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
+
+volatile uint8_t  tx_packets_head = 0;
+volatile uint8_t  tx_packets_tail = 0;
+volatile uint32_t tx_packets[TX_PACKETS_SIZE] = { 0 };
 
 // we maintain the number of wakes where we haven't seen a transmission, if we hit the match variable,
 //we queue a keep alive packet
@@ -1085,7 +1091,11 @@ int MicroBitPeridoRadio::popTxQueue()
     this->txHead = nextHead;
     txQueueDepth--;
 
-    MicroBitEvent(MICROBIT_ID_RADIO_TX, p->id);
+    tx_packets[tx_packets_tail] = (p->namespace_id << 16) | p->id;
+
+    uint8_t next_tx_tail = (tx_packets_tail + 1) % TX_PACKETS_SIZE;
+    if (next_tx_tail != tx_packets_head)
+        tx_packets_tail = next_tx_tail;
 
     delete p;
 
@@ -1379,9 +1389,21 @@ void MicroBitPeridoRadio::idleTick()
         radio_status &= ~RADIO_STATUS_QUEUE_KEEP_ALIVE;
     }
 
-    PeridoFrameBuffer* p = NULL;
+    // walk the array of tx'd packets and fire packetTransmitted for each driver...
+    while (tx_packets_head != tx_packets_tail)
+    {
+        uint8_t next_tx_head = (tx_packets_head + 1) % TX_PACKETS_SIZE;
+        uint8_t namespace_id = tx_packets[tx_packets_head] >> 16;
+        uint16_t id = tx_packets[tx_packets_head] & 0xFFFF;
 
-    // Walk the list of packets and process each one.
+        if (namespace_id == cloud.getNamespaceId())
+            cloud.packetTransmitted(id);
+
+        tx_packets_head = next_tx_head;
+    }
+
+    // Walk the list of received packets and process each one.
+    PeridoFrameBuffer* p = NULL;
     while ((p = peakRxQueue()) != NULL)
     {
 
