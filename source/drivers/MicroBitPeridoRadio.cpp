@@ -401,7 +401,7 @@ void radio_state_machine()
                     radio_status &= ~RADIO_STATUS_FORWARD;
 
                     // store this packet (should be a nop in most cases as we store after every forward), then try and transmit...
-                    MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_MIN + microbit_random(TX_BACKOFF_TIME));
+                    MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_MIN + microbit_random((periods[network_period_idx] / 4) * 2000));
                     radio_status |= RADIO_STATUS_STORE;
                 }
             }
@@ -1209,7 +1209,7 @@ int MicroBitPeridoRadio::enable()
 
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
     setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
-    setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
+    setFrequencyBand(10); // setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
