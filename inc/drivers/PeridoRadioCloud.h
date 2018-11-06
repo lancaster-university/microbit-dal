@@ -30,8 +30,7 @@ class MicroBitPeridoRadio;
 #define CLOUD_RADIO_RETRY_THRESHOLD         2    // resend packet, equates to 3 resends...
 
 #define DATA_PACKET_WAITING_FOR_SEND        0x01
-#define DATA_PACKET_WAITING_FOR_ACK         0x02
-#define DATA_PACKET_ACK_RECEIVED            0x04
+#define DATA_PACKET_AWAITING_RESPONSE       0x02
 #define DATA_PACKET_EXPECT_NO_RESPONSE      0x08
 
 #define CLOUD_RADIO_MAXIMUM_BUFFERS         10
@@ -99,8 +98,6 @@ class PeridoRadioCloud : public MicroBitComponent
     int sendCloudDataItem(CloudDataItem* p);
 
     int send(uint8_t request_type, uint8_t* buffer, int len);
-
-    int sendAck(uint16_t id, uint8_t app_id, uint8_t namespace_id);
 
     void packetReceived();
     void packetTransmitted(uint16_t id);

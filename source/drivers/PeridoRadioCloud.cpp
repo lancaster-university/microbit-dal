@@ -209,7 +209,7 @@ void PeridoRadioCloud::packetTransmitted(uint16_t id)
 
         // packet transmitted, flag as waiting for ACK.
         p->status &= ~(DATA_PACKET_WAITING_FOR_SEND);
-        p->status |= (DATA_PACKET_WAITING_FOR_ACK);
+        p->status |= (DATA_PACKET_AWAITING_RESPONSE);
     }
     NVIC_EnableIRQ(TIMER1_IRQn);
 }
@@ -244,29 +244,6 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
     addToTxQueue(c);
 
     return data->request_id;
-}
-
-int PeridoRadioCloud::sendAck(uint16_t request_id, uint8_t app_id, uint8_t namespace_id)
-{
-    LOG_STRING("SEND_ACK for rid: ");
-    LOG_NUM(request_id);
-    PeridoFrameBuffer buf;
-
-    buf.id = radio.generateId(app_id, namespace_id);
-    buf.length = 0 + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE;
-    buf.app_id = app_id;
-    buf.namespace_id = namespace_id;
-    buf.ttl = 4;
-    buf.initial_ttl = 4;
-    buf.time_since_wake = 0;
-    buf.period = 0;
-
-    DataPacket* data = (DataPacket*)buf.payload;
-    data->request_id = request_id;
-    data->request_type = REQUEST_STATUS_ACK;
-
-    radio.send(&buf);
-    return MICROBIT_OK;
 }
 
 void PeridoRadioCloud::handleError(DataPacket* t)
@@ -317,11 +294,16 @@ void PeridoRadioCloud::systemTick()
                 p->status &=~(DATA_PACKET_WAITING_FOR_SEND);
             }
         }
-        else if (p->status & DATA_PACKET_WAITING_FOR_ACK)
+        else if (p->status & DATA_PACKET_AWAITING_RESPONSE)
         {
-             p->no_response_count++;
+            p->no_response_count++;
 
-            if (p->no_response_count > CLOUD_RADIO_NO_ACK_THRESHOLD)
+            if (p->status & DATA_PACKET_EXPECT_NO_RESPONSE)
+            {
+                LOG_STRING("EXPECT NO RESP");
+                handleError(t);
+            }
+            else if (p->no_response_count > CLOUD_RADIO_NO_RESPONSE_THRESHOLD)
             {
                 // if we've exceeded our retry threshold, we remove from the tx queue, flagging an error
                 if (p->retry_count > CLOUD_RADIO_RETRY_THRESHOLD)
@@ -333,22 +315,11 @@ void PeridoRadioCloud::systemTick()
                 {
                     LOG_STRING("RESENT: ");
                     LOG_NUM(t->request_id);
-                    p->status &= ~DATA_PACKET_WAITING_FOR_ACK;
+                    p->status &= ~DATA_PACKET_AWAITING_RESPONSE;
                     p->status |= DATA_PACKET_WAITING_FOR_SEND;
                     p->retry_count++;
                     p->no_response_count = 0;
                 }
-            }
-        }
-        // if we've received an ack, time out if we never actually receive a reply.
-        else if (p->status & DATA_PACKET_ACK_RECEIVED)
-        {
-            p->no_response_count++;
-
-            if (p->no_response_count > CLOUD_RADIO_NO_RESPONSE_THRESHOLD || p->status & DATA_PACKET_EXPECT_NO_RESPONSE)
-            {
-                LOG_STRING("RESPONSE TIMEOUT / ACK RECEIVED");
-                handleError(t);
             }
         }
 
@@ -390,35 +361,6 @@ void PeridoRadioCloud::packetReceived()
     // LOG_NUM(packet->length);
     // for (int i = 0; i < packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1); i++)
     //     LOG_NUM(packet->payload[i]);
-
-    // first we check if we've received an ack
-    if (temp->request_type & REQUEST_STATUS_ACK)
-    {
-        CloudDataItem* p = peakTxQueue(temp->request_id);
-
-        if (p)
-        {
-            LOG_STRING("ACK!");
-            // flag this packet as receiving the ack.
-            // once we do this the idle tick will remove the packet for us.
-            p->status &= ~(DATA_PACKET_WAITING_FOR_ACK | DATA_PACKET_WAITING_FOR_SEND);
-            p->status |= DATA_PACKET_ACK_RECEIVED;
-            p->no_response_count = 0;
-            p->retry_count = 0;
-        }
-
-        // delete the ack packet and return
-        delete packet;
-        return;
-    }
-
-    // check if we are the originator of the request or a bridge
-    // if we are, send an ack
-    if (peakTxQueue(temp->request_id) || getBridgeMode())
-    {
-        // LOG_STRING("OUR TX");
-        sendAck(temp->request_id, packet->app_id, packet->namespace_id);
-    }
 
     // check if we've already received the packet:
     if (searchHistory(rx_history, temp->request_id, packet->app_id, packet->namespace_id))
