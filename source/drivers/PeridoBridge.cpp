@@ -22,12 +22,12 @@
 const char* HUB_ID = "M1cR0B1THuBs";
 const char* SCHOOL_ID = "M1cR0B1TSCHO";
 
-const MicroBitImage smile_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n255, 0, 0, 0, 255\n0, 255, 255, 255, 0\n");
-const MicroBitImage smile_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n255, 255, 255, 255, 255\n0, 255, 255, 255, 0\n");
-const MicroBitImage neutral_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n0, 255, 255, 255, 0\n");
-const MicroBitImage neutral_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n255, 255, 255, 255, 255\n0, 0, 0, 0, 0\n");
-const MicroBitImage sad_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 0, 0, 0, 255\n");
-const MicroBitImage sad_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 255, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 255, 255, 255, 255\n");
+const MicroBitImage smile_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n255, 0, 0, 0, 255\n0, 255, 255, 255, 0\n");
+const MicroBitImage smile_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n255, 255, 255, 255, 255\n0, 255, 255, 255, 0\n");
+const MicroBitImage neutral_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n0, 255, 255, 255, 0\n");
+const MicroBitImage neutral_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n255, 255, 255, 255, 255\n0, 0, 0, 0, 0\n");
+const MicroBitImage sad_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 0, 0, 0, 255\n");
+const MicroBitImage sad_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 255, 255, 255, 255\n");
 
 bool test_mode = true;
 
