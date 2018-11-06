@@ -70,7 +70,9 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
-#define FILTER
+// begin static config options of perido:
+#define FILTER // if def'd, the driver will filter packets based on app id
+#define DISABLE_SLEEP // if def'd the driver will never go to sleep.
 
 // #define TRACE_CRC_FAIL
 // #define TRACE_WAKE
@@ -872,7 +874,12 @@ void wake_up()
     // we're still exchanging packets - come back in another period amount.
     if (!(radio_status & RADIO_STATUS_SLEEPING))
     {
-        // if we're discovering let's check our tx packets (otherwise we get stuck in an infinite loop of waiting around :) )
+         // 3 / 4 of the period.
+        uint32_t max_sleep = ((periods[network_period_idx] / 4) * 3000);
+        uint32_t tx_backoff = PERIDO_WAKE_THRESHOLD_MID;
+        tx_backoff +=  microbit_random(max_sleep);
+        // don't forget to check tx if we've bled into the next period.
+        MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + tx_backoff);
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         return;
     }
