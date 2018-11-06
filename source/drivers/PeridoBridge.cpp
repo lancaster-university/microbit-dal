@@ -38,6 +38,7 @@ void PeridoBridge::queueTestResponse()
     PeridoFrameBuffer* buf = new PeridoFrameBuffer;
 
     DataPacket* dp = (DataPacket*)&serialPacket.request_id;
+    dp->request_type |= REQUEST_STATUS_OK;
 
     DynamicType response;
     response.appendString("99");
