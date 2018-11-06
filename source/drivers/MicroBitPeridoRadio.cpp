@@ -176,7 +176,7 @@ extern void log_num(int num);
 
 #define FORWARD_POLL_TIME           2500
 #define ABSOLUTE_RESPONSE_TIME      10000
-#define PERIDO_DEFAULT_PERIOD_IDX   1
+#define PERIDO_DEFAULT_PERIOD_IDX   2
 
 #define TIME_TO_TRANSMIT_BYTE_1MB   8
 
@@ -369,7 +369,9 @@ void radio_state_machine()
             NRF_RADIO->EVENTS_END = 0;
             NRF_RADIO->TASKS_START = 1;
 
+#ifndef DISABLE_SLEEP
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
+#endif
 
             if(NRF_RADIO->CRCSTATUS == 1)
             {
@@ -488,7 +490,9 @@ void radio_state_machine()
 
             radio_status |= (RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN | RADIO_STATUS_EXPECT_RESPONSE);
 
+#ifndef DISABLE_SLEEP
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
+#endif
         }
 #ifdef TRACE
         set_gpio2(0);
@@ -513,7 +517,9 @@ void radio_state_machine()
             radio_status &= ~(RADIO_STATUS_TX_END | RADIO_STATUS_FORWARD);
             radio_status |= RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN;
 
+#ifndef DISABLE_SLEEP
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
+#ifndef
         }
 
         if(radio_status & RADIO_STATUS_TX_RDY)
@@ -890,7 +896,9 @@ void wake_up()
         tx_backoff +=  microbit_random(2500);
 
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + tx_backoff);
+#ifndef DISABLE_SLEEP
         MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + 4000);
+#endif
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
     }
 
