@@ -224,8 +224,8 @@ int PeridoRadioCloud::send(uint8_t request_type, uint8_t* buffer, int len)
     buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1) + CLOUD_HEADER_SIZE; // add 1 for request type
     buf->app_id = radio.getAppId();
     buf->namespace_id = this->namespaceId;
-    buf->ttl = 4;
-    buf->initial_ttl = 4;
+    buf->ttl = 2;
+    buf->initial_ttl = 2;
     buf->time_since_wake = 0;
     buf->period = 0;
 
@@ -360,10 +360,10 @@ void PeridoRadioCloud::packetReceived()
     // for (int i = 0; i < packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1); i++)
     //     LOG_NUM(packet->payload[i]);
 
-    // check if we've already received the packet:
-    if (searchHistory(rx_history, temp->request_id, packet->app_id, packet->namespace_id))
+    // check if we've already received the packet, or if we can't handle a packet (too much network demand)
+    if (searchHistory(rx_history, temp->request_id, packet->app_id, packet->namespace_id) || radio.txQueueDepth > RADIO_CLOUD_TX_THROTTLE)
     {
-        // LOG_STRING("ALREADY RX'd");
+        LOG_STRING("ALREADY RX'd");
 
         // here we should cache N responses, if it's not in the cache, RX again (only in bridge mode)
         delete packet;

@@ -39,7 +39,8 @@ class MicroBitPeridoRadio;
 #define RADIO_REST_ID                       62965
 #define RADIO_CLOUD_VARIABLE_ID             62966
 
-#define RADIO_CLOUD_HISTORY_SIZE             4
+#define RADIO_CLOUD_TX_THROTTLE             12
+#define RADIO_CLOUD_HISTORY_SIZE             20
 
 #define RADIO_CLOUD_STATUS_HUB_MODE         0x02
 
