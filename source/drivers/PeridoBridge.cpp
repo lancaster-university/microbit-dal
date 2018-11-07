@@ -29,7 +29,7 @@ const MicroBitImage neutral_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\
 const MicroBitImage sad_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 0, 0, 0, 255\n");
 const MicroBitImage sad_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n0, 255, 255, 255, 0\n255, 255, 255, 255, 255\n");
 
-bool test_mode = true;
+bool test_mode = false;
 
 void PeridoBridge::queueTestResponse()
 {
@@ -53,8 +53,8 @@ void PeridoBridge::queueTestResponse()
     buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1);
     buf->app_id = serialPacket.app_id;
     buf->namespace_id = serialPacket.namespace_id;
-    buf->ttl = 4;
-    buf->initial_ttl = 4;
+    buf->ttl = 2;
+    buf->initial_ttl = 2;
     buf->time_since_wake = 0;
     buf->period = 0;
 
@@ -266,8 +266,8 @@ void PeridoBridge::onSerialPacket(MicroBitEvent)
         buf->length = len + (MICROBIT_PERIDO_HEADER_SIZE - 1);
         buf->app_id = serialPacket.app_id;
         buf->namespace_id = serialPacket.namespace_id;
-        buf->ttl = 4;
-        buf->initial_ttl = 4;
+        buf->ttl = 2;
+        buf->initial_ttl = 2;
         buf->time_since_wake = 0;
         buf->period = 0;
         memcpy(buf->payload, &serialPacket.request_id, len);
