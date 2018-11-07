@@ -77,14 +77,14 @@ MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 #endif
 
 #define DISABLE_SLEEP // if def'd the driver will never go to sleep.
-#ifdef FILTER
+#ifdef DISABLE_SLEEP
 #warning sleep is disabled.
 #endif
 
-#define TRACE_CRC_FAIL
-#define TRACE_WAKE
-#define TRACE_TX // if enabled, disabled debug will be lost
-#define TRACE
+// #define TRACE_CRC_FAIL
+// #define TRACE_WAKE
+// #define TRACE_TX // if enabled, disabled debug will be lost
+// #define TRACE
 
 #ifdef TRACE
 #warning TRACE is on...
