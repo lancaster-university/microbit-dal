@@ -79,7 +79,7 @@ struct PeridoFrameBuffer;
 #endif
 
 #ifndef MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS
-#define MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS      10
+#define MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS      20
 #endif
 
 #define MICROBIT_PERIDO_DEFAULT_APP_ID          0
