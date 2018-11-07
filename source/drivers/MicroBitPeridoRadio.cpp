@@ -467,18 +467,18 @@ void radio_state_machine()
             p->flags = 0;
             p->ttl = p->initial_ttl;
 
-            if (radio_status & RADIO_STATUS_DISCOVERING)
-                p->time_since_wake = 0;
-            else
-            {
-                uint32_t t = read_and_restart_wake();
+            // if (radio_status & RADIO_STATUS_DISCOVERING)
+            p->time_since_wake = 0;
+            // else
+            // {
+            //     uint32_t t = read_and_restart_wake();
 
-                // account for roll over... otherwise the network will be put to sleep for quite some time... :)
-                if (period_start_cc < t)
-                    p->time_since_wake = t - period_start_cc;
-                else
-                    p->time_since_wake = period_start_cc - t;
-            }
+            //     // account for roll over... otherwise the network will be put to sleep for quite some time... :)
+            //     if (period_start_cc < t)
+            //         p->time_since_wake = t - period_start_cc;
+            //     else
+            //         p->time_since_wake = period_start_cc - t;
+            // }
 
             NRF_RADIO->PACKETPTR = (uint32_t)p;
 #ifdef DEBUG_MODE
