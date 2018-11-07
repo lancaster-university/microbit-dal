@@ -72,14 +72,23 @@ MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
 // begin static config options of perido:
 #define FILTER // if def'd, the driver will filter packets based on app id
-#define DISABLE_SLEEP // if def'd the driver will never go to sleep.
+#ifdef FILTER
+#warning filtering packets based on app id
+#endif
 
-// #define TRACE_CRC_FAIL
+#define DISABLE_SLEEP // if def'd the driver will never go to sleep.
+#ifdef FILTER
+#warning sleep is disabled.
+#endif
+
+#define TRACE_CRC_FAIL
 #define TRACE_WAKE
 #define TRACE_TX // if enabled, disabled debug will be lost
 #define TRACE
 
 #ifdef TRACE
+#warning TRACE is on...
+
 extern void set_gpio0(int);
 extern void set_gpio1(int);
 extern void set_gpio2(int);
@@ -156,7 +165,7 @@ extern void log_num(int num);
 
 // #else
 
-#define DISCOVERY_TX_BACKOFF_TIME   2000000
+#define DISCOVERY_TX_BACKOFF_TIME   40000
 #define DISCOVERY_BACKOFF_TIME      (DISCOVERY_TX_BACKOFF_TIME * 2)
 
 #define DISCOVERY_TX_BACKOFF_TIME_RUNNING   40000
@@ -417,12 +426,12 @@ void radio_state_machine()
             {
                 // check tx here
 #ifdef TRACE_CRC_FAIL
-                set_gpio6(1);
+                set_gpio3(1);
 #endif
                 MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + FORWARD_POLL_TIME + microbit_random((periods[network_period_idx] / 4) * 2000));
                 crc_fail_count++;
 #ifdef TRACE_CRC_FAIL
-                set_gpio6(0);
+                set_gpio3(0);
 #endif
 #ifdef TRACE
                 set_gpio1(0);
@@ -514,7 +523,9 @@ void radio_state_machine()
     if (radio_status & RADIO_STATUS_FORWARD)
     {
 #ifdef TRACE
+#ifndef TRACE_CRC_FAIL
         set_gpio3(1);
+#endif
 #endif
         if(radio_status & RADIO_STATUS_TX_END)
         {
@@ -554,7 +565,9 @@ void radio_state_machine()
             radio_status |= RADIO_STATUS_STORE;
         }
 #ifdef TRACE
+#ifndef TRACE_CRC_FAIL
         set_gpio3(0);
+#endif
 #endif
     }
 
@@ -640,8 +653,8 @@ void radio_state_machine()
                 }
 #endif
 
-            current_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction);
-            MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
+            // current_cc = MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL) + (period - correction);
+            // MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         }
 
         if (p->flags & MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG)
@@ -704,6 +717,7 @@ extern "C" void RADIO_IRQHandler(void)
 {
     interrupt_count++;
 #ifdef TRACE
+#ifdef DEBUG_MODE
     if (interrupt_count>1000000)
     {
         log_string("radio_state: ");
@@ -723,6 +737,7 @@ extern "C" void RADIO_IRQHandler(void)
         log_string("\r\n");
     }
 #endif
+#endif
 #ifdef DEBUG_MODE
     if(NRF_RADIO->EVENTS_END)
         log_string("1");
@@ -741,9 +756,7 @@ extern "C" void RADIO_IRQHandler(void)
 void tx_callback()
 {
 #ifdef TRACE
-#ifndef TRACE_CRC_FAIL
     set_gpio6(1);
-#endif
 #endif
 #ifdef DEBUG_MODE
     log_string("tx cb: ");
@@ -754,9 +767,7 @@ void tx_callback()
     if (radio_status & (RADIO_STATUS_SLEEPING | RADIO_STATUS_FORWARD | RADIO_STATUS_RECEIVING))
     {
 #ifdef TRACE
-#ifndef TRACE_CRC_FAIL
     set_gpio6(0);
-#endif
 #endif
         return;
     }
@@ -768,9 +779,7 @@ void tx_callback()
         radio_status = (radio_status & (RADIO_STATUS_DISCOVERING | RADIO_STATUS_FIRST_PACKET | RADIO_STATUS_DIRECTING)) | RADIO_STATUS_TRANSMIT | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
         radio_state_machine();
 #ifdef TRACE
-#ifndef TRACE_CRC_FAIL
     set_gpio6(0);
-#endif
 #endif
         NVIC_EnableIRQ(RADIO_IRQn);
         return;
@@ -781,17 +790,13 @@ void tx_callback()
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + DISCOVERY_TX_BACKOFF_TIME + microbit_random(DISCOVERY_TX_BACKOFF_TIME));
         NVIC_EnableIRQ(RADIO_IRQn);
 #ifdef TRACE
-#ifndef TRACE_CRC_FAIL
     set_gpio6(0);
-#endif
 #endif
         return;
     }
     NVIC_EnableIRQ(RADIO_IRQn);
 #ifdef TRACE
-#ifndef TRACE_CRC_FAIL
     set_gpio6(0);
-#endif
 #endif
 }
 
