@@ -1241,9 +1241,7 @@ int MicroBitPeridoRadio::enable()
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
     setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
 
-    #warning fix this
-    setFrequencyBand(10);
-    // setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
+    setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
