@@ -798,6 +798,12 @@ void tx_callback()
 #ifdef TRACE
     set_gpio6(0);
 #endif
+
+    // uint32_t max_sleep = ((periods[network_period_idx] / 4) * 1000);
+    // uint32_t tx_backoff = PERIDO_WAKE_THRESHOLD_MID;
+    // tx_backoff +=  microbit_random(max_sleep);
+    // MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + tx_backoff);
+
 }
 
 // used to begin a transmission window
@@ -900,7 +906,7 @@ void wake_up()
         uint32_t tx_backoff = PERIDO_WAKE_THRESHOLD_MID;
         tx_backoff +=  microbit_random(max_sleep);
         // don't forget to check tx if we've bled into the next period.
-        radio_status |=  RADIO_STATUS_FIRST_PACKET;
+        // radio_status |=  RADIO_STATUS_FIRST_PACKET;
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + tx_backoff);
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
 #ifdef TRACE_WAKE
