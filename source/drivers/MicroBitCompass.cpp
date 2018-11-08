@@ -134,7 +134,8 @@ MicroBitCompass& MicroBitCompass::autoDetect(MicroBitI2C &i2c)
 
         else
         {
-            microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE_MAG);
+            MicroBitCompass *unavailable = new MicroBitCompass(coordinateSpace, MICROBIT_ID_COMPASS);
+            MicroBitCompass::detectedCompass = unavailable;
         }
     }
 
@@ -357,6 +358,7 @@ int MicroBitCompass::getPeriod()
  */
 int MicroBitCompass::requestUpdate()
 {
+    microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE_MAG);
     return MICROBIT_NOT_SUPPORTED;
 }
 
