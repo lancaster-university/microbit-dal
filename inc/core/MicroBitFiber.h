@@ -355,6 +355,11 @@ int fiber_add_idle_component(MicroBitComponent *component);
 int fiber_remove_idle_component(MicroBitComponent *component);
 
 /**
+ * Check if fiber is an idle component
+ */
+bool fiber_is_idle_component(MicroBitComponent *component);
+
+/**
   * Determines if the processor is executing in interrupt context.
   *
   * @return true if any the processor is currently executing any interrupt service routine. False otherwise.

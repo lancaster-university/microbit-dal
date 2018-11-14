@@ -129,7 +129,10 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 
     if (MicroBitBLEManager::manager)
     {
-        MicroBitBLEManager::manager->advertise();
+
+        if(!fiber_is_idle_component(MicroBitBLEManager::manager))
+            MicroBitBLEManager::manager->advertise();
+
         MicroBitBLEManager::manager->deferredSysAttrWrite(reason->handle);
     }
 }
@@ -492,9 +495,9 @@ void MicroBitBLEManager::pairingRequested(ManagedString passKey)
  */
 void MicroBitBLEManager::pairingComplete(bool success)
 {
-    this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
     pairing_completed_at_time = system_timer_current_time();
+    this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
     if (success)
     {
@@ -522,6 +525,12 @@ void MicroBitBLEManager::idleTick()
     {
         storeSystemAttributes(pairingHandle);
         this->status &= ~MICROBIT_BLE_STATUS_STORE_SYSATTR;
+
+        if ( this->pairingStatus == MICROBIT_BLE_PAIR_SUCCESSFUL)
+            this->pairingStatus |= MICROBIT_BLE_PAIR_COMPLETE;
+
+        // Once system attributes have been stored, restart advertising
+        advertise();
     }
 }
 
@@ -739,6 +748,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
         {
             if (pairingStatus & MICROBIT_BLE_PAIR_SUCCESSFUL)
             {
+
                 MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
                 display.print(tick, 0, 0, 0);
                 fiber_sleep(15000);
@@ -862,3 +872,4 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
 uint8_t MicroBitBLEManager::getCurrentMode(){
   return currentMode;
 }
+
