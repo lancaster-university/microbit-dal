@@ -19,8 +19,8 @@
 #define SLIP_ESC_END            0xDC
 #define SLIP_ESC_ESC            0xDD
 
-const char* HUB_ID = "M1cR0B1THuBs";
-const char* SCHOOL_ID = "M1cR0B1TSCHO";
+const char* HUB_ID = "B1THu";
+const char* SCHOOL_ID = "B1TSC";
 
 const MicroBitImage smile_small = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n255, 0, 0, 0, 255\n0, 255, 255, 255, 0\n");
 const MicroBitImage smile_big = MicroBitImage("0, 0, 0, 0, 0\n0, 255, 0, 0, 0\n0, 0, 0, 0, 0\n255, 255, 255, 255, 255\n0, 255, 255, 255, 0\n");
@@ -151,12 +151,19 @@ void PeridoBridge::onRadioPacket(MicroBitEvent)
         serialPacket.app_id = packet->app_id;
         serialPacket.namespace_id = packet->namespace_id;
         // first two bytes of the payload nicely contain the id.
-        memcpy(&serialPacket.request_id, packet->payload, packet->length - MICROBIT_PERIDO_HEADER_SIZE);
+        memcpy(&serialPacket.request_id, packet->payload, packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1));
 
         LOG_STRING("RX PACKET: ");
         LOG_NUM(serialPacket.app_id);
         LOG_NUM(serialPacket.namespace_id);
         LOG_NUM(serialPacket.request_id);
+
+        // uint8_t* packetPtr = (uint8_t *)&serialPacket;
+
+        // for (int i = 0; i < (packet->length - (MICROBIT_PERIDO_HEADER_SIZE - 1)); i++)
+        // {
+        //     serial.printf("%c[%d] ",packet->payload[i],packet->payload[i]);
+        // }
 
         if (test_mode)
             queueTestResponse();
