@@ -2,6 +2,13 @@ This file highlights all notable changes between tagged releases on the master b
 
 For a more detailed treatment of changes, please see the commit history of the github repository containing this file.
 
+Version 2.1.1 (23/11/19 sam@microbit.org)
+   - Partial flashing is no longer a default service in C++ builds
+   - Make microbit_heap_print() available globally
+   - Remove unused MicroBitPin objects
+   - Add capability to set radio upper and lower frequency bands in yotta config
+   - Fix radio power in C++ builds
+
 Version 2.1.0 (18/10/18 joe@comp.lancs.ac.uk)
    - Refactor of motion sensor devices to support a range of accelerometer/magnetometer 
      sensors through abstract high level classes and concrete device specific subclasses.
