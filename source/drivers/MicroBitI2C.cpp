@@ -73,6 +73,7 @@ int MicroBitI2C::read(int address, char *data, int length, bool repeated)
 {
     int result = I2C::read(address,data,length,repeated);
 
+#ifdef MICROBIT_I2C_RESET_IN_FAIL
     //0 indicates a success, presume failure
     while(result != 0 && retries < MICROBIT_I2C_MAX_RETRIES)
     {
@@ -86,6 +87,7 @@ int MicroBitI2C::read(int address, char *data, int length, bool repeated)
         result = I2C::read(address,data,length,repeated);
         retries++;
     }
+#endif
 
     if(result != 0)
         return MICROBIT_I2C_ERROR;
@@ -112,6 +114,7 @@ int MicroBitI2C::write(int address, const char *data, int length, bool repeated)
     int result = I2C::write(address,data,length,repeated);
 
     //0 indicates a success, presume failure
+#ifdef MICROBIT_I2C_RESET_IN_FAIL
     while(result != 0 && retries < MICROBIT_I2C_MAX_RETRIES)
     {
         _i2c.i2c->EVENTS_ERROR = 0;
@@ -125,10 +128,81 @@ int MicroBitI2C::write(int address, const char *data, int length, bool repeated)
         result = I2C::write(address,data,length,repeated);
         retries++;
     }
+#endif    
 
     if(result != 0)
         return MICROBIT_I2C_ERROR;
 
     retries = 0;
     return MICROBIT_OK;
+}
+
+/**
+  * Issues a standard, 2 byte I2C command write.
+  *
+  * Blocks the calling thread until complete.
+  *
+  * @param address The address of the I2C device to write to.
+  * @param reg The address of the register in the device to write.
+  * @param value The value to write.
+  *
+  * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the the write request failed.
+  */
+int MicroBitI2C::writeRegister(uint8_t address, uint8_t reg, uint8_t value)
+{
+    uint8_t command[2];
+    command[0] = reg;
+    command[1] = value;
+
+    return write(address, (const char *)command, 2);
+}
+
+/**
+  * Issues a read command, copying data into the specified buffer.
+  *
+  * Blocks the calling thread until complete.
+  *
+  * @param address The address of the I2C device to write to.
+  * @param reg The address of the register to access.
+  * @param buffer Memory area to read the data into.
+  * @param length The number of bytes to read.
+  *
+  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
+  */
+int MicroBitI2C::readRegister(uint8_t address, uint8_t reg, uint8_t* buffer, int length)
+{
+    int result;
+
+    if (buffer == NULL || length <= 0 )
+        return MICROBIT_INVALID_PARAMETER;
+
+    result = write(address, (const char *)&reg, 1, true);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
+
+    result = read(address, (char *)buffer, length);
+    if (result !=0)
+        return MICROBIT_I2C_ERROR;
+
+    return MICROBIT_OK;
+}
+
+/**
+  * Issues a single byte read command, and returns the value read, or an error.
+  *
+  * Blocks the calling thread until complete.
+  *
+  * @param address The address of the I2C device to write to.
+  * @param reg The address of the register to access.
+  *
+  * @return the byte read on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
+  */
+int MicroBitI2C::readRegister(uint8_t address, uint8_t reg)
+{
+    int result;
+    uint8_t data;
+
+    result = readRegister(address, reg, &data, 1);
+    
+    return (result == MICROBIT_OK) ? (int)data : result;
 }

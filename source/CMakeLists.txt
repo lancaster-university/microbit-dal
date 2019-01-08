@@ -14,9 +14,10 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "core/MicroBitHeapAllocator.cpp"
     "core/MicroBitListener.cpp"
     "core/MicroBitSystemTimer.cpp"
+    "core/MicroBitUtil.cpp"
 
+    "types/CoordinateSystem.cpp"
     "types/ManagedString.cpp"
-    "types/Matrix4.cpp"
     "types/MicroBitEvent.cpp"
     "types/MicroBitImage.cpp"
     "types/PacketBuffer.cpp"
@@ -24,10 +25,8 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
 
     "drivers/DynamicPwm.cpp"
     "drivers/MicroBitAccelerometer.cpp"
-    "drivers/MicroBitAccelerometer-bmx.cpp"
     "drivers/MicroBitButton.cpp"
     "drivers/MicroBitCompass.cpp"
-    "drivers/MicroBitCompass-bmx.cpp"
     "drivers/MicroBitCompassCalibrator.cpp"
     "drivers/MicroBitDisplay.cpp"
     "drivers/MicroBitI2C.cpp"
@@ -47,6 +46,12 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/MicroBitFlash.cpp"
     "drivers/MicroBitFile.cpp"
     "drivers/MicroBitFileSystem.cpp"
+    "drivers/FXOS8700.cpp"
+    "drivers/MMA8653.cpp"
+    "drivers/MAG3110.cpp"
+    "drivers/LSM303Accelerometer.cpp"
+    "drivers/LSM303Magnetometer.cpp"
+    "drivers/MicroBitMemoryMap.cpp"
     "drivers/CalliopeSoundMotor.cpp"
     "drivers/CalliopeRGB.cpp"
 
@@ -61,6 +66,8 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "bluetooth/MicroBitMagnetometerService.cpp"
     "bluetooth/MicroBitTemperatureService.cpp"
     "bluetooth/MicroBitUARTService.cpp"
+    "bluetooth/MicroBitPartialFlashingService.cpp"
+
 )
 
 execute_process(WORKING_DIRECTORY "../../yotta_modules/${PROJECT_NAME}" COMMAND "git" "log" "--pretty=format:%h" "-n" "1" OUTPUT_VARIABLE git_hash)

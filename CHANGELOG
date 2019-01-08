@@ -1,0 +1,46 @@
+This file highlights all notable changes between tagged releases on the master branch of this repository, in the form of release notes. 
+
+For a more detailed treatment of changes, please see the commit history of the github repository containing this file.
+
+Version 2.1.1 (23/11/19 sam@microbit.org)
+   - Partial flashing is no longer a default service in C++ builds
+   - Make microbit_heap_print() available globally
+   - Remove unused MicroBitPin objects
+   - Add capability to set radio upper and lower frequency bands in yotta config
+   - Fix radio power in C++ builds
+
+Version 2.1.0 (18/10/18 joe@comp.lancs.ac.uk)
+   - Refactor of motion sensor devices to support a range of accelerometer/magnetometer 
+     sensors through abstract high level classes and concrete device specific subclasses.
+   - Introduction of resusable 3D coordinate space transformation code.
+   - Autodetection algorithm for I2C based accelerometer/magnetometer sensors.
+   - Add support for LSM303 accelerometer/magnetometer sensor.
+   - Add support for FXOS8700 accelerometer/magnetometer sensor.
+   - Update compass calibration UX to gather more samples during calibration
+     in order to improve accuracy. The algorithm now asks the user to "tilt to
+     fill the screen" with pixels, rather than 'draw a circle' of pixels.
+   - More resilient compass calibration algorithm based on iterative
+     approximation that provides more accurate calibration in the presence of
+     local magnetic fileds, such as those caused by a battery pack.
+   - Updates to heap memory allocator. The MicroBitHeapAllocator now replaces
+     the GNU libc heap allocator, rather than exisitng in parallel with it, in
+     order to reduce memory fragmentation and ensure that all allocations
+     benefit from multiple heap region support and interrupt safety.
+   - Added new bluetooth partial flashing service, that allows rapid
+     reprogramming of the micro:bit over bluetooth in the common case.
+   - Improved graphics for bluetooth pairing mode.
+   - Support to allow explicit launch of conmpass calibration algorithm via BLE characteristic.
+   - Support for integrated hardware quadrature decoder
+   
+   - Minor bug fixes/code optimisations including:
+       - the message bus event routing code to support multiple event listeners 
+         with the same id, value and context.
+	   - accelerometer pitch measurement algorithm now has a full 0..360 degree range.
+	   - Support for SHAKE gesture recognition in tight loops.
+	   - prevent device lockups when routing UART pins to the edge connector.
+	   - support for changing RADIO frequency whilst active.
+	   - accurate configurations for optional SoftDevice S130v2.
+
+Version 2.0.0
+   Initial Open Source Release
+

@@ -102,6 +102,47 @@ class MicroBitI2C : public I2C
       * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if an unresolved write failure is detected.
       */
     int write(int address, const char *data, int length, bool repeated = false);
+
+    /**
+     * Issues a standard, 2 byte I2C command write.
+     *
+     * Blocks the calling thread until complete.
+     *
+     * @param address The address of the I2C device to write to.
+     * @param reg The address of the register in the device to write.
+     * @param value The value to write.
+     *
+     * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the the write request failed.
+     */
+    int writeRegister(uint8_t address, uint8_t reg, uint8_t value);
+
+    /**
+     * Issues a read command, copying data into the specified buffer.
+     *
+     * Blocks the calling thread until complete.
+     *
+     * @param reg The address of the register to access.
+     *
+     * @param buffer Memory area to read the data into.
+     *
+     * @param length The number of bytes to read.
+     *
+     * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
+     */
+    int readRegister(uint8_t address, uint8_t reg, uint8_t* buffer, int length);
+
+    /**
+     * Issues a single byte read command, and returns the value read, or an error.
+     *
+     * Blocks the calling thread until complete.
+     *
+     * @param address The address of the I2C device to write to.
+     * @param reg The address of the register to access.
+     *
+     * @return the byte read on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
+     */
+    int readRegister(uint8_t address, uint8_t reg);
+
 };
 
 #endif

@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef TARGET_NRF51_CALLIOPE
+#ifdef TARGET_NRF51_CALLIOPE_
 
 /**
   * Class definition for MicroBit Compass.
@@ -32,12 +32,12 @@ DEALINGS IN THE SOFTWARE.
   * Also includes basic caching, calibration and on demand activation.
   */
 #include "MicroBitConfig.h"
-#include "MicroBitAccelerometer-bmx.h"
-#include "MicroBitCompass-bmx.h"
+#include "BMX055Accelerometer.h"
+#include "BMX055Magnetometer.h"
 #include "MicroBitFiber.h"
 #include "ErrorNo.h"
 
-void MicroBitCompass::writeByte(char id, char addr, char value)
+void BMX055Magnetometer::writeByte(char id, char addr, char value)
 {
     char cmd[2];
     cmd[0] = addr;
@@ -45,7 +45,7 @@ void MicroBitCompass::writeByte(char id, char addr, char value)
     i2c.write(id<<1, cmd, 2);
 }
 
-char MicroBitCompass::readByte(char id, char addr)
+char BMX055Magnetometer::readByte(char id, char addr)
 {
     char res;
     i2c.write( id<<1, &addr, 1 );
@@ -53,7 +53,7 @@ char MicroBitCompass::readByte(char id, char addr)
     return res;
 }
 
-void MicroBitCompass::readBytes(char id, char addr, int len, uint8_t* buffer)
+void BMX055Magnetometer::readBytes(char id, char addr, int len, uint8_t* buffer)
 {
     i2c.write( id<<1, &addr, 1 );
     i2c.read( id<<1, (char *)buffer, len );
@@ -67,7 +67,7 @@ void MicroBitCompass::readBytes(char id, char addr, int len, uint8_t* buffer)
   * @param address the base address of the magnetometer on the i2c bus.
   */
 
-void MicroBitCompass::init(uint16_t id, uint16_t address)
+void BMX055Magnetometer::init(uint16_t id, uint16_t address)
 {
     this->id = id;
     this->address = address;
@@ -125,7 +125,7 @@ void MicroBitCompass::init(uint16_t id, uint16_t address)
   * MicroBitCompass compass(i2c, accelerometer, storage);
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address,  uint16_t id) :
+BMX055Magnetometer::BMX055Magnetometer(MicroBitI2C& _i2c, BMX055Accelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address,  uint16_t id) :
     average(),
     sample(),
 //    int1(MICROBIT_PIN_COMPASS_DATA_READY),
@@ -156,7 +156,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _acce
   * MicroBitCompass compass(i2c, accelerometer, storage);
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, uint16_t address, uint16_t id) :
+BMX055Magnetometer::BMX055Magnetometer(MicroBitI2C& _i2c, BMX055Accelerometer& _accelerometer, uint16_t address, uint16_t id) :
     average(),
     sample(),
 //    int1(MICROBIT_PIN_COMPASS_DATA_READY),
@@ -187,7 +187,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _acce
   * MicroBitCompass compass(i2c, storage);
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address, uint16_t id) :
+BMX055Magnetometer::BMX055Magnetometer(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address, uint16_t id) :
     average(),
     sample(),
 //    int1(MICROBIT_PIN_COMPASS_DATA_READY),
@@ -214,7 +214,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, u
   * MicroBitCompass compass(i2c);
   * @endcode
   */
-MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, uint16_t address, uint16_t id) :
+BMX055Magnetometer::BMX055Magnetometer(MicroBitI2C& _i2c, uint16_t address, uint16_t id) :
     average(),
     sample(),
 //    int1(MICROBIT_PIN_COMPASS_DATA_READY),
@@ -236,7 +236,7 @@ MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, uint16_t address, uint16_t i
   *
   * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the the write request failed.
   */
-int MicroBitCompass::writeCommand(uint8_t reg, uint8_t value)
+int BMX055Magnetometer::writeCommand(uint8_t reg, uint8_t value)
 {
     uint8_t command[2];
     command[0] = reg;
@@ -258,7 +258,7 @@ int MicroBitCompass::writeCommand(uint8_t reg, uint8_t value)
   *
   * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
   */
-int MicroBitCompass::readCommand(uint8_t reg, uint8_t* buffer, int length)
+int BMX055Magnetometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
 {
     int result;
 
@@ -286,7 +286,7 @@ int MicroBitCompass::readCommand(uint8_t reg, uint8_t* buffer, int length)
   *
   * @return The register value, interpreted as a 16 but signed value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
   */
-int MicroBitCompass::read16(uint8_t reg)
+int BMX055Magnetometer::read16(uint8_t reg)
 {
     uint8_t cmd[2];
     int result;
@@ -315,7 +315,7 @@ int MicroBitCompass::read16(uint8_t reg)
   *
   * @return The register value, interpreted as a 8 bit unsigned value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
   */
-int MicroBitCompass::read8(uint8_t reg)
+int BMX055Magnetometer::read8(uint8_t reg)
 {
     uint8_t data;
     int result;
@@ -331,7 +331,7 @@ int MicroBitCompass::read8(uint8_t reg)
 /**
   * Calculates a tilt compensated bearing of the device, using the accelerometer.
   */
-int MicroBitCompass::tiltCompensatedBearing()
+int BMX055Magnetometer::tiltCompensatedBearing()
 {
     // Precompute the tilt compensation parameters to improve readability.
     float phi = accelerometer->getRollRadians();
@@ -358,7 +358,7 @@ int MicroBitCompass::tiltCompensatedBearing()
 /**
   * Calculates a non-tilt compensated bearing of the device.
   */
-int MicroBitCompass::basicBearing()
+int BMX055Magnetometer::basicBearing()
 {
     updateSample();
 
@@ -385,7 +385,7 @@ int MicroBitCompass::basicBearing()
   * compass.heading();
   * @endcode
   */
-int MicroBitCompass::heading()
+int BMX055Magnetometer::heading()
 {
     if(status & MICROBIT_COMPASS_STATUS_CALIBRATING)
         return MICROBIT_CALIBRATION_IN_PROGRESS;
@@ -406,7 +406,7 @@ int MicroBitCompass::heading()
   * @note Can be used to trigger manual updates, if the device is running without a scheduler.
   *       Also called internally by all get[X,Y,Z]() member functions.
   */
-int MicroBitCompass::updateSample()
+int BMX055Magnetometer::updateSample()
 {
     /**
       * Adds the compass to idle, if it hasn't been added already.
@@ -430,7 +430,7 @@ int MicroBitCompass::updateSample()
 }
 
 
-int  MicroBitCompass::readMagData(int16_t * magData)
+int  BMX055Magnetometer::readMagData(int16_t * magData)
 {
   int16_t mdata_x = 0, mdata_y = 0, mdata_z = 0, temp = 0;
   uint16_t data_r = 0;
@@ -464,13 +464,13 @@ int  MicroBitCompass::readMagData(int16_t * magData)
   return 0;
 }
 
-int16_t MicroBitCompass::readACCTempData()
+int16_t BMX055Magnetometer::readACCTempData()
 {
   uint8_t c =  readByte(BMX055_ACC_ADDRESS, BMX055_ACC_D_TEMP);  // Read the raw data register 
   return ((int16_t)((int16_t)c << 8)) >> 8 ;  // Turn the byte into a signed 8-bit integer
 }
 
-void MicroBitCompass::trimBMX055()  // get trim values for magnetometer sensitivity
+void BMX055Magnetometer::trimBMX055()  // get trim values for magnetometer sensitivity
 { 
   uint8_t rawData[2];  //placeholder for 2-byte trim data
   dig_x1 = readByte(BMX055_MAG_ADDRESS, BMM050_DIG_X1);
@@ -497,7 +497,7 @@ void MicroBitCompass::trimBMX055()  // get trim values for magnetometer sensitiv
   *
   * Calls updateSample().
   */
-void MicroBitCompass::idleTick()
+void BMX055Magnetometer::idleTick()
 {
     updateSample();
 }
@@ -513,7 +513,7 @@ void MicroBitCompass::idleTick()
   * compass.getX();
   * @endcode
   */
-int MicroBitCompass::getX(MicroBitCoordinateSystem system)
+int BMX055Magnetometer::getX(MicroBitCoordinateSystem system)
 {
     updateSample();
 
@@ -542,7 +542,7 @@ int MicroBitCompass::getX(MicroBitCoordinateSystem system)
   * compass.getY();
   * @endcode
   */
-int MicroBitCompass::getY(MicroBitCoordinateSystem system)
+int BMX055Magnetometer::getY(MicroBitCoordinateSystem system)
 {
     updateSample();
 
@@ -571,7 +571,7 @@ int MicroBitCompass::getY(MicroBitCoordinateSystem system)
   * compass.getZ();
   * @endcode
   */
-int MicroBitCompass::getZ(MicroBitCoordinateSystem system)
+int BMX055Magnetometer::getZ(MicroBitCoordinateSystem system)
 {
     updateSample();
 
@@ -596,7 +596,7 @@ int MicroBitCompass::getZ(MicroBitCoordinateSystem system)
   * compass.getFieldStrength();
   * @endcode
   */
-int MicroBitCompass::getFieldStrength()
+int BMX055Magnetometer::getFieldStrength()
 {
     double x = getX();
     double y = getY();
@@ -612,7 +612,7 @@ int MicroBitCompass::getFieldStrength()
   *
   * @return MICROBIT_OK or MICROBIT_I2C_ERROR if the magnetometer could not be configured.
   */
-int MicroBitCompass::configure()
+int BMX055Magnetometer::configure()
 {
 
     writeByte(BMX055_MAG_ADDRESS, BMX055_MAG_PWR_CNTL1, 0x82);  // Softreset magnetometer, ends up in sleep mode
@@ -681,7 +681,7 @@ int MicroBitCompass::configure()
   * @note The requested rate may not be possible on the hardware. In this case, the
   * nearest lower rate is chosen.
   */
-int MicroBitCompass::setPeriod(int period)
+int BMX055Magnetometer::setPeriod(int period)
 {
     this->samplePeriod = period;
     return this->configure();
@@ -692,7 +692,7 @@ int MicroBitCompass::setPeriod(int period)
   *
   * @return The time between samples, in milliseconds.
   */
-int MicroBitCompass::getPeriod()
+int BMX055Magnetometer::getPeriod()
 {
     return (int)samplePeriod;
 }
@@ -707,7 +707,7 @@ int MicroBitCompass::getPeriod()
   * compass.whoAmI();
   * @endcode
   */
-int MicroBitCompass::whoAmI()
+int BMX055Magnetometer::whoAmI()
 {
     uint8_t data;
 
@@ -727,7 +727,7 @@ int MicroBitCompass::whoAmI()
   * @return the temperature in degrees celsius, or MICROBIT_I2C_ERROR if the temperature reading could not be retreived
   *         from the accelerometer.
   */
-int MicroBitCompass::readTemperature()
+int BMX055Magnetometer::readTemperature()
 {
     int8_t temperature;
     int result;
@@ -752,7 +752,7 @@ int MicroBitCompass::readTemperature()
   *
   * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
   */
-int MicroBitCompass::calibrate()
+int BMX055Magnetometer::calibrate()
 {
     // Only perform one calibration process at a time.
     if(isCalibrating())
@@ -789,7 +789,7 @@ int MicroBitCompass::calibrate()
   *
   * @param calibration A CompassSample containing the offsets for the x, y and z axis.
   */
-void MicroBitCompass::setCalibration(CompassSample calibration)
+void BMX055Magnetometer::setCalibration(CompassSample calibration)
 {
     if(this->storage != NULL)
         this->storage->put(ManagedString("compassCal"), (uint8_t *)&calibration, sizeof(CompassSample));
@@ -805,7 +805,7 @@ void MicroBitCompass::setCalibration(CompassSample calibration)
   *
   * @return calibration A CompassSample containing the offsets for the x, y and z axis.
   */
-CompassSample MicroBitCompass::getCalibration()
+CompassSample BMX055Magnetometer::getCalibration()
 {
     return average;
 }
@@ -813,7 +813,7 @@ CompassSample MicroBitCompass::getCalibration()
 /**
   * Returns 0 or 1. 1 indicates that the compass is calibrated, zero means the compass requires calibration.
   */
-int MicroBitCompass::isCalibrated()
+int BMX055Magnetometer::isCalibrated()
 {
     return status & MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
@@ -821,7 +821,7 @@ int MicroBitCompass::isCalibrated()
 /**
   * Returns 0 or 1. 1 indicates that the compass is calibrating, zero means the compass is not currently calibrating.
   */
-int MicroBitCompass::isCalibrating()
+int BMX055Magnetometer::isCalibrating()
 {
     return status & MICROBIT_COMPASS_STATUS_CALIBRATING;
 }
@@ -829,7 +829,7 @@ int MicroBitCompass::isCalibrating()
 /**
   * Clears the calibration held in persistent storage, and sets the calibrated flag to zero.
   */
-void MicroBitCompass::clearCalibration()
+void BMX055Magnetometer::clearCalibration()
 {
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
@@ -837,7 +837,7 @@ void MicroBitCompass::clearCalibration()
 /**
   * Destructor for MicroBitCompass, where we deregister this instance from the array of fiber components.
   */
-MicroBitCompass::~MicroBitCompass()
+BMX055Magnetometer::~BMX055Magnetometer()
 {
     fiber_remove_idle_component(this);
 }

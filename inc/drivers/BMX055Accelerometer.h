@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef TARGET_NRF51_CALLIOPE
+#ifdef TARGET_NRF51_CALLIOPE_
 
 #ifndef MICROBIT_ACCELEROMETER_H
 #define MICROBIT_ACCELEROMETER_H
@@ -31,7 +31,7 @@ DEALINGS IN THE SOFTWARE.
 #include "mbed.h"
 #include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
-#include "MicroBitCoordinateSystem.h"
+#include "CoordinateSystem.h"
 #include "MicroBitI2C.h"
 #include "MicroBitPin.h"
 
@@ -397,7 +397,7 @@ struct ShakeHistory
  * Represents an implementation of the Freescale MMA8653 3 axis accelerometer
  * Also includes basic data caching and on demand activation.
  */
-class MicroBitAccelerometer : public MicroBitComponent
+class BMX055Accelerometer : public MicroBitComponent
 {
     uint16_t        address;            // I2C address of this accelerometer.
     uint16_t        samplePeriod;       // The time between samples, in milliseconds.
@@ -441,7 +441,7 @@ class MicroBitAccelerometer : public MicroBitComponent
       * MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
       * @endcode
      */
-    MicroBitAccelerometer(MicroBitI2C &_i2c, uint16_t address = BMX055_ACC_ADDRESS, uint16_t id = MICROBIT_ID_ACCELEROMETER);
+    BMX055Accelerometer(MicroBitI2C &_i2c, uint16_t address = BMX055_ACC_ADDRESS, uint16_t id = MICROBIT_ID_ACCELEROMETER);
 
     /**
       * Configures the accelerometer for G range and sample rate defined
@@ -539,7 +539,7 @@ class MicroBitAccelerometer : public MicroBitComponent
       * accelerometer.getX();
       * @endcode
       */
-    int getX(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+    int getX();
 
     /**
       * Reads the value of the Y axis from the latest update retrieved from the accelerometer.
@@ -550,7 +550,7 @@ class MicroBitAccelerometer : public MicroBitComponent
       * accelerometer.getY();
       * @endcode
       */
-    int getY(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+    int getY();
 
     /**
       * Reads the value of the Z axis from the latest update retrieved from the accelerometer.
@@ -561,7 +561,7 @@ class MicroBitAccelerometer : public MicroBitComponent
       * accelerometer.getZ();
       * @endcode
       */
-    int getZ(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+    int getZ();
 
     /**
       * Provides a rotation compensated pitch of the device, based on the latest update retrieved from the accelerometer.
@@ -632,7 +632,7 @@ class MicroBitAccelerometer : public MicroBitComponent
     /**
       * Destructor for MicroBitButton, where we deregister this instance from the array of fiber components.
       */
-    ~MicroBitAccelerometer();
+    ~BMX055Accelerometer();
 
     private:
 

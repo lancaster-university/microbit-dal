@@ -60,15 +60,15 @@ DEALINGS IN THE SOFTWARE.
   */
 MicroBitMessageBus::MicroBitMessageBus()
 {
-	this->listeners = NULL;
+    this->listeners = NULL;
     this->evt_queue_head = NULL;
     this->evt_queue_tail = NULL;
     this->queueLength = 0;
 
-	fiber_add_idle_component(this);
+    fiber_add_idle_component(this);
 
-	if(EventModel::defaultEventBus == NULL)
-		EventModel::defaultEventBus = this;
+    if(EventModel::defaultEventBus == NULL)
+        EventModel::defaultEventBus = this;
 }
 
 /**
@@ -79,7 +79,7 @@ MicroBitMessageBus::MicroBitMessageBus()
   */
 void async_callback(void *param)
 {
-	MicroBitListener *listener = (MicroBitListener *)param;
+    MicroBitListener *listener = (MicroBitListener *)param;
 
     // OK, now we need to decide how to behave depending on our configuration.
     // If this a fiber f already active within this listener then check our
@@ -228,11 +228,11 @@ MicroBitEventQueueItem* MicroBitMessageBus::dequeueEvent()
   */
 int MicroBitMessageBus::deleteMarkedListeners()
 {
-	MicroBitListener *l, *p;
+    MicroBitListener *l, *p;
     int removed = 0;
 
-	l = listeners;
-	p = NULL;
+    l = listeners;
+    p = NULL;
 
     // Walk this list of event handlers. Delete any that match the given listener.
     while (l != NULL)
@@ -339,14 +339,14 @@ int MicroBitMessageBus::send(MicroBitEvent evt)
   */
 int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
 {
-	MicroBitListener *l;
+    MicroBitListener *l;
     int complete = 1;
     bool listenerUrgent;
 
     l = listeners;
     while (l != NULL)
     {
-	    if((l->id == evt.source || l->id == MICROBIT_ID_ANY) && (l->value == evt.value || l->value == MICROBIT_EVT_ANY))
+        if((l->id == evt.source || l->id == MICROBIT_ID_ANY) && (l->value == evt.value || l->value == MICROBIT_EVT_ANY))
         {
             // If we're running under the fiber scheduler, then derive the THREADING_MODE for the callback based on the
             // metadata in the listener itself.
@@ -365,19 +365,19 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
                 // Otherwise, we invoke it in a 'fork on block' context, that will automatically create a fiber
                 // should the event handler attempt a blocking operation, but doesn't have the overhead
                 // of creating a fiber needlessly. (cool huh?)
-				if (l->flags & MESSAGE_BUS_LISTENER_NONBLOCKING || !fiber_scheduler_running())
-					async_callback(l);
-				else
-					invoke(async_callback, l);
+                if (l->flags & MESSAGE_BUS_LISTENER_NONBLOCKING || !fiber_scheduler_running())
+                    async_callback(l);
+                else
+                    invoke(async_callback, l);
             }
             else
             {
                 complete = 0;
             }
-		}
+        }
 
-		l = l->next;
-	}
+        l = l->next;
+    }
 
     return complete;
 }
@@ -391,17 +391,17 @@ int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
   */
 int MicroBitMessageBus::add(MicroBitListener *newListener)
 {
-	MicroBitListener *l, *p;
+    MicroBitListener *l, *p;
     int methodCallback;
 
-	//handler can't be NULL!
-	if (newListener == NULL)
-		return MICROBIT_INVALID_PARAMETER;
+    //handler can't be NULL!
+    if (newListener == NULL)
+        return MICROBIT_INVALID_PARAMETER;
 
-	l = listeners;
+    l = listeners;
 
-	// Firstly, we treat a listener as an idempotent operation. Ensure we don't already have this handler
-	// registered in a that will already capture these events. If we do, silently ignore.
+    // Firstly, we treat a listener as an idempotent operation. Ensure we don't already have this handler
+    // registered in a that will already capture these events. If we do, silently ignore.
 
     // We always check the ID, VALUE and CB_METHOD fields.
     // If we have a callback to a method, check the cb_method class. Otherwise, the cb function point is sufficient.
@@ -409,7 +409,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
     {
         methodCallback = (newListener->flags & MESSAGE_BUS_LISTENER_METHOD) && (l->flags & MESSAGE_BUS_LISTENER_METHOD);
 
-        if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb))
+        if (l->id == newListener->id && l->value == newListener->value && (methodCallback ? *l->cb_method == *newListener->cb_method : l->cb == newListener->cb) && newListener->cb_arg == l->cb_arg)
         {
             // We have a perfect match for this event listener already registered.
             // If it's marked for deletion, we simply resurrect the listener, and we're done.
@@ -424,50 +424,50 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
     }
 
     // We have a valid, new event handler. Add it to the list.
-	// if listeners is null - we can automatically add this listener to the list at the beginning...
-	if (listeners == NULL)
-	{
-		listeners = newListener;
+    // if listeners is null - we can automatically add this listener to the list at the beginning...
+    if (listeners == NULL)
+    {
+        listeners = newListener;
         MicroBitEvent(MICROBIT_ID_MESSAGE_BUS_LISTENER, newListener->id);
 
-		return MICROBIT_OK;
-	}
+        return MICROBIT_OK;
+    }
 
-	// We maintain an ordered list of listeners.
-	// The chain is held stictly in increasing order of ID (first level), then value code (second level).
-	// Find the correct point in the chain for this event.
-	// Adding a listener is a rare occurance, so we just walk the list...
+    // We maintain an ordered list of listeners.
+    // The chain is held stictly in increasing order of ID (first level), then value code (second level).
+    // Find the correct point in the chain for this event.
+    // Adding a listener is a rare occurance, so we just walk the list...
 
-	p = listeners;
-	l = listeners;
+    p = listeners;
+    l = listeners;
 
-	while (l != NULL && l->id < newListener->id)
-	{
-		p = l;
-		l = l->next;
-	}
+    while (l != NULL && l->id < newListener->id)
+    {
+        p = l;
+        l = l->next;
+    }
 
-	while (l != NULL && l->id == newListener->id && l->value < newListener->value)
-	{
-		p = l;
-		l = l->next;
-	}
+    while (l != NULL && l->id == newListener->id && l->value <= newListener->value)
+    {
+        p = l;
+        l = l->next;
+    }
 
-	//add at front of list
-	if (p == listeners && (newListener->id < p->id || (p->id == newListener->id && p->value > newListener->value)))
-	{
-		newListener->next = p;
+    //add at front of list
+    if (p == listeners && (newListener->id < p->id || (p->id == newListener->id && p->value > newListener->value)))
+    {
+        newListener->next = p;
 
-		//this new listener is now the front!
-		listeners = newListener;
-	}
+        //this new listener is now the front!
+        listeners = newListener;
+    }
 
-	//add after p
-	else
-	{
-		newListener->next = p->next;
-		p->next = newListener;
-	}
+    //add after p
+    else
+    {
+        newListener->next = p->next;
+        p->next = newListener;
+    }
 
     MicroBitEvent(MICROBIT_ID_MESSAGE_BUS_LISTENER, newListener->id);
     return MICROBIT_OK;
@@ -482,14 +482,14 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
   */
 int MicroBitMessageBus::remove(MicroBitListener *listener)
 {
-	MicroBitListener *l;
+    MicroBitListener *l;
     int removed = 0;
 
-	//handler can't be NULL!
-	if (listener == NULL)
-		return MICROBIT_INVALID_PARAMETER;
+    //handler can't be NULL!
+    if (listener == NULL)
+        return MICROBIT_INVALID_PARAMETER;
 
-	l = listeners;
+    l = listeners;
 
     // Walk this list of event handlers. Delete any that match the given listener.
     while (l != NULL)
@@ -499,8 +499,12 @@ int MicroBitMessageBus::remove(MicroBitListener *listener)
             if(((listener->flags & MESSAGE_BUS_LISTENER_METHOD) && (*l->cb_method == *listener->cb_method)) ||
               ((!(listener->flags & MESSAGE_BUS_LISTENER_METHOD) && l->cb == listener->cb)))
             {
-                if ((listener->id == MICROBIT_ID_ANY || listener->id == l->id) && (listener->value == MICROBIT_EVT_ANY || listener->value == l->value))
+                if ((listener->id == MICROBIT_ID_ANY || listener->id == l->id) && (listener->value == MICROBIT_EVT_ANY || listener->value == l->value) && (listener->cb_arg == l->cb_arg || listener->cb_arg == NULL))
                 {
+                    // if notification of deletion has been requested, invoke the listener deletion callback.
+                    if (listener_deletion_callback)
+                        listener_deletion_callback(l);
+
                     // Found a match. mark this to be removed from the list.
                     l->flags |= MESSAGE_BUS_LISTENER_DELETING;
                     removed++;

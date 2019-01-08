@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef TARGET_NRF51_CALLIOPE
+#ifdef TARGET_NRF51_CALLIOPE_
 
 #ifndef MICROBIT_COMPASS_H
 #define MICROBIT_COMPASS_H
@@ -31,8 +31,8 @@ DEALINGS IN THE SOFTWARE.
 #include "mbed.h"
 #include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
-#include "MicroBitCoordinateSystem.h"
-#include "MicroBitAccelerometer-bmx.h"
+#include "CoordinateSystem.h"
+#include "BMX055Accelerometer.h"
 #include "MicroBitStorage.h"
 
 /**
@@ -146,7 +146,7 @@ struct CompassSample
   * Represents an implementation of the Freescale MAG3110 I2C Magnetmometer.
   * Also includes basic caching, calibration and on demand activation.
   */
-class MicroBitCompass : public MicroBitComponent
+class BMX055Magnetometer : public MicroBitComponent
 {
     uint16_t                address;                  // I2C address of the magnetmometer.
     uint16_t                samplePeriod;             // The time between samples, in millseconds.
@@ -155,7 +155,7 @@ class MicroBitCompass : public MicroBitComponent
     CompassSample           sample;                   // The latest sample data recorded.
 //    DigitalIn               int1;                     // Data ready interrupt.
     MicroBitI2C&		    i2c;                      // The I2C interface the sensor is connected to.
-    MicroBitAccelerometer*  accelerometer;            // The accelerometer to use for tilt compensation.
+    BMX055Accelerometer*  accelerometer;            // The accelerometer to use for tilt compensation.
     MicroBitStorage*        storage;                  // An instance of MicroBitStorage used for persistence.
 
     uint8_t Mmode  = Regular;          // Choose magnetometer operation mode
@@ -202,7 +202,7 @@ class MicroBitCompass : public MicroBitComponent
       * MicroBitCompass compass(i2c, accelerometer, storage);
       * @endcode
       */
-    MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
+    BMX055Magnetometer(MicroBitI2C& _i2c, BMX055Accelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
       * Constructor.
@@ -224,7 +224,7 @@ class MicroBitCompass : public MicroBitComponent
       * MicroBitCompass compass(i2c, accelerometer, storage);
       * @endcode
       */
-    MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
+    BMX055Magnetometer(MicroBitI2C& _i2c, BMX055Accelerometer& _accelerometer, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
       * Constructor.
@@ -246,7 +246,7 @@ class MicroBitCompass : public MicroBitComponent
       * MicroBitCompass compass(i2c, storage);
       * @endcode
       */
-    MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
+    BMX055Magnetometer(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
       * Constructor.
@@ -264,7 +264,7 @@ class MicroBitCompass : public MicroBitComponent
       * MicroBitCompass compass(i2c);
       * @endcode
       */
-    MicroBitCompass(MicroBitI2C& _i2c, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
+    BMX055Magnetometer(MicroBitI2C& _i2c, uint16_t address = MAG3110_DEFAULT_ADDR, uint16_t id = MICROBIT_ID_COMPASS);
 
     /**
       * Configures the compass for the sample rate defined in this object.
@@ -339,7 +339,7 @@ class MicroBitCompass : public MicroBitComponent
       * compass.getX();
       * @endcode
       */
-    int getX(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+    int getX();
 
     /**
       * Reads the value of the Y axis from the latest update retrieved from the magnetometer.
@@ -352,7 +352,7 @@ class MicroBitCompass : public MicroBitComponent
       * compass.getY();
       * @endcode
       */
-    int getY(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+    int getY();
 
     /**
       * Reads the value of the Z axis from the latest update retrieved from the magnetometer.
@@ -365,7 +365,7 @@ class MicroBitCompass : public MicroBitComponent
       * compass.getZ();
       * @endcode
       */
-    int getZ(MicroBitCoordinateSystem system = SIMPLE_CARTESIAN);
+    int getZ();
 
     /**
       * Determines the overall magnetic field strength based on the latest update from the magnetometer.
@@ -456,7 +456,7 @@ class MicroBitCompass : public MicroBitComponent
     /**
       * Destructor for MicroBitCompass, where we deregister this instance from the array of fiber components.
       */
-    ~MicroBitCompass();
+    ~BMX055Magnetometer();
 
     private:
 

@@ -49,12 +49,20 @@ DEALINGS IN THE SOFTWARE.
 
 // The end address of memory normally reserved for Soft Device.
 #ifndef MICROBIT_SD_LIMIT
+#ifdef TARGET_MCU_NRF51_16K_S130
+#define MICROBIT_SD_LIMIT                       0x20002800
+#else
 #define MICROBIT_SD_LIMIT                       0x20002000
+#endif
 #endif
 
 // The physical address in memory of the Soft Device GATT table.
 #ifndef MICROBIT_SD_GATT_TABLE_START
+#ifdef TARGET_MCU_NRF51_16K_S130
+#define MICROBIT_SD_GATT_TABLE_START            0x20002200
+#else
 #define MICROBIT_SD_GATT_TABLE_START            0x20001900
+#endif
 #endif
 
 // Physical address of the top of the system stack (on mbed-classic this is the top of SRAM)
@@ -79,13 +87,14 @@ DEALINGS IN THE SOFTWARE.
 
 // Defines where in memory persistent data is stored.
 #ifndef KEY_VALUE_STORE_PAGE
-#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))	
+#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17)) 
 #endif
 
 #ifndef BLE_BOND_DATA_PAGE 
 #define BLE_BOND_DATA_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
 #endif
 
+// MicroBitFileSystem uses DEFAULT_SCRATCH_PAGE to mark end of FileSystem
 #ifndef DEFAULT_SCRATCH_PAGE
 #define DEFAULT_SCRATCH_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 19))
 #endif
@@ -100,23 +109,20 @@ extern uint32_t __etext;
 #define FLASH_PROGRAM_END (uint32_t) (&__etext)
 #endif
 
-
-// Enables or disables the MicroBitHeapllocator. Note that if disabled, no reuse of the SRAM normally
-// reserved for SoftDevice is possible, and out of memory condition will no longer be trapped...
-// i.e. panic() will no longer be triggered on memory full conditions.
-#ifndef MICROBIT_HEAP_ALLOCATOR
-#define MICROBIT_HEAP_ALLOCATOR                 1
+//
+// If set to '1', this option enables the microbit heap allocator. This supports multiple heaps and interrupt safe operation.
+// If set to '0', the standard GCC libc heap allocator is used, which restricts available memory in BLE scenarios, and MessageBus operations
+// in ISR contexts will no longer be safe.
+//
+#ifndef MICROBIT_HEAP_ENABLED
+#define MICROBIT_HEAP_ENABLED                   1
 #endif
+
 
 // Block size used by the allocator in bytes.
 // n.b. Currently only 32 bits (4 bytes) is supported.
 #ifndef MICROBIT_HEAP_BLOCK_SIZE
 #define MICROBIT_HEAP_BLOCK_SIZE                4
-#endif
-
-// The proportion of SRAM available on the mbed heap to reserve for the micro:bit heap.
-#ifndef MICROBIT_NESTED_HEAP_SIZE
-#define MICROBIT_NESTED_HEAP_SIZE               0.75
 #endif
 
 // If defined, reuse any unused SRAM normally reserved for SoftDevice (Nordic's memory resident BLE stack) as heap memory.
@@ -297,6 +303,33 @@ extern uint32_t __etext;
 #define MICROBIT_BLE_DEVICE_INFORMATION_SERVICE 1
 #endif
 
+// Enable/Disable BLE Service: MicroBitPartialFlashingService
+// This enables the flashing part of the partial flashing service.
+// Partial flashing is currently only possible for programs built using MakeCode
+// and is disabled by default.
+#ifndef MICROBIT_BLE_PARTIAL_FLASHING
+#define MICROBIT_BLE_PARTIAL_FLASHING           0
+#endif
+
+//
+// Radio options
+//
+
+// Sets the default radio channel
+#ifndef MICROBIT_RADIO_DEFAULT_FREQUENCY
+#define MICROBIT_RADIO_DEFAULT_FREQUENCY 7
+#endif
+
+// Sets the minimum frequency band permissable for the device
+#ifndef MICROBIT_RADIO_LOWER_FREQ_BAND
+#define MICROBIT_RADIO_LOWER_FREQ_BAND 0
+#endif
+
+// Sets the maximum frequency band permissable for the device
+#ifndef MICROBIT_RADIO_UPPER_FREQ_BAND
+#define MICROBIT_RADIO_UPPER_FREQ_BAND 83
+#endif
+
 //
 // Accelerometer options
 //
@@ -306,6 +339,18 @@ extern uint32_t __etext;
 // Set '1' to enable.
 #ifndef USE_ACCEL_LSB
 #define USE_ACCEL_LSB                           0
+#endif
+
+//
+// Enable a 0..360 degree range on the accelerometer getPitch()
+// calculation. Set to '1' to enable.
+//
+// A value of '0' provides consistency with the (buggy) microbit-dal 2.0
+// and earlier versions, which inadvertently provided only an ambiguous
+// 0..180 degree range
+//
+#ifndef MICROBIT_FULL_RANGE_PITCH_CALCULATION
+#define MICROBIT_FULL_RANGE_PITCH_CALCULATION   1
 #endif
 
 //
@@ -372,7 +417,7 @@ extern uint32_t __etext;
 // Defines the logical block size for the file system.
 // Must be a factor of the physical PAGE_SIZE (ideally a power of two less).
 //
-#ifndef MBFS_BLOCK_SIZE		
+#ifndef MBFS_BLOCK_SIZE
 #define MBFS_BLOCK_SIZE		256
 #endif
 
@@ -382,7 +427,7 @@ extern uint32_t __etext;
 // Should be <= MBFS_BLOCK_SIZE.
 //
 #ifndef MBFS_CACHE_SIZE
-#define MBFS_CACHE_SIZE	    0	
+#define MBFS_CACHE_SIZE	    0   
 #endif
 
 //
@@ -435,6 +480,15 @@ extern uint32_t __etext;
 #define MICROBIT_DAL_VERSION                    "unknown"
 #endif
 
+// micro:bit Modes
+// The micro:bit may be in different states: running a user's application or into BLE pairing mode
+// These modes can be representeded using these #defines
+#ifndef MICROBIT_MODE_PAIRING
+#define MICROBIT_MODE_PAIRING                   0
+#endif
+#ifndef MICROBIT_MODE_APPLICATION
+#define MICROBIT_MODE_APPLICATION               1
+#endif
 
 //
 // Helper macro used by the micro:bit runtime to determine if a boolean configuration option is set.

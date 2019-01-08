@@ -146,10 +146,27 @@ int MicroBitRadio::setFrequencyBand(int band)
     if (ble_running())
         return MICROBIT_NOT_SUPPORTED;
 
-    if (band < 0 || band > 100)
+    if (band < MICROBIT_RADIO_LOWER_FREQ_BAND || band > MICROBIT_RADIO_UPPER_FREQ_BAND)
         return MICROBIT_INVALID_PARAMETER;
 
+    // We need to disable the radio before setting the frequency
+    NVIC_DisableIRQ(RADIO_IRQn);
+    NRF_RADIO->EVENTS_DISABLED = 0;
+    NRF_RADIO->TASKS_DISABLE = 1;
+    while (NRF_RADIO->EVENTS_DISABLED == 0);
+
     NRF_RADIO->FREQUENCY = (uint32_t)band;
+
+    // Reenable the radio to wait for the next packet
+    NRF_RADIO->EVENTS_READY = 0;
+    NRF_RADIO->TASKS_RXEN = 1;
+    while (NRF_RADIO->EVENTS_READY == 0);
+
+    NRF_RADIO->EVENTS_END = 0;
+    NRF_RADIO->TASKS_START = 1;
+
+    NVIC_ClearPendingIRQ(RADIO_IRQn);
+    NVIC_EnableIRQ(RADIO_IRQn);
 
     return MICROBIT_OK;
 }
@@ -277,7 +294,7 @@ int MicroBitRadio::enable()
 
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
     setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
-    setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
+    NRF_RADIO->FREQUENCY = MICROBIT_RADIO_DEFAULT_FREQUENCY;
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
@@ -505,8 +522,8 @@ int MicroBitRadio::send(FrameBuffer *buffer)
     while (NRF_RADIO->EVENTS_READY == 0);
 
     // Start transmission and wait for end of packet.
-    NRF_RADIO->TASKS_START = 1;
     NRF_RADIO->EVENTS_END = 0;
+    NRF_RADIO->TASKS_START = 1;
     while(NRF_RADIO->EVENTS_END == 0);
 
     // Return the radio to using the default receive buffer

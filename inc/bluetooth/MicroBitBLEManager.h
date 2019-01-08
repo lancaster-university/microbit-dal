@@ -57,6 +57,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitButtonService.h"
 #include "MicroBitIOPinService.h"
 #include "MicroBitTemperatureService.h"
+#include "MicroBitPartialFlashingService.h"
 #include "ExternalEvents.h"
 #include "MicroBitButton.h"
 #include "MicroBitStorage.h"
@@ -281,6 +282,19 @@ class MicroBitBLEManager : MicroBitComponent
     int advertiseEddystoneUid(const char* uid_namespace, const char* uid_instance, int8_t calibratedPower = MICROBIT_BLE_EDDYSTONE_DEFAULT_POWER, bool connectable = true, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
+  /**
+   * Restarts in BLE Mode
+   *
+   */
+   void restartInBLEMode();
+
+   /**
+    * Get current BLE mode; application, pairing
+    * #define MICROBIT_MODE_PAIRING     0x00
+    * #define MICROBIT_MODE_APPLICATION 0x01
+    */
+    uint8_t getCurrentMode();
+
   private:
     /**
 	* Displays the device's ID code as a histogram on the provided MicroBitDisplay instance.
@@ -289,12 +303,27 @@ class MicroBitBLEManager : MicroBitComponent
 	*/
     void showNameHistogram(MicroBitDisplay &display);
 
+
+    /**
+    * Displays pairing mode animation
+    *
+    * @param display The display instance used for displaying the histogram.
+    */
+    void showManagementModeAnimation(MicroBitDisplay &display);
+
     #define MICROBIT_BLE_DISCONNECT_AFTER_PAIRING_DELAY  500
     unsigned long pairing_completed_at_time;   
 
     int pairingStatus;
     ManagedString passKey;
     ManagedString deviceName;
+
+    /*
+     * Default to Application Mode
+     * This variable will be set to MICROBIT_MODE_PAIRING if pairingMode() is executed.
+     */
+    uint8_t currentMode = MICROBIT_MODE_APPLICATION;
+
 };
 
 #endif

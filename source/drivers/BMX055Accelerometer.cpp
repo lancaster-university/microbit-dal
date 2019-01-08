@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef TARGET_NRF51_CALLIOPE
+#ifdef TARGET_NRF51_CALLIOPE_
 
 /**
  * Class definition for MicroBit Accelerometer.
@@ -34,7 +34,7 @@ DEALINGS IN THE SOFTWARE.
 #include "mbed.h"
 
 #include "MicroBitConfig.h"
-#include "MicroBitAccelerometer-bmx.h"
+#include "BMX055Accelerometer.h"
 #include "ErrorNo.h"
 #include "MicroBitEvent.h"
 #include "MicroBitCompat.h"
@@ -54,7 +54,7 @@ DEALINGS IN THE SOFTWARE.
   *
   * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the accelerometer could not be configured.
   */
-int MicroBitAccelerometer::configure()
+int BMX055Accelerometer::configure()
 {
     // BMX_DEBUG("RUN BMX055 start\r\n");
 
@@ -171,7 +171,7 @@ int MicroBitAccelerometer::configure()
 }
 
 
-void MicroBitAccelerometer::writeByte(char id, char addr, char value)
+void BMX055Accelerometer::writeByte(char id, char addr, char value)
 {
     char cmd[2];
     cmd[0] = addr;
@@ -179,7 +179,7 @@ void MicroBitAccelerometer::writeByte(char id, char addr, char value)
     i2c.write(id<<1, cmd, 2);
 }
 
-char MicroBitAccelerometer::readByte(char id, char addr)
+char BMX055Accelerometer::readByte(char id, char addr)
 {
     char res;
     i2c.write( id<<1, &addr, 1 );
@@ -187,13 +187,13 @@ char MicroBitAccelerometer::readByte(char id, char addr)
     return res;
 }
 
-void MicroBitAccelerometer::readBytes(uint8_t id, uint8_t addr, uint8_t num, uint8_t *rawData)
+void BMX055Accelerometer::readBytes(uint8_t id, uint8_t addr, uint8_t num, uint8_t *rawData)
 {
     i2c.write( id<<1, (char *) &addr, 1 );
     i2c.read( id<<1, (char *) rawData, num);
 }
 
-void MicroBitAccelerometer::readAccelData(int16_t * destination)
+void BMX055Accelerometer::readAccelData(int16_t * destination)
 {
     uint8_t rawData[6];  // x/y/z accel register data stored here
     //    BMX_DEBUG("before read\r\n");
@@ -219,7 +219,7 @@ void MicroBitAccelerometer::readAccelData(int16_t * destination)
   *
   * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the the write request failed.
   */
-int MicroBitAccelerometer::writeCommand(uint8_t reg, uint8_t value)
+int BMX055Accelerometer::writeCommand(uint8_t reg, uint8_t value)
 {
     uint8_t command[2];
     command[0] = reg;
@@ -241,7 +241,7 @@ int MicroBitAccelerometer::writeCommand(uint8_t reg, uint8_t value)
   *
   * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
   */
-int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
+int BMX055Accelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
 {
     int result;
 
@@ -278,7 +278,7 @@ int MicroBitAccelerometer::readCommand(uint8_t reg, uint8_t* buffer, int length)
   * MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
   * @endcode
  */
-MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address, uint16_t id) : sample(), int1(MICROBIT_PIN_ACCEL_DATA_READY), i2c(_i2c)
+BMX055Accelerometer::BMX055Accelerometer(MicroBitI2C& _i2c, uint16_t address, uint16_t id) : sample(), int1(MICROBIT_PIN_ACCEL_DATA_READY), i2c(_i2c)
 {
 
 	//    BMX_DEBUG("Constructor\r\n");
@@ -317,7 +317,7 @@ MicroBitAccelerometer::MicroBitAccelerometer(MicroBitI2C& _i2c, uint16_t address
   * accelerometer.whoAmI();
   * @endcode
   */
-int MicroBitAccelerometer::whoAmI()
+int BMX055Accelerometer::whoAmI()
 {
     uint8_t data;
 
@@ -343,7 +343,7 @@ int MicroBitAccelerometer::whoAmI()
   *
   * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the read request fails.
   */
-int MicroBitAccelerometer::updateSample()
+int BMX055Accelerometer::updateSample()
 {
     if(!(status & MICROBIT_ACCEL_ADDED_TO_IDLE))
     {
@@ -410,7 +410,7 @@ int MicroBitAccelerometer::updateSample()
   *
   * @return the sum of the square of the acceleration of the device across all axes.
   */
-int MicroBitAccelerometer::instantaneousAccelerationSquared()
+int BMX055Accelerometer::instantaneousAccelerationSquared()
 {
     updateSample();
 
@@ -426,7 +426,7 @@ int MicroBitAccelerometer::instantaneousAccelerationSquared()
  *
  * @return A 'best guess' of the current posture of the device, based on instanataneous data.
  */
-uint16_t MicroBitAccelerometer::instantaneousPosture()
+uint16_t BMX055Accelerometer::instantaneousPosture()
 {
     bool shakeDetected = false;
 
@@ -521,7 +521,7 @@ uint16_t MicroBitAccelerometer::instantaneousPosture()
   * Updates the basic gesture recognizer. This performs instantaneous pose recognition, and also some low pass filtering to promote
   * stability.
   */
-void MicroBitAccelerometer::updateGesture()
+void BMX055Accelerometer::updateGesture()
 {
     // Check for High/Low G force events - typically impulses, impacts etc.
     // Again, during such spikes, these event take priority of the posture of the device.
@@ -607,7 +607,7 @@ void MicroBitAccelerometer::updateGesture()
   * @note The requested rate may not be possible on the hardware. In this case, the
   * nearest lower rate is chosen.
   */
-int MicroBitAccelerometer::setPeriod(int period)
+int BMX055Accelerometer::setPeriod(int period)
 {
     this->samplePeriod = period;
     return this->configure();
@@ -618,7 +618,7 @@ int MicroBitAccelerometer::setPeriod(int period)
   *
   * @return The time between samples, in milliseconds.
   */
-int MicroBitAccelerometer::getPeriod()
+int BMX055Accelerometer::getPeriod()
 {
     return (int)samplePeriod;
 }
@@ -638,7 +638,7 @@ int MicroBitAccelerometer::getPeriod()
   * @note The requested range may not be possible on the hardware. In this case, the
   * nearest lower range is chosen.
   */
-int MicroBitAccelerometer::setRange(int range)
+int BMX055Accelerometer::setRange(int range)
 {
     this->sampleRange = range;
     return this->configure();
@@ -649,7 +649,7 @@ int MicroBitAccelerometer::setRange(int range)
   *
   * @return The sample range, in g.
   */
-int MicroBitAccelerometer::getRange()
+int BMX055Accelerometer::getRange()
 {
     return (int)sampleRange;
 }
@@ -665,7 +665,7 @@ int MicroBitAccelerometer::getRange()
   * accelerometer.getX();
   * @endcode
   */
-int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
+int BMX055Accelerometer::getX()
 {
 	//	BMX_DEBUG("before\r\n");
 	updateSample();
@@ -693,7 +693,7 @@ int MicroBitAccelerometer::getX(MicroBitCoordinateSystem system)
   * accelerometer.getY();
   * @endcode
   */
-int MicroBitAccelerometer::getY(MicroBitCoordinateSystem system)
+int BMX055Accelerometer::getY(MicroBitCoordinateSystem system)
 {
     updateSample();
 
@@ -720,7 +720,7 @@ int MicroBitAccelerometer::getY(MicroBitCoordinateSystem system)
   * accelerometer.getZ();
   * @endcode
   */
-int MicroBitAccelerometer::getZ(MicroBitCoordinateSystem system)
+int BMX055Accelerometer::getZ(MicroBitCoordinateSystem system)
 {
     updateSample();
 
@@ -745,7 +745,7 @@ int MicroBitAccelerometer::getZ(MicroBitCoordinateSystem system)
   * accelerometer.getPitch();
   * @endcode
   */
-int MicroBitAccelerometer::getPitch()
+int BMX055Accelerometer::getPitch()
 {
     return (int) ((360*getPitchRadians()) / (2*PI));
 }
@@ -759,7 +759,7 @@ int MicroBitAccelerometer::getPitch()
   * accelerometer.getPitchRadians();
   * @endcode
   */
-float MicroBitAccelerometer::getPitchRadians()
+float BMX055Accelerometer::getPitchRadians()
 {
     if (!(status & MICROBIT_ACCEL_PITCH_ROLL_VALID))
         recalculatePitchRoll();
@@ -776,7 +776,7 @@ float MicroBitAccelerometer::getPitchRadians()
   * accelerometer.getRoll();
   * @endcode
   */
-int MicroBitAccelerometer::getRoll()
+int BMX055Accelerometer::getRoll()
 {
     return (int) ((360*getRollRadians()) / (2*PI));
 }
@@ -790,7 +790,7 @@ int MicroBitAccelerometer::getRoll()
   * accelerometer.getRollRadians();
   * @endcode
   */
-float MicroBitAccelerometer::getRollRadians()
+float BMX055Accelerometer::getRollRadians()
 {
     if (!(status & MICROBIT_ACCEL_PITCH_ROLL_VALID))
         recalculatePitchRoll();
@@ -804,7 +804,7 @@ float MicroBitAccelerometer::getRollRadians()
   * @note We only do this at most once per sample, as the necessary trigonemteric functions are rather
   *       heavyweight for a CPU without a floating point unit.
   */
-void MicroBitAccelerometer::recalculatePitchRoll()
+void BMX055Accelerometer::recalculatePitchRoll()
 {
     double x = (double) getX(NORTH_EAST_DOWN);
     double y = (double) getY(NORTH_EAST_DOWN);
@@ -829,7 +829,7 @@ void MicroBitAccelerometer::recalculatePitchRoll()
   *     display.scroll("SHAKE!");
   * @endcode
   */
-uint16_t MicroBitAccelerometer::getGesture()
+uint16_t BMX055Accelerometer::getGesture()
 {
     return lastGesture;
 }
@@ -839,7 +839,7 @@ uint16_t MicroBitAccelerometer::getGesture()
   *
   * Internally calls updateSample().
   */
-void MicroBitAccelerometer::idleTick()
+void BMX055Accelerometer::idleTick()
 {
     updateSample();
 }
@@ -847,7 +847,7 @@ void MicroBitAccelerometer::idleTick()
 /**
   * Destructor for MicroBitAccelerometer, where we deregister from the array of fiber components.
   */
-MicroBitAccelerometer::~MicroBitAccelerometer()
+BMX055Accelerometer::~BMX055Accelerometer()
 {
     fiber_remove_idle_component(this);
 }

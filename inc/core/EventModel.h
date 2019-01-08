@@ -53,9 +53,15 @@ DEALINGS IN THE SOFTWARE.
   */
 class EventModel
 {
+    protected:
+    void (*listener_deletion_callback)(MicroBitListener *); // if not null, this function is invoked when a listener is removed.
+
     public:
 
     static EventModel *defaultEventBus;
+
+    // Set listener_deletion_callback to NULL.
+    EventModel() : listener_deletion_callback(NULL) {}
 
 	/**
 	  * Queues the given event to be sent to all registered recipients.
@@ -127,6 +133,17 @@ class EventModel
 	static int setDefaultEventModel(EventModel &model)
     {
         EventModel::defaultEventBus = &model;
+        return MICROBIT_OK;
+    }
+
+    /**
+      * Sets a pointer to handler that's invoked when any listener is deleted.
+      *
+      * @returns MICROBIT_OK on success.
+      **/
+    int setListenerDeletionCallback(void (*listener_deletion_callback)(MicroBitListener *))
+    {
+        this->listener_deletion_callback = listener_deletion_callback;
         return MICROBIT_OK;
     }
 
@@ -298,6 +315,8 @@ class EventModel
 	  * @param id The Event ID used to register the listener.
 	  * @param value The Event value used to register the listener.
 	  * @param handler The function used to register the listener.
+      * @param arg the arg that is passed to the handler on an event. Used to differentiate between handlers with the same id and source, but not the same arg.
+      *            Defaults to NULL, which means any handler with the same id, event and callback is removed.
       *
       * @return MICROBIT_OK on success or MICROBIT_INVALID_PARAMETER if the handler
       *         given is NULL.
@@ -315,12 +334,12 @@ class EventModel
       * uBit.messageBus.ignore(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonBClick);
       * @endcode
 	  */
-	int ignore(int id, int value, void (*handler)(MicroBitEvent, void*))
+	int ignore(int id, int value, void (*handler)(MicroBitEvent, void*), void* arg = NULL)
     {
         if (handler == NULL)
             return MICROBIT_INVALID_PARAMETER;
 
-        MicroBitListener listener(id, value, handler, NULL);
+        MicroBitListener listener(id, value, handler, arg);
         remove(&listener);
 
         return MICROBIT_OK;

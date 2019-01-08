@@ -1,8 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2016 British Broadcasting Corporation.
-This software is provided by Lancaster University by arrangement with the BBC.
+Copyright (c) 2017 Lancaster University.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -23,342 +22,145 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef TARGET_NRF51_MICROBIT
-
-/**
-  * Class definition for MicroBit Compass.
-  *
-  * Represents an implementation of the Freescale MAG3110 I2C Magnetmometer.
-  * Also includes basic caching, calibration and on demand activation.
-  */
-#include "MicroBitConfig.h"
 #include "MicroBitCompass.h"
-#include "MicroBitFiber.h"
 #include "ErrorNo.h"
+#include "MicroBitEvent.h"
+#include "MicroBitCompat.h"
+#include "MicroBitFiber.h"
+#include "MicroBitDevice.h"
+
+#include "MAG3110.h"
+#include "LSM303Magnetometer.h"
+#include "FXOS8700.h"
+
+//
+// Internal convenience macro to apply calibration to a given sample.
+//
+#define CALIBRATED_SAMPLE(sample, axis) (((sample.axis - calibration.centre.axis) * calibration.scale.axis) >> 10)
 
 /**
-  * An initialisation member function used by the many constructors of MicroBitCompass.
-  *
-  * @param id the unique identifier for this compass instance.
-  *
-  * @param address the base address of the magnetometer on the i2c bus.
-  */
-void MicroBitCompass::init(uint16_t id, uint16_t address)
+ * Constructor.
+ * Create a software abstraction of an e-compass.
+ *
+ * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_COMPASS
+ * @param coordinateSpace the orientation of the sensor. Defaults to: SIMPLE_CARTESIAN
+ *
+ */
+MicroBitCompass::MicroBitCompass(CoordinateSpace &cspace, uint16_t id) : calibration(), sample(), sampleENU(), coordinateSpace(cspace)
 {
-    this->id = id;
-    this->address = address;
+    accelerometer = NULL;
+    init(id);
+}
 
-    // Select 10Hz update rate, with oversampling, and enable the device.
+/**
+ * Constructor.
+ * Create a software abstraction of an e-compass.
+ *
+ * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_COMPASS
+ * @param accel the accelerometer to use for tilt compensation
+ * @param coordinateSpace the orientation of the sensor. Defaults to: SIMPLE_CARTESIAN
+ *
+ */
+MicroBitCompass::MicroBitCompass(MicroBitAccelerometer &accel, CoordinateSpace &cspace, uint16_t id) :  calibration(), sample(), sampleENU(), coordinateSpace(cspace)
+{
+    accelerometer = &accel;
+    init(id);
+}
+
+/**
+ * Internal helper used to de-duplicate code in the constructors
+ * @param coordinateSpace the orientation of the sensor. Defaults to: SIMPLE_CARTESIAN
+ * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_COMPASS
+ *
+ */
+void MicroBitCompass::init(uint16_t id)
+{
+    // Store our identifiers.
+    this->id = id;
+    this->status = 0;
+
+    // Set a default rate of 10Hz.
     this->samplePeriod = 100;
     this->configure();
 
     // Assume that we have no calibration information.
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 
-    if(this->storage != NULL)
-    {
-        KeyValuePair *calibrationData =  storage->get("compassCal");
-
-        if(calibrationData != NULL)
-        {
-            CompassSample storedSample = CompassSample();
-
-            memcpy(&storedSample, calibrationData->value, sizeof(CompassSample));
-
-            setCalibration(storedSample);
-
-            delete calibrationData;
-        }
-    }
-
     // Indicate that we're up and running.
     status |= MICROBIT_COMPONENT_RUNNING;
 }
 
 /**
-  * Constructor.
-  * Create a software representation of an e-compass.
-  *
-  * @param _i2c an instance of i2c, which the compass is accessible from.
-  *
-  * @param _accelerometer an instance of the accelerometer, used for tilt compensation.
-  *
-  * @param _storage an instance of MicroBitStorage, used to persist calibration data across resets.
-  *
-  * @param address the default address for the compass register on the i2c bus. Defaults to MAG3110_DEFAULT_ADDR.
-  *
-  * @param id the ID of the new MicroBitCompass object. Defaults to MAG3110_DEFAULT_ADDR.
-  *
-  * @code
-  * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
-  *
-  * MicroBitAccelerometer accelerometer(i2c);
-  *
-  * MicroBitStorage storage;
-  *
-  * MicroBitCompass compass(i2c, accelerometer, storage);
-  * @endcode
-  */
-MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, MicroBitStorage& _storage, uint16_t address,  uint16_t id) :
-    average(),
-    sample(),
-    int1(MICROBIT_PIN_COMPASS_DATA_READY),
-    i2c(_i2c),
-    accelerometer(&_accelerometer),
-    storage(&_storage)
+ * Device autodetection. Scans the given I2C bus for supported accelerometer devices.
+ * if found, constructs an appropriate driver and returns it.
+ *
+ * @param i2c the bus to scan.
+ * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
+ *
+ */
+MicroBitCompass& MicroBitCompass::autoDetect(MicroBitI2C &i2c)
 {
-    init(id, address);
+    if (MicroBitCompass::detectedCompass == NULL)
+    {
+        // Configuration of IRQ lines
+        MicroBitPin int1(MICROBIT_ID_IO_INT1, P0_28, PIN_CAPABILITY_STANDARD);
+        MicroBitPin int2(MICROBIT_ID_IO_INT2, P0_29, PIN_CAPABILITY_STANDARD);
+        MicroBitPin int3(MICROBIT_ID_IO_INT3, P0_27, PIN_CAPABILITY_STANDARD);
+
+        // All known accelerometer/magnetometer peripherals have the same alignment
+        CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, true, COORDINATE_SPACE_ROTATED_0));
+
+        // Now, probe for connected peripherals, if none have already been found.
+        if (MAG3110::isDetected(i2c))
+            MicroBitCompass::detectedCompass = new MAG3110(i2c, int2, coordinateSpace);
+
+        else if (LSM303Magnetometer::isDetected(i2c))
+            MicroBitCompass::detectedCompass = new LSM303Magnetometer(i2c, int2, coordinateSpace);
+
+        else if (FXOS8700::isDetected(i2c))
+        {
+            FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace);
+            MicroBitAccelerometer::detectedAccelerometer = fxos;
+            MicroBitCompass::detectedCompass = fxos;
+        }
+
+        // Insert this case to support FXOS on the microbit1.5-SN
+        //else if (FXOS8700::isDetected(i2c, 0x3A))
+        //{
+        //    FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace, 0x3A);
+        //    MicroBitAccelerometer::detectedAccelerometer = fxos;
+        //    MicroBitCompass::detectedCompass = fxos;
+        //}
+
+        else
+        {
+            MicroBitCompass *unavailable = new MicroBitCompass(coordinateSpace, MICROBIT_ID_COMPASS);
+            MicroBitCompass::detectedCompass = unavailable;
+        }
+    }
+
+    // If an accelerometer has been discovered, enable tilt compensation on the e-compass.
+    if (MicroBitAccelerometer::detectedAccelerometer)
+        MicroBitCompass::detectedCompass->setAccelerometer(*MicroBitAccelerometer::detectedAccelerometer);
+
+    return *MicroBitCompass::detectedCompass;
 }
 
 /**
-  * Constructor.
-  * Create a software representation of an e-compass.
-  *
-  * @param _i2c an instance of i2c, which the compass is accessible from.
-  *
-  * @param _accelerometer an instance of the accelerometer, used for tilt compensation.
-  *
-  * @param address the default address for the compass register on the i2c bus. Defaults to MAG3110_DEFAULT_ADDR.
-  *
-  * @param id the ID of the new MicroBitCompass object. Defaults to MAG3110_DEFAULT_ADDR.
-  *
-  * @code
-  * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
-  *
-  * MicroBitAccelerometer accelerometer(i2c);
-  *
-  * MicroBitCompass compass(i2c, accelerometer, storage);
-  * @endcode
-  */
-MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitAccelerometer& _accelerometer, uint16_t address, uint16_t id) :
-    average(),
-    sample(),
-    int1(MICROBIT_PIN_COMPASS_DATA_READY),
-    i2c(_i2c),
-    accelerometer(&_accelerometer),
-    storage(NULL)
-{
-    init(id, address);
-}
-
-/**
-  * Constructor.
-  * Create a software representation of an e-compass.
-  *
-  * @param _i2c an instance of i2c, which the compass is accessible from.
-  *
-  * @param _storage an instance of MicroBitStorage, used to persist calibration data across resets.
-  *
-  * @param address the default address for the compass register on the i2c bus. Defaults to MAG3110_DEFAULT_ADDR.
-  *
-  * @param id the ID of the new MicroBitCompass object. Defaults to MAG3110_DEFAULT_ADDR.
-  *
-  * @code
-  * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
-  *
-  * MicroBitStorage storage;
-  *
-  * MicroBitCompass compass(i2c, storage);
-  * @endcode
-  */
-MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, MicroBitStorage& _storage, uint16_t address, uint16_t id) :
-    average(),
-    sample(),
-    int1(MICROBIT_PIN_COMPASS_DATA_READY),
-    i2c(_i2c),
-    accelerometer(NULL),
-    storage(&_storage)
-{
-    init(id, address);
-}
-
-/**
-  * Constructor.
-  * Create a software representation of an e-compass.
-  *
-  * @param _i2c an instance of i2c, which the compass is accessible from.
-  *
-  * @param address the default address for the compass register on the i2c bus. Defaults to MAG3110_DEFAULT_ADDR.
-  *
-  * @param id the ID of the new MicroBitCompass object. Defaults to MAG3110_DEFAULT_ADDR.
-  *
-  * @code
-  * MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
-  *
-  * MicroBitCompass compass(i2c);
-  * @endcode
-  */
-MicroBitCompass::MicroBitCompass(MicroBitI2C& _i2c, uint16_t address, uint16_t id) :
-    average(),
-    sample(),
-    int1(MICROBIT_PIN_COMPASS_DATA_READY),
-    i2c(_i2c),
-    accelerometer(NULL),
-    storage(NULL)
-{
-    init(id, address);
-}
-
-/**
-  * Issues a standard, 2 byte I2C command write to the accelerometer.
-  *
-  * Blocks the calling thread until complete.
-  *
-  * @param reg The address of the register to write to.
-  *
-  * @param value The value to write.
-  *
-  * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the the write request failed.
-  */
-int MicroBitCompass::writeCommand(uint8_t reg, uint8_t value)
-{
-    uint8_t command[2];
-    command[0] = reg;
-    command[1] = value;
-
-    return i2c.write(address, (const char *)command, 2);
-}
-
-/**
-  * Issues a read command, copying data into the specified buffer.
-  *
-  * Blocks the calling thread until complete.
-  *
-  * @param reg The address of the register to access.
-  *
-  * @param buffer Memory area to read the data into.
-  *
-  * @param length The number of bytes to read.
-  *
-  * @return MICROBIT_OK on success, MICROBIT_INVALID_PARAMETER or MICROBIT_I2C_ERROR if the the read request failed.
-  */
-int MicroBitCompass::readCommand(uint8_t reg, uint8_t* buffer, int length)
-{
-    int result;
-
-    if (buffer == NULL || length <= 0)
-        return MICROBIT_INVALID_PARAMETER;
-
-    result = i2c.write(address, (const char *)&reg, 1, true);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
-
-    result = i2c.read(address, (char *)buffer, length);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
-
-    return MICROBIT_OK;
-}
-
-
-/**
-  * Issues a read of a given address, and returns the value.
-  *
-  * Blocks the calling thread until complete.
-  *
-  * @param reg The address of the 16 bit register to access.
-  *
-  * @return The register value, interpreted as a 16 but signed value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
-  */
-int MicroBitCompass::read16(uint8_t reg)
-{
-    uint8_t cmd[2];
-    int result;
-
-    cmd[0] = reg;
-    result = i2c.write(address, (const char *)cmd, 1);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
-
-    cmd[0] = 0x00;
-    cmd[1] = 0x00;
-
-    result = i2c.read(address, (char *)cmd, 2);
-    if (result !=0)
-        return MICROBIT_I2C_ERROR;
-
-    return (int16_t) ((cmd[1] | (cmd[0] << 8))); //concatenate the MSB and LSB
-}
-
-/**
-  * Issues a read of a given address, and returns the value.
-  *
-  * Blocks the calling thread until complete.
-  *
-  * @param reg The address of the 16 bit register to access.
-  *
-  * @return The register value, interpreted as a 8 bit unsigned value, or MICROBIT_I2C_ERROR if the magnetometer could not be accessed.
-  */
-int MicroBitCompass::read8(uint8_t reg)
-{
-    uint8_t data;
-    int result;
-
-    data = 0;
-    result = readCommand(reg, (uint8_t*) &data, 1);
-    if (result != MICROBIT_OK)
-        return MICROBIT_I2C_ERROR;
-
-    return data;
-}
-
-/**
-  * Calculates a tilt compensated bearing of the device, using the accelerometer.
-  */
-int MicroBitCompass::tiltCompensatedBearing()
-{
-    // Precompute the tilt compensation parameters to improve readability.
-    float phi = accelerometer->getRollRadians();
-    float theta = accelerometer->getPitchRadians();
-
-    float x = (float) getX(NORTH_EAST_DOWN);
-    float y = (float) getY(NORTH_EAST_DOWN);
-    float z = (float) getZ(NORTH_EAST_DOWN);
-
-    // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
-    float sinPhi = sin(phi);
-    float cosPhi = cos(phi);
-    float sinTheta = sin(theta);
-    float cosTheta = cos(theta);
-
-    float bearing = (360*atan2(z*sinPhi - y*cosPhi, x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi)) / (2*PI);
-
-    if (bearing < 0)
-        bearing += 360.0;
-
-    return (int) bearing;
-}
-
-/**
-  * Calculates a non-tilt compensated bearing of the device.
-  */
-int MicroBitCompass::basicBearing()
-{
-    updateSample();
-
-    float bearing = (atan2((double)(sample.y - average.y),(double)(sample.x - average.x)))*180/PI;
-
-    if (bearing < 0)
-        bearing += 360.0;
-
-    return (int)(360.0 - bearing);
-}
-
-/**
-  * Gets the current heading of the device, relative to magnetic north.
-  *
-  * If the compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
-  *
-  * Users wishing to implement their own calibration algorithms should listen for this event,
-  * using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensures that calibration is complete before
-  * the user program continues.
-  *
-  * @return the current heading, in degrees. Or MICROBIT_CALIBRATION_IN_PROGRESS if the compass is calibrating.
-  *
-  * @code
-  * compass.heading();
-  * @endcode
-  */
+ * Gets the current heading of the device, relative to magnetic north.
+ *
+ * If the compass is not calibrated, it will raise the MICROBIT_COMPASS_EVT_CALIBRATE event.
+ *
+ * Users wishing to implement their own calibration algorithms should listen for this event,
+ * using MESSAGE_BUS_LISTENER_IMMEDIATE model. This ensures that calibration is complete before
+ * the user program continues.
+ *
+ * @return the current heading, in degrees. Or CALIBRATION_IN_PROGRESS if the compass is calibrating.
+ *
+ * @code
+ * compass.heading();
+ * @endcode
+ */
 int MicroBitCompass::heading()
 {
     if(status & MICROBIT_COMPASS_STATUS_CALIBRATING)
@@ -374,304 +176,45 @@ int MicroBitCompass::heading()
 }
 
 /**
-  * Updates the local sample, only if the compass indicates that
-  * data is stale.
-  *
-  * @note Can be used to trigger manual updates, if the device is running without a scheduler.
-  *       Also called internally by all get[X,Y,Z]() member functions.
-  */
-int MicroBitCompass::updateSample()
-{
-    /**
-      * Adds the compass to idle, if it hasn't been added already.
-      * This is an optimisation so that the compass is only added on first 'use'.
-      */
-    if(!(status & MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE))
-    {
-        fiber_add_idle_component(this);
-        status |= MICROBIT_COMPASS_STATUS_ADDED_TO_IDLE;
-    }
-
-    // Poll interrupt line from compass (Active HI).
-    // Interrupt is cleared on data read of MAG_OUT_X_MSB.
-    if(int1)
-    {
-        sample.x = MAG3110_NORMALIZE_SAMPLE((int) read16(MAG_OUT_X_MSB));
-        sample.y = MAG3110_NORMALIZE_SAMPLE((int) read16(MAG_OUT_Y_MSB));
-        sample.z = MAG3110_NORMALIZE_SAMPLE((int) read16(MAG_OUT_Z_MSB));
-
-        // Indicate that a new sample is available
-        MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
-    }
-
-    return MICROBIT_OK;
-}
-
-/**
-  * Periodic callback from MicroBit idle thread.
-  *
-  * Calls updateSample().
-  */
-void MicroBitCompass::idleTick()
-{
-    updateSample();
-}
-
-/**
-  * Reads the value of the X axis from the latest update retrieved from the magnetometer.
-  *
-  * @param system The coordinate system to use. By default, a simple cartesian system is provided.
-  *
-  * @return The magnetic force measured in the X axis, in nano teslas.
-  *
-  * @code
-  * compass.getX();
-  * @endcode
-  */
-int MicroBitCompass::getX(MicroBitCoordinateSystem system)
-{
-    updateSample();
-
-    switch (system)
-    {
-        case SIMPLE_CARTESIAN:
-            return sample.x - average.x;
-
-        case NORTH_EAST_DOWN:
-            return -(sample.y - average.y);
-
-        case RAW:
-        default:
-            return sample.x;
-    }
-}
-
-/**
-  * Reads the value of the Y axis from the latest update retrieved from the magnetometer.
-  *
-  * @param system The coordinate system to use. By default, a simple cartesian system is provided.
-  *
-  * @return The magnetic force measured in the Y axis, in nano teslas.
-  *
-  * @code
-  * compass.getY();
-  * @endcode
-  */
-int MicroBitCompass::getY(MicroBitCoordinateSystem system)
-{
-    updateSample();
-
-    switch (system)
-    {
-        case SIMPLE_CARTESIAN:
-            return -(sample.y - average.y);
-
-        case NORTH_EAST_DOWN:
-            return (sample.x - average.x);
-
-        case RAW:
-        default:
-            return sample.y;
-    }
-}
-
-/**
-  * Reads the value of the Z axis from the latest update retrieved from the magnetometer.
-  *
-  * @param system The coordinate system to use. By default, a simple cartesian system is provided.
-  *
-  * @return The magnetic force measured in the Z axis, in nano teslas.
-  *
-  * @code
-  * compass.getZ();
-  * @endcode
-  */
-int MicroBitCompass::getZ(MicroBitCoordinateSystem system)
-{
-    updateSample();
-
-    switch (system)
-    {
-        case SIMPLE_CARTESIAN:
-        case NORTH_EAST_DOWN:
-            return -(sample.z - average.z);
-
-        case RAW:
-        default:
-            return sample.z;
-    }
-}
-
-/**
-  * Determines the overall magnetic field strength based on the latest update from the magnetometer.
-  *
-  * @return The magnetic force measured across all axis, in nano teslas.
-  *
-  * @code
-  * compass.getFieldStrength();
-  * @endcode
-  */
+ * Determines the overall magnetic field strength based on the latest update from the magnetometer.
+ *
+ * @return The magnetic force measured across all axis, in nano teslas.
+ *
+ * @code
+ * compass.getFieldStrength();
+ * @endcode
+ */
 int MicroBitCompass::getFieldStrength()
 {
-    double x = getX();
-    double y = getY();
-    double z = getZ();
+    Sample3D s = getSample();
+
+    double x = s.x;
+    double y = s.y;
+    double z = s.z;
 
     return (int) sqrt(x*x + y*y + z*z);
 }
 
 /**
-  * Configures the compass for the sample rate defined in this object.
-  * The nearest values are chosen to those defined that are supported by the hardware.
-  * The instance variables are then updated to reflect reality.
-  *
-  * @return MICROBIT_OK or MICROBIT_I2C_ERROR if the magnetometer could not be configured.
-  */
-int MicroBitCompass::configure()
-{
-    const MAG3110SampleRateConfig  *actualSampleRate;
-    int result;
-
-    // First, take the device offline, so it can be configured.
-    result = writeCommand(MAG_CTRL_REG1, 0x00);
-    if (result != MICROBIT_OK)
-        return MICROBIT_I2C_ERROR;
-
-    // Wait for the part to enter standby mode...
-    while(1)
-    {
-        // Read the status of the part...
-        // If we can't communicate with it over I2C, pass on the error.
-        result = this->read8(MAG_SYSMOD);
-        if (result == MICROBIT_I2C_ERROR)
-            return MICROBIT_I2C_ERROR;
-
-        // if the part in in standby, we're good to carry on.
-        if((result & 0x03) == 0)
-            break;
-
-        // Perform a power efficient sleep...
-		fiber_sleep(100);
-    }
-
-    // Find the nearest sample rate to that specified.
-    actualSampleRate = &MAG3110SampleRate[MAG3110_SAMPLE_RATES-1];
-    for (int i=MAG3110_SAMPLE_RATES-1; i>=0; i--)
-    {
-        if(MAG3110SampleRate[i].sample_period < this->samplePeriod * 1000)
-            break;
-
-        actualSampleRate = &MAG3110SampleRate[i];
-    }
-
-    // OK, we have the correct data. Update our local state.
-    this->samplePeriod = actualSampleRate->sample_period / 1000;
-
-    // Enable automatic reset after each sample;
-    result = writeCommand(MAG_CTRL_REG2, 0xA0);
-    if (result != MICROBIT_OK)
-        return MICROBIT_I2C_ERROR;
-
-
-    // Bring the device online, with the requested sample frequency.
-    result = writeCommand(MAG_CTRL_REG1, actualSampleRate->ctrl_reg1 | 0x01);
-    if (result != MICROBIT_OK)
-        return MICROBIT_I2C_ERROR;
-
-    return MICROBIT_OK;
-}
-
-/**
-  * Attempts to set the sample rate of the compass to the specified value (in ms).
-  *
-  * @param period the requested time between samples, in milliseconds.
-  *
-  * @return MICROBIT_OK or MICROBIT_I2C_ERROR if the magnetometer could not be updated.
-  *
-  * @code
-  * // sample rate is now 20 ms.
-  * compass.setPeriod(20);
-  * @endcode
-  *
-  * @note The requested rate may not be possible on the hardware. In this case, the
-  * nearest lower rate is chosen.
-  */
-int MicroBitCompass::setPeriod(int period)
-{
-    this->samplePeriod = period;
-    return this->configure();
-}
-
-/**
-  * Reads the currently configured sample rate of the compass.
-  *
-  * @return The time between samples, in milliseconds.
-  */
-int MicroBitCompass::getPeriod()
-{
-    return (int)samplePeriod;
-}
-
-/**
-  * Attempts to read the 8 bit ID from the magnetometer, this can be used for
-  * validation purposes.
-  *
-  * @return the 8 bit ID returned by the magnetometer, or MICROBIT_I2C_ERROR if the request fails.
-  *
-  * @code
-  * compass.whoAmI();
-  * @endcode
-  */
-int MicroBitCompass::whoAmI()
-{
-    uint8_t data;
-    int result;
-
-    result = readCommand(MAG_WHOAMI, &data, 1);
-    if (result != MICROBIT_OK)
-        return MICROBIT_I2C_ERROR;
-
-    return (int)data;
-}
-
-/**
-  * Reads the current die temperature of the compass.
-  *
-  * @return the temperature in degrees celsius, or MICROBIT_I2C_ERROR if the temperature reading could not be retreived
-  *         from the accelerometer.
-  */
-int MicroBitCompass::readTemperature()
-{
-    int8_t temperature;
-    int result;
-
-    result = readCommand(MAG_DIE_TEMP, (uint8_t *)&temperature, 1);
-    if (result != MICROBIT_OK)
-        return MICROBIT_I2C_ERROR;
-
-    return temperature;
-}
-
-/**
-  * Perform a calibration of the compass.
-  *
-  * This method will be called automatically if a user attempts to read a compass value when
-  * the compass is uncalibrated. It can also be called at any time by the user.
-  *
-  * The method will only return once the compass has been calibrated.
-  *
-  * @return MICROBIT_OK, MICROBIT_I2C_ERROR if the magnetometer could not be accessed,
-  * or MICROBIT_CALIBRATION_REQUIRED if the calibration algorithm failed to complete successfully.
-  *
-  * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
-  */
+ * Perform a calibration of the compass.
+ *
+ * This method will be called automatically if a user attempts to read a compass value when
+ * the compass is uncalibrated. It can also be called at any time by the user.
+ *
+ * The method will only return once the compass has been calibrated.
+ *
+ * @return MICROBIT_OK, MICROBIT_I2C_ERROR if the magnetometer could not be accessed,
+ * or MICROBIT_CALIBRATION_REQUIRED if the calibration algorithm failed to complete successfully.
+ *
+ * @note THIS MUST BE CALLED TO GAIN RELIABLE VALUES FROM THE COMPASS
+ */
 int MicroBitCompass::calibrate()
 {
     // Only perform one calibration process at a time.
     if(isCalibrating())
         return MICROBIT_CALIBRATION_IN_PROGRESS;
 
-    updateSample();
+    requestUpdate();
 
     // Delete old calibration data
     clearCalibration();
@@ -693,80 +236,275 @@ int MicroBitCompass::calibrate()
 }
 
 /**
-  * Configure the compass to use the calibration data that is supplied to this call.
-  *
-  * Calibration data is comprised of the perceived zero offset of each axis of the compass.
-  *
-  * After calibration this should now take into account trimming errors in the magnetometer,
-  * and any "hard iron" offsets on the device.
-  *
-  * @param calibration A CompassSample containing the offsets for the x, y and z axis.
-  */
-void MicroBitCompass::setCalibration(CompassSample calibration)
+ * Configure the compass to use the calibration data that is supplied to this call.
+ *
+ * Calibration data is comprised of the perceived zero offset of each axis of the compass.
+ *
+ * After calibration this should now take into account trimming errors in the magnetometer,
+ * and any "hard iron" offsets on the device.
+ *
+ * @param calibration A Sample3D containing the offsets for the x, y and z axis.
+ */
+void MicroBitCompass::setCalibration(CompassCalibration calibration)
 {
-    if(this->storage != NULL)
-        this->storage->put(ManagedString("compassCal"), (uint8_t *)&calibration, sizeof(CompassSample));
-
-    average = calibration;
+    this->calibration = calibration;
     status |= MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
 
 /**
-  * Provides the calibration data currently in use by the compass.
-  *
-  * More specifically, the x, y and z zero offsets of the compass.
-  *
-  * @return calibration A CompassSample containing the offsets for the x, y and z axis.
-  */
-CompassSample MicroBitCompass::getCalibration()
+ * Provides the calibration data currently in use by the compass.
+ *
+ * More specifically, the x, y and z zero offsets of the compass.
+ *
+ * @return A Sample3D containing the offsets for the x, y and z axis.
+ */
+CompassCalibration MicroBitCompass::getCalibration()
 {
-    return average;
+    return calibration;
 }
 
 /**
-  * Returns 0 or 1. 1 indicates that the compass is calibrated, zero means the compass requires calibration.
-  */
+ * Returns 0 or 1. 1 indicates that the compass is calibrated, zero means the compass requires calibration.
+ */
 int MicroBitCompass::isCalibrated()
 {
     return status & MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
 
 /**
-  * Returns 0 or 1. 1 indicates that the compass is calibrating, zero means the compass is not currently calibrating.
-  */
+ * Returns 0 or 1. 1 indicates that the compass is calibrating, zero means the compass is not currently calibrating.
+ */
 int MicroBitCompass::isCalibrating()
 {
     return status & MICROBIT_COMPASS_STATUS_CALIBRATING;
 }
 
 /**
-  * Clears the calibration held in persistent storage, and sets the calibrated flag to zero.
-  */
+ * Clears the calibration held in memory storage, and sets the calibrated flag to zero.
+ */
 void MicroBitCompass::clearCalibration()
 {
+    calibration = CompassCalibration();
     status &= ~MICROBIT_COMPASS_STATUS_CALIBRATED;
 }
 
 /**
-  * Destructor for MicroBitCompass, where we deregister this instance from the array of fiber components.
+ * Configures the device for the sample rate defined
+ * in this object. The nearest values are chosen to those defined
+ * that are supported by the hardware. The instance variables are then
+ * updated to reflect reality.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the compass could not be configured.
+ */
+int MicroBitCompass::configure()
+{
+    return MICROBIT_NOT_SUPPORTED;
+}
+
+/**
+ *
+ * Defines the accelerometer to be used for tilt compensation.
+ *
+ * @param acceleromter Reference to the accelerometer to use.
+ */
+void MicroBitCompass::setAccelerometer(MicroBitAccelerometer &accelerometer)
+{
+    this->accelerometer = &accelerometer;
+}
+
+/**
+ * Attempts to set the sample rate of the compass to the specified period value (in ms).
+ *
+ * @param period the requested time between samples, in milliseconds.
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR is the request fails.
+ *
+ * @note The requested rate may not be possible on the hardware. In this case, the
+ * nearest lower rate is chosen.
+ *
+ * @note This method should be overriden (if supported) by specific magnetometer device drivers.
+ */
+int MicroBitCompass::setPeriod(int period)
+{
+    int result;
+
+    samplePeriod = period;
+    result = configure();
+
+    samplePeriod = getPeriod();
+    return result;
+
+}
+
+/**
+ * Reads the currently configured sample rate of the compass.
+ *
+ * @return The time between samples, in milliseconds.
+ */
+int MicroBitCompass::getPeriod()
+{
+    return (int)samplePeriod;
+}
+
+/**
+ * Poll to see if new data is available from the hardware. If so, update it.
+ * n.b. it is not necessary to explicitly call this funciton to update data
+ * (it normally happens in the background when the scheduler is idle), but a check is performed
+ * if the user explicitly requests up to date data.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the update fails.
+ *
+ * @note This method should be overidden by the hardware driver to implement the requested
+ * changes in hardware.
+ */
+int MicroBitCompass::requestUpdate()
+{
+    microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE_MAG);
+    return MICROBIT_NOT_SUPPORTED;
+}
+
+/**
+ * Stores data from the compass sensor in our buffer.
+ *
+ * On first use, this member function will attempt to add this component to the
+ * list of fiber components in order to constantly update the values stored
+ * by this object.
+ *
+ * This lazy instantiation means that we do not
+ * obtain the overhead from non-chalantly adding this component to fiber components.
+ *
+ * @return MICROBIT_OK on success, MICROBIT_I2C_ERROR if the read request fails.
+ */
+int MicroBitCompass::update()
+{
+    // Store the raw data, and apply any calibration data we have.
+    sampleENU.x = CALIBRATED_SAMPLE(sampleENU, x);
+    sampleENU.y = CALIBRATED_SAMPLE(sampleENU, y);
+    sampleENU.z = CALIBRATED_SAMPLE(sampleENU, z);
+
+    // Store the user accessible data, in the requested coordinate space, and taking into account component placement of the sensor.
+    sample = coordinateSpace.transform(sampleENU);
+
+    // Indicate that a new sample is available
+    MicroBitEvent e(id, MICROBIT_COMPASS_EVT_DATA_UPDATE);
+
+    return MICROBIT_OK;
+};
+
+/**
+ * Reads the last compass value stored, and provides it in the coordinate system requested.
+ *
+ * @param coordinateSpace The coordinate system to use.
+ * @return The force measured in each axis, in milli-g.
+ */
+Sample3D MicroBitCompass::getSample(CoordinateSystem coordinateSystem)
+{
+    requestUpdate();
+    return coordinateSpace.transform(sampleENU, coordinateSystem);
+}
+
+/**
+ * Reads the last compass value stored, and in the coordinate system defined in the constructor.
+ * @return The force measured in each axis, in milli-g.
+ */
+Sample3D MicroBitCompass::getSample()
+{
+    requestUpdate();
+    return sample;
+}
+
+/**
+ * reads the value of the x axis from the latest update retrieved from the compass,
+ * using the default coordinate system as specified in the constructor.
+ *
+ * @return the force measured in the x axis, in milli-g.
+ */
+int MicroBitCompass::getX()
+{
+    requestUpdate();
+    return sample.x;
+}
+
+/**
+ * reads the value of the y axis from the latest update retrieved from the compass,
+ * using the default coordinate system as specified in the constructor.
+ *
+ * @return the force measured in the y axis, in milli-g.
+ */
+int MicroBitCompass::getY()
+{
+    requestUpdate();
+    return sample.y;
+}
+
+/**
+ * reads the value of the z axis from the latest update retrieved from the compass,
+ * using the default coordinate system as specified in the constructor.
+ *
+ * @return the force measured in the z axis, in milli-g.
+ */
+int MicroBitCompass::getZ()
+{
+    requestUpdate();
+    return sample.z;
+}
+
+/**
+ * Calculates a tilt compensated bearing of the device, using the accelerometer.
+ */
+int MicroBitCompass::tiltCompensatedBearing()
+{
+    // Precompute the tilt compensation parameters to improve readability.
+    float phi = accelerometer->getRollRadians();
+    float theta = accelerometer->getPitchRadians();
+
+    // Convert to floating point to reduce rounding errors
+    Sample3D cs = this->getSample(NORTH_EAST_DOWN);
+    float x = (float) cs.x;
+    float y = (float) cs.y;
+    float z = (float) cs.z;
+
+    // Precompute cos and sin of pitch and roll angles to make the calculation a little more efficient.
+    float sinPhi = sin(phi);
+    float cosPhi = cos(phi);
+    float sinTheta = sin(theta);
+    float cosTheta = cos(theta);
+
+    // Calculate the tilt compensated bearing, and convert to degrees.
+    float bearing = (360*atan2(x*cosTheta + y*sinTheta*sinPhi + z*sinTheta*cosPhi, z*sinPhi - y*cosPhi)) / (2*PI);
+
+    // Handle the 90 degree offset caused by the NORTH_EAST_DOWN based calculation.
+    bearing = 90 - bearing;
+
+    // Ensure the calculated bearing is in the 0..359 degree range.
+    if (bearing < 0)
+        bearing += 360.0f;
+
+    return (int) (bearing);
+}
+
+/**
+ * Calculates a non-tilt compensated bearing of the device.
+ */
+int MicroBitCompass::basicBearing()
+{
+    // Convert to floating point to reduce rounding errors
+    Sample3D cs = this->getSample(SIMPLE_CARTESIAN);
+    float x = (float) cs.x;
+    float y = (float) cs.y;
+
+    float bearing = (atan2(x,y))*180/PI;
+
+    if (bearing < 0)
+        bearing += 360.0;
+
+    return (int)bearing;
+}
+
+/**
+  * Destructor.
   */
 MicroBitCompass::~MicroBitCompass()
 {
-    fiber_remove_idle_component(this);
 }
 
-const MAG3110SampleRateConfig MAG3110SampleRate[MAG3110_SAMPLE_RATES] = {
-    {12500,      0x00},        // 80 Hz
-    {25000,      0x20},        // 40 Hz
-    {50000,      0x40},        // 20 Hz
-    {100000,     0x60},        // 10 hz
-    {200000,     0x80},        // 5 hz
-    {400000,     0x88},        // 2.5 hz
-    {800000,     0x90},        // 1.25 hz
-    {1600000,    0xb0},        // 0.63 hz
-    {3200000,    0xd0},        // 0.31 hz
-    {6400000,    0xf0},        // 0.16 hz
-    {12800000,   0xf8}         // 0.08 hz
-};
-
-#endif // TARGET_NRF51_MICROBIT
+MicroBitCompass* MicroBitCompass::detectedCompass= NULL;

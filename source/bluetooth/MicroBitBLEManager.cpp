@@ -73,11 +73,7 @@ uint32_t btle_set_gatt_table_size(uint32_t size);
 #define SECURITY_MODE_IS(x) (SECURITY_MODE(MICROBIT_BLE_SECURITY_LEVEL) == SECURITY_MODE(x))
 
 const char *MICROBIT_BLE_MANUFACTURER = NULL;
-#ifdef TARGET_NRF51_CALLIOPE
 const char *MICROBIT_BLE_MODEL = "Calliope mini";
-#else
-const char *MICROBIT_BLE_MODEL = "BBC micro:bit";
-#endif
 const char *MICROBIT_BLE_HARDWARE_VERSION = NULL;
 const char *MICROBIT_BLE_FIRMWARE_VERSION = MICROBIT_DAL_VERSION;
 const char *MICROBIT_BLE_SOFTWARE_VERSION = NULL;
@@ -300,12 +296,7 @@ void MicroBitBLEManager::deferredSysAttrWrite(Gap::Handle_t handle)
   */
 void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding)
 {
-    // TODO make this configuration dependent
-#ifdef TARGET_NRF51_CALLIOPE
-    ManagedString BLEName("Calliope mini");
-#else
-    ManagedString BLEName("BBC micro:bit");
-#endif
+    ManagedString BLEName(MICROBIT_BLE_MODEL);
     this->deviceName = deviceName;
 
 #if !(CONFIG_ENABLED(MICROBIT_BLE_WHITELIST))
@@ -349,13 +340,13 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 // Default to passkey pairing with MITM protection
 #if (SECURITY_MODE_IS(SECURITY_MODE_ENCRYPTION_NO_MITM))
     // Just Works
-    ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE, (const uint8_t*) "000000");
+    ble->securityManager().init(enableBonding, false, SecurityManager::IO_CAPS_NONE);
 #elif (SECURITY_MODE_IS(SECURITY_MODE_ENCRYPTION_OPEN_LINK))
     // no security
-    ble->securityManager().init(false, false, SecurityManager::IO_CAPS_DISPLAY_ONLY,  (const uint8_t*) "000000");
+    ble->securityManager().init(false, false, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 #else
     // passkey
-    ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY,  (const uint8_t*) "000000");
+    ble->securityManager().init(enableBonding, true, SecurityManager::IO_CAPS_DISPLAY_ONLY);
 #endif
 
     if (enableBonding)
@@ -392,7 +383,10 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 // Bring up core BLE services.
 #if CONFIG_ENABLED(MICROBIT_BLE_DFU_SERVICE)
     new MicroBitDFUService(*ble);
-    ble->gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_128BIT_SERVICE_IDS, MicroBitDFUServiceUUID, 16);
+#endif
+
+#if CONFIG_ENABLED(MICROBIT_BLE_PARTIAL_FLASHING)
+    new MicroBitPartialFlashingService(*ble, messageBus);
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
@@ -647,22 +641,18 @@ int MicroBitBLEManager::advertiseEddystoneUid(const char* uid_namespace, const c
  */
 void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &authorisationButton)
 {
-    // TODO make this configuration dependent
-#ifdef TARGET_NRF51_CALLIOPE
+    // Do not page this fiber!
+    currentFiber->flags |= MICROBIT_FIBER_FLAG_DO_NOT_PAGE;
+
     ManagedString namePrefix("Calliope mini [");
-#else
-    ManagedString namePrefix("BBC micro:bit [");
-#endif
     ManagedString namePostfix("]");
     ManagedString BLEName = namePrefix + deviceName + namePostfix;
-
-#ifndef TARGET_NRF51_CALLIOPE
-    ManagedString msg("PAIRING MODE!");
-#endif
 
     int timeInPairingMode = 0;
     int brightness = 255;
     int fadeDirection = 0;
+
+    currentMode = MICROBIT_MODE_PAIRING;
 
     ble->gap().stopAdvertising();
 
@@ -690,14 +680,13 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
 
     // Stop any running animations on the display
     display.stopAnimation();
-#ifndef TARGET_NRF51_CALLIOPE
-    display.scroll(msg);
-#endif
+
+    fiber_add_idle_component(this);
+
+    showManagementModeAnimation(display);
 
     // Display our name, visualised as a histogram in the display to aid identification.
     showNameHistogram(display);
-
-    fiber_add_idle_component(this);
 
     while (1)
     {
@@ -779,11 +768,52 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
         fiber_sleep(100);
         timeInPairingMode++;
 
-#ifndef TARGET_NRF51_CALLIOPE
         if (timeInPairingMode >= MICROBIT_BLE_PAIRING_TIMEOUT * 30)
             microbit_reset();
-#endif
     }
+}
+
+/**
+ * Displays the management mode animation on the provided MicroBitDisplay instance.
+ *
+ * @param display The Display instance used for displaying the animation.
+ */
+void MicroBitBLEManager::showManagementModeAnimation(MicroBitDisplay &display)
+{
+    // Animation for display object
+    // https://makecode.microbit.org/93264-81126-90471-58367
+
+    const uint8_t mgmt_animation[] __attribute__ ((aligned (4))) =
+    {
+         0xff, 0xff, 20, 0, 5, 0,
+         255,255,255,255,255,   255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,
+         255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,
+         255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,     0,  0,  0,  0,  0,
+         255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255,     0,  0,  0,  0,  0,
+         255,255,255,255,255,   255,255,255,255,255,   255,255,  0,255,255,   255,  0,  0,  0,255
+    };
+
+    MicroBitImage mgmt((ImageData*)mgmt_animation);
+    display.animate(mgmt,100,5);
+
+    const uint8_t bt_icon_raw[] =
+    {
+          0,  0,255,255,  0,
+        255,  0,255,  0,255,
+          0,255,255,255,  0,
+        255,  0,255,  0,255,
+          0,  0,255,255,  0
+    };
+
+    MicroBitImage bt_icon(5,5,bt_icon_raw);
+    display.print(bt_icon,0,0,0,0);
+
+    for(int i=0; i < 255; i = i + 5){
+        display.setBrightness(i);
+        fiber_sleep(5);
+    }
+    fiber_sleep(1000);
+
 }
 
 /**
@@ -810,4 +840,25 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
         for (int j = 0; j < h + 1; j++)
             display.image.setPixelValue(MICROBIT_DFU_HISTOGRAM_WIDTH - i - 1, MICROBIT_DFU_HISTOGRAM_HEIGHT - j - 1, 255);
     }
+}
+
+/**
+ * Restarts into BLE Mode
+ *
+ */
+ void MicroBitBLEManager::restartInBLEMode(){
+   KeyValuePair* RebootMode = storage->get("RebootMode");
+   if(RebootMode == NULL){
+     uint8_t RebootModeValue = MICROBIT_MODE_PAIRING;
+     storage->put("RebootMode", &RebootModeValue, sizeof(RebootMode));
+     delete RebootMode;
+   }
+   microbit_reset();
+ }
+
+ /**
+  * Get BLE mode. Returns the current mode: application, pairing mode
+  */
+uint8_t MicroBitBLEManager::getCurrentMode(){
+  return currentMode;
 }
