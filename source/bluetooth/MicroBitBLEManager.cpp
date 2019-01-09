@@ -502,6 +502,8 @@ void MicroBitBLEManager::pairingComplete(bool success)
     {
         this->pairingStatus = MICROBIT_BLE_PAIR_SUCCESSFUL;
         this->status |= MICROBIT_BLE_STATUS_DISCONNECT;
+    } else {
+        this->status |= MICROBIT_BLE_PAIR_COMPLETE;
     }
 }
 
@@ -747,7 +749,6 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
         {
             if (pairingStatus & MICROBIT_BLE_PAIR_SUCCESSFUL)
             {
-
                 MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
                 display.print(tick, 0, 0, 0);
                 fiber_sleep(15000);
