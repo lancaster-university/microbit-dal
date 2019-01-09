@@ -497,11 +497,10 @@ void MicroBitBLEManager::pairingComplete(bool success)
 {
 
     pairing_completed_at_time = system_timer_current_time();
-    this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
     if (success)
     {
-        this->pairingStatus |= MICROBIT_BLE_PAIR_SUCCESSFUL;
+        this->pairingStatus = MICROBIT_BLE_PAIR_SUCCESSFUL;
         this->status |= MICROBIT_BLE_STATUS_DISCONNECT;
     }
 }
