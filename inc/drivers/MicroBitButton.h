@@ -33,7 +33,7 @@ DEALINGS IN THE SOFTWARE.
 
 #define MICROBIT_PIN_BUTTON_A                   MICROBIT_PIN_P5
 #define MICROBIT_PIN_BUTTON_B                   MICROBIT_PIN_P11
-#define MICROBIT_PIN_BUTTON_RESET               P0_19
+#define MICROBIT_PIN_BUTTON_RESET               NC
 
 #define MICROBIT_BUTTON_EVT_DOWN                1
 #define MICROBIT_BUTTON_EVT_UP                  2
