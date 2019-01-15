@@ -101,6 +101,7 @@ DEALINGS IN THE SOFTWARE.
 #define BMX055_A_FIFO_DATA     0x3F
 
 #define BMX055_A_WHOAMI_VAL     0xFA
+
 /**
  * Class definition for BMX055Accelerometer.
  *

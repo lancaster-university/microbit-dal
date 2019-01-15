@@ -52,7 +52,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "drivers/LSM303Accelerometer.cpp"
     "drivers/LSM303Magnetometer.cpp"
     "drivers/BMX055Accelerometer.cpp"
-#    "drivers/BMX055Magnetometer.cpp"
+    "drivers/BMX055Magnetometer.cpp"
     "drivers/MicroBitMemoryMap.cpp"
     "drivers/CalliopeSoundMotor.cpp"
     "drivers/CalliopeRGB.cpp"

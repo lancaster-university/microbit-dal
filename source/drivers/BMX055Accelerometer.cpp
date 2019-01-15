@@ -48,52 +48,15 @@ enum ACCBW {    // define BMX055 accelerometer bandwidths
     ABW_100Hz     // 1000  Hz,  0.5 ms update time
 };
 
-enum Gscale {
-    GFS_2000DPS = 0,
-    GFS_1000DPS,
-    GFS_500DPS,
-    GFS_250DPS,
-    GFS_125DPS
-};
-
-enum GODRBW {
-    G_2000Hz523Hz = 0, // 2000 Hz ODR and unfiltered (bandwidth 523Hz)
-    G_2000Hz230Hz,
-    G_1000Hz116Hz,
-    G_400Hz47Hz,
-    G_200Hz23Hz,
-    G_100Hz12Hz,
-    G_200Hz64Hz,
-    G_100Hz32Hz  // 100 Hz ODR and 32 Hz bandwidth
-};
-
-enum MODR {
-    MODR_10Hz = 0,   // 10 Hz ODR
-    MODR_2Hz     ,   // 2 Hz ODR
-    MODR_6Hz     ,   // 6 Hz ODR
-    MODR_8Hz     ,   // 8 Hz ODR
-    MODR_15Hz    ,   // 15 Hz ODR
-    MODR_20Hz    ,   // 20 Hz ODR
-    MODR_25Hz    ,   // 25 Hz ODR
-    MODR_30Hz        // 30 Hz ODR
-};
-
-enum Mmode {
-    lowPower         = 0,   // rms noise ~1.0 microTesla, 0.17 mA power
-    Regular             ,   // rms noise ~0.6 microTesla, 0.5 mA power
-    enhancedRegular     ,   // rms noise ~0.5 microTesla, 0.8 mA power
-    highAccuracy            // rms noise ~0.3 microTesla, 4.9 mA power
-};
-
 //
 // Configuration table for available g force ranges.
 // Maps g -> BMX055 full scale options
 //
 static const KeyValueTableEntry accelerometerRangeData[] = {
-    {2, AFS_2G},
-    {4, AFS_4G},
-    {8, AFS_8G},
-    {16, AFS_16G}
+        {2,  AFS_2G},
+        {4,  AFS_4G},
+        {8,  AFS_8G},
+        {16, AFS_16G}
 };
 CREATE_KEY_VALUE_TABLE(accelerometerRange, accelerometerRangeData);
 
@@ -102,14 +65,14 @@ CREATE_KEY_VALUE_TABLE(accelerometerRange, accelerometerRangeData);
 // maps microsecond period -> BMX055 bandwith selection parameter
 //
 static const KeyValueTableEntry accelerometerPeriodData[] = {
-    {500, ABW_100Hz},
-    {1000, ABW_500Hz},
-    {2000, ABW_250Hz},
-    {4000, ABW_125Hz},
-    {8000, ABW_63Hz},
-    {16000, ABW_31Hz},
-    {32000, ABW_16Hz},
-    {64000, ABW_8Hz}
+        {500,   ABW_100Hz},
+        {1000,  ABW_500Hz},
+        {2000,  ABW_250Hz},
+        {4000,  ABW_125Hz},
+        {8000,  ABW_63Hz},
+        {16000, ABW_31Hz},
+        {32000, ABW_16Hz},
+        {64000, ABW_8Hz}
 };
 CREATE_KEY_VALUE_TABLE(accelerometerPeriod, accelerometerPeriodData);
 
@@ -123,8 +86,9 @@ CREATE_KEY_VALUE_TABLE(accelerometerPeriod, accelerometerPeriodData);
  * @param id The unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
  *
  */
-BMX055Accelerometer::BMX055Accelerometer(MicroBitI2C& _i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t id) : MicroBitAccelerometer(coordinateSpace, id), i2c(_i2c), int1(_int1)
-{
+BMX055Accelerometer::BMX055Accelerometer(MicroBitI2C &_i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace,
+                                         uint16_t address, uint16_t id) : MicroBitAccelerometer(coordinateSpace, id),
+                                                                          i2c(_i2c), int1(_int1) {
     // Store our identifiers.
     this->status = 0;
     this->address = address;
@@ -144,14 +108,13 @@ BMX055Accelerometer::BMX055Accelerometer(MicroBitI2C& _i2c, MicroBitPin _int1, C
  * @note This method should be overidden by the hardware driver to implement the requested
  * changes in hardware.
  */
-int BMX055Accelerometer::configure()
-{
+int BMX055Accelerometer::configure() {
     // First find the nearest sample rate to that specified.
-    samplePeriod = accelerometerPeriod.getKey(samplePeriod * 1000) / 1000;
+    samplePeriod = accelerometerPeriod.getKey(samplePeriod * 1000);
     sampleRange = accelerometerRange.getKey(sampleRange);
 
     // Now configure the accelerometer accordingly.
-    
+
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_BGW_SOFTRESET, 0xB6)); // reset accelerometer
     wait_ms(100);
 
@@ -162,14 +125,22 @@ int BMX055Accelerometer::configure()
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_BGW_SPI3_WDT, 0x06));       // Set watchdog timer for 50 ms
 
     // accelerometer
-    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_0,     0b01110111)); // Controls which interrupt engines in group 0 are enabled.
-    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_1,     0b00011111)); // Controls which interrupt engines in group 1 are enabled.
-    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_2,     0b00001111)); // Controls which interrupt engines in group 2 are enabled.
-    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_0,    0b00000000)); // Controls which interrupt signals are mapped to the INT1 pin.
-    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_1,    0b00000001)); // Controls which interrupt signals are mapped to the INT1 and INT2 pins.
-    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_2,    0b00000000)); // Controls which interrupt signals are mapped to the INT2 pin.
-    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_SRC,      0b00000000)); // Contains the data source definition for interrupts with selectable data source.
-    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_OUT_CTRL, 0b00000010)); // Contains the behavioural configuration (electrical behavior) of the interrupt pins.
+    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_0,
+                                0b01110111)); // Controls which interrupt engines in group 0 are enabled.
+    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_1,
+                                0b00011111)); // Controls which interrupt engines in group 1 are enabled.
+    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_2,
+                                0b00001111)); // Controls which interrupt engines in group 2 are enabled.
+    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_0,
+                                0b00000000)); // Controls which interrupt signals are mapped to the INT1 pin.
+    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_1,
+                                0b00000001)); // Controls which interrupt signals are mapped to the INT1 and INT2 pins.
+    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_2,
+                                0b00000000)); // Controls which interrupt signals are mapped to the INT2 pin.
+    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_SRC,
+                                0b00000000)); // Contains the data source definition for interrupts with selectable data source.
+    I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_OUT_CTRL,
+                                0b00000010)); // Contains the behavioural configuration (electrical behavior) of the interrupt pins.
 
     return MICROBIT_OK;
 }
@@ -185,19 +156,16 @@ int BMX055Accelerometer::configure()
  * @note This method should be overidden by the hardware driver to implement the requested
  * changes in hardware.
  */
-int BMX055Accelerometer::requestUpdate()
-{
+int BMX055Accelerometer::requestUpdate() {
     // Ensure we're scheduled to update the data periodically
 
-    if(!(status & MICROBIT_ACCEL_ADDED_TO_IDLE))
-    {
+    if (!(status & MICROBIT_ACCEL_ADDED_TO_IDLE)) {
         fiber_add_idle_component(this);
         status |= MICROBIT_ACCEL_ADDED_TO_IDLE;
     }
 
     // Poll interrupt line from device (ACTIVE LO)
-    if(!int1.getDigitalValue())
-    {
+    if (!int1.getDigitalValue()) {
         uint8_t data[6];
         int result;
         int16_t *x;
@@ -208,7 +176,7 @@ int BMX055Accelerometer::requestUpdate()
         // Read the combined accelerometer and magnetometer data.
         result = i2c.readRegister(address, BMX055_A_D_X_LSB, data, 6);
 
-        if (result !=0)
+        if (result != 0)
             return MICROBIT_I2C_ERROR;
 
         // Read in each reading as a 16 bit little endian value, and scale to 10 bits.
@@ -221,9 +189,9 @@ int BMX055Accelerometer::requestUpdate()
         *z = *z / 32;
 
         // Scale into millig (approx) and align to ENU coordinate system
-        sampleENU.x = -((int)(*y)) * sampleRange;
-        sampleENU.y = -((int)(*x)) * sampleRange;
-        sampleENU.z =  ((int)(*z)) * sampleRange;
+        sampleENU.x = ((int) (*x)) * sampleRange;
+        sampleENU.y = ((int) (*y)) * sampleRange;
+        sampleENU.z = ((int) (*z)) * sampleRange;
 
         // indicate that new data is available.
         update();
@@ -237,8 +205,7 @@ int BMX055Accelerometer::requestUpdate()
   *
   * Internally calls updateSample().
   */
-void BMX055Accelerometer::idleTick()
-{
+void BMX055Accelerometer::idleTick() {
     requestUpdate();
 }
 
@@ -247,15 +214,15 @@ void BMX055Accelerometer::idleTick()
  *
  * @return true if the WHO_AM_I value is succesfully read. false otherwise.
  */
-int BMX055Accelerometer::isDetected(MicroBitI2C &i2c, uint16_t address)
-{
+int BMX055Accelerometer::isDetected(MicroBitI2C &i2c, uint16_t address) {
+    i2c.writeRegister(address, BMX055_A_BGW_SOFTRESET, 0xB6);
+    wait_ms(100);
     return i2c.readRegister(address, BMX055_A_WHOAMI) == BMX055_A_WHOAMI_VAL;
 }
 
 /**
  * Destructor.
  */
-BMX055Accelerometer::~BMX055Accelerometer()
-{
+BMX055Accelerometer::~BMX055Accelerometer() {
 }
 

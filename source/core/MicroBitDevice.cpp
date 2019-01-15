@@ -171,8 +171,10 @@ void microbit_panic_timeout(int iterations)
   */
 void microbit_panic(int statusCode)
 {
+#ifndef TARGET_NRF51_CALLIOPE
     DigitalIn resetButton(MICROBIT_PIN_BUTTON_RESET);
     resetButton.mode(PullUp);
+#endif
 
     uint32_t    row_mask = 0;
     uint32_t    col_mask = 0;
@@ -246,10 +248,11 @@ void microbit_panic(int statusCode)
                 i = 2000;
                 while(i>0)
                 {
+#ifndef TARGET_NRF51_CALLIOPE
                     // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
                     if (resetButton == 0)
                         microbit_reset();
-
+#endif
                     i--;
                 }
 
