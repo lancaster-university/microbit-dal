@@ -333,11 +333,7 @@ void MicroBitCompassCalibrator::calibrateUX(MicroBitEvent)
         // Scroll a message the first time we enter this loop and every REDISPLAY_MSG_TIMEOUT_MS
         if (remaining_scroll_time == MSG_TIME || remaining_scroll_time <= -REDISPLAY_MSG_TIMEOUT_MS)        {
                 display.clear();
-#ifdef TARGET_NRF51_CALLIOPE
-                display.scrollAsync("KIPPEN & FUELLEN "); // Takes about 14s
-#else
                 display.scrollAsync("TILT TO FILL SCREEN "); // Takes about 14s
-#endif
                 remaining_scroll_time = MSG_TIME;
                 samples_this_period = 0;
         }
