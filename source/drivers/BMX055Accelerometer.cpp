@@ -126,15 +126,15 @@ int BMX055Accelerometer::configure() {
 
     // accelerometer
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_0,
-                                0b01110111)); // Controls which interrupt engines in group 0 are enabled.
+                                0b00000000)); // Controls which interrupt engines in group 0 are enabled.
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_1,
-                                0b00011111)); // Controls which interrupt engines in group 1 are enabled.
+                                0b00010000)); // Controls which interrupt engines in group 1 are enabled.
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_EN_2,
-                                0b00001111)); // Controls which interrupt engines in group 2 are enabled.
+                                0b00000000)); // Controls which interrupt engines in group 2 are enabled.
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_0,
                                 0b00000000)); // Controls which interrupt signals are mapped to the INT1 pin.
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_1,
-                                0b00000001)); // Controls which interrupt signals are mapped to the INT1 and INT2 pins.
+                                0b10000001)); // Controls which interrupt signals are mapped to the INT1 and INT2 pins.
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_MAP_2,
                                 0b00000000)); // Controls which interrupt signals are mapped to the INT2 pin.
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_INT_SRC,
@@ -164,8 +164,9 @@ int BMX055Accelerometer::requestUpdate() {
         status |= MICROBIT_ACCEL_ADDED_TO_IDLE;
     }
 
+    int dataReady = !int1.getDigitalValue();
     // Poll interrupt line from device (ACTIVE LO)
-    if (!int1.getDigitalValue()) {
+    if (dataReady) {
         uint8_t data[6];
         int result;
         int16_t *x;
