@@ -112,17 +112,11 @@ void CalliopeRGB::setColour(uint8_t red, uint8_t green, uint8_t blue, uint8_t wh
     GRBW[2] = blue;
     GRBW[3] = white;
 
-#if CONFIG_ENABLED(MICROBIT_DBG)
-    SERIAL_DEBUG->printf("RGB(%d,%d,%d,%d) ->", GRBW[1], GRBW[0],GRBW[2],GRBW[3]);
-#endif
     //check intensity
     for(uint8_t i=0; i<4; i++) {
         GRBW[i] = (uint8_t) (GRBW[i] * maxIntensity / 255.0);
     }
-#if CONFIG_ENABLED(MICROBIT_DBG)
-    SERIAL_DEBUG->printf("RGB(%d,%d,%d,%d)\r\n", GRBW[1], GRBW[0],GRBW[2],GRBW[3]);
-#endif
-    
+
     //apply settings
     this->send();
 }
