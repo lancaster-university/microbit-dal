@@ -34,6 +34,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitFiber.h"
 #include "MicroBitSystemTimer.h"
+#include "ErrorNo.h"
+#include "MicroBitDevice.h"
 
 /*
  * Statically allocated values used to create and destroy Fibers.
@@ -67,7 +69,8 @@ static MicroBitComponent* idleThreadComponents[MICROBIT_IDLE_COMPONENTS];
 
 static void get_fibers_from(Fiber ***dest, int *sum, Fiber *queue)
 {
-    if (queue && queue->prev) target_panic(30);
+    if (queue && queue->prev)
+        microbit_panic(MICROBIT_HEAP_ERROR);
     while (queue) {
         if (*dest)
             *(*dest)++ = queue;
@@ -232,7 +235,7 @@ void scheduler_init(EventModel &_messageBus)
 
 	// Store a reference to the messageBus provided.
 	// This parameter will be NULL if we're being run without a message bus.
-	messageBus = &_messageBus;
+    messageBus = &_messageBus;
 
     // Create a new fiber context
     currentFiber = getFiberContext();
@@ -438,7 +441,7 @@ int fiber_wait_for_event(uint16_t id, uint16_t value)
     if(ret == MICROBIT_OK)
         schedule();
 
-	return ret;
+    return ret;
 }
 
 /**
@@ -766,7 +769,6 @@ void release_fiber(void)
     for (Fiber *p = fiberPool; p; p = p->next) {
         if (!p->next && numFree > 3) {
             p->prev->next = NULL;
-            free(p->tcb);
             free((void *)p->stack_bottom);
             memset(p, 0, sizeof(*p));
             free(p);
