@@ -553,7 +553,7 @@ int invoke(void (*entry_fn)(void))
     currentFiber->flags |= MICROBIT_FIBER_FLAG_FOB;
     entry_fn();
     #if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
-    f->user_data = 0;
+    currentFiber->user_data = 0;
     #endif
     currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
 
@@ -619,7 +619,7 @@ int invoke(void (*entry_fn)(void *), void *param)
     currentFiber->flags |= MICROBIT_FIBER_FLAG_FOB;
     entry_fn(param);
     #if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
-    f->user_data = 0;
+    currentFiber->user_data = 0;
     #endif
     currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
 
