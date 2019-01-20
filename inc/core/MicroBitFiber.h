@@ -89,6 +89,9 @@ struct Fiber
     uint32_t flags;                     // Information about this fiber.
     Fiber **queue;                      // The queue this fiber is stored on.
     Fiber *next, *prev;                 // Position of this Fiber on the run queue.
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    void *user_data;
+#endif
 };
 
 extern Fiber *currentFiber;
@@ -363,6 +366,16 @@ inline int inInterruptContext()
 {
     return (((int)__get_IPSR()) & 0x003F) > 0;
 }
+
+/**
+ * Return all current fibers.
+ * 
+ * @param dest If non-null, it points to an array of pointers to fibers to store results in.
+ * 
+ * @return the number of fibers (potentially) stored
+ */
+int list_fibers(Fiber **dest);
+
 
 /**
   * Assembler Context switch routing.
