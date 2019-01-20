@@ -65,6 +65,43 @@ static EventModel *messageBus = NULL;
 // Array of components which are iterated during idle thread execution.
 static MicroBitComponent* idleThreadComponents[MICROBIT_IDLE_COMPONENTS];
 
+static void get_fibers_from(Fiber ***dest, int *sum, Fiber *queue)
+{
+    if (queue && queue->prev) target_panic(30);
+    while (queue) {
+        if (*dest)
+            *(*dest)++ = queue;
+        (*sum)++;
+        queue = queue->next;
+    }
+}
+
+/**
+  * Return all current fibers.
+  *
+  * @param dest If non-null, it points to an array of pointers to fibers to store results in.
+  *
+  * @return the number of fibers (potentially) stored
+  */
+int list_fibers(Fiber **dest)
+{
+    int sum = 0;
+
+    // interrupts might move fibers between queues, but should not create new ones
+    __disable_irq();
+    get_fibers_from(&dest, &sum, runQueue);
+    get_fibers_from(&dest, &sum, sleepQueue);
+    get_fibers_from(&dest, &sum, waitQueue);
+    __enable_irq();
+
+    // idleFiber is used to start event handlers using invoke(),
+    // so it may in fact have the user_data set if in FOB context
+    if (dest)
+        *dest++ = idleFiber;
+    sum++;
+    return sum;
+}
+
 /**
   * Utility function to add the currenty running fiber to the given queue.
   *
@@ -170,6 +207,10 @@ Fiber *getFiberContext()
     // Ensure this fiber is in suitable state for reuse.
     f->flags = 0;
     f->tcb.stack_base = CORTEX_M0_STACK_BASE;
+
+    #if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    f->user_data = 0;
+    #endif
 
     return f;
 }
@@ -314,6 +355,29 @@ void scheduler_event(MicroBitEvent evt)
         messageBus->ignore(evt.source, evt.value, scheduler_event);
 }
 
+static Fiber* handle_fob()
+{
+    Fiber *f = currentFiber;
+
+    // This is a blocking call, so if we're in a fork on block context,
+    // it's time to spawn a new fiber...
+    if (f->flags & MICROBIT_FIBER_FLAG_FOB)
+    {
+        // Allocate a TCB from the new fiber. This will come from the tread pool if availiable,
+        // else a new one will be allocated on the heap.
+        forkedFiber = getFiberContext();
+         // If we're out of memory, there's nothing we can do.
+        // keep running in the context of the current thread as a best effort.
+        if (forkedFiber != NULL) {
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+            forkedFiber->user_data = f->user_data;
+            f->user_data = NULL;
+#endif
+            f = forkedFiber;
+        }
+    }
+    return f;
+}
 
 /**
   * Blocks the calling thread for the given period of time.
@@ -327,8 +391,6 @@ void scheduler_event(MicroBitEvent evt)
   */
 void fiber_sleep(unsigned long t)
 {
-    Fiber *f = currentFiber;
-
     // If the scheduler is not running, then simply perform a spin wait and exit.
     if (!fiber_scheduler_running())
     {
@@ -336,19 +398,7 @@ void fiber_sleep(unsigned long t)
         return;
     }
 
-    // Sleep is a blocking call, so if we're in a fork on block context,
-    // it's time to spawn a new fiber...
-    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
-    {
-        // Allocate a new fiber. This will come from the fiber pool if availiable,
-        // else a new one will be allocated on the heap.
-        forkedFiber = getFiberContext();
-
-        // If we're out of memory, there's nothing we can do.
-        // keep running in the context of the current thread as a best effort.
-        if (forkedFiber != NULL)
-                f = forkedFiber;
-    }
+    Fiber *f = handle_fob();
 
     // Calculate and store the time we want to wake up.
     f->context = system_timer_current_time() + t;
@@ -412,28 +462,17 @@ int fiber_wait_for_event(uint16_t id, uint16_t value)
   */
 int fiber_wake_on_event(uint16_t id, uint16_t value)
 {
-    Fiber *f = currentFiber;
-
 	if (messageBus == NULL || !fiber_scheduler_running())
 		return MICROBIT_NOT_SUPPORTED;
 
-    // Sleep is a blocking call, so if we're in a fork on block context,
-    // it's time to spawn a new fiber...
-    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
-    {
-        // Allocate a TCB from the new fiber. This will come from the tread pool if availiable,
-        // else a new one will be allocated on the heap.
-        forkedFiber = getFiberContext();
+    Fiber *f = handle_fob();
 
-        // If we're out of memory, there's nothing we can do.
-        // keep running in the context of the current thread as a best effort.
-        if (forkedFiber != NULL)
-        {
-            f = forkedFiber;
-            dequeue_fiber(f);
-            queue_fiber(f, &runQueue);
-            schedule();
-        }
+    // in case we created a new fiber, make sure to initialize its context
+    // in case schedule() isn't called immedietly afterwards
+    if (f != currentFiber) {
+        dequeue_fiber(f);
+        queue_fiber(f, &runQueue);
+        schedule();
     }
 
     // Encode the event data in the context field. It's handy having a 32 bit core. :-)
@@ -452,6 +491,12 @@ int fiber_wake_on_event(uint16_t id, uint16_t value)
 
     return MICROBIT_OK;
 }
+
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+#define HAS_THREAD_USER_DATA (currentFiber->user_data != NULL)
+#else
+#define HAS_THREAD_USER_DATA false
+#endif
 
 /**
   * Executes the given function asynchronously if necessary.
@@ -475,7 +520,7 @@ int invoke(void (*entry_fn)(void))
     if (!fiber_scheduler_running())
 		return MICROBIT_NOT_SUPPORTED;
 
-    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
+    if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD) || HAS_THREAD_USER_DATA)
     {
         // If we attempt a fork on block whilst already in  fork n block context,
         // simply launch a fiber to deal with the request and we're done.
@@ -504,6 +549,9 @@ int invoke(void (*entry_fn)(void))
     // spawn a thread to deal with it.
     currentFiber->flags |= MICROBIT_FIBER_FLAG_FOB;
     entry_fn();
+    #if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    f->user_data = 0;
+    #endif
     currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
 
     // If this is is an exiting fiber that for spawned to handle a blocking call, recycle it.
@@ -538,7 +586,7 @@ int invoke(void (*entry_fn)(void *), void *param)
     if (!fiber_scheduler_running())
 		return MICROBIT_NOT_SUPPORTED;
 
-    if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD))
+    if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD) || HAS_THREAD_USER_DATA)
     {
         // If we attempt a fork on block whilst already in a fork on block context,
         // simply launch a fiber to deal with the request and we're done.
@@ -567,6 +615,9 @@ int invoke(void (*entry_fn)(void *), void *param)
     // spawn a thread to deal with it.
     currentFiber->flags |= MICROBIT_FIBER_FLAG_FOB;
     entry_fn(param);
+    #if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    f->user_data = 0;
+    #endif
     currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
 
     // If this is is an exiting fiber that for spawned to handle a blocking call, recycle it.
@@ -710,6 +761,21 @@ void release_fiber(void)
     // Remove ourselves form the runqueue.
     dequeue_fiber(currentFiber);
 
+    // limit the number of fibers in the pool
+    int numFree = 0;
+    for (Fiber *p = fiberPool; p; p = p->next) {
+        if (!p->next && numFree > 3) {
+            p->prev->next = NULL;
+            free(p->tcb);
+            free((void *)p->stack_bottom);
+            memset(p, 0, sizeof(*p));
+            free(p);
+            break;
+        }
+        numFree++;
+    }
+
+
     // Add ourselves to the list of free fibers
     queue_fiber(currentFiber, &fiberPool);
 
@@ -742,6 +808,12 @@ void verify_stack_size(Fiber *f)
     // If we're too small, increase our buffer size.
     if (bufferSize < stackDepth)
     {
+        // We are only here, when the current stack is the stack of fiber [f].
+        // Make sure the contents of [currentFiber] variable reflects that, otherwise
+        // an external memory allocator might get confused when scanning fiber stacks.
+        Fiber *prevCurrFiber = currentFiber;
+        currentFiber = f;
+
         // To ease heap churn, we choose the next largest multple of 32 bytes.
         bufferSize = (stackDepth + 32) & 0xffffffe0;
 
@@ -754,6 +826,8 @@ void verify_stack_size(Fiber *f)
 
         // Recalculate where the top of the stack is and we're done.
         f->stack_top = f->stack_bottom + bufferSize;
+
+        currentFiber = prevCurrFiber;
     }
 }
 
