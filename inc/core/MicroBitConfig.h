@@ -123,14 +123,14 @@ extern uint32_t __etext;
 // The amount of memory reused depends upon whether or not BLE is enabled using MICROBIT_BLE_ENABLED.
 // Set '1' to enable.
 #ifndef MICROBIT_HEAP_REUSE_SD
-#define MICROBIT_HEAP_REUSE_SD                  1
+#define MICROBIT_HEAP_REUSE_SD                  0
 #endif
 
 // The amount of memory allocated to Soft Device to hold its BLE GATT table.
 // For standard S110 builds, this should be word aligned and in the range 0x300 - 0x700.
 // Any unused memory will be automatically reclaimed as HEAP memory if both MICROBIT_HEAP_REUSE_SD and MICROBIT_HEAP_ALLOCATOR are enabled.
 #ifndef MICROBIT_SD_GATT_TABLE_SIZE
-#define MICROBIT_SD_GATT_TABLE_SIZE             0x300
+#define MICROBIT_SD_GATT_TABLE_SIZE             0x700
 #endif
 
 //
@@ -235,7 +235,7 @@ extern uint32_t __etext;
 // SECURITY_MODE_ENCRYPTION_WITH_MITM:      Bonding, encrytion and whitelisting with passkey authentication.
 //
 #ifndef MICROBIT_BLE_SECURITY_LEVEL
-#define MICROBIT_BLE_SECURITY_LEVEL             SECURITY_MODE_ENCRYPTION_WITH_MITM
+#define MICROBIT_BLE_SECURITY_LEVEL             SECURITY_MODE_ENCRYPTION_NO_MITM
 #endif
 
 // Enable/Disable the use of BLE whitelisting.
@@ -261,14 +261,14 @@ extern uint32_t __etext;
 // Based on trials undertaken by the BBC, the radio is normally set to its lowest power level
 // to best protect children's privacy.
 #ifndef MICROBIT_BLE_DEFAULT_TX_POWER
-#define MICROBIT_BLE_DEFAULT_TX_POWER           0
+#define MICROBIT_BLE_DEFAULT_TX_POWER           7
 #endif
 
 // Enable/Disable BLE Service: MicroBitDFU
 // This allows over the air programming during normal operation.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_DFU_SERVICE
-#define MICROBIT_BLE_DFU_SERVICE                1
+#define MICROBIT_BLE_DFU_SERVICE                0
 #endif
 
 // Enable/Disable availability of Eddystone URL APIs
@@ -287,7 +287,7 @@ extern uint32_t __etext;
 // This allows routing of events from the micro:bit message bus over BLE.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_EVENT_SERVICE
-#define MICROBIT_BLE_EVENT_SERVICE              1
+#define MICROBIT_BLE_EVENT_SERVICE              0
 #endif
 
 // Enable/Disable BLE Service: MicroBitDeviceInformationService
@@ -301,7 +301,7 @@ extern uint32_t __etext;
 // This enables the standard BLE HID keyboard service.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_KEYBOARD_SERVICE
-#define MICROBIT_BLE_KEYBOARD_SERVICE           0
+#define MICROBIT_BLE_KEYBOARD_SERVICE           1
 #endif
 
 //
@@ -423,7 +423,7 @@ extern uint32_t __etext;
 // n.b. This also disables the user serial port 'uBit.serial'.
 // Set '1' to enable.
 #ifndef MICROBIT_DBG
-#define MICROBIT_DBG                            0
+#define MICROBIT_DBG                            1
 #endif
 
 // Enable this to receive diagnostic messages from the heap allocator via the USB serial interface.

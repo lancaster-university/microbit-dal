@@ -119,7 +119,7 @@ public:
                                              (softwareRevision != NULL) ? strlen(softwareRevision) : 0, /* maxLength */
                                              GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ);
 
-        GattCharacteristic pnpIDCharacteristic(GattCharacteristic::UUID_PNP_ID_CHAR, (uint8_t *)PnPID);
+        GattCharacteristic pnpIDCharacteristic(GattCharacteristic::UUID_PNP_ID_CHAR, (uint8_t *)PnPID, 7,7,GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ);
 
         GattCharacteristic *charTable[] = {&manufacturersNameStringCharacteristic,
                                            &modelNumberStringCharacteristic,

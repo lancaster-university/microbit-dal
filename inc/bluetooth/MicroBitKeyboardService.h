@@ -6,6 +6,7 @@
 #include "ble/services/BatteryService.h"
 #include "ManagedString.h"
 #include "ble/BLE.h"
+#include "ScanParametersService.h"
 
 #include "MicroBitComponent.h"
 
@@ -28,8 +29,27 @@ class MicroBitKeyboardService : public MicroBitComponent
     private:
     BLEDevice& ble;
     BatteryService* batteryService;
+    ScanParametersService* paramsService;
 
+    uint16_t inputDescriptorHandle;
+    uint16_t outputDescriptorHandle;
+    uint16_t featureDescriptorHandle;
+    uint16_t pmCharacteristicHandle;
+    uint16_t kInCharacteristicHandle;
+    uint16_t kOutCharacteristicHandle;
+    uint16_t rMapCharacteristicHandle;
+    uint16_t infoCharacteristicHandle;
+    uint16_t cpCharacteristicHandle;
+
+    GattAttribute* inputDescriptor;
+    GattAttribute* outputDescriptor;
+    GattAttribute* featureDescriptor;
+    GattAttribute* reportMapExternalRef;
+
+    GattCharacteristic* protocolModeCharacteristic;
+    GattCharacteristic* controlPointCharacteristic;
     GattCharacteristic* keyboardInCharacteristic;
+    GattCharacteristic* bootInCharacteristic;
 
     /**
       * A simple helper function that "returns" our most recently "pressed" key to
@@ -51,7 +71,7 @@ class MicroBitKeyboardService : public MicroBitComponent
       * Creates a collection of characteristics, instantiates a battery service,
       * and modifies advertisement data.
       */
-    MicroBitKeyboardService(BLEDevice& _ble);
+    MicroBitKeyboardService(BLEDevice& _ble, bool pairing);
 
     /**
       * Send a "Special" non-ascii keyboard key, defined in BluetoothHIDKeys.h
@@ -86,6 +106,10 @@ class MicroBitKeyboardService : public MicroBitComponent
       * @return MICROBIT_NOT_SUPPORTED if the micro:bit is not connected to a host.
       */
     int send(ManagedString data);
+
+    void debugRead(const GattReadCallbackParams *params);
+
+    void debugWrite(const GattWriteCallbackParams *params);
 
     /**
       * Destructor.

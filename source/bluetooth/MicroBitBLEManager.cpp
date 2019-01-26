@@ -92,7 +92,11 @@ static uint8_t deviceID = 255;          // Unique ID for the peer that has conne
 static Gap::Handle_t pairingHandle = 0; // The connection handle used during a pairing process. Used to ensure that connections are dropped elegantly.
 
 static const PnPID_t pnp = {
-    0x2, 0x0d28, 0x204, 0x0100
+    0x01,  // From Bluetooth SIG
+    0xFFFE,
+    0x0001,
+    0x01,
+    // 0x2, 0x0d28, 0x204, 0x0100
 };
 
 static void storeSystemAttributes(Gap::Handle_t handle)
@@ -138,6 +142,8 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
         MicroBitBLEManager::manager->advertise();
         MicroBitBLEManager::manager->deferredSysAttrWrite(reason->handle);
     }
+
+    SERIAL_DEBUG->printf("DISC\r\n");
 }
 
 /**
@@ -146,6 +152,7 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *)
 {
     MicroBitEvent(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED);
+    SERIAL_DEBUG->printf("CONN\r\n");
 }
 
 /**
@@ -153,6 +160,7 @@ static void bleConnectionCallback(const Gap::ConnectionCallbackParams_t *)
   */
 static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *params)
 {
+    SERIAL_DEBUG->printf("Sa:\r\n");
     int complete = 0;
     deviceID = 255;
 
@@ -172,8 +180,11 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
         BLESysAttributeStore attribStore;
         BLESysAttribute attrib;
 
+        SERIAL_DEBUG->printf("RES\r\n");
+
         if (bleSysAttrs != NULL)
         {
+            SERIAL_DEBUG->printf("ACT\r\n");
             //restore our sysAttrStore
             memcpy(&attribStore, bleSysAttrs->value, sizeof(BLESysAttributeStore));
             delete bleSysAttrs;
@@ -185,12 +196,18 @@ static void bleSysAttrMissingCallback(const GattSysAttrMissingCallbackParams *pa
             complete = 1;
 
             if (ret == 0)
+            {
+                SERIAL_DEBUG->printf("RET!\r\n");
                 ret = sd_ble_gatts_service_changed(params->connHandle, 0x000c, 0xffff);
+            }
         }
     }
 
     if (!complete)
+    {
+        SERIAL_DEBUG->printf("ERR\r\n");
         sd_ble_gatts_sys_attr_set(params->connHandle, NULL, 0, 0);
+    }
 }
 
 static void passkeyDisplayCallback(Gap::Handle_t handle, const SecurityManager::Passkey_t passkey)
@@ -215,9 +232,12 @@ static void securitySetupCompletedCallback(Gap::Handle_t handle, SecurityManager
 
     if (MicroBitBLEManager::manager)
     {
+        SERIAL_DEBUG->printf("Pair suc %d\r\n", status == SecurityManager::SEC_STATUS_SUCCESS);
         pairingHandle = handle;
         MicroBitBLEManager::manager->pairingComplete(status == SecurityManager::SEC_STATUS_SUCCESS);
     }
+
+    SERIAL_DEBUG->printf("SS COMP\r\n");
 }
 
 /**
@@ -514,7 +534,7 @@ void MicroBitBLEManager::idleTick()
 {
     if (this->status & MICROBIT_BLE_STATUS_DISCONNECT)
     {
-        if((system_timer_current_time() - pairing_completed_at_time) >= MICROBIT_BLE_DISCONNECT_AFTER_PAIRING_DELAY) {
+        if((system_timer_current_time() - pairing_completed_at_time) >= 3000) {
             if (ble)
                 ble->disconnect(pairingHandle, Gap::REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF);
             this->status &= ~MICROBIT_BLE_STATUS_DISCONNECT;
@@ -669,7 +689,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
 
 #if CONFIG_ENABLED(MICROBIT_BLE_KEYBOARD_SERVICE)
     // in order to appear as a bluetooth keyboard, we need to advertise and expose the correct characteristics.
-    new MicroBitKeyboardService(*ble);
+    new MicroBitKeyboardService(*ble, true);
 #else
     // Update the advertised name of this micro:bit to include the device name
     ble->clearAdvertisingPayload();
