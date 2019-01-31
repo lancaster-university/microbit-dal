@@ -249,7 +249,7 @@ ManagedString::ManagedString(PacketBuffer buffer)
 ManagedString::ManagedString(const char *str, const int16_t length)
 {
     // Sanity check. Return EmptyString for anything distasteful
-    if (str == NULL || *str == 0 || length == 0 || (uint16_t)length > strlen(str)) // XXX length should be unsigned on the interface
+    if (str == NULL || *str == 0 || length < 0) // XXX length should be unsigned on the interface
     {
         initEmpty();
         return;
@@ -366,6 +366,11 @@ ManagedString& ManagedString::operator = (const ManagedString& s)
 bool ManagedString::operator== (const ManagedString& s)
 {
     return ((length() == s.length()) && (strcmp(toCharArray(),s.toCharArray())==0));
+}
+
+bool ManagedString::operator!= (const ManagedString& s)
+{
+    return !(*this == s);
 }
 
 /**

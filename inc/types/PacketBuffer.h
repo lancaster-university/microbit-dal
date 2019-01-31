@@ -54,7 +54,7 @@ class PacketBuffer
       *
       * @return The contents of this packet, as an array of bytes.
       */
-    uint8_t *getBytes();
+    uint8_t *getBytes() const;
 
     /**
       * Default Constructor.
@@ -161,7 +161,7 @@ class PacketBuffer
       * uint8_t data = p1[0];
       * @endcode
       */
-    uint8_t operator [] (int i) const;
+    const uint8_t& operator [] (const int i) const;
 
     /**
       * Array access operation (modify).
@@ -175,7 +175,7 @@ class PacketBuffer
       * p1[0] = 42;
       * @endcode
       */
-    uint8_t& operator [] (int i);
+    uint8_t& operator [] (const int i);
 
     /**
       * Equality operation.
@@ -227,7 +227,7 @@ class PacketBuffer
       * p1.getByte(0);                  // Returns 255.
       * @endcode
       */
-    int getByte(int position);
+    int getByte(int position) const;
 
     /**
       * Gets number of bytes in this buffer
@@ -239,7 +239,7 @@ class PacketBuffer
       * p1.length(); // Returns 16.
       * @endcode
       */
-    int length();
+    int length() const;
 
     /**
       * Retrieves the received signal strength of this packet.
@@ -252,7 +252,7 @@ class PacketBuffer
       * p1.getRSSI();                 // Returns the received signal strength.
       * @endcode
       */
-    int getRSSI();
+    int getRSSI() const;
 
     /**
       * Sets the received signal strength of this packet.

@@ -443,6 +443,15 @@ class MicroBitFileSystem
     int seek(int fd, int offset, uint8_t flags);
 
     /**
+     * Get the stored size of the file
+     * 
+     * @param fd file handle, obtained with open
+     * @return the file size in bytes on success, MICROBIT_NOT_SUPPORTED if the file system
+     *         is not initialised, MICROBIT_INVALID_PARAMETER if the file handle is invalid. 
+     */
+    int getSize(int fd);
+
+    /**
       * Write data to the file.
       *
       * Write from buffer, length bytes to the current seek position.

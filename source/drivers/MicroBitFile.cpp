@@ -76,6 +76,19 @@ int MicroBitFile::getPosition()
 }
 
 /**
+ * Returns the size of the file.
+ * 
+ * @return the size of the file, MICROBIT_NOT_SUPPORTED if the current file handle is invalid.
+ */
+int MicroBitFile::getSize()
+{
+    if (fileHandle < 0)
+        return MICROBIT_NOT_SUPPORTED;
+
+    return MicroBitFileSystem::defaultFileSystem -> getSize(fileHandle);
+}
+
+/**
   * Writes the given bytes to this MicroBitFile instance at the current position.
   *
   * @param bytes a pointer to the bytes to write to this file.
@@ -144,7 +157,7 @@ int MicroBitFile::read(char *buffer, int size)
     if(fileHandle < 0)
         return MICROBIT_NOT_SUPPORTED;
 
-    if(size < 0 || buffer == NULL)
+    if(size <= 0 || buffer == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
     return MicroBitFileSystem::defaultFileSystem->read(fileHandle, (uint8_t*)buffer, size);
@@ -160,6 +173,9 @@ int MicroBitFile::read(char *buffer, int size)
   */
 ManagedString MicroBitFile::read(int size)
 {
+    if(size <= 0)
+        return ManagedString();
+
     char buff[size + 1];
 
     buff[size] = 0;

@@ -175,7 +175,7 @@ PacketBuffer& PacketBuffer::operator = (const PacketBuffer &p)
   * uint8_t data = p1[0];
   * @endcode
   */
-uint8_t PacketBuffer::operator [] (int i) const
+const uint8_t& PacketBuffer::operator [] (const int i) const
 {
     return ptr->payload[i];
 }
@@ -264,7 +264,7 @@ int PacketBuffer::setByte(int position, uint8_t value)
   * p1.getByte(0);                  // Returns 255.
   * @endcode
   */
-int PacketBuffer::getByte(int position)
+int PacketBuffer::getByte(int position) const
 {
     if (position < ptr->length)
         return ptr->payload[position];
@@ -277,7 +277,7 @@ int PacketBuffer::getByte(int position)
   *
   * @return The contents of this packet, as an array of bytes.
   */
-uint8_t*PacketBuffer::getBytes()
+uint8_t*PacketBuffer::getBytes() const
 {
     return ptr->payload;
 }
@@ -292,7 +292,7 @@ uint8_t*PacketBuffer::getBytes()
   * p1.length(); // Returns 16.
   * @endcode
   */
-int PacketBuffer::length()
+int PacketBuffer::length() const
 {
     return ptr->length;
 }
@@ -308,7 +308,7 @@ int PacketBuffer::length()
   * p1.getRSSI();                 // Returns the received signal strength.
   * @endcode
   */
-int PacketBuffer::getRSSI()
+int PacketBuffer::getRSSI() const
 {
     return ptr->rssi;
 }

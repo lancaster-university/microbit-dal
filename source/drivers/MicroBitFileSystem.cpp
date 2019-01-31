@@ -1036,6 +1036,32 @@ int MicroBitFileSystem::seek(int fd, int offset, uint8_t flags)
 }
 
 /**
+ * Get the stored size of the file
+ * 
+ * @param fd file handle, obtained with open
+ * @return the file size in bytes on success, MICROBIT_NOT_SUPPORTED if the file system
+ *         is not initialised, MICROBIT_INVALID_PARAMETER if the file handle is invalid. 
+ */
+int MicroBitFileSystem::getSize(int fd)
+{
+
+    // Protect against accidental re-initialisation
+    if ((status & MBFS_STATUS_INITIALISED) == 0)
+        return MICROBIT_NOT_SUPPORTED;
+
+    FileDescriptor* file = getFileDescriptor(fd);
+
+    //Ensure file is open
+    if (file == NULL)
+        return MICROBIT_INVALID_PARAMETER;
+    
+    // Flush any data in the writeback cache.
+    writeBack(file);
+
+    return file -> length;
+}
+
+/**
   * Read data from the file.
   *
   * Read len bytes from the current seek position in the file, into the
@@ -1076,7 +1102,7 @@ int MicroBitFileSystem::read(int fd, uint8_t* buffer, int size)
     // Ensure the file is open.
     file = getFileDescriptor(fd);
 
-    if (file == NULL || buffer == NULL || size == 0)
+    if (file == NULL || buffer == NULL || size <= 0)
         return MICROBIT_INVALID_PARAMETER;
 
     // Flush any data in the writeback cache before we change the seek pointer.
