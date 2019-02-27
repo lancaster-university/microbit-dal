@@ -354,8 +354,7 @@ void MicroBitDisplay::updateScrollText()
 void MicroBitDisplay::updatePrintText()
 {
     image.print(printingChar < printingText.length() ? printingText.charAt(printingChar) : ' ',0,0);
-
-    if (printingChar > printingText.length())
+    if (printingChar >= printingText.length())
     {
         animationMode = ANIMATION_MODE_NONE;
 
@@ -448,7 +447,7 @@ void MicroBitDisplay::stopAnimation()
 void MicroBitDisplay::waitForFreeDisplay()
 {
     // If there's an ongoing animation, wait for our turn to display.
-    if (animationMode != ANIMATION_MODE_NONE && animationMode != ANIMATION_MODE_STOPPED)
+    while (animationMode != ANIMATION_MODE_NONE && animationMode != ANIMATION_MODE_STOPPED)
         fiber_wait_for_event(MICROBIT_ID_NOTIFY, MICROBIT_DISPLAY_EVT_FREE);
 }
 
@@ -492,7 +491,7 @@ int MicroBitDisplay::printCharAsync(char c, int delay)
         if (delay > 0)
         {
             animationDelay = delay;
-            animationTick = 0;
+            animationTick = delay-1;
             animationMode = ANIMATION_MODE_PRINT_CHARACTER;
         }
     }
@@ -533,7 +532,7 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
         printingChar = 0;
         printingText = s;
         animationDelay = delay;
-        animationTick = 0;
+        animationTick = delay-1;
 
         animationMode = ANIMATION_MODE_PRINT_TEXT;
     }
@@ -576,7 +575,7 @@ int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int de
         if(delay > 0)
         {
             animationDelay = delay;
-            animationTick = 0;
+            animationTick = delay-1;
             animationMode = ANIMATION_MODE_PRINT_CHARACTER;
         }
     }
