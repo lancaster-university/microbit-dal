@@ -108,7 +108,7 @@ class MicroBitMessageBus : public EventModel, public MicroBitComponent
       * @note It is recommended that all external code uses the send() function instead of this function,
       *       or the constructors provided by MicrobitEvent.
       */
-	int process(MicroBitEvent &evt, bool urgent = false);
+	int process(MicroBitEvent evt, bool urgent = false);
 
     /**
       * Returns the microBitListener with the given position in our list.
