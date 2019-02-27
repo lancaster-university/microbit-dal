@@ -358,7 +358,7 @@ int MicroBitMessageBus::send(MicroBitEvent evt)
   * @note It is recommended that all external code uses the send() function instead of this function,
   *       or the constructors provided by MicrobitEvent.
   */
-int MicroBitMessageBus::process(MicroBitEvent &evt, bool urgent)
+int MicroBitMessageBus::process(MicroBitEvent evt, bool urgent)
 {
     MicroBitListener *l;
     int complete = 1;
