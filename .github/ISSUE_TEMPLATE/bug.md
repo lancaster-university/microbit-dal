@@ -13,7 +13,7 @@ A clear and concise description of what the error is.
 
 ## How To Reproduce
 
-Steps to reproduce the behavior, providing a minimum example program that uses the latest version of DAL/MakeCode/MicroPython:
+Steps to reproduce the behavior, providing a minimum example program, snippet of code or microbit-samples example that uses the latest version of DAL/MakeCode/MicroPython:
 
 1. Go to '...'
 2. Click on '....'
@@ -25,13 +25,14 @@ Steps to reproduce the behavior, providing a minimum example program that uses t
 A clear and concise description of what you expected to happen.
 
 ## Attachments 
-1. Image of the front and rear of the board
+1. Image of the front and rear of the board (or micro:bit revision see below)
 2. DETAILS/FAIL.TXT files
-3. HEX file/Link to MakeCode Program
+3. HEX file/Link to reproducing program
 
-## Environment
+## Build environment
 
 **micro:bit revision eg. 1.3, 1.3b, 1.5 (can be found printed on the back of the micro:bit)**
+
 
 **Desktop (please complete the following information):**
 
