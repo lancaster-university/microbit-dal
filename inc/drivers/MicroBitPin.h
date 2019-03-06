@@ -105,12 +105,12 @@ und Björn Eberhardt GbR by arrangement with Calliope GbR.
 #define MICROBIT_PIN_MAX_SERVO_RANGE        180
 #define MICROBIT_PIN_DEFAULT_SERVO_RANGE    2000
 #define MICROBIT_PIN_DEFAULT_SERVO_CENTER   1500
-
+// config
 #define MICROBIT_PIN_EVENT_NONE             0
 #define MICROBIT_PIN_EVENT_ON_EDGE          1
 #define MICROBIT_PIN_EVENT_ON_PULSE         2
 #define MICROBIT_PIN_EVENT_ON_TOUCH         3
-
+// event output
 #define MICROBIT_PIN_EVT_RISE               2
 #define MICROBIT_PIN_EVT_FALL               3
 #define MICROBIT_PIN_EVT_PULSE_HI           4
