@@ -40,7 +40,7 @@ A clear and concise description of what you expected to happen.
 - Version [e.g. 22]
 - What software are you using that produces the error? eg Mu, Makecode Python Editor and version number
 
-**Smartphone (please complete the following information):**
+**Smartphone or BLE central device (please complete the following information if your bug is related to BLE):**
 
 - Device: [e.g. iPhone6]
 - OS: [e.g. iOS8.1]
