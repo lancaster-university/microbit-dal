@@ -103,7 +103,7 @@ void MicroBitDFUService::onDataWritten(const GattWriteCallbackParams *params)
             //uBit.display.clear();
 
 #if CONFIG_ENABLED(MICROBIT_DBG)
-            printf("  ACTIVATING BOOTLOADER.\n");
+            if (SERIAL_DEBUG) SERIAL_DEBUG->printf("  ACTIVATING BOOTLOADER.\n");
 #endif
 
             // Perform an explicit disconnection to assist our peer to reconnect to the DFU service
