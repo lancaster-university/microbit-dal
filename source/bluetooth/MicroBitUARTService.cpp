@@ -55,6 +55,14 @@ void on_confirmation(uint16_t handle)
 }
 
 /**
+ * Callback when a BLE GATT disconnect occurs.
+ */
+static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
+{
+    MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_UART_S_EVT_TX_EMPTY);
+}
+
+/**
  * Constructor for the UARTService.
  * @param _ble an instance of BLEDevice
  * @param rxBufferSize the size of the rxBuffer
@@ -92,6 +100,8 @@ MicroBitUARTService::MicroBitUARTService(BLEDevice &_ble, uint8_t rxBufferSize, 
 
     _ble.gattServer().onDataWritten(this, &MicroBitUARTService::onDataWritten);
     _ble.gattServer().onConfirmationReceived(on_confirmation);
+  
+    _ble.gap().onDisconnection( bleDisconnectionCallback);
 }
 
 /**
