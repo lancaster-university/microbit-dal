@@ -104,7 +104,7 @@ void MicroBitAccelerometerService::accelerometerUpdate(MicroBitEvent)
         accelerometerDataCharacteristicBuffer[1] = accelerometer.getY();
         accelerometerDataCharacteristicBuffer[2] = accelerometer.getZ();
 
-        ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
+//        ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
     }
 }
 
