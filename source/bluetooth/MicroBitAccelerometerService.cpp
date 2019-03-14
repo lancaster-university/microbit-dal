@@ -67,7 +67,7 @@ MicroBitAccelerometerService::MicroBitAccelerometerService(BLEDevice &_ble, Micr
     accelerometerDataCharacteristicHandle = accelerometerDataCharacteristic.getValueHandle();
     accelerometerPeriodCharacteristicHandle = accelerometerPeriodCharacteristic.getValueHandle();
 
-    ble.gattServer().write(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
+    ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
     ble.gattServer().write(accelerometerPeriodCharacteristicHandle, (const uint8_t *)&accelerometerPeriodCharacteristicBuffer, sizeof(accelerometerPeriodCharacteristicBuffer));
 
     ble.onDataWritten(this, &MicroBitAccelerometerService::onDataWritten);
@@ -104,7 +104,10 @@ void MicroBitAccelerometerService::accelerometerUpdate(MicroBitEvent)
         accelerometerDataCharacteristicBuffer[1] = accelerometer.getY();
         accelerometerDataCharacteristicBuffer[2] = accelerometer.getZ();
 
-//        ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
+//        accelerometerPeriodCharacteristicBuffer = accelerometer.getPeriod();
+//        ble.gattServer().write(accelerometerPeriodCharacteristicHandle, (const uint8_t *)&accelerometerPeriodCharacteristicBuffer, sizeof(accelerometerPeriodCharacteristicBuffer));
+
+        ble.gattServer().notify(accelerometerDataCharacteristicHandle,(uint8_t *)accelerometerDataCharacteristicBuffer, sizeof(accelerometerDataCharacteristicBuffer));
     }
 }
 
