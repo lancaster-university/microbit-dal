@@ -83,21 +83,21 @@ MicroBitAccelerometer& MicroBitAccelerometer::autoDetect(MicroBitI2C &i2c)
     {
 
         // Now, probe for connected peripherals, if none have already been found.
-#if MICROBIT_DEVICE_ENABLED_MMA3110
+#ifdef MICROBIT_DEVICE_ENABLED_MMA3110
         if (MMA8653::isDetected(i2c)) {
             CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, true, COORDINATE_SPACE_ROTATED_0));
             MicroBitPin int1(MICROBIT_ID_IO_INT1, P0_28, PIN_CAPABILITY_STANDARD);
             MicroBitAccelerometer::detectedAccelerometer = new MMA8653(i2c, int1, coordinateSpace);
         } else
 #endif
-#if  MICROBIT_DEVICE_ENABLED_LSM303
+#ifdef  MICROBIT_DEVICE_ENABLED_LSM303
         if (LSM303Accelerometer::isDetected(i2c)){
             CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, true, COORDINATE_SPACE_ROTATED_0));
             MicroBitPin int1(MICROBIT_ID_IO_INT1, P0_28, PIN_CAPABILITY_STANDARD);
             MicroBitAccelerometer::detectedAccelerometer = new LSM303Accelerometer(i2c, int1, coordinateSpace);
         } else
 #endif
-#if MICROBIT_DEVICE_ENABLED_FXOS8700
+#ifdef MICROBIT_DEVICE_ENABLED_FXOS8700
         if (FXOS8700::isDetected(i2c))
         {
             CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, true, COORDINATE_SPACE_ROTATED_0));
@@ -118,7 +118,7 @@ MicroBitAccelerometer& MicroBitAccelerometer::autoDetect(MicroBitI2C &i2c)
 
         else
 #endif
-#if MICROBIT_DEVICE_ENABLED_BMX055
+#ifdef MICROBIT_DEVICE_ENABLED_BMX055
         if (BMX055Accelerometer::isDetected(i2c)) {
             // the Calliope mini coordinate space is rotated by 90 degrees and not upside down as micro:bit
             CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, false, COORDINATE_SPACE_ROTATED_180));
@@ -168,7 +168,7 @@ int MicroBitAccelerometer::update()
     MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
 
     return MICROBIT_OK;
-};
+}
 
 /**
   * A service function.

@@ -116,7 +116,7 @@ int BMX055Accelerometer::configure() {
     // Now configure the accelerometer accordingly.
 
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_BGW_SOFTRESET, 0xB6)); // reset accelerometer
-    wait_ms(100);
+    fiber_sleep(100);// wait_ms(100);
 
     // configure accelerometer
     I2C_CHECK(i2c.writeRegister(address, BMX055_A_PMU_RANGE, sampleRange & 0x0F)); // Set accelerometer full range
@@ -217,7 +217,7 @@ void BMX055Accelerometer::idleTick() {
  */
 int BMX055Accelerometer::isDetected(MicroBitI2C &i2c, uint16_t address) {
     i2c.writeRegister(address, BMX055_A_BGW_SOFTRESET, 0xB6);
-    wait_ms(100);
+    fiber_sleep(100);// wait_ms(100);
     return i2c.readRegister(address, BMX055_A_WHOAMI) == BMX055_A_WHOAMI_VAL;
 }
 

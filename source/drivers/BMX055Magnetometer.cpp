@@ -92,9 +92,9 @@ int BMX055Magnetometer::configure() {
 
     // Softreset magnetometer, ends up in sleep mode, so wake up afterwards
     I2C_CHECK(i2c.writeRegister(BMX055_M_DEFAULT_ADDR, BMX055_M_PWR_CNTL1, 0x82));
-    wait_ms(100);
+    fiber_sleep(100);//wait_ms(100);
     I2C_CHECK(i2c.writeRegister(BMX055_M_DEFAULT_ADDR, BMX055_M_PWR_CNTL1, 0x01));
-    wait_ms(100);
+    fiber_sleep(100);//wait_ms(100);
 
     I2C_CHECK(i2c.writeRegister(BMX055_M_DEFAULT_ADDR, BMX055_M_PWR_CNTL2, samplePeriod << 3));
     I2C_CHECK(i2c.writeRegister(BMX055_M_DEFAULT_ADDR, BMX055_M_INT_EN_2,
@@ -262,7 +262,7 @@ void BMX055Magnetometer::idleTick() {
  */
 int BMX055Magnetometer::isDetected(MicroBitI2C &i2c, uint16_t address) {
     I2C_CHECK(i2c.writeRegister(BMX055_M_DEFAULT_ADDR, BMX055_M_PWR_CNTL1, 0x01));
-    wait_ms(100);
+    fiber_sleep(100);// wait_ms(100);
     return i2c.readRegister(address, BMX055_M_WHOAMI) == BMX055_M_WHOAMI_VAL;
 }
 
