@@ -1,3 +1,4 @@
+//todo changes
 /*
 The MIT License (MIT)
 
@@ -150,7 +151,7 @@ int BMX055Magnetometer::configure() {
 //    I2C_CHECK(i2c.readRegister(BMX055_A_DEFAULT_ADDR, BMX055_A_OFC_OFFSET_Y, &offset[1], 1));
 //    I2C_CHECK(i2c.readRegister(BMX055_A_DEFAULT_ADDR, BMX055_A_OFC_OFFSET_Z, &offset[2], 1));
 //    if (offset[0] || offset[1] || offset[2]) {
-        // disable microbit calibration if the accelerometer is already calibrated
+    // disable microbit calibration if the accelerometer is already calibrated
 //        setCalibration(CompassCalibration());
 //    }
 
@@ -212,24 +213,24 @@ int BMX055Magnetometer::requestUpdate() {
 
         // calculate temperature compensated 16-bit magnetic fields
         temp = ((int16_t) (((uint16_t) ((((int32_t) dig_xyz1) << 14) / (data_r != 0 ? data_r : dig_xyz1))) -
-                           ((uint16_t) 0x4000)));
+                ((uint16_t) 0x4000)));
         x = ((int16_t) ((((int32_t) mdata_x) *
-                         ((((((((int32_t) dig_xy2) * ((((int32_t) temp) * ((int32_t) temp)) >> 7)) +
-                              (((int32_t) temp) * ((int32_t) (((int16_t) dig_xy1) << 7)))) >> 9) +
-                            ((int32_t) 0x100000)) * ((int32_t) (((int16_t) dig_x2) + ((int16_t) 0xA0)))) >> 12))
+                ((((((((int32_t) dig_xy2) * ((((int32_t) temp) * ((int32_t) temp)) >> 7)) +
+                        (((int32_t) temp) * ((int32_t) (((int16_t) dig_xy1) << 7)))) >> 9) +
+                   ((int32_t) 0x100000)) * ((int32_t) (((int16_t) dig_x2) + ((int16_t) 0xA0)))) >> 12))
                 >> 13)) +
             (((int16_t) dig_x1) << 3);
 
         temp = ((int16_t) (((uint16_t) ((((int32_t) dig_xyz1) << 14) / (data_r != 0 ? data_r : dig_xyz1))) -
-                           ((uint16_t) 0x4000)));
+                ((uint16_t) 0x4000)));
         y = ((int16_t) ((((int32_t) mdata_y) *
-                         ((((((((int32_t) dig_xy2) * ((((int32_t) temp) * ((int32_t) temp)) >> 7)) +
-                              (((int32_t) temp) * ((int32_t) (((int16_t) dig_xy1) << 7)))) >> 9) +
-                            ((int32_t) 0x100000)) * ((int32_t) (((int16_t) dig_y2) + ((int16_t) 0xA0)))) >> 12))
+                ((((((((int32_t) dig_xy2) * ((((int32_t) temp) * ((int32_t) temp)) >> 7)) +
+                        (((int32_t) temp) * ((int32_t) (((int16_t) dig_xy1) << 7)))) >> 9) +
+                   ((int32_t) 0x100000)) * ((int32_t) (((int16_t) dig_y2) + ((int16_t) 0xA0)))) >> 12))
                 >> 13)) +
             (((int16_t) dig_y1) << 3);
         z = (((((int32_t) (mdata_z - dig_z4)) << 15) - ((((int32_t) dig_z3) * ((int32_t) (((int16_t) data_r) -
-                                                                                          ((int16_t) dig_xyz1))))
+                ((int16_t) dig_xyz1))))
                 >> 2)) /
              (dig_z2 + ((int16_t) (((((int32_t) dig_z1) * ((((int16_t) data_r) << 1))) + (1 << 15)) >> 16))));
 
