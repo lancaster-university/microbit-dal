@@ -117,3 +117,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(ble-nrf51822 PRIVATE "-w")
     target_compile_options(nrf51-sdk PRIVATE "-w")
 endif()
+
+if (YOTTA_CFG_MICROBIT_DAL_CUSTOM_CMAKE_SOURCE)
+include ("${YOTTA_CFG_MICROBIT_DAL_CUSTOM_CMAKE_SOURCE}")
+endif ()
