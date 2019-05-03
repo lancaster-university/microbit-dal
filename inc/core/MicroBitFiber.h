@@ -88,7 +88,7 @@ struct Fiber
     uint32_t context;                   // Context specific information.
     uint32_t flags;                     // Information about this fiber.
     Fiber **queue;                      // The queue this fiber is stored on.
-    Fiber *next, *prev;                 // Position of this Fiber on the run queue.
+    Fiber *next;                        // Position of this Fiber on the run queue.
 };
 
 extern Fiber *currentFiber;

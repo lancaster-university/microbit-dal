@@ -89,7 +89,6 @@ void queue_fiber(Fiber *f, Fiber **queue)
     if (*queue == NULL)
     {
         f->next = NULL;
-        f->prev = NULL;
         *queue = f;
     }
     else
@@ -102,7 +101,6 @@ void queue_fiber(Fiber *f, Fiber **queue)
             last = last->next;
 
         last->next = f;
-        f->prev = last;
         f->next = NULL;
     }
 
@@ -120,23 +118,30 @@ void dequeue_fiber(Fiber *f)
     if (f->queue == NULL)
         return;
 
-    // Remove this fiber fromm whichever queue it is on.
     __disable_irq();
 
-    if (f->prev != NULL)
-        f->prev->next = f->next;
-    else
+    if (*(f->queue) == f)
+    {
+        // Remove the fiber from the head of the queue
         *(f->queue) = f->next;
+    }
+    else
+    {
+        Fiber *prev = *(f->queue);
 
-    if(f->next)
-        f->next->prev = f->prev;
+        // Scan for the given fiber in its queue
+        while(prev->next != f)
+            prev = prev->next;
 
+        // Remove the fiber
+        prev->next = f->next;
+    }
+
+    // Ensure old linkage is cleared
     f->next = NULL;
-    f->prev = NULL;
     f->queue = NULL;
 
     __enable_irq();
-
 }
 
 /**
