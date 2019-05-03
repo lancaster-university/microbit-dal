@@ -149,6 +149,12 @@ extern uint32_t __etext;
 #define SYSTEM_TICK_PERIOD_MS                   6
 #endif
 
+// Initial FiberTable size
+// Defines the initial size of the Fiber table. This will grow automatially if more Fibers are created.
+#ifndef INITIAL_FIBER_TABLE_SIZE
+#define INITIAL_FIBER_TABLE_SIZE                4
+#endif
+
 //
 // Message Bus:
 // Default behaviour for event handlers, if not specified in the listen() call

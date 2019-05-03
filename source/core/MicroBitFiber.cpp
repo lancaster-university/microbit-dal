@@ -42,7 +42,7 @@ DEALINGS IN THE SOFTWARE.
 Fiber *currentFiber = NULL;                        // The context in which the current fiber is executing.
 static Fiber *forkedFiber = NULL;                  // The context in which a newly created child fiber is executing.
 static Fiber *idleFiber = NULL;                    // the idle task - performs a power efficient sleep, and system maintenance tasks.
-
+static FiberTable *fiberTable = NULL;              // Table of all active Fibers.
 /*
  * Scheduler state.
  */
@@ -145,6 +145,16 @@ void dequeue_fiber(Fiber *f)
 }
 
 /**
+  * Provides a list of all active fibers.
+  * 
+  * @return A pointer to a FiberTable structure containing the list of currently active fibers.
+  */
+const FiberTable * get_fiber_table()
+{
+    return (const FiberTable *) fiberTable;
+}
+
+/**
   * Allocates a fiber from the fiber pool if availiable. Otherwise, allocates a new one from the heap.
   */
 Fiber *getFiberContext()
@@ -176,6 +186,38 @@ Fiber *getFiberContext()
     f->flags = 0;
     f->tcb.stack_base = CORTEX_M0_STACK_BASE;
 
+    // Add the new Fiber to the FiberTable
+    __disable_irq();
+    if (fiberTable->length == fiberTable->capacity)
+    {
+        // Create the FiberTable.
+        FiberTable *newTable = (FiberTable *) realloc(fiberTable, sizeof(FiberTable) + sizeof(Fiber *) * (fiberTable->capacity + INITIAL_FIBER_TABLE_SIZE));
+        
+        if (newTable == NULL)
+        {
+            free(f);
+            __enable_irq();
+            return NULL;
+        }
+
+        memclr(&newTable->table[newTable->capacity], sizeof(Fiber *) * INITIAL_FIBER_TABLE_SIZE);
+        newTable->capacity += INITIAL_FIBER_TABLE_SIZE;
+
+        fiberTable = newTable;
+    }
+
+    // Fill from the front
+    for (int i=0; i<fiberTable->capacity; i++)
+    {
+        if (fiberTable->table[i] == NULL)
+        {
+            fiberTable->table[i] = f;
+            fiberTable->length++;
+            break;
+        }
+    }
+    __enable_irq();
+
     return f;
 }
 
@@ -197,6 +239,12 @@ void scheduler_init(EventModel &_messageBus)
 	// Store a reference to the messageBus provided.
 	// This parameter will be NULL if we're being run without a message bus.
 	messageBus = &_messageBus;
+
+    // Create the FiberTable.
+    fiberTable = (FiberTable *) malloc(sizeof(FiberTable) + sizeof(Fiber *) * INITIAL_FIBER_TABLE_SIZE);
+    memclr(&fiberTable->table[0], sizeof(Fiber *) * INITIAL_FIBER_TABLE_SIZE);
+    fiberTable->capacity = INITIAL_FIBER_TABLE_SIZE;
+    fiberTable->length = 0;
 
     // Create a new fiber context
     currentFiber = getFiberContext();
@@ -717,6 +765,16 @@ void release_fiber(void)
 
     // Add ourselves to the list of free fibers
     queue_fiber(currentFiber, &fiberPool);
+
+    // Remove the fiber from the FiberTable.
+    for (int i=0; i<fiberTable->capacity; i++)
+    {
+        if (fiberTable->table[i] == currentFiber)
+        {
+            fiberTable->table[i] = NULL;
+            fiberTable->length--;
+        }
+    }
 
     // Find something else to do!
     schedule();

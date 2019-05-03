@@ -91,6 +91,13 @@ struct Fiber
     Fiber *next;                        // Position of this Fiber on the run queue.
 };
 
+struct FiberTable
+{
+    uint16_t  length;                  // The number of live fibers in the table (n.b. the table may be non-contiguous).
+    uint16_t  capacity;                // The capacity of the FiberTable (n.b. This is not the same as the number of allocated Fibers).
+
+    Fiber *   table[0];                // List of all Fibers in the system. May be non-contiguous. Unused entries are listed as NULL.
+};
 extern Fiber *currentFiber;
 
 
@@ -110,6 +117,13 @@ void scheduler_init(EventModel &_messageBus);
   * @return 1 if the fber scheduler is running, 0 otherwise.
   */
 int fiber_scheduler_running();
+
+/**
+  * Provides a list of all active fibers.
+  * 
+  * @return A pointer to a FiberTable structure containing the list of currently active fibers.
+  */
+const FiberTable * get_fiber_table();
 
 /**
   * Exit point for all fibers.
