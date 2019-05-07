@@ -301,6 +301,8 @@ void PeridoBridge::enable()
     // configure an event for SLIP_END
     serial.eventOn((char)SLIP_END);
 
+    serial.baud(57600);
+
     sendHelloPacket();
 
     // listen to everything.
