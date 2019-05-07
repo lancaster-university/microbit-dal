@@ -160,6 +160,13 @@ extern uint32_t __etext;
 #define MICROBIT_FIBER_USER_DATA                0
 #endif
 
+// Maximum size of the FiberPool
+// Defines the size that the pool of unused Fiber contexts is permitted to grow to. After this point, memory
+// from unused Fiber contexts will be restored to the Heap Allocator.
+#ifndef MICROBIT_FIBER_MAXIMUM_FIBER_POOL_SIZE
+#define MICROBIT_FIBER_MAXIMUM_FIBER_POOL_SIZE  3
+#endif
+
 //
 // Message Bus:
 // Default behaviour for event handlers, if not specified in the listen() call

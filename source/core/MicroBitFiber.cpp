@@ -765,14 +765,13 @@ void release_fiber(void *)
   */
 void release_fiber(void)
 {
+    int fiberPoolSize = 0;
+
     if (!fiber_scheduler_running())
 		return;
 
     // Remove ourselves form the runqueue.
     dequeue_fiber(currentFiber);
-
-    // Add ourselves to the list of free fibers
-    queue_fiber(currentFiber, &fiberPool);
 
     // Remove the fiber from the FiberTable.
     for (int i=0; i<fiberTable->capacity; i++)
@@ -783,6 +782,23 @@ void release_fiber(void)
             fiberTable->length--;
         }
     }
+
+    // Scan the FiberPool and release memory to the heap if it is full.
+    for (Fiber *p = fiberPool; p; p = p->next) 
+        fiberPoolSize++;
+
+    while (fiberPoolSize > MICROBIT_FIBER_MAXIMUM_FIBER_POOL_SIZE)
+    {
+        // Release Fiber contexts from the head of the FiberPool.
+        Fiber *p = fiberPool;
+        fiberPool = p->next;
+        free((void *)p->stack_bottom);
+        free(p);
+        fiberPoolSize--;
+    }
+
+    // Add ourselves to the list of free fibers
+    queue_fiber(currentFiber, &fiberPool);
 
     // Find something else to do!
     schedule();
