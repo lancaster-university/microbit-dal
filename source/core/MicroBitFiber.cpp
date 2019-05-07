@@ -415,6 +415,13 @@ static Fiber* handle_fob()
   */
 void fiber_sleep(unsigned long t)
 {
+    // If the scheduler is not running, then simply perform a spin wait and exit.
+    if (!fiber_scheduler_running())
+    {
+        wait_ms(t);
+        return;
+    }
+
     // Fork a new fiber if necessary
     Fiber *f = handle_fob();
 
