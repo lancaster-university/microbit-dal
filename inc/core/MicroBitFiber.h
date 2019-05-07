@@ -51,6 +51,12 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_FIBER_FLAG_CHILD           0x04
 #define MICROBIT_FIBER_FLAG_DO_NOT_PAGE     0x08
 
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+#define HAS_THREAD_USER_DATA (currentFiber->user_data != NULL)
+#else
+#define HAS_THREAD_USER_DATA false
+#endif
+
 /**
   *  Thread Context for an ARM Cortex M0 core.
   *
@@ -89,6 +95,10 @@ struct Fiber
     uint32_t flags;                     // Information about this fiber.
     Fiber **queue;                      // The queue this fiber is stored on.
     Fiber *next;                        // Position of this Fiber on the run queue.
+
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    void *user_data;                            // Optional pointer to user defined data block.
+#endif
 };
 
 struct FiberTable

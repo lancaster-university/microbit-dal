@@ -186,6 +186,10 @@ Fiber *getFiberContext()
     f->flags = 0;
     f->tcb.stack_base = CORTEX_M0_STACK_BASE;
 
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    f->user_data = 0;
+#endif
+
     // Add the new Fiber to the FiberTable
     __disable_irq();
     if (fiberTable->length == fiberTable->capacity)
@@ -367,6 +371,37 @@ void scheduler_event(MicroBitEvent evt)
         messageBus->ignore(evt.source, evt.value, scheduler_event);
 }
 
+/**
+ * Internal utility function to perform a fork operation on the current fiber, and return
+ * the current fibers context to the point at which it was checkpointed.
+ * 
+ * This function is called whenever a fiber requests a "Fork on Block" behaviour and a
+ * blocking call to the scheduler is requested.
+ */
+static Fiber* handle_fob()
+{
+    Fiber *f = currentFiber;
+
+    // This is a blocking call, so if we're in a fork on block context,
+    // it's time to spawn a new fiber...
+    if (f->flags & MICROBIT_FIBER_FLAG_FOB)
+    {
+        // Allocate a TCB from the new fiber. This will come from the tread pool if availiable,
+        // else a new one will be allocated on the heap.
+        forkedFiber = getFiberContext();
+        
+        // If we're out of memory, there's nothing we can do.
+        // keep running in the context of the current thread as a best effort.
+        if (forkedFiber != NULL) {
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+            forkedFiber->user_data = f->user_data;
+            f->user_data = NULL;
+#endif
+            f = forkedFiber;
+        }
+    }
+    return f;
+}
 
 /**
   * Blocks the calling thread for the given period of time.
@@ -380,28 +415,8 @@ void scheduler_event(MicroBitEvent evt)
   */
 void fiber_sleep(unsigned long t)
 {
-    Fiber *f = currentFiber;
-
-    // If the scheduler is not running, then simply perform a spin wait and exit.
-    if (!fiber_scheduler_running())
-    {
-        wait_ms(t);
-        return;
-    }
-
-    // Sleep is a blocking call, so if we're in a fork on block context,
-    // it's time to spawn a new fiber...
-    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
-    {
-        // Allocate a new fiber. This will come from the fiber pool if availiable,
-        // else a new one will be allocated on the heap.
-        forkedFiber = getFiberContext();
-
-        // If we're out of memory, there's nothing we can do.
-        // keep running in the context of the current thread as a best effort.
-        if (forkedFiber != NULL)
-                f = forkedFiber;
-    }
+    // Fork a new fiber if necessary
+    Fiber *f = handle_fob();
 
     // Calculate and store the time we want to wake up.
     f->context = system_timer_current_time() + t;
@@ -465,29 +480,11 @@ int fiber_wait_for_event(uint16_t id, uint16_t value)
   */
 int fiber_wake_on_event(uint16_t id, uint16_t value)
 {
-    Fiber *f = currentFiber;
-
 	if (messageBus == NULL || !fiber_scheduler_running())
 		return MICROBIT_NOT_SUPPORTED;
 
-    // Sleep is a blocking call, so if we're in a fork on block context,
-    // it's time to spawn a new fiber...
-    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
-    {
-        // Allocate a TCB from the new fiber. This will come from the tread pool if availiable,
-        // else a new one will be allocated on the heap.
-        forkedFiber = getFiberContext();
-
-        // If we're out of memory, there's nothing we can do.
-        // keep running in the context of the current thread as a best effort.
-        if (forkedFiber != NULL)
-        {
-            f = forkedFiber;
-            dequeue_fiber(f);
-            queue_fiber(f, &runQueue);
-            schedule();
-        }
-    }
+    // Fork a new fiber if necessary
+    Fiber *f = handle_fob();
 
     // Encode the event data in the context field. It's handy having a 32 bit core. :-)
     f->context = value << 16 | id;
@@ -503,6 +500,9 @@ int fiber_wake_on_event(uint16_t id, uint16_t value)
     if (id != MICROBIT_ID_NOTIFY && id != MICROBIT_ID_NOTIFY_ONE)
         messageBus->listen(id, value, scheduler_event, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
+    // NOTE: We intentionally don't re-enter the scheduler here, such that this function
+    // can be used to create atomic wait events. if using this function, the calling thread MUST
+    // call schedule() as its next call to the scheduler.
     return MICROBIT_OK;
 }
 
@@ -528,7 +528,7 @@ int invoke(void (*entry_fn)(void))
     if (!fiber_scheduler_running())
 		return MICROBIT_NOT_SUPPORTED;
 
-    if (currentFiber->flags & MICROBIT_FIBER_FLAG_FOB)
+    if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD) || HAS_THREAD_USER_DATA)
     {
         // If we attempt a fork on block whilst already in  fork n block context,
         // simply launch a fiber to deal with the request and we're done.
@@ -557,6 +557,10 @@ int invoke(void (*entry_fn)(void))
     // spawn a thread to deal with it.
     currentFiber->flags |= MICROBIT_FIBER_FLAG_FOB;
     entry_fn();
+
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    currentFiber->user_data = 0;
+#endif
     currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
 
     // If this is is an exiting fiber that for spawned to handle a blocking call, recycle it.
@@ -591,7 +595,7 @@ int invoke(void (*entry_fn)(void *), void *param)
     if (!fiber_scheduler_running())
 		return MICROBIT_NOT_SUPPORTED;
 
-    if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD))
+    if (currentFiber->flags & (MICROBIT_FIBER_FLAG_FOB | MICROBIT_FIBER_FLAG_PARENT | MICROBIT_FIBER_FLAG_CHILD) || HAS_THREAD_USER_DATA)
     {
         // If we attempt a fork on block whilst already in a fork on block context,
         // simply launch a fiber to deal with the request and we're done.
@@ -620,6 +624,10 @@ int invoke(void (*entry_fn)(void *), void *param)
     // spawn a thread to deal with it.
     currentFiber->flags |= MICROBIT_FIBER_FLAG_FOB;
     entry_fn(param);
+
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    currentFiber->user_data = 0;
+#endif
     currentFiber->flags &= ~MICROBIT_FIBER_FLAG_FOB;
 
     // If this is is an exiting fiber that for spawned to handle a blocking call, recycle it.
