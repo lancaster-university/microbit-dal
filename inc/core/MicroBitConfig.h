@@ -149,12 +149,6 @@ extern uint32_t __etext;
 #define SYSTEM_TICK_PERIOD_MS                   6
 #endif
 
-// Initial FiberTable size
-// Defines the initial size of the Fiber table. This will grow automatially if more Fibers are created.
-#ifndef INITIAL_FIBER_TABLE_SIZE
-#define INITIAL_FIBER_TABLE_SIZE                4
-#endif
-
 // Enable used_data field in Fiber structure (for thread-local data)
 #ifndef MICROBIT_FIBER_USER_DATA
 #define MICROBIT_FIBER_USER_DATA                0

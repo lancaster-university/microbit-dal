@@ -42,7 +42,6 @@ DEALINGS IN THE SOFTWARE.
 Fiber *currentFiber = NULL;                        // The context in which the current fiber is executing.
 static Fiber *forkedFiber = NULL;                  // The context in which a newly created child fiber is executing.
 static Fiber *idleFiber = NULL;                    // the idle task - performs a power efficient sleep, and system maintenance tasks.
-static FiberTable *fiberTable = NULL;              // Table of all active Fibers.
 /*
  * Scheduler state.
  */
@@ -50,6 +49,7 @@ static Fiber *runQueue = NULL;                     // The list of runnable fiber
 static Fiber *sleepQueue = NULL;                   // The list of blocked fibers waiting on a fiber_sleep() operation.
 static Fiber *waitQueue = NULL;                    // The list of blocked fibers waiting on an event.
 static Fiber *fiberPool = NULL;                    // Pool of unused fibers, just waiting for a job to do.
+static Fiber *fiberList = NULL;                    // List of all active Fibers (excludes those in the fiberPool)
 
 /*
  * Scheduler wide flags
@@ -147,11 +147,11 @@ void dequeue_fiber(Fiber *f)
 /**
   * Provides a list of all active fibers.
   * 
-  * @return A pointer to a FiberTable structure containing the list of currently active fibers.
+  * @return A pointer to the head of the list of all active fibers.
   */
-const FiberTable * get_fiber_table()
+Fiber * get_fiber_list()
 {
-    return (const FiberTable *) fiberTable;
+    return fiberList;
 }
 
 /**
@@ -190,36 +190,10 @@ Fiber *getFiberContext()
     f->user_data = 0;
 #endif
 
-    // Add the new Fiber to the FiberTable
+    // Add the new Fiber to the list of all fibers
     __disable_irq();
-    if (fiberTable->length == fiberTable->capacity)
-    {
-        // Create the FiberTable.
-        FiberTable *newTable = (FiberTable *) realloc(fiberTable, sizeof(FiberTable) + sizeof(Fiber *) * (fiberTable->capacity + INITIAL_FIBER_TABLE_SIZE));
-        
-        if (newTable == NULL)
-        {
-            free(f);
-            __enable_irq();
-            return NULL;
-        }
-
-        memclr(&newTable->table[newTable->capacity], sizeof(Fiber *) * INITIAL_FIBER_TABLE_SIZE);
-        newTable->capacity += INITIAL_FIBER_TABLE_SIZE;
-
-        fiberTable = newTable;
-    }
-
-    // Fill from the front
-    for (int i=0; i<fiberTable->capacity; i++)
-    {
-        if (fiberTable->table[i] == NULL)
-        {
-            fiberTable->table[i] = f;
-            fiberTable->length++;
-            break;
-        }
-    }
+    f->fiber_list_next = fiberList;
+    fiberList = f;
     __enable_irq();
 
     return f;
@@ -243,12 +217,6 @@ void scheduler_init(EventModel &_messageBus)
 	// Store a reference to the messageBus provided.
 	// This parameter will be NULL if we're being run without a message bus.
 	messageBus = &_messageBus;
-
-    // Create the FiberTable.
-    fiberTable = (FiberTable *) malloc(sizeof(FiberTable) + sizeof(Fiber *) * INITIAL_FIBER_TABLE_SIZE);
-    memclr(&fiberTable->table[0], sizeof(Fiber *) * INITIAL_FIBER_TABLE_SIZE);
-    fiberTable->capacity = INITIAL_FIBER_TABLE_SIZE;
-    fiberTable->length = 0;
 
     // Create a new fiber context
     currentFiber = getFiberContext();
@@ -780,16 +748,6 @@ void release_fiber(void)
     // Remove ourselves form the runqueue.
     dequeue_fiber(currentFiber);
 
-    // Remove the fiber from the FiberTable.
-    for (int i=0; i<fiberTable->capacity; i++)
-    {
-        if (fiberTable->table[i] == currentFiber)
-        {
-            fiberTable->table[i] = NULL;
-            fiberTable->length--;
-        }
-    }
-
     // Scan the FiberPool and release memory to the heap if it is full.
     for (Fiber *p = fiberPool; p; p = p->next) 
         fiberPoolSize++;
@@ -806,6 +764,30 @@ void release_fiber(void)
 
     // Add ourselves to the list of free fibers
     queue_fiber(currentFiber, &fiberPool);
+
+    // Remove the fiber from the list of active fibers
+    __disable_irq();
+    if (fiberList == currentFiber)
+    {
+        fiberList = fiberList->fiber_list_next;
+    }
+    else
+    {
+        Fiber *p = fiberList;
+
+        while (p)
+        {
+            if (p->fiber_list_next == currentFiber)
+            {
+                p->fiber_list_next = currentFiber->fiber_list_next;
+                break;
+            }
+
+            p = p->fiber_list_next;
+        }
+    }
+    __enable_irq();
+
 
     // Find something else to do!
     schedule();
