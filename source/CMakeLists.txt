@@ -86,16 +86,14 @@ if (YOTTA_CFG_MICROBIT_CONFIGFILE)
 endif ()
 
 if(CMAKE_COMPILER_IS_GNUCC)
-  file(REMOVE "asm/CortexContextSwitch.s")
-  configure_file("asm/CortexContextSwitch.s.gcc" "asm/CortexContextSwitch.s" COPYONLY)
+  set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
+    "asm/TOOLCHAIN_GCC_ARM/CortexContextSwitch.s"
+  )
 else()
-  file(REMOVE "asm/CortexContextSwitch.s")
-  configure_file("asm/CortexContextSwitch.s.armcc" "asm/CortexContextSwitch.s" COPYONLY)
+  set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
+    "asm/TOOLCHAIN_ARM_STD/CortexContextSwitch.S"
+  )
 endif()
-
-set(YOTTA_AUTO_MICROBIT-DAL_S_FILES
-    "asm/CortexContextSwitch.s"
-)
 
 add_library(microbit-dal
     ${YOTTA_AUTO_MICROBIT-DAL_CPP_FILES}
