@@ -117,29 +117,29 @@ extern void log_num(int num);
 #define RADIO_STATUS_RX_EN          0x00000001      // reception is enabled
 #define RADIO_STATUS_RX_RDY         0x00000002      // available to receive packets
 
-#define RADIO_STATUS_TX_EN          0x00000008      // transmission is enabled
-#define RADIO_STATUS_TX_RDY         0x00000010      // transmission is ready
-#define RADIO_STATUS_TX_ST          0x00000020      // transmission has begun
-#define RADIO_STATUS_TX_END         0x00000040      // transmission has finished
+#define RADIO_STATUS_DISABLE        0x00000004      // the radio should be disabled
+#define RADIO_STATUS_DISABLED       0x00000008      // the radio is disabled
 
-#define RADIO_STATUS_DISABLE        0x00000080      // the radio should be disabled
-#define RADIO_STATUS_DISABLED       0x00000100      // the radio is disabled
+#define RADIO_STATUS_TX_EN          0x00000010      // transmission is enabled
+#define RADIO_STATUS_TX_RDY         0x00000020      // transmission is ready
+#define RADIO_STATUS_TX_ST          0x00000040      // transmission has begun
+#define RADIO_STATUS_TX_END         0x00000080      // transmission has finished
 
 // high level actions
 #define HIGH_LEVEL_STATE_MASK               0xFFFF0000      // a mask for removing or retaining high level state
 
-#define RADIO_STATUS_TRANSMIT               0x00020000      // moving into transmit mode to send a packet.
-#define RADIO_STATUS_FORWARD                0x00040000      // actively forwarding any received packets
-#define RADIO_STATUS_RECEIVING              0x00080000      // in the act of currently receiving a packet.
-#define RADIO_STATUS_STORE                  0x00100000      // indicates the storage of the rx'd packet is required.
-#define RADIO_STATUS_DISCOVERING            0x00200000      // listening for packets after powering on, prevents sleeping in rx mode.
-#define RADIO_STATUS_SLEEPING               0x00400000      // indicates that the window of transmission has passed, and we have entered sleep mode.
-#define RADIO_STATUS_WAKE_CONFIGURED        0x00800000
-#define RADIO_STATUS_EXPECT_RESPONSE        0x01000000
-#define RADIO_STATUS_FIRST_PACKET           0x02000000
-#define RADIO_STATUS_SAMPLING               0x04000000
-#define RADIO_STATUS_DIRECTING              0x08000000
-#define RADIO_STATUS_QUEUE_KEEP_ALIVE       0x10000000
+#define RADIO_STATUS_TRANSMIT               0x00000100      // moving into transmit mode to send a packet.
+#define RADIO_STATUS_FORWARD                0x00000200      // actively forwarding any received packets
+#define RADIO_STATUS_RECEIVING              0x00000400      // in the act of currently receiving a packet.
+#define RADIO_STATUS_STORE                  0x00000800      // indicates the storage of the rx'd packet is required.
+#define RADIO_STATUS_DISCOVERING            0x00001000      // listening for packets after powering on, prevents sleeping in rx mode.
+#define RADIO_STATUS_SLEEPING               0x00002000      // indicates that the window of transmission has passed, and we have entered sleep mode.
+#define RADIO_STATUS_WAKE_CONFIGURED        0x00004000
+#define RADIO_STATUS_EXPECT_RESPONSE        0x00008000
+#define RADIO_STATUS_FIRST_PACKET           0x00010000
+#define RADIO_STATUS_SAMPLING               0x00020000
+#define RADIO_STATUS_DIRECTING              0x00040000
+#define RADIO_STATUS_QUEUE_KEEP_ALIVE       0x00080000
 
 /**
  *  Timings for each event (us):
@@ -241,7 +241,7 @@ uint32_t radio_pointer = 0;
 #define PERIDO_SET_FLAGS(flags) do {                        \
                             target_disable_irq();       \
                             PERIDO_SET_FLAGS((flags);     \
-                            radio_state[radio_pointer] = radio_status | (__LINE__ << 16) | 1 << 31;  \
+                            radio_state[radio_pointer] = radio_status | (__LINE__ << 20) | 1 << 31;  \
                             target_enable_irq();        \
                             radio_pointer = (radio_pointer + 1) % PHYS_STATE_SIZE;    \
                             }while(0)
@@ -249,7 +249,7 @@ uint32_t radio_pointer = 0;
 #define PERIDO_UNSET_FLAGS(flags) do {                          \
                                 target_disable_irq();       \
                                 PERIDO_UNSET_FLAGS(flags);    \
-                                radio_state[radio_pointer] = radio_status | (__LINE__ << 16); \
+                                radio_state[radio_pointer] = radio_status | (__LINE__ << 20); \
                                 target_enable_irq();        \
                                 radio_pointer = (radio_pointer + 1) % PHYS_STATE_SIZE;    \
                               }while(0)
