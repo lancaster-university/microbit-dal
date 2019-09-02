@@ -86,9 +86,15 @@ MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 #warning sleep is disabled.
 #endif
 
+#define DISABLE_STORING // if def'd the driver will never go to sleep.
+#ifdef DISABLE_STORING
+#warning storing is disabled.
+#endif
+
+
 // #define TRACE_CRC_FAIL
-// #define TRACE_WAKE
-// #define TRACE_TX // if enabled, disabled debug will be lost
+#define TRACE_WAKE
+#define TRACE_TX
 #define TRACE
 
 #ifdef TRACE
@@ -97,11 +103,13 @@ MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 extern void set_rx_gpio(int);
 extern void set_tx_enable_gpio(int);
 extern void set_transmit_gpio(int);
-extern void set_fwd_crc_gpio(int);
-extern void set_store_gpio(int);
-extern void set_disable_gpio(int);
+extern void set_fwd_gpio(int);
+extern void set_crc_fail_gpio(int);
+extern void set_store_disable_gpio(int);
 extern void set_tx_callback_gpio(int);
 extern void set_wake_gpio(int);
+extern void set_transmission_reception_gpio(int);
+extern void set_user_placed_gpio(int);
 
 
 extern void packet_debug(PeridoFrameBuffer*);
@@ -117,7 +125,7 @@ extern void log_num(int num);
 #endif
 
 // low level states
-#define LOW_LEVEL_STATE_MASK        0x0000FFFF      // a mask for removing or retaining low level state
+#define LOW_LEVEL_STATE_MASK        0x000000FF      // a mask for removing or retaining low level state
 
 #define RADIO_STATUS_RX_EN          0x00000001      // reception is enabled
 #define RADIO_STATUS_RX_RDY         0x00000002      // available to receive packets
@@ -131,7 +139,7 @@ extern void log_num(int num);
 #define RADIO_STATUS_TX_END         0x00000080      // transmission has finished
 
 // high level actions
-#define HIGH_LEVEL_STATE_MASK               0xFFFF0000      // a mask for removing or retaining high level state
+#define HIGH_LEVEL_STATE_MASK               0x0001FF00      // a mask for removing or retaining high level state
 
 #define RADIO_STATUS_TRANSMIT               0x00000100      // moving into transmit mode to send a packet.
 #define RADIO_STATUS_FORWARD                0x00000200      // actively forwarding any received packets
@@ -261,7 +269,7 @@ uint32_t radio_pointer = 0;
 
 #define PERIDO_LOG_FLAGS(flags) do {                          \
                                 __disable_irq();       \
-                                radio_state[radio_pointer] = radio_status | (__LINE__ << 16); \
+                                radio_state[radio_pointer] = radio_status | (__LINE__ << 20); \
                                 __enable_irq();        \
                                 radio_pointer = (radio_pointer + 1) % PHYS_STATE_SIZE;    \
                               }while(0)
@@ -289,6 +297,8 @@ uint32_t read_and_restart_wake()
 
 void radio_state_machine()
 {
+state_machine_start:
+
     if(radio_status & RADIO_STATUS_DISABLED)
     {
 #ifdef TRACE
@@ -300,8 +310,11 @@ void radio_state_machine()
         NRF_RADIO->EVENTS_END = 0;
         NRF_RADIO->EVENTS_ADDRESS = 0;
 
+        PERIDO_ASSERT(!(radio_status & RADIO_STATUS_TX_EN && radio_status & RADIO_STATUS_RX_EN), radio_status);
+
         if(radio_status & RADIO_STATUS_TX_EN)
         {
+            set_user_placed_gpio(1);
             PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING)), radio_status);
             // WE DON'T WANT THE ADDRESS EVENT
             NRF_RADIO->INTENCLR = 0x0000000A;
@@ -312,10 +325,10 @@ void radio_state_machine()
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_TXEN = 1;
 
-            if (radio_status & RADIO_STATUS_FORWARD)
+            // if (radio_status & RADIO_STATUS_FORWARD)
                 MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_ENABLE_TIME + 200);
-            else
-                MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_ENABLE_TIME);
+            // else
+            //     MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + TX_ENABLE_TIME);
 #ifdef TRACE
 #ifndef TRACE_TX
             set_tx_enable_gpio(0);
@@ -357,14 +370,14 @@ void radio_state_machine()
 
     if(radio_status & RADIO_STATUS_RX_RDY)
     {
-#ifdef TRACE
-        set_rx_gpio(1);
-#endif
-
         PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)), radio_status);
 
         if (NRF_RADIO->EVENTS_READY)
         {
+#ifdef TRACE
+            set_rx_gpio(1);
+#endif
+
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_START = 1;
 
@@ -378,6 +391,10 @@ void radio_state_machine()
         // we get an address event for rx, indicating we are in the process of receiving a packet. Update our status and return;
         if(NRF_RADIO->EVENTS_ADDRESS)
         {
+#ifdef TRACE
+            set_transmission_reception_gpio(1);
+            set_rx_gpio(1);
+#endif
             NRF_RADIO->EVENTS_ADDRESS = 0;
             PERIDO_SET_FLAGS(RADIO_STATUS_RECEIVING);
 
@@ -396,6 +413,11 @@ void radio_state_machine()
             NRF_RADIO->EVENTS_ADDRESS = 0;
             NRF_RADIO->EVENTS_END = 0;
             NRF_RADIO->TASKS_START = 1;
+
+#ifdef TRACE
+            set_transmission_reception_gpio(0);
+            set_rx_gpio(0);
+#endif
 
 #ifndef DISABLE_SLEEP
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
@@ -438,15 +460,13 @@ void radio_state_machine()
             else
             {
                 // check tx here
-#ifdef TRACE_CRC_FAIL
-                set_fwd_crc_gpio(1);
+#ifdef TRACE
+                set_crc_fail_gpio(1);
 #endif
                 MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + FORWARD_POLL_TIME + microbit_random((periods[network_period_idx] / 4) * 2000));
                 crc_fail_count++;
-#ifdef TRACE_CRC_FAIL
-                set_fwd_crc_gpio(0);
-#endif
 #ifdef TRACE
+                set_crc_fail_gpio(0);
                 set_rx_gpio(0);
 #endif
                 return;
@@ -493,6 +513,7 @@ void radio_state_machine()
             NRF_RADIO->PACKETPTR = (uint32_t)p;
             // grab next packet and set pointer
 #ifdef TRACE
+            set_transmission_reception_gpio(1);
 #ifdef TRACE_TX
             set_tx_enable_gpio(1);
 #endif
@@ -510,6 +531,7 @@ void radio_state_machine()
         {
             NRF_RADIO->EVENTS_END = 0;
 #ifdef TRACE
+            set_transmission_reception_gpio(0);
 #ifdef TRACE_TX
             set_tx_enable_gpio(0);
 #endif
@@ -531,14 +553,13 @@ void radio_state_machine()
         PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING)), radio_status);
 
 #ifdef TRACE
-#ifndef TRACE_CRC_FAIL
-        set_fwd_crc_gpio(1);
-#endif
+        set_fwd_gpio(1);
 #endif
         if(radio_status & RADIO_STATUS_TX_END)
         {
             NRF_RADIO->EVENTS_END = 0;
 #ifdef TRACE
+            set_transmission_reception_gpio(0);
 #ifdef TRACE_TX
             set_tx_enable_gpio(0);
 #endif
@@ -546,7 +567,7 @@ void radio_state_machine()
             PERIDO_UNSET_FLAGS(RADIO_STATUS_TX_END | RADIO_STATUS_FORWARD);
             PERIDO_SET_FLAGS(RADIO_STATUS_DISABLE | RADIO_STATUS_RX_EN);
 
-            MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + FORWARD_POLL_TIME + microbit_random((periods[network_period_idx] / 4) * 1000));
+            MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + (MicroBitPeridoRadio::instance->rxBuf->ttl * FORWARD_POLL_TIME) + microbit_random((periods[network_period_idx] / 4) * 1000));
 #ifndef DISABLE_SLEEP
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
 #endif
@@ -560,6 +581,7 @@ void radio_state_machine()
 
             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
 #ifdef TRACE
+            set_transmission_reception_gpio(1);
 #ifdef TRACE_TX
             set_tx_enable_gpio(1);
 #endif
@@ -571,15 +593,21 @@ void radio_state_machine()
         }
 #ifdef TRACE
 #ifndef TRACE_CRC_FAIL
-        set_fwd_crc_gpio(0);
+        set_fwd_gpio(0);
 #endif
 #endif
     }
 
     if(radio_status & RADIO_STATUS_STORE)
     {
+#ifdef DISABLE_STORE
+        PeridoFrameBuffer* tx = MicroBitPeridoRadio::instance->getCurrentTxBuf();
 #ifdef TRACE
-        set_store_gpio(1);
+        process_packet(tx);
+#endif
+#else
+#ifdef TRACE
+        set_store_disable_gpio(1);
 #endif
         PERIDO_UNSET_FLAGS(RADIO_STATUS_STORE);
 
@@ -679,14 +707,15 @@ void radio_state_machine()
             last_seen_index = (last_seen_index + 1) %  LAST_SEEN_BUFFER_SIZE;
         }
 #ifdef TRACE
-        set_store_gpio(0);
+        set_store_disable_gpio(0);
 #endif
+#endif // end DISABLE_STORE
     }
 
     if(radio_status & RADIO_STATUS_DISABLE)
     {
 #ifdef TRACE
-        set_disable_gpio(1);
+        set_store_disable_gpio(1);
 #endif
         NRF_RADIO->EVENTS_END = 0;
         NRF_RADIO->EVENTS_READY = 0;
@@ -696,11 +725,39 @@ void radio_state_machine()
         NRF_RADIO->EVENTS_DISABLED = 0;
         NRF_RADIO->TASKS_DISABLE = 1;
 
-        radio_status = (radio_status & (HIGH_LEVEL_STATE_MASK | RADIO_STATUS_RX_EN | RADIO_STATUS_TX_EN)) | RADIO_STATUS_DISABLED;
+        radio_status = (radio_status & (HIGH_LEVEL_STATE_MASK | RADIO_STATUS_RX_EN | RADIO_STATUS_TX_EN));
         PERIDO_LOG_FLAGS(radio_status);
+
+        // instead of relying on timer accuracy, we busy wait instead to ensure retransmissions are as close as possible.
+        if (radio_status & RADIO_STATUS_FORWARD && radio_status & RADIO_STATUS_TX_EN)
+        {
+            // disable takes 10 us , account for variabilities
+            wait_us(20);
+            PERIDO_ASSERT(NRF_RADIO->EVENTS_DISABLED == 1, radio_status);
+            NRF_RADIO->EVENTS_DISABLED = 0;
+            set_user_placed_gpio(1);
+            PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING)), radio_status);
+            // WE DON'T WANT THE ADDRESS EVENT
+            NRF_RADIO->INTENCLR = 0x0000000A;
+            NRF_RADIO->INTENSET = 0x00000008;
+            PERIDO_UNSET_FLAGS(RADIO_STATUS_TX_EN | RADIO_STATUS_DISABLED);
+            PERIDO_SET_FLAGS(RADIO_STATUS_TX_RDY);
+
+            NRF_RADIO->EVENTS_READY = 0;
+            NRF_RADIO->TASKS_TXEN = 1;
+
+            // tx enable takes 166 us (account for variabilities)
+            wait_us(180);
+
+            PERIDO_ASSERT(NRF_RADIO->EVENTS_READY == 1, radio_status);
+            goto state_machine_start;
+        }
+
+        PERIDO_SET_FLAGS(RADIO_STATUS_DISABLED);
         MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_TX_DISABLE_TIME);
 #ifdef TRACE
-        set_disable_gpio(0);
+        set_store_disable_gpio(0);
+        set_user_placed_gpio(0);
 #endif
         return;
     }
@@ -722,7 +779,7 @@ void tx_callback()
     if (radio_status & (RADIO_STATUS_SLEEPING | RADIO_STATUS_FORWARD | RADIO_STATUS_RECEIVING))
     {
 #ifdef TRACE
-    set_tx_callback_gpio(0);
+        set_tx_callback_gpio(0);
 #endif
         return;
     }
@@ -735,7 +792,7 @@ void tx_callback()
         PERIDO_LOG_FLAGS(radio_status);
         radio_state_machine();
 #ifdef TRACE
-    set_tx_callback_gpio(0);
+        set_tx_callback_gpio(0);
 #endif
         NVIC_EnableIRQ(RADIO_IRQn);
         return;
@@ -746,7 +803,7 @@ void tx_callback()
         MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + DISCOVERY_TX_BACKOFF_TIME + microbit_random(DISCOVERY_TX_BACKOFF_TIME));
         NVIC_EnableIRQ(RADIO_IRQn);
 #ifdef TRACE
-    set_tx_callback_gpio(0);
+        set_tx_callback_gpio(0);
 #endif
         return;
     }
@@ -884,7 +941,7 @@ void wake_up()
 
     if (radio_status & RADIO_STATUS_DISCOVERING)
     {
-        MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + discovery_tx_time + microbit_random(discovery_tx_time));
+        MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + microbit_random(1000));
         MicroBitPeridoRadio::instance->timer.setCompare(WAKE_UP_CHANNEL, current_cc);
         discovery_tx_time = DISCOVERY_TX_BACKOFF_TIME_RUNNING;
     }
@@ -943,7 +1000,7 @@ void timer_callback(uint8_t state)
         go_to_sleep();
 #ifdef TRACE
 #ifndef TRACE_WAKE
-        set_wake_gpio(0);
+    set_wake_gpio(0);
 #endif
 #endif
 }
