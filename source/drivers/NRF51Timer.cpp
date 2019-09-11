@@ -2,12 +2,6 @@
 #include "ErrorNo.h"
 #include "MicroBitConfig.h"
 
-static inline uint32_t counter_value(NRF_TIMER_Type* t, uint8_t cc)
-{
-    t->TASKS_CAPTURE[cc] = 1;
-    return t->CC[cc];
-}
-
 static void (*timer_pointer) (uint8_t);
 
 extern "C" void TIMER0_IRQHandler()
@@ -99,7 +93,8 @@ uint32_t NRF51Timer::captureCounter(uint8_t channel)
     if (channel > getChannelCount() - 1)
         return 0;
 
-    return counter_value(timer, channel);
+    timer->TASKS_CAPTURE[channel] = 1;
+    return timer->CC[channel];
 }
 
 int NRF51Timer::setPrescaler(uint16_t prescaleValue)
