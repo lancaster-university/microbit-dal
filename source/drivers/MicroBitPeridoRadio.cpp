@@ -35,15 +35,15 @@ DEALINGS IN THE SOFTWARE.
 #define LOG_STRING(...) ((void)0)
 #define LOG_NUM(...) ((void)0)
 
-#define PERIDO_ASSERT(cond, panic_num) {\
+#define PERIDO_ASSERT(cond) {\
                                         if (!(cond)) \
-                                            microbit_panic(panic_num);\
+                                            microbit_panic(__LINE__);\
                                         }
 volatile int hw_state = 0;
 #define HW_ASSERT(expected_state, panic_num) {\
                                         hw_state = NRF_RADIO->STATE;\
                                         if (hw_state != expected_state) \
-                                            microbit_panic(panic_num);\
+                                            microbit_panic(__LINE__);\
                                         }\
 
 #include "MicroBitPeridoRadio.h"
@@ -340,17 +340,17 @@ state_machine_start:
         NRF_RADIO->EVENTS_END = 0;
         NRF_RADIO->EVENTS_ADDRESS = 0;
 
-        PERIDO_ASSERT(!(radio_status & RADIO_STATUS_TX_EN && radio_status & RADIO_STATUS_RX_EN), radio_status);
+        PERIDO_ASSERT(!(radio_status & RADIO_STATUS_TX_EN && radio_status & RADIO_STATUS_RX_EN));
 
         if(radio_status & RADIO_STATUS_TX_EN)
         {
             set_user_placed_gpio(1);
-            PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)), radio_status);
+            PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)));
             // WE DON'T WANT THE ADDRESS EVENT
             NRF_RADIO->INTENCLR = 0x0000000A;
             NRF_RADIO->INTENSET = 0x00000008;
             PERIDO_UNSET_FLAGS(RADIO_STATUS_TX_EN | RADIO_STATUS_DISABLED);
-            PERIDO_SET_FLAGS(RADIO_STATUS_TRANSMIT | RADIO_STATUS_TX_RDY);
+            PERIDO_SET_FLAGS(RADIO_STATUS_TX_RDY);
 
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_TXEN = 1;
@@ -369,7 +369,7 @@ state_machine_start:
 
         if(radio_status & RADIO_STATUS_RX_EN)
         {
-            PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)), radio_status);
+            PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)));
             // WE WANT THE ADDRESS EVENT TO REDUCE COLLISIONS.
             NRF_RADIO->INTENCLR = 0x0000000A;
             NRF_RADIO->INTENSET = 0x0000000A;
@@ -395,14 +395,14 @@ state_machine_start:
 #endif
 #endif
         // we're disabled but haven't been configured for rx / tx DO NOT CONTINUE!
-        PERIDO_ASSERT(0, radio_status);
+        PERIDO_ASSERT(0);
         return;
     }
 
     if(radio_status & RADIO_STATUS_RECEIVE)
     {
         PERIDO_LOG_FLAGS(radio_status);
-        PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)), radio_status);
+        PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)));
 
         if (NRF_RADIO->EVENTS_READY)
         {
@@ -511,11 +511,12 @@ state_machine_start:
 
     if(radio_status & RADIO_STATUS_TRANSMIT)
     {
+        PERIDO_ASSERT(!(radio_status & RADIO_STATUS_FORWARD));
         PERIDO_LOG_FLAGS(radio_status);
 #ifdef TRACE
         set_transmit_gpio(1);
 #endif
-        PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)), radio_status);
+        PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)));
         if (radio_status & RADIO_STATUS_TX_RDY)
         {
             set_user_placed_gpio(0);
@@ -586,8 +587,9 @@ state_machine_start:
 
     if (radio_status & RADIO_STATUS_FORWARD)
     {
+        PERIDO_ASSERT(!(radio_status & RADIO_STATUS_TRANSMIT));
         PERIDO_LOG_FLAGS(radio_status);
-        PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)), radio_status);
+        PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)));
 
 #ifdef TRACE
         set_fwd_gpio(1);
@@ -785,9 +787,9 @@ state_machine_start:
             // disable takes 10 us , account for variabilities
             accurate_delay_us(20);
             HW_ASSERT(0, 11);
-            PERIDO_ASSERT(NRF_RADIO->EVENTS_DISABLED == 1, radio_status);
+            PERIDO_ASSERT(NRF_RADIO->EVENTS_DISABLED == 1);
             NRF_RADIO->EVENTS_DISABLED = 0;
-            PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)), radio_status);
+            PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)));
             // WE DON'T WANT THE ADDRESS EVENT
             NRF_RADIO->INTENCLR = 0x0000000A;
             NRF_RADIO->INTENSET = 0x00000008;
@@ -848,7 +850,7 @@ void tx_callback()
     // no one else has transmitted recently, and we are not receiving, we can transmit
     if(MicroBitPeridoRadio::instance->getCurrentTxBuf() != NULL)
     {
-        radio_status = (radio_status & (RADIO_STATUS_DISCOVERING | RADIO_STATUS_FIRST_PACKET)) | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN;
+        radio_status = (radio_status & (RADIO_STATUS_DISCOVERING | RADIO_STATUS_FIRST_PACKET)) | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN | RADIO_STATUS_TRANSMIT;
         PERIDO_LOG_FLAGS(radio_status);
         radio_state_machine();
 #ifdef TRACE
