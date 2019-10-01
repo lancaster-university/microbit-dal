@@ -1,6 +1,6 @@
 # microbit-dal
 
-The core set of drivers, mechanisms and types that make up the micro:bit runtime.
+The Device Abstraction Layer (DAL) provides the core set of drivers, mechanisms and types that make up the micro:bit runtime.
 
 ## Overview
 
