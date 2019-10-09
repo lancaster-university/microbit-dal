@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitStorage.h"
 #include "MicroBitFiber.h"
 #include "MicroBitSystemTimer.h"
+#include "NotifyEvents.h"
 
 /* The underlying Nordic libraries that support BLE do not compile cleanly with the stringent GCC settings we employ.
  * If we're compiling under GCC, then we suppress any warnings generated from this code (but not the rest of the DAL)
@@ -126,6 +127,7 @@ static void storeSystemAttributes(Gap::Handle_t handle)
 static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *reason)
 {
     MicroBitEvent(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED);
+    MicroBitEvent(MICROBIT_ID_NOTIFY, MICROBIT_UART_S_EVT_TX_EMPTY);
 
     if (MicroBitBLEManager::manager)
     {
