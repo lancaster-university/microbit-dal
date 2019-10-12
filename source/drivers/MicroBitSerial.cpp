@@ -646,7 +646,7 @@ int MicroBitSerial::read(uint8_t *buffer, int bufferLen, MicroBitSerialMode mode
 
     if(mode == ASYNC)
     {
-        while((temp = getChar(mode)) != MICROBIT_NO_DATA && bufferIndex < bufferLen)
+        while(bufferIndex < bufferLen && (temp = getChar(mode)) != MICROBIT_NO_DATA)
         {
             buffer[bufferIndex] = (char)temp;
             bufferIndex++;
