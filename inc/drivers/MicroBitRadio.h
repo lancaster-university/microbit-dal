@@ -74,7 +74,7 @@ struct FrameBuffer;
 
 // Events
 #define MICROBIT_RADIO_EVT_DATAGRAM             1       // Event to signal that a new datagram has been received.
-
+#define MICROBIT_RADIO_EVT_PACKET_DROPPED       2       // Event to signal that a datagram has been dropped.
 
 struct FrameBuffer
 {

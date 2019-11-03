@@ -193,6 +193,7 @@ void MicroBitRadioDatagram::packetReceived()
         if (queueDepth >= MICROBIT_RADIO_MAXIMUM_RX_BUFFERS)
         {
             delete packet;
+            MicroBitEvent(MICROBIT_ID_RADIO, MICROBIT_RADIO_EVT_PACKET_DROPPED);
             return;
         }
 
