@@ -67,7 +67,6 @@ struct FrameBuffer;
 #define MICROBIT_RADIO_DEFAULT_TX_POWER         6
 #define MICROBIT_RADIO_MAX_PACKET_SIZE          32
 #define MICROBIT_RADIO_HEADER_SIZE              4
-#define MICROBIT_RADIO_MAXIMUM_RX_BUFFERS       4
 
 // Known Protocol Numbers
 #define MICROBIT_RADIO_PROTOCOL_DATAGRAM        1       // A simple, single frame datagram. a little like UDP but with smaller packets. :-)
