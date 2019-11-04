@@ -67,6 +67,13 @@ class MicroBitFile
     int getPosition();
 
     /**
+     * Returns the size of the file.
+     * 
+     * @return the size of the file, MICROBIT_NOT_SUPPORTED if the current file handle is invalid.
+     */
+    int getSize();
+
+    /**
       * Writes the given bytes to this MicroBitFile instance at the current position.
       *
       * @param bytes a pointer to the bytes to write to this file.

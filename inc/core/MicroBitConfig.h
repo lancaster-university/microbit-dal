@@ -330,6 +330,12 @@ extern uint32_t __etext;
 #define MICROBIT_RADIO_UPPER_FREQ_BAND 83
 #endif
 
+// Sets the maximum radio packet size to 32 bytes, configurable up to 254
+#ifndef MICROBIT_RADIO_MAX_PACKET_SIZE
+#define MICROBIT_RADIO_MAX_PACKET_SIZE          32
+#endif
+
+
 //
 // Accelerometer options
 //

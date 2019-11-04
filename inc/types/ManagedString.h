@@ -237,6 +237,9 @@ class ManagedString
       */
     bool operator== (const ManagedString& s);
 
+
+    bool operator!= (const ManagedString& s);
+
     /**
       * Inequality operation.
       *

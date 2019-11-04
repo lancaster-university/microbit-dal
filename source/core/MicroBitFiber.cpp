@@ -365,7 +365,7 @@ void fiber_sleep(unsigned long t)
 
 /**
   * Blocks the calling thread until the specified event is raised.
-  * The calling thread will be immediateley descheduled, and placed onto a
+  * The calling thread will be immediately descheduled, and placed onto a
   * wait queue until the requested event is received.
   *
   * @param id The ID field of the event to listen for (e.g. MICROBIT_ID_BUTTON_A)
