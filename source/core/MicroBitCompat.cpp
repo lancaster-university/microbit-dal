@@ -61,7 +61,37 @@ int string_reverse(char *s)
 }
 
 /**
-  * Converts a given integer into a string representation.
+  * Converts a given unsigned integer into a string representation.
+  *
+  * @param n The number to convert.
+  *
+  * @param s A pointer to the buffer where the resulting string will be stored.
+  *
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  */
+int utoa(unsigned int n, char *s)
+{
+    int i = 0;
+
+    if (s == NULL)
+        return MICROBIT_INVALID_PARAMETER;
+
+    // Calculate each character, starting with the LSB.
+    do {
+        s[i++] = (n % 10) + '0';
+    } while ( (n /= 10) > 0);
+
+    // Terminate the string.
+    s[i] = '\0';
+
+    // Flip the order.
+    string_reverse(s);
+
+    return MICROBIT_OK;
+}
+
+/**
+  * Converts a given signed integer into a string representation.
   *
   * @param n The number to convert.
   *
@@ -71,31 +101,17 @@ int string_reverse(char *s)
   */
 int itoa(int n, char *s)
 {
-    int i = 0;
-    int positive = (n >= 0);
-
     if (s == NULL)
         return MICROBIT_INVALID_PARAMETER;
 
-    // Record the sign of the number,
     // Ensure our working value is positive.
-    if (positive)
-        n = -n;
-
-    // Calculate each character, starting with the LSB.
-    do {
-         s[i++] = abs(n % 10) + '0';
-    } while (abs(n /= 10) > 0);
-
     // Add a negative sign as needed
-    if (!positive)
-        s[i++] = '-';
+    if ( n < 0)
+    {
+        n = -n;
+        *s = '-';
+        s++;
+    }
 
-    // Terminate the string.
-    s[i] = '\0';
-
-    // Flip the order.
-    string_reverse(s);
-
-    return MICROBIT_OK;
+    return utoa( (unsigned int) n, s);
 }
