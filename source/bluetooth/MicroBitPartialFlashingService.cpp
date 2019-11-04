@@ -146,7 +146,7 @@ void MicroBitPartialFlashingService::onDataWritten(const GattWriteCallbackParams
            switch(data[1]) {
              case MICROBIT_MODE_PAIRING:
              {
-               MicroBitEvent evt(MICROBIT_ID_PARTIAL_FLASHING, MICROBIT_RESET );
+               MicroBitEvent evt(MICROBIT_ID_PARTIAL_FLASHING, MICROBIT_ID_RESET_INTO_PAIRING );
                break;
              }
              case MICROBIT_MODE_APPLICATION:
@@ -314,11 +314,6 @@ void MicroBitPartialFlashingService::partialFlashingEvent(MicroBitEvent e)
         MicroBitStorage storage;
         storage.remove("flashIncomplete");
         microbit_reset();
-      break;
-    }
-    case MICROBIT_RESET:
-    {
-      MicroBitBLEManager::manager->restartInBLEMode();
       break;
     }
   }
