@@ -39,7 +39,7 @@ DEALINGS IN THE SOFTWARE.
   * @param _messageBus The instance of a EventModel that we're running on.
   */
 MicroBitPartialFlashingService::MicroBitPartialFlashingService(BLEDevice &_ble, EventModel &_messageBus) :
-        ble(_ble), messageBus(_messageBus)
+        ble(_ble)
 {
     // Set up partial flashing characteristic
     uint8_t initCharacteristicValue = 0x00;
@@ -59,7 +59,7 @@ MicroBitPartialFlashingService::MicroBitPartialFlashingService(BLEDevice &_ble, 
     ble.gattServer().onDataWritten(this, &MicroBitPartialFlashingService::onDataWritten);
 
     // Set up listener for SD writing
-    messageBus.listen(MICROBIT_ID_PARTIAL_FLASHING, MICROBIT_EVT_ANY, this, &MicroBitPartialFlashingService::partialFlashingEvent);
+    _messageBus.listen(MICROBIT_ID_PARTIAL_FLASHING, MICROBIT_EVT_ANY, this, &MicroBitPartialFlashingService::partialFlashingEvent);
 
 }
 
@@ -146,7 +146,7 @@ void MicroBitPartialFlashingService::onDataWritten(const GattWriteCallbackParams
            switch(data[1]) {
              case MICROBIT_MODE_PAIRING:
              {
-               MicroBitEvent evt(MICROBIT_ID_PARTIAL_FLASHING, MICROBIT_RESET );
+               MicroBitEvent evt(MICROBIT_ID_SYSTEM, MICROBIT_ID_RESET_INTO_PAIRING );
                break;
              }
              case MICROBIT_MODE_APPLICATION:
@@ -199,6 +199,11 @@ void MicroBitPartialFlashingService::flashData(uint8_t *data)
         }
 
         packetCount++;
+
+        // Reallocate block
+        if(block == NULL) {
+            block = (uint32_t*) malloc(16 * sizeof(uint32_t));
+        }
 
         // Add to block
         memcpy(block + (4*blockNum), data + 4, 16);
@@ -314,11 +319,6 @@ void MicroBitPartialFlashingService::partialFlashingEvent(MicroBitEvent e)
         MicroBitStorage storage;
         storage.remove("flashIncomplete");
         microbit_reset();
-      break;
-    }
-    case MICROBIT_RESET:
-    {
-      MicroBitBLEManager::manager->restartInBLEMode();
       break;
     }
   }

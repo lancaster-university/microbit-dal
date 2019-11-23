@@ -201,6 +201,16 @@ int LSM303Accelerometer::isDetected(MicroBitI2C &i2c, uint16_t address)
 }
 
 /**
+* Returns which accelerometer is detected
+*
+* @return MICROBIT_ACCELEROMETER_XXX
+*/
+uint8_t LSM303Accelerometer::whatAmI()
+{
+    return MICROBIT_ACCELEROMETER_LSM303;
+}
+
+/**
  * Destructor.
  */
 LSM303Accelerometer::~LSM303Accelerometer()

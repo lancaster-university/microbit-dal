@@ -38,6 +38,10 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_NAME_CODE_LETTERS              5
 #define MICROBIT_PANIC_ERROR_CHARS              4
 
+#define MICROBIT_MODEL_UNKNOWN                  "BBC micro:bit"
+#define MICROBIT_MODEL_1_3_X                    "BBC micro:bit v1.3x"
+#define MICROBIT_MODEL_1_5_X                    "BBC micro:bit v1.5"
+
 #include "MicroBitConfig.h"
 #include "MicroBitMatrixMaps.h"
 

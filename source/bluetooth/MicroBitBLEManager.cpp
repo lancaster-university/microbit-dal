@@ -129,7 +129,10 @@ static void bleDisconnectionCallback(const Gap::DisconnectionCallbackParams_t *r
 
     if (MicroBitBLEManager::manager)
     {
-        MicroBitBLEManager::manager->advertise();
+
+        if(!fiber_is_idle_component(MicroBitBLEManager::manager))
+            MicroBitBLEManager::manager->advertise();
+
         MicroBitBLEManager::manager->deferredSysAttrWrite(reason->handle);
     }
 }
@@ -289,12 +292,13 @@ void MicroBitBLEManager::deferredSysAttrWrite(Gap::Handle_t handle)
   * @param serialNumber The serial number exposed by the device information service
   * @param messageBus An instance of an EventModel, used during pairing.
   * @param enableBonding If true, the security manager enabled bonding.
+  * @param microbitModel The model of the micro:bit if detected
   *
   * @code
-  * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
+  * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true, uBit.getModel());
   * @endcode
   */
-void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding)
+void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding, ManagedString microbitModel)
 {
     ManagedString BLEName("BBC micro:bit");
     this->deviceName = deviceName;
@@ -390,7 +394,7 @@ void MicroBitBLEManager::init(ManagedString deviceName, ManagedString serialNumb
 #endif
 
 #if CONFIG_ENABLED(MICROBIT_BLE_DEVICE_INFORMATION_SERVICE)
-    DeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, MICROBIT_BLE_MODEL, serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
+    DeviceInformationService ble_device_information_service(*ble, MICROBIT_BLE_MANUFACTURER, microbitModel.toCharArray(), serialNumber.toCharArray(), MICROBIT_BLE_HARDWARE_VERSION, MICROBIT_BLE_FIRMWARE_VERSION, MICROBIT_BLE_SOFTWARE_VERSION);
 #else
     (void)serialNumber;
 #endif
@@ -492,9 +496,9 @@ void MicroBitBLEManager::pairingRequested(ManagedString passKey)
  */
 void MicroBitBLEManager::pairingComplete(bool success)
 {
-    this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
     pairing_completed_at_time = system_timer_current_time();
+    this->pairingStatus = MICROBIT_BLE_PAIR_COMPLETE;
 
     if (success)
     {
@@ -522,6 +526,12 @@ void MicroBitBLEManager::idleTick()
     {
         storeSystemAttributes(pairingHandle);
         this->status &= ~MICROBIT_BLE_STATUS_STORE_SYSATTR;
+
+        if ( this->pairingStatus == MICROBIT_BLE_PAIR_SUCCESSFUL)
+            this->pairingStatus |= MICROBIT_BLE_PAIR_COMPLETE;
+
+        // Once system attributes have been stored, restart advertising
+        advertise();
     }
 }
 
@@ -739,6 +749,7 @@ void MicroBitBLEManager::pairingMode(MicroBitDisplay &display, MicroBitButton &a
         {
             if (pairingStatus & MICROBIT_BLE_PAIR_SUCCESSFUL)
             {
+
                 MicroBitImage tick("0,0,0,0,0\n0,0,0,0,255\n0,0,0,255,0\n255,0,255,0,0\n0,255,0,0,0\n");
                 display.print(tick, 0, 0, 0);
                 fiber_sleep(15000);
@@ -842,23 +853,10 @@ void MicroBitBLEManager::showNameHistogram(MicroBitDisplay &display)
     }
 }
 
-/**
- * Restarts into BLE Mode
- *
- */
- void MicroBitBLEManager::restartInBLEMode(){
-   KeyValuePair* RebootMode = storage->get("RebootMode");
-   if(RebootMode == NULL){
-     uint8_t RebootModeValue = MICROBIT_MODE_PAIRING;
-     storage->put("RebootMode", &RebootModeValue, sizeof(RebootMode));
-     delete RebootMode;
-   }
-   microbit_reset();
- }
-
  /**
   * Get BLE mode. Returns the current mode: application, pairing mode
   */
 uint8_t MicroBitBLEManager::getCurrentMode(){
   return currentMode;
 }
+

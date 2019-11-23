@@ -266,6 +266,16 @@ void FXOS8700::idleTick()
 }
 
 /**
+* Returns which accelerometer is detected
+*
+* @return MICROBIT_ACCELEROMETER_XXX
+*/
+uint8_t FXOS8700::whatAmI()
+{
+    return MICROBIT_ACCELEROMETER_FXOS8700;
+}
+
+/**
   * Destructor for FXS8700, where we deregister from the array of fiber components.
   */
 FXOS8700::~FXOS8700()

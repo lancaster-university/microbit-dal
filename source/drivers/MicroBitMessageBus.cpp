@@ -428,7 +428,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
     if (listeners == NULL)
     {
         listeners = newListener;
-        MicroBitEvent(MICROBIT_ID_MESSAGE_BUS_LISTENER, newListener->id);
+        MicroBitEvent(MICROBIT_ID_SYSTEM, newListener->id);
 
         return MICROBIT_OK;
     }
@@ -469,7 +469,7 @@ int MicroBitMessageBus::add(MicroBitListener *newListener)
         p->next = newListener;
     }
 
-    MicroBitEvent(MICROBIT_ID_MESSAGE_BUS_LISTENER, newListener->id);
+    MicroBitEvent(MICROBIT_ID_SYSTEM, newListener->id);
     return MICROBIT_OK;
 }
 

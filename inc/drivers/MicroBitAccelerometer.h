@@ -79,6 +79,11 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_ACCELEROMETER_8G_THRESHOLD                 ((uint32_t)MICROBIT_ACCELEROMETER_8G_TOLERANCE * (uint32_t)MICROBIT_ACCELEROMETER_8G_TOLERANCE)
 #define MICROBIT_ACCELEROMETER_SHAKE_COUNT_THRESHOLD        4
 
+#define MICROBIT_ACCELEROMETER_UNKNOWN                      0
+#define MICROBIT_ACCELEROMETER_MMA8653                      1
+#define MICROBIT_ACCELEROMETER_LSM303                       2
+#define MICROBIT_ACCELEROMETER_FXOS8700                     3
+
 struct ShakeHistory
 {
     uint16_t    shaken:1,
@@ -118,7 +123,7 @@ class MicroBitAccelerometer : public MicroBitComponent
 
     public:
 
-        static          MicroBitAccelerometer *detectedAccelerometer;       // The autodetected instance of a MicroBitAcelerometer driver.
+        static          MicroBitAccelerometer *detectedAccelerometer;       // The autodetected instance of a MicroBitAccelerometer driver.
 
         /**
          * Constructor.
@@ -323,6 +328,13 @@ class MicroBitAccelerometer : public MicroBitComponent
         {
             getSample();
         }
+        
+        /**
+         * Returns which accelerometer is detected
+         *
+         * @return MICROBIT_ACCELEROMETER_XXX
+         */
+        virtual uint8_t whatAmI();
 
         /**
          * Destructor.
@@ -365,6 +377,7 @@ class MicroBitAccelerometer : public MicroBitComponent
          * @return A 'best guess' of the current posture of the device, based on instanataneous data.
          */
         uint16_t instantaneousPosture();
+
 };
 
 #endif
