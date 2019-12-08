@@ -104,7 +104,7 @@ accurate_delay_us(uint32_t volatile number_of_us)
 MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
 // begin static config options of perido:
-#define FILTER // if def'd, the driver will filter packets based on app id
+// #define FILTER // if def'd, the driver will filter packets based on app id
 #ifdef FILTER
 #warning filtering packets based on app id
 #endif
@@ -117,6 +117,11 @@ MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 #define DISABLE_STORE // if def'd the driver will not store packets.
 #ifdef DISABLE_STORE
 #warning storing is disabled.
+#endif
+
+#define PACKET_DBG
+#ifdef PACKET_DBG
+#warning passing packets to process_packet function
 #endif
 
 
@@ -249,6 +254,7 @@ volatile static uint8_t network_period_idx = PERIDO_DEFAULT_PERIOD_IDX;
 
 volatile uint32_t crc_fail_count = 0;
 volatile uint32_t packet_count = 0;
+volatile uint32_t retransmit_count = 0;
 
 volatile static uint32_t current_cc = 0;
 volatile static uint32_t period_start_cc = 0;
@@ -347,7 +353,7 @@ state_machine_start:
             set_user_placed_gpio(1);
             PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)));
             // WE DON'T WANT THE ADDRESS EVENT
-            NRF_RADIO->INTENCLR = 0x0000000A;
+            NRF_RADIO->INTENCLR = 0x0000000F;
             NRF_RADIO->INTENSET = 0x00000008;
             PERIDO_UNSET_FLAGS(RADIO_STATUS_TX_EN | RADIO_STATUS_DISABLED);
             PERIDO_SET_FLAGS(RADIO_STATUS_TX_RDY);
@@ -371,17 +377,19 @@ state_machine_start:
         {
             PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)));
             // WE WANT THE ADDRESS EVENT TO REDUCE COLLISIONS.
-            NRF_RADIO->INTENCLR = 0x0000000A;
-            NRF_RADIO->INTENSET = 0x0000000A;
+            NRF_RADIO->EVENTS_READY = 0;
+            NRF_RADIO->EVENTS_ADDRESS = 0;
+            NRF_RADIO->INTENCLR = 0x0000000F;
+            NRF_RADIO->INTENSET = 0x0000000B;
             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
 
             PERIDO_UNSET_FLAGS(RADIO_STATUS_RX_EN | RADIO_STATUS_DISABLED);
             PERIDO_SET_FLAGS(RADIO_STATUS_RECEIVE);
 
             // takes 7 us to complete, not much point in a timer.
-            NRF_RADIO->EVENTS_READY = 0;
+
             NRF_RADIO->TASKS_RXEN = 1;
-            MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_ENABLE_TIME);
+            // MicroBitPeridoRadio::instance->timer.setCompare(STATE_MACHINE_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(STATE_MACHINE_CHANNEL) + RX_ENABLE_TIME);
 #ifdef TRACE
 #ifndef TRACE_TX
             set_tx_enable_gpio(0);
@@ -401,6 +409,7 @@ state_machine_start:
 
     if(radio_status & RADIO_STATUS_RECEIVE)
     {
+
         PERIDO_LOG_FLAGS(radio_status);
         PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)));
 
@@ -643,16 +652,16 @@ state_machine_start:
     {
         PERIDO_LOG_FLAGS(radio_status);
 #ifdef DISABLE_STORE
-        // PeridoFrameBuffer* tx = MicroBitPeridoRadio::instance->getCurrentTxBuf();
-#ifdef TRACE
-        // if(radio_status & RADIO_STATUS_EXPECT_RESPONSE)
-        // {
-        //     process_packet(tx);
-        // }
-        // else
-        // {
-        //     process_packet(MicroBitPeridoRadio::instance->rxBuf);
-        // }
+        PeridoFrameBuffer* tx = MicroBitPeridoRadio::instance->getCurrentTxBuf();
+#ifdef PACKET_DBG
+        if(radio_status & RADIO_STATUS_EXPECT_RESPONSE)
+        {
+            process_packet(tx);
+        }
+        else
+        {
+            process_packet(MicroBitPeridoRadio::instance->rxBuf);
+        }
 
 #endif
         PERIDO_UNSET_FLAGS(RADIO_STATUS_STORE);
@@ -679,7 +688,7 @@ state_machine_start:
             // if we get our own packet back pop our tx queue and reset our no_response_count
             if(app_id_same && namespace_same && id_same)
             {
-#ifdef TRACE
+#ifdef PACKET_DBG
                 process_packet(tx);
 #endif
                 // only pop our tx buffer if something responds
@@ -750,7 +759,7 @@ state_machine_start:
         )
         {
             MicroBitPeridoRadio::instance->copyRxBuf();
-#ifdef TRACE
+#ifdef PACKET_DBG
             process_packet(MicroBitPeridoRadio::instance->rxBuf);
 #endif
 
@@ -791,7 +800,7 @@ state_machine_start:
             NRF_RADIO->EVENTS_DISABLED = 0;
             PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)));
             // WE DON'T WANT THE ADDRESS EVENT
-            NRF_RADIO->INTENCLR = 0x0000000A;
+            NRF_RADIO->INTENCLR = 0x0000000F;
             NRF_RADIO->INTENSET = 0x00000008;
 
 
