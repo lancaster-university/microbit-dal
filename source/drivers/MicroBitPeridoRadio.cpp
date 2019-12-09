@@ -272,6 +272,10 @@ volatile uint32_t tx_packets[TX_PACKETS_SIZE] = { 0 };
 volatile static uint8_t keep_alive_count = 0;
 volatile static uint8_t keep_alive_match = 0;
 
+volatile uint32_t packets_transmitted = 0;
+volatile uint32_t packets_received = 0;
+volatile uint32_t packets_forwarded = 0;
+
 
 #define TRACK_STATE
 
@@ -311,16 +315,19 @@ uint32_t radio_pointer = 0;
 #else
 
 #define PERIDO_SET_FLAGS(flags) do {                        \
-                                    radio_status |= flags;     \
+                                    radio_status |= (flags);     \
                                 }while(0)
 
 #define PERIDO_UNSET_FLAGS(flags) do {                          \
-                                    radio_status &= ~flags;    \
+                                    radio_status &= ~(flags);    \
                                 }while(0)
 
 
 #define PERIDO_LOG_FLAGS(...) ((void)0)
 #endif
+
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 uint32_t read_and_restart_wake()
 {
@@ -353,8 +360,9 @@ state_machine_start:
             set_user_placed_gpio(1);
             PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)));
             // WE DON'T WANT THE ADDRESS EVENT
-            NRF_RADIO->INTENCLR = 0x0000000F;
+            NRF_RADIO->INTENCLR = 0xffffffff;
             NRF_RADIO->INTENSET = 0x00000008;
+            NRF_RADIO->SHORTS = 0;
             PERIDO_UNSET_FLAGS(RADIO_STATUS_TX_EN | RADIO_STATUS_DISABLED);
             PERIDO_SET_FLAGS(RADIO_STATUS_TX_RDY);
 
@@ -379,8 +387,9 @@ state_machine_start:
             // WE WANT THE ADDRESS EVENT TO REDUCE COLLISIONS.
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->EVENTS_ADDRESS = 0;
-            NRF_RADIO->INTENCLR = 0x0000000F;
-            NRF_RADIO->INTENSET = 0x0000000B;
+            NRF_RADIO->INTENCLR = 0xffffffff;
+            NRF_RADIO->INTENSET = 0x0000000A;
+            NRF_RADIO->SHORTS = 1; // auto start reception
             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
 
             PERIDO_UNSET_FLAGS(RADIO_STATUS_RX_EN | RADIO_STATUS_DISABLED);
@@ -413,40 +422,41 @@ state_machine_start:
         PERIDO_LOG_FLAGS(radio_status);
         PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)));
 
-        if (NRF_RADIO->EVENTS_READY)
-        {
-#ifdef TRACE
-            set_rx_gpio(1);
-#endif
-            PERIDO_SET_FLAGS(RADIO_STATUS_RX_RDY);
-            NRF_RADIO->EVENTS_READY = 0;
-            NRF_RADIO->TASKS_START = 1;
+//         if (NRF_RADIO->EVENTS_READY)
+//         {
+// #ifdef TRACE
+//             set_rx_gpio(1);
+// #endif
+//             PERIDO_SET_FLAGS(RADIO_STATUS_RX_RDY);
+//             NRF_RADIO->EVENTS_READY = 0;
+//             NRF_RADIO->TASKS_START = 1;
 
-#ifdef TRACE
-            set_rx_gpio(0);
-#endif
+// #ifdef TRACE
+//             set_rx_gpio(0);
+// #endif
 
-            return;
-        }
+//             return;
+//         }
 
         // we get an address event for rx, indicating we are in the process of receiving a packet. Update our status and return;
         if(NRF_RADIO->EVENTS_ADDRESS)
         {
 #ifdef TRACE
             set_transmission_reception_gpio(1);
-            set_rx_gpio(1);
+//             set_rx_gpio(1);
 #endif
             NRF_RADIO->EVENTS_ADDRESS = 0;
             PERIDO_SET_FLAGS(RADIO_STATUS_RECEIVING);
 
-            // clear any timer cb's so we aren't interrupted in our critical section
-            MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL);
-            MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL);
+//             // clear any timer cb's so we aren't interrupted in our critical section
+//             MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL);
+//             MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL);
             return;
         }
 
         if(NRF_RADIO->EVENTS_END)
         {
+            packets_received++;
             packet_count++;
 
             PERIDO_UNSET_FLAGS(RADIO_STATUS_RECEIVING);
@@ -575,6 +585,7 @@ state_machine_start:
 
         if(radio_status & RADIO_STATUS_TX_END)
         {
+            packets_transmitted++;
             NRF_RADIO->EVENTS_END = 0;
 #ifdef TRACE
             set_transmission_reception_gpio(0);
@@ -605,6 +616,7 @@ state_machine_start:
 #endif
         if(radio_status & RADIO_STATUS_TX_END)
         {
+            packets_forwarded++;
             NRF_RADIO->EVENTS_END = 0;
 #ifdef TRACE
             set_transmission_reception_gpio(0);
@@ -793,22 +805,24 @@ state_machine_start:
         // instead of relying on timer accuracy, we busy wait instead to ensure retransmissions are as close as possible.
         if (radio_status & RADIO_STATUS_FORWARD && radio_status & RADIO_STATUS_TX_EN)
         {
+            volatile int i = 40;
             // disable takes 10 us , account for variabilities
-            accurate_delay_us(20);
+            while(i-- > 0);
             HW_ASSERT(0, 11);
             PERIDO_ASSERT(NRF_RADIO->EVENTS_DISABLED == 1);
             NRF_RADIO->EVENTS_DISABLED = 0;
             PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RX_EN|RADIO_STATUS_RX_RDY|RADIO_STATUS_RECEIVING|RADIO_STATUS_RECEIVE)));
-            // WE DON'T WANT THE ADDRESS EVENT
-            NRF_RADIO->INTENCLR = 0x0000000F;
-            NRF_RADIO->INTENSET = 0x00000008;
 
+            NRF_RADIO->INTENCLR = 0xffffffff;
+            NRF_RADIO->INTENSET = 0x00000008;
+            NRF_RADIO->SHORTS = 0;
 
             NRF_RADIO->EVENTS_READY = 0;
             NRF_RADIO->TASKS_TXEN = 1;
 
             // tx enable takes 166 us (account for variabilities)
-            accurate_delay_us(TX_ENABLE_TIME + 200);
+            i = 250;
+            while(i-- > 0);
 
             PERIDO_UNSET_FLAGS(RADIO_STATUS_TX_EN | RADIO_STATUS_DISABLED);
             PERIDO_SET_FLAGS(RADIO_STATUS_TX_RDY);
@@ -1053,29 +1067,37 @@ void wake_up()
 **/
 void timer_callback(uint8_t state)
 {
-    PERIDO_LOG_FLAGS(state);
-#ifdef TRACE
-#ifndef TRACE_WAKE
-        set_wake_gpio(1);
-#endif
-#endif
+//     PERIDO_LOG_FLAGS(state);
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//         set_wake_gpio(1);
+// #endif
+// #endif
     if(state & (1 << STATE_MACHINE_CHANNEL))
         radio_state_machine();
 
     if(state & (1 << WAKE_UP_CHANNEL))
         wake_up();
 
-    if(state & (1 << CHECK_TX_CHANNEL))
-        tx_callback();
+//     if(state & (1 << CHECK_TX_CHANNEL))
+//         tx_callback();
 
-    if(state & (1 << GO_TO_SLEEP_CHANNEL))
-        go_to_sleep();
-#ifdef TRACE
-#ifndef TRACE_WAKE
-    set_wake_gpio(0);
-#endif
-#endif
+//     if(state & (1 << GO_TO_SLEEP_CHANNEL))
+//         go_to_sleep();
+// #ifdef TRACE
+// #ifndef TRACE_WAKE
+//     set_wake_gpio(0);
+// #endif
+// #endif
 }
+
+void manual_poke(){
+    radio_status = (radio_status & (RADIO_STATUS_DISCOVERING | RADIO_STATUS_FIRST_PACKET)) | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN | RADIO_STATUS_TRANSMIT;
+    PERIDO_LOG_FLAGS(radio_status);
+    radio_state_machine();
+}
+
+#pragma GCC pop_options
 
 /**
   * Constructor.
@@ -1275,19 +1297,20 @@ int MicroBitPeridoRadio::queueTxBuf(PeridoFrameBuffer* tx)
 
 int MicroBitPeridoRadio::queueKeepAlive()
 {
-    PeridoFrameBuffer buf;
+    // PeridoFrameBuffer buf;
 
-    buf.id = microbit_random(65535);
-    buf.length = 0 + MICROBIT_PERIDO_HEADER_SIZE - 1; // keep alive has no content.
-    buf.app_id = appId;
-    buf.namespace_id = 0;
-    buf.flags |= MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG;
-    buf.ttl = 2;
-    buf.initial_ttl = 2;
-    buf.time_since_wake = 0;
-    buf.period = 0;
+    // buf.id = microbit_random(65535);
+    // buf.length = 0 + MICROBIT_PERIDO_HEADER_SIZE - 1; // keep alive has no content.
+    // buf.app_id = appId;
+    // buf.namespace_id = 0;
+    // buf.flags |= MICROBIT_PERIDO_FRAME_KEEP_ALIVE_FLAG;
+    // buf.ttl = 2;
+    // buf.initial_ttl = 2;
+    // buf.time_since_wake = 0;
+    // buf.period = 0;
 
-    return queueTxBuf(&buf);
+    // return queueTxBuf(&buf);
+    return MICROBIT_OK;
 }
 
 /**
@@ -1318,6 +1341,9 @@ int MicroBitPeridoRadio::enable()
     while (keep_alive_match < 11)
         keep_alive_match = microbit_random(256) % 40;
 
+    NRF_RADIO->POWER = 0;
+    NRF_RADIO->POWER = 1;
+
     // Enable the High Frequency clock on the processor. This is a pre-requisite for
     // the RADIO module. Without this clock, no communication is possible.
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
@@ -1329,9 +1355,15 @@ int MicroBitPeridoRadio::enable()
 
     setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
 
+    NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
+    NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
+    NRF_RADIO->OVERRIDE2 = NRF_FICR->BLE_1MBIT[2];
+    NRF_RADIO->OVERRIDE3 = NRF_FICR->BLE_1MBIT[3];
+    NRF_RADIO->OVERRIDE4 = 0x80000000 | NRF_FICR->BLE_1MBIT[4];
+
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
-    NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_1Mbit;
+    NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit;
 
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
@@ -1354,7 +1386,7 @@ int MicroBitPeridoRadio::enable()
     // NRF_RADIO->PCNF1 = 0x02040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
     // NRF_RADIO->PCNF1 = 0x00040000 | MICROBIT_RADIO_MAX_PACKET_SIZE;
 
-    NRF_RADIO->PCNF1 = 0x00040000 | MICROBIT_PERIDO_MAX_PACKET_SIZE;
+    NRF_RADIO->PCNF1 = 0x02040000 | MICROBIT_PERIDO_MAX_PACKET_SIZE;
 
     // Most communication channels contain some form of checksum - a mathematical calculation taken based on all the data
     // in a packet, that is also sent as part of the packet. When received, this calculation can be repeated, and the results
@@ -1367,7 +1399,7 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->CRCPOLY = 0x11021;
 
     // Set the start random value of the data whitening algorithm. This can be any non zero number.
-    // NRF_RADIO->DATAWHITEIV = 0x18;
+    NRF_RADIO->DATAWHITEIV = 0x18;
 
     // Set up the RADIO module to read and write from our internal buffer.
     NRF_RADIO->PACKETPTR = (uint32_t)rxBuf;
