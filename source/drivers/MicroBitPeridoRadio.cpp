@@ -184,256 +184,57 @@ void timer_callback(uint8_t) {}
 
 extern void set_transmission_reception_gpio(int);
 
-void poop()
-{
-    volatile int i = 0;
-
-    i++;
-    return;
-}
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 extern "C" void RADIO_IRQHandler(void)
 {
-    if (NRF_RADIO->EVENTS_END)
+    NRF_RADIO->EVENTS_END = 0;
+    PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
+
+    if (radioState == RADIO_STATE_FORWARD)
     {
-        NRF_RADIO->EVENTS_END = 0;
-        PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
+        radioState = RADIO_STATE_RECEIVE;
+        NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
+        NRF_RADIO->TASKS_RXEN = 1;
+        packets_forwarded++;
+        return;
+    }
 
-        if (radioState == RADIO_STATE_RECEIVE)
+    if (radioState == RADIO_STATE_RECEIVE)
+    {
+        if(NRF_RADIO->CRCSTATUS == 1)
         {
-            if(NRF_RADIO->CRCSTATUS == 1)
+            if(p->ttl > 0)
             {
-                if(p->ttl > 0)
-                {
-                    p->ttl--;
-                    NRF_RADIO->PACKETPTR = (uint32_t)p;
-                    NRF_RADIO->TASKS_TXEN = 1;
-                    radioState = RADIO_STATE_FORWARD;
-                    // swap to forward mode
-                    // PERIDO_UNSET_FLAGS(RADIO_STATUS_RX_RDY | RADIO_STATUS_RECEIVE);
-                    // policy decisions could be implemented here. i.e. forward only ours, forward all, whitelist
-                    // PERIDO_SET_FLAGS((RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN));
-                    // PERIDO_UNSET_FLAGS(RADIO_STATUS_RECEIVE);
-                    // PERIDO_SET_FLAGS(RADIO_STATUS_FORWARD);
-    // #ifdef TRACE
-    //                     set_transmission_reception_gpio(1);
-    // #endif
-                    // HW_ASSERT(0,11);
-                    packets_received++;
-                    return;
-                }
+                p->ttl--;
+                radioState = RADIO_STATE_FORWARD;
+                NRF_RADIO->PACKETPTR = (uint32_t)p;
+                NRF_RADIO->TASKS_TXEN = 1;
+                packets_received++;
+                return;
             }
-
-            packets_received++;
+        }
+        else
+        {
             crc_fail_count++;
-
-            // HW_ASSERT(0,11);
-            NRF_RADIO->PACKETPTR = (uint32_t)p;
-            NRF_RADIO->TASKS_RXEN = 1;
-            return;
         }
 
-        if (radioState == RADIO_STATE_TRANSMIT)
-        {
-            // #ifdef TRACE
-                // set_transmission_reception_gpio(0);
-    // #endif
-                // HW_ASSERT(0,11);
-                NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
-                NRF_RADIO->TASKS_RXEN = 1;
-                packets_transmitted++;
-                radioState = RADIO_STATE_RECEIVE;
-    // #ifdef TRACE
-    //             set_transmission_reception_gpio(1);
-    // #endif
-            return;
-        }
+        packets_received++;
+        NRF_RADIO->PACKETPTR = (uint32_t)p;
+        NRF_RADIO->TASKS_RXEN = 1;
+        return;
+    }
 
-        if (radioState == RADIO_STATE_FORWARD)
-        {
-            // #ifdef TRACE
-    //             set_transmission_reception_gpio(0);
-    // #endif
-                // HW_ASSERT(0,11);
-                NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
-                NRF_RADIO->TASKS_RXEN = 1;
-                radioState = RADIO_STATE_RECEIVE;
-                packets_forwarded++;
-            return;
-    // #ifdef TRACE
-    //             set_transmission_reception_gpio(1);
-    // #endif
-        }
+    if (radioState == RADIO_STATE_TRANSMIT)
+    {
+        radioState = RADIO_STATE_RECEIVE;
+        NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
+        NRF_RADIO->TASKS_RXEN = 1;
+        packets_transmitted++;
+        return;
     }
 }
-
-//     switch (radioState) {
-//         case Receive:
-// // #ifdef TRACE
-// //             set_transmission_reception_gpio(0);
-// // #endif
-//             if(NRF_RADIO->CRCSTATUS == 1)
-//             {
-//                 if(p->ttl > 0)
-//                 {
-//                     p->ttl--;
-//                     NRF_RADIO->PACKETPTR = (uint32_t)p;
-//                     NRF_RADIO->TASKS_TXEN = 1;
-//                     radioState = Forward;
-//                     // swap to forward mode
-//                     // PERIDO_UNSET_FLAGS(RADIO_STATUS_RX_RDY | RADIO_STATUS_RECEIVE);
-//                     // policy decisions could be implemented here. i.e. forward only ours, forward all, whitelist
-//                     // PERIDO_SET_FLAGS((RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN));
-//                     // PERIDO_UNSET_FLAGS(RADIO_STATUS_RECEIVE);
-//                     // PERIDO_SET_FLAGS(RADIO_STATUS_FORWARD);
-// // #ifdef TRACE
-// //                     set_transmission_reception_gpio(1);
-// // #endif
-//                     // HW_ASSERT(0,11);
-//                     packets_received++;
-//                     break;
-//                 }
-//             }
-
-//             packets_received++;
-//             crc_fail_count++;
-
-//             // HW_ASSERT(0,11);
-//             NRF_RADIO->PACKETPTR = (uint32_t)p;
-//             NRF_RADIO->TASKS_RXEN = 1;
-// // #ifdef TRACE
-// //             set_transmission_reception_gpio(1);
-// // #endif
-//             break;
-//         case Transmit:
-// // #ifdef TRACE
-//             // set_transmission_reception_gpio(0);
-// // #endif
-//             // HW_ASSERT(0,11);
-//             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
-//             NRF_RADIO->TASKS_RXEN = 1;
-//             packets_transmitted++;
-//             radioState = Receive;
-// // #ifdef TRACE
-// //             set_transmission_reception_gpio(1);
-// // #endif
-//             break;
-
-//         case Forward:
-
-// // #ifdef TRACE
-// //             set_transmission_reception_gpio(0);
-// // #endif
-//             // HW_ASSERT(0,11);
-//             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
-//             NRF_RADIO->TASKS_RXEN = 1;
-//             radioState = Receive;
-//             packets_forwarded++;
-// // #ifdef TRACE
-// //             set_transmission_reception_gpio(1);
-// // #endif
-//             break;
-//     }
-// }
-
-
-//         if (radio_status & RADIO_STATUS_RECEIVE)
-//         {
-//             // PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_FORWARD | RADIO_STATUS_TRANSMIT)))
-//             packets_received++;
-// #ifdef TRACE
-//             set_transmission_reception_gpio(0);
-// #endif
-//             PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
-//             if(NRF_RADIO->CRCSTATUS == 1)
-//             {
-//                 if(p->ttl > 0)
-//                 {
-//                     p->ttl--;
-//                     radioState = Transmit;
-//                     // swap to forward mode
-//                     // PERIDO_UNSET_FLAGS(RADIO_STATUS_RX_RDY | RADIO_STATUS_RECEIVE);
-//                     // policy decisions could be implemented here. i.e. forward only ours, forward all, whitelist
-//                     // PERIDO_SET_FLAGS((RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN));
-//                     // PERIDO_UNSET_FLAGS(RADIO_STATUS_RECEIVE);
-//                     // PERIDO_SET_FLAGS(RADIO_STATUS_FORWARD);
-// #ifdef TRACE
-//                     set_transmission_reception_gpio(1);
-// #endif
-//                     // HW_ASSERT(0,11);
-//                     NRF_RADIO->PACKETPTR = (uint32_t)p;
-//                     NRF_RADIO->TASKS_TXEN = 1;
-//                     return;
-//                 }
-//             }
-//             else
-//                 crc_fail_count++;
-
-//             // HW_ASSERT(0,11);
-//             NRF_RADIO->PACKETPTR = (uint32_t)p;
-//             NRF_RADIO->TASKS_RXEN = 1;
-// #ifdef TRACE
-//             set_transmission_reception_gpio(1);
-// #endif
-//             return;
-//         }
-
-//         if (radio_status & (RADIO_STATUS_FORWARD))
-//         {
-//             // PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RECEIVE | RADIO_STATUS_TRANSMIT)))
-//             packets_forwarded++;
-// #ifdef TRACE
-//             set_transmission_reception_gpio(0);
-// #endif
-//             PERIDO_UNSET_FLAGS(RADIO_STATUS_FORWARD);
-//             PERIDO_SET_FLAGS(RADIO_STATUS_RECEIVE);
-
-//             // HW_ASSERT(0,11);
-//             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
-//             NRF_RADIO->TASKS_RXEN = 1;
-// #ifdef TRACE
-//             set_transmission_reception_gpio(1);
-// #endif
-//             return;
-//         }
-
-//         if (radio_status & RADIO_STATUS_TRANSMIT)
-//         {
-//             // PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_RECEIVE | RADIO_STATUS_FORWARD)))
-// #ifdef TRACE
-//             set_transmission_reception_gpio(0);
-// #endif
-//             packets_transmitted++;
-//             PERIDO_UNSET_FLAGS(RADIO_STATUS_TRANSMIT);
-//             PERIDO_SET_FLAGS(RADIO_STATUS_RECEIVE);
-
-//             // HW_ASSERT(0,11);
-//             NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
-//             NRF_RADIO->TASKS_RXEN = 1;
-// #ifdef TRACE
-//             set_transmission_reception_gpio(1);
-// #endif
-//             return;
-//         }
-    // }
-
-/**
-* automatic transposition of textual name to app id and namespace...
-    * should there be a default app_id and namespace?
-* The ability to create a "private" group where there aren't other devices is desired
-    * could probably use the app_id to select a band...
-    * it's on the user to create reliability.
-    * Probably want some group collision detection and the selection of another group...
-    * there are only 100 bands...
-* increasing and decreasing data rates...
-    * how do we reach concensus?
-        * do we need a broadcast frame?
-            * i'd rather not...
-        * expresses of intent in a frame
-            * only works if others have data to transmit.
-        * First to broadcast, if others are ok with that then then they move, otherwise they stay where they are.
-    * automatic slowdown on no transmission in wake period... inverse as well if we're not sleeping as often as we should, speed up.
-**/
 
 void manual_poke()
 {
@@ -442,18 +243,14 @@ void manual_poke()
 
     NRF_RADIO->TASKS_DISABLE = 1;
     while (NRF_RADIO->EVENTS_DISABLED == 0);
-
     NRF_RADIO->EVENTS_DISABLED = 0;
-    NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->getCurrentTxBuf();
-    // HW_ASSERT(0,11);
-    NRF_RADIO->TASKS_TXEN = 1;
-// #ifdef TRACE
-//     set_transmission_reception_gpio(1);
-// #endif
+
     radioState = RADIO_STATE_TRANSMIT;
-    // radio_status = 0;
-    // PERIDO_SET_FLAGS(RADIO_STATUS_TRANSMIT);
+    NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->getCurrentTxBuf();
+    NRF_RADIO->TASKS_TXEN = 1;
 }
+
+#pragma GCC pop_options
 
 /**
   * Constructor.
@@ -762,26 +559,22 @@ int MicroBitPeridoRadio::enable()
     // Set up the RADIO module to read and write from our internal buffer.
     NRF_RADIO->PACKETPTR = (uint32_t)rxBuf;
 
-    // Configure the hardware to issue an interrupt whenever a task is complete (e.g. send/receive)
-    NVIC_ClearPendingIRQ(RADIO_IRQn);
-    NVIC_SetPriority(RADIO_IRQn, 0);
-    NVIC_EnableIRQ(RADIO_IRQn);
-
     NRF_RADIO->EVENTS_READY = 0;
     NRF_RADIO->EVENTS_END = 0;
-    NRF_RADIO->INTENCLR = 0xffffffff;
-    NRF_RADIO->INTENSET = 0x8;
-    // NRF_RADIO->TIFS = 148;
+    // NRF_RADIO->TIFS = 300;
     NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
     NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk; //| RADIO_SHORTS_ADDRESS_RSSISTART_Msk;
 
     radioState = RADIO_STATE_RECEIVE;
-    // radio_status = 0;
-    // PERIDO_SET_FLAGS(RADIO_STATUS_RECEIVE);
-    NRF_RADIO->TASKS_RXEN = 1;
 
-    // PERIDO_SET_FLAGS(RADIO_STATUS_DISABLED | RADIO_STATUS_DISCOVERING | RADIO_STATUS_SLEEPING);
-    // timer.setCompare(WAKE_UP_CHANNEL, timer.captureCounter(WAKE_UP_CHANNEL) + periods[periodIndex] * 1000);
+    NRF_RADIO->INTENCLR = 0xffffffff;
+    NRF_RADIO->INTENSET = 0x8;
+
+    NVIC_ClearPendingIRQ(RADIO_IRQn);
+    NVIC_SetPriority(RADIO_IRQn, 0);
+    NVIC_EnableIRQ(RADIO_IRQn);
+
+    NRF_RADIO->TASKS_RXEN = 1;
 
     // Done. Record that our RADIO is configured.
     status |= MICROBIT_RADIO_STATUS_INITIALISED;
