@@ -277,7 +277,7 @@ volatile uint32_t packets_received = 0;
 volatile uint32_t packets_forwarded = 0;
 
 
-#define TRACK_STATE
+// #define TRACK_STATE
 
 #ifdef TRACK_STATE
 
@@ -1363,7 +1363,7 @@ int MicroBitPeridoRadio::enable()
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
-    NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit;
+    NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_250Kbit;
 
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
