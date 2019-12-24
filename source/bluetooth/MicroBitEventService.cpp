@@ -34,22 +34,40 @@ DEALINGS IN THE SOFTWARE.
 #include "ExternalEvents.h"
 #include "MicroBitFiber.h"
 
+//
+// Local enumeration of valid client event write configuration options. Used only to optimise pre‐processor comparisons.
+//
+#define __BOTH_FAST_AND_RELIABLE 0
+#define __FAST_ONLY 1
+#define __RELIABLE_ONLY 2
+
+#define __CAT(a, ...) a##__VA_ARGS__
+#define CLIENT_EVENT_WRITE_MODE(x) __CAT(__, x)
+#define CLIENT_EVENT_WRITE_MODE_IS(x) (CLIENT_EVENT_WRITE_MODE(MICROBIT_BLE_CLIENT_EVENT_WRITE_TYPES) == CLIENT_EVENT_WRITE_MODE(x))
+
 /**
   * Constructor.
   * Create a representation of the EventService
   * @param _ble The instance of a BLE device that we're running on.
   * @param _messageBus An instance of an EventModel which events will be mirrored from.
   */
-MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus) :
-        ble(_ble),messageBus(_messageBus)
+MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_messageBus) : ble(_ble), messageBus(_messageBus)
 {
-    GattCharacteristic  microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent),
-    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
+    GattCharacteristic microBitEventCharacteristic(MicroBitEventServiceMicroBitEventCharacteristicUUID, (uint8_t *)&microBitEventBuffer, 0, sizeof(EventServiceEvent),
+                                                   GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
-    GattCharacteristic  clientEventCharacteristic(MicroBitEventServiceClientEventCharacteristicUUID, (uint8_t *)&clientEventBuffer, 0, sizeof(EventServiceEvent),
-    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
+#if (CLIENT_EVENT_WRITE_MODE_IS(FAST_ONLY))
+    GattCharacteristic clientEventCharacteristic(MicroBitEventServiceClientEventCharacteristicUUID, (uint8_t *)&clientEventBuffer, 0, sizeof(EventServiceEvent),
+                                                 GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
+#elif (CLIENT_EVENT_WRITE_MODE_IS(RELIABLE_ONLY))
+    GattCharacteristic clientEventCharacteristic(MicroBitEventServiceClientEventCharacteristicUUID, (uint8_t *)&clientEventBuffer, 0, sizeof(EventServiceEvent),
+                                                 GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
+#else
+    GattCharacteristic clientEventCharacteristic(MicroBitEventServiceClientEventCharacteristicUUID, (uint8_t *)&clientEventBuffer, 0, sizeof(EventServiceEvent),
+                                                 GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE);
+#endif
 
-    GattCharacteristic  clientRequirementsCharacteristic(MicroBitEventServiceClientRequirementsCharacteristicUUID, (uint8_t *)&clientRequirementsBuffer, 0, sizeof(EventServiceEvent), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
+    GattCharacteristic clientRequirementsCharacteristic(MicroBitEventServiceClientRequirementsCharacteristicUUID, (uint8_t *)&clientRequirementsBuffer, 0, sizeof(EventServiceEvent), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE);
 
     microBitRequirementsCharacteristic = new GattCharacteristic(MicroBitEventServiceMicroBitRequirementsCharacteristicUUID, (uint8_t *)&microBitRequirementsBuffer, 0, sizeof(EventServiceEvent), GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
 
@@ -69,7 +87,7 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_message
     microBitRequirementsCharacteristic->requireSecurity(SecurityManager::MICROBIT_BLE_SECURITY_LEVEL);
 
     GattCharacteristic *characteristics[] = {&microBitEventCharacteristic, &clientEventCharacteristic, &clientRequirementsCharacteristic, microBitRequirementsCharacteristic};
-    GattService         service(MicroBitEventServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
+    GattService service(MicroBitEventServiceUUID, characteristics, sizeof(characteristics) / sizeof(GattCharacteristic *));
 
     ble.addService(service);
 
@@ -82,7 +100,6 @@ MicroBitEventService::MicroBitEventService(BLEDevice &_ble, EventModel &_message
     fiber_add_idle_component(this);
 }
 
-
 /**
   * Callback. Invoked when any of our attributes are written via BLE.
   */
@@ -91,25 +108,27 @@ void MicroBitEventService::onDataWritten(const GattWriteCallbackParams *params)
     int len = params->len;
     EventServiceEvent *e = (EventServiceEvent *)params->data;
 
-    if (params->handle == clientEventCharacteristicHandle) {
+    if (params->handle == clientEventCharacteristicHandle)
+    {
 
         // Read and fire all events...
         while (len >= 4)
         {
             MicroBitEvent evt(e->type, e->reason);
-            len-=4;
+            len -= 4;
             e++;
         }
         return;
     }
 
-    if (params->handle == clientRequirementsCharacteristicHandle) {
+    if (params->handle == clientRequirementsCharacteristicHandle)
+    {
         // Read and register for all the events given...
         while (len >= 4)
         {
             messageBus.listen(e->type, e->reason, this, &MicroBitEventService::onMicroBitEvent, MESSAGE_BUS_LISTENER_IMMEDIATE);
 
-            len-=4;
+            len -= 4;
             e++;
         }
         return;
@@ -123,7 +142,8 @@ void MicroBitEventService::onMicroBitEvent(MicroBitEvent evt)
 {
     EventServiceEvent *e = &microBitEventBuffer;
 
-    if (ble.getGapState().connected) {
+    if (ble.getGapState().connected)
+    {
         e->type = evt.source;
         e->reason = evt.value;
 
@@ -137,7 +157,8 @@ void MicroBitEventService::onMicroBitEvent(MicroBitEvent evt)
   */
 void MicroBitEventService::idleTick()
 {
-    if (!ble.getGapState().connected && messageBusListenerOffset >0) {
+    if (!ble.getGapState().connected && messageBusListenerOffset > 0)
+    {
         messageBusListenerOffset = 0;
         messageBus.ignore(MICROBIT_ID_ANY, MICROBIT_EVT_ANY, this, &MicroBitEventService::onMicroBitEvent);
     }
@@ -161,28 +182,25 @@ void MicroBitEventService::onRequirementsRead(GattReadAuthCallbackParams *params
             microBitRequirementsBuffer.type = l->id;
             microBitRequirementsBuffer.reason = l->value;
             ble.gattServer().write(microBitRequirementsCharacteristic->getValueHandle(), (uint8_t *)&microBitRequirementsBuffer, sizeof(EventServiceEvent));
-        } else {
+        }
+        else
+        {
             ble.gattServer().write(microBitRequirementsCharacteristic->getValueHandle(), (uint8_t *)&microBitRequirementsBuffer, 0);
         }
     }
 }
 
-const uint8_t  MicroBitEventServiceUUID[] = {
-    0xe9,0x5d,0x93,0xaf,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
-};
+const uint8_t MicroBitEventServiceUUID[] = {
+    0xe9, 0x5d, 0x93, 0xaf, 0x25, 0x1d, 0x47, 0x0a, 0xa0, 0x62, 0xfa, 0x19, 0x22, 0xdf, 0xa9, 0xa8};
 
-const uint8_t  MicroBitEventServiceMicroBitEventCharacteristicUUID[] = {
-    0xe9,0x5d,0x97,0x75,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
-};
+const uint8_t MicroBitEventServiceMicroBitEventCharacteristicUUID[] = {
+    0xe9, 0x5d, 0x97, 0x75, 0x25, 0x1d, 0x47, 0x0a, 0xa0, 0x62, 0xfa, 0x19, 0x22, 0xdf, 0xa9, 0xa8};
 
-const uint8_t  MicroBitEventServiceClientEventCharacteristicUUID[] = {
-    0xe9,0x5d,0x54,0x04,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
-};
+const uint8_t MicroBitEventServiceClientEventCharacteristicUUID[] = {
+    0xe9, 0x5d, 0x54, 0x04, 0x25, 0x1d, 0x47, 0x0a, 0xa0, 0x62, 0xfa, 0x19, 0x22, 0xdf, 0xa9, 0xa8};
 
-const uint8_t  MicroBitEventServiceMicroBitRequirementsCharacteristicUUID[] = {
-    0xe9,0x5d,0xb8,0x4c,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
-};
+const uint8_t MicroBitEventServiceMicroBitRequirementsCharacteristicUUID[] = {
+    0xe9, 0x5d, 0xb8, 0x4c, 0x25, 0x1d, 0x47, 0x0a, 0xa0, 0x62, 0xfa, 0x19, 0x22, 0xdf, 0xa9, 0xa8};
 
-const uint8_t  MicroBitEventServiceClientRequirementsCharacteristicUUID[] = {
-    0xe9,0x5d,0x23,0xc4,0x25,0x1d,0x47,0x0a,0xa0,0x62,0xfa,0x19,0x22,0xdf,0xa9,0xa8
-};
+const uint8_t MicroBitEventServiceClientRequirementsCharacteristicUUID[] = {
+    0xe9, 0x5d, 0x23, 0xc4, 0x25, 0x1d, 0x47, 0x0a, 0xa0, 0x62, 0xfa, 0x19, 0x22, 0xdf, 0xa9, 0xa8};
