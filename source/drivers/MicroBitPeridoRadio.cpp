@@ -119,7 +119,7 @@ MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 #warning storing is disabled.
 #endif
 
-#define PACKET_DBG
+// #define PACKET_DBG
 #ifdef PACKET_DBG
 #warning passing packets to process_packet function
 #endif
@@ -147,7 +147,7 @@ extern void set_user_placed_gpio(int);
 
 extern void packet_debug(PeridoFrameBuffer*);
 
-extern void process_packet(PeridoFrameBuffer*);
+void process_packet(PeridoFrameBuffer* p, bool crc_ok);
 extern void packet_missed(PeridoFrameBuffer *p);
 
 extern void valid_packet_received(PeridoFrameBuffer*);
@@ -186,6 +186,10 @@ extern void log_num(int num);
 #define RADIO_STATUS_FIRST_PACKET           0x00020000
 #define RADIO_STATUS_SAMPLING               0x00040000
 #define RADIO_STATUS_QUEUE_KEEP_ALIVE       0x00080000
+
+#if MICROBIT_PERIDO_TEST_MODE == 1
+    TestRole testRole;
+#endif;
 
 /**
  *  Timings for each event (us):
@@ -416,6 +420,86 @@ state_machine_start:
         return;
     }
 
+#if MICROBIT_PERIDO_TEST_MODE == 1
+    if(radio_status & RADIO_STATUS_RECEIVE)
+    {
+        PERIDO_LOG_FLAGS(radio_status);
+        PERIDO_ASSERT(!(radio_status & (RADIO_STATUS_TX_EN|RADIO_STATUS_TX_RDY|RADIO_STATUS_TRANSMIT)));
+
+        // we get an address event for rx, indicating we are in the process of receiving a packet. Update our status and return;
+        if(NRF_RADIO->EVENTS_ADDRESS)
+        {
+            NRF_RADIO->EVENTS_ADDRESS = 0;
+            PERIDO_SET_FLAGS(RADIO_STATUS_RECEIVING);
+            return;
+        }
+
+        if(NRF_RADIO->EVENTS_END)
+        {
+            packets_received++;
+            packet_count++;
+
+            PERIDO_UNSET_FLAGS(RADIO_STATUS_RECEIVING);
+
+            NRF_RADIO->EVENTS_ADDRESS = 0;
+            NRF_RADIO->EVENTS_END = 0;
+            NRF_RADIO->TASKS_START = 1;
+
+            PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
+
+            if (testRole == Repeater)
+            {
+                if(NRF_RADIO->CRCSTATUS == 1)
+                {
+                    // catch ddos
+                    if (p->ttl > 4)
+                        return;
+
+                    // reset our keep alive count, a transmission has been seen
+                    keep_alive_count = 0;
+
+                    // if we've been discovering and are now synced, it's
+                    // highly likely that our new wake sleep window
+                    // does not align with our previous tx callback check... cancel!
+                    // MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL);
+                    PERIDO_UNSET_FLAGS(RADIO_STATUS_DISCOVERING);
+
+                    if(p->ttl > 0)
+                    {
+                        p->ttl--;
+                        // swap to forward mode
+                        PERIDO_UNSET_FLAGS(RADIO_STATUS_RX_RDY | RADIO_STATUS_RECEIVE);
+                        // policy decisions could be implemented here. i.e. forward only ours, forward all, whitelist
+                        PERIDO_SET_FLAGS((RADIO_STATUS_FORWARD | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN));
+                    }
+                    else
+                    {
+                        PERIDO_UNSET_FLAGS(RADIO_STATUS_FORWARD);
+
+                        // store this packet (should be a nop in most cases as we store after every forward), then try and transmit...
+                        MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + TX_BACKOFF_MIN + microbit_random((periods[network_period_idx] / 4) * 2000));
+                        PERIDO_SET_FLAGS(RADIO_STATUS_STORE);
+                    }
+                }
+                else
+                {
+                    MicroBitPeridoRadio::instance->timer.setCompare(CHECK_TX_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL) + FORWARD_POLL_TIME + microbit_random((periods[network_period_idx] / 4) * 2000));
+                    crc_fail_count++;
+                    return;
+                }
+            }
+            else
+            {
+                if(NRF_RADIO->CRCSTATUS == 0)
+                    crc_fail_count++;
+
+                packets_received++;
+                NRF_RADIO->PACKETPTR = (uint32_t)p;
+                process_packet(p, NRF_RADIO->CRCSTATUS == 1);
+            }
+        }
+    }
+#else
     if(radio_status & RADIO_STATUS_RECEIVE)
     {
 
@@ -453,7 +537,6 @@ state_machine_start:
 //             MicroBitPeridoRadio::instance->timer.captureCounter(CHECK_TX_CHANNEL);
             return;
         }
-
         if(NRF_RADIO->EVENTS_END)
         {
             packets_received++;
@@ -473,7 +556,6 @@ state_machine_start:
 #ifndef DISABLE_SLEEP
             MicroBitPeridoRadio::instance->timer.setCompare(GO_TO_SLEEP_CHANNEL, MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL) + FORWARD_POLL_TIME);
 #endif
-
             if(NRF_RADIO->CRCSTATUS == 1)
             {
                 PeridoFrameBuffer *p = MicroBitPeridoRadio::instance->rxBuf;
@@ -527,6 +609,7 @@ state_machine_start:
         set_rx_gpio(0);
 #endif
     }
+#endif // if test mode
 
     if(radio_status & RADIO_STATUS_TRANSMIT)
     {
@@ -1341,9 +1424,6 @@ int MicroBitPeridoRadio::enable()
     while (keep_alive_match < 11)
         keep_alive_match = microbit_random(256) % 40;
 
-    NRF_RADIO->POWER = 0;
-    NRF_RADIO->POWER = 1;
-
     // Enable the High Frequency clock on the processor. This is a pre-requisite for
     // the RADIO module. Without this clock, no communication is possible.
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
@@ -1351,9 +1431,8 @@ int MicroBitPeridoRadio::enable()
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0);
 
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
-    setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
-
-    setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
+    NRF_RADIO->TXPOWER = (uint32_t)MICROBIT_BLE_POWER_LEVEL[6];
+    NRF_RADIO->FREQUENCY = 2;
 
     NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
     NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
@@ -1363,14 +1442,21 @@ int MicroBitPeridoRadio::enable()
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
-    NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_250Kbit;
+    NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit;
 
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
     // Statistically, this provides assurance to avoid other similar 2.4GHz protocols that may be in the vicinity.
     // We also map the assigned 8-bit GROUP id into the PREFIX field. This allows the RADIO hardware to perform
     // address matching for us, and only generate an interrupt when a packet matching our group is received.
-    NRF_RADIO->BASE0 =  MICROBIT_RADIO_BASE_ADDRESS;
+#if MICROBIT_PERIDO_TEST_MODE == 1
+    if (testRole == Collector)
+        NRF_RADIO->BASE0 =  MICROBIT_RADIO_BASE_ADDRESS;
+    else
+        NRF_RADIO->BASE0 =  MICROBIT_PERIDO_RADIO_BASE_ADDRESS;
+#else
+    NRF_RADIO->BASE0 =  MICROBIT_PERIDO_RADIO_BASE_ADDRESS;
+#endif
 
     NRF_RADIO->PREFIX0 = 0;
 
@@ -1399,7 +1485,7 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->CRCPOLY = 0x11021;
 
     // Set the start random value of the data whitening algorithm. This can be any non zero number.
-    NRF_RADIO->DATAWHITEIV = 0x18;
+    NRF_RADIO->DATAWHITEIV = 37;
 
     // Set up the RADIO module to read and write from our internal buffer.
     NRF_RADIO->PACKETPTR = (uint32_t)rxBuf;
@@ -1630,8 +1716,8 @@ int MicroBitPeridoRadio::send(uint8_t *buffer, int len, uint8_t namespaceId)
     buf.length = len + MICROBIT_PERIDO_HEADER_SIZE - 1;
     buf.app_id = appId;
     buf.namespace_id = namespaceId;
-    buf.ttl = 2;
-    buf.initial_ttl = 2;
+    buf.ttl = MICROBIT_PERIDO_DEFAULT_TTL;
+    buf.initial_ttl = MICROBIT_PERIDO_DEFAULT_TTL;
     buf.time_since_wake = 0;
     buf.period = 0;
     memcpy(buf.payload, buffer, len);
@@ -1673,6 +1759,47 @@ uint16_t MicroBitPeridoRadio::generateId(uint8_t app_id, uint8_t namespace_id)
     LOG_NUM(new_id);
 
     return new_id;
+}
+
+int MicroBitPeridoRadio::setTestRole(TestRole t)
+{
+    testRole = t;
+    return MICROBIT_OK;
+}
+
+int MicroBitPeridoRadio::sendTestResults(uint8_t* data, uint8_t length)
+{
+    NRF_RADIO->TASKS_DISABLE = 1;
+    while(NRF_RADIO->EVENTS_DISABLED == 0);
+    NRF_RADIO->EVENTS_DISABLED = 0;
+
+    NRF_RADIO->BASE0 =  MICROBIT_RADIO_BASE_ADDRESS;
+
+    PeridoFrameBuffer* buf = new PeridoFrameBuffer;
+
+    memset(buf, 0, sizeof(PeridoFrameBuffer));
+
+    buf->id = microbit_random(65535);
+    buf->length = length + MICROBIT_PERIDO_HEADER_SIZE - 1;
+    buf->app_id = 0;
+    buf->namespace_id = 0;
+    buf->ttl = 0;
+    buf->initial_ttl = 0;
+    buf->time_since_wake = 0;
+    buf->period = 0;
+    memcpy(buf->payload, data, length);
+
+    NRF_RADIO->PACKETPTR = (uint32_t)buf;
+
+    NRF_RADIO->EVENTS_END = 0;
+    NRF_RADIO->TASKS_TXEN = 1;
+    while (NRF_RADIO->EVENTS_END == 0);
+
+    NRF_RADIO->EVENTS_END = 0;
+
+    delete buf;
+
+    return MICROBIT_OK;
 }
 
 #endif
