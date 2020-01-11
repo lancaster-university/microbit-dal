@@ -179,10 +179,13 @@ volatile static uint8_t keep_alive_match = 0;
 
 volatile uint8_t radioState = RADIO_STATE_RECEIVE;
 
+TestRole testRole;
+
 void timer_callback(uint8_t) {}
 
 
 extern void set_transmission_reception_gpio(int);
+extern void process_packet(PeridoFrameBuffer* p, bool);
 
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
@@ -201,6 +204,45 @@ extern "C" void RADIO_IRQHandler(void)
         return;
     }
 
+#if MICROBIT_PERIDO_TEST_MODE == 1
+    if (radioState == RADIO_STATE_RECEIVE)
+    {
+        if (testRole == Repeater)
+        {
+            if(NRF_RADIO->CRCSTATUS == 1)
+            {
+                if(p->ttl > 0)
+                {
+                    p->ttl--;
+                    radioState = RADIO_STATE_FORWARD;
+                    NRF_RADIO->PACKETPTR = (uint32_t)p;
+                    NRF_RADIO->TASKS_TXEN = 1;
+                    packets_received++;
+                    return;
+                }
+            }
+            else
+            {
+                crc_fail_count++;
+            }
+            packets_received++;
+            NRF_RADIO->PACKETPTR = (uint32_t)p;
+            NRF_RADIO->TASKS_RXEN = 1;
+        }
+        else
+        {
+            if(NRF_RADIO->CRCSTATUS == 0)
+                crc_fail_count++;
+
+            packets_received++;
+            NRF_RADIO->PACKETPTR = (uint32_t)p;
+            NRF_RADIO->TASKS_RXEN = 1;
+
+            process_packet(p, NRF_RADIO->CRCSTATUS == 1);
+        }
+        return;
+    }
+#else
     if (radioState == RADIO_STATE_RECEIVE)
     {
         if(NRF_RADIO->CRCSTATUS == 1)
@@ -225,6 +267,7 @@ extern "C" void RADIO_IRQHandler(void)
         NRF_RADIO->TASKS_RXEN = 1;
         return;
     }
+#endif
 
     if (radioState == RADIO_STATE_TRANSMIT)
     {
@@ -236,17 +279,16 @@ extern "C" void RADIO_IRQHandler(void)
     }
 }
 
-void manual_poke()
-{
-    if (MicroBitPeridoRadio::instance->getCurrentTxBuf() == NULL)
-        return;
+#endif
 
+void manual_poke(PeridoFrameBuffer* p)
+{
     NRF_RADIO->TASKS_DISABLE = 1;
     while (NRF_RADIO->EVENTS_DISABLED == 0);
     NRF_RADIO->EVENTS_DISABLED = 0;
 
     radioState = RADIO_STATE_TRANSMIT;
-    NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->getCurrentTxBuf();
+    NRF_RADIO->PACKETPTR = (uint32_t)p;
     NRF_RADIO->TASKS_TXEN = 1;
 }
 
@@ -525,7 +567,14 @@ int MicroBitPeridoRadio::enable()
     // Statistically, this provides assurance to avoid other similar 2.4GHz protocols that may be in the vicinity.
     // We also map the assigned 8-bit GROUP id into the PREFIX field. This allows the RADIO hardware to perform
     // address matching for us, and only generate an interrupt when a packet matching our group is received.
-    NRF_RADIO->BASE0 =  MICROBIT_RADIO_BASE_ADDRESS;
+#if MICROBIT_PERIDO_TEST_MODE == 1
+    if (testRole == Collector)
+        NRF_RADIO->BASE0 =  MICROBIT_RADIO_BASE_ADDRESS;
+    else
+        NRF_RADIO->BASE0 =  MICROBIT_PERIDO_RADIO_BASE_ADDRESS;
+#else
+    NRF_RADIO->BASE0 =  MICROBIT_PERIDO_RADIO_BASE_ADDRESS;
+#endif
 
     NRF_RADIO->PREFIX0 = 0;
 
@@ -787,8 +836,8 @@ int MicroBitPeridoRadio::send(uint8_t *buffer, int len, uint8_t namespaceId)
     buf.length = len + MICROBIT_PERIDO_HEADER_SIZE - 1;
     buf.app_id = appId;
     buf.namespace_id = namespaceId;
-    buf.ttl = 2;
-    buf.initial_ttl = 2;
+    buf.ttl = MICROBIT_PERIDO_DEFAULT_TTL;
+    buf.initial_ttl = MICROBIT_PERIDO_DEFAULT_TTL;
     buf.time_since_wake = 0;
     buf.period = 0;
     memcpy(buf.payload, buffer, len);
@@ -827,4 +876,43 @@ uint16_t MicroBitPeridoRadio::generateId(uint8_t app_id, uint8_t namespace_id)
     return new_id;
 }
 
-#endif
+int MicroBitPeridoRadio::setTestRole(TestRole t)
+{
+    testRole = t;
+    return MICROBIT_OK;
+}
+
+int MicroBitPeridoRadio::sendTestResults(uint8_t* data, uint8_t length)
+{
+    NRF_RADIO->TASKS_DISABLE = 1;
+    while(NRF_RADIO->EVENTS_DISABLED == 0);
+    NRF_RADIO->EVENTS_DISABLED = 0;
+
+    NRF_RADIO->BASE0 =  MICROBIT_RADIO_BASE_ADDRESS;
+
+    PeridoFrameBuffer* buf = new PeridoFrameBuffer;
+
+    memset(buf, 0, sizeof(PeridoFrameBuffer));
+
+    buf->id = microbit_random(65535);
+    buf->length = length + MICROBIT_PERIDO_HEADER_SIZE - 1;
+    buf->app_id = 0;
+    buf->namespace_id = 0;
+    buf->ttl = 0;
+    buf->initial_ttl = 0;
+    buf->time_since_wake = 0;
+    buf->period = 0;
+    memcpy(buf->payload, data, length);
+
+    NRF_RADIO->PACKETPTR = (uint32_t)buf;
+
+    NRF_RADIO->EVENTS_END = 0;
+    NRF_RADIO->TASKS_TXEN = 1;
+    while (NRF_RADIO->EVENTS_END == 0);
+
+    NRF_RADIO->EVENTS_END = 0;
+
+    delete buf;
+
+    return MICROBIT_OK;
+}

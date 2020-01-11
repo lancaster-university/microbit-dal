@@ -63,10 +63,20 @@ struct PeridoFrameBuffer;
  * For serious applications, BLE should be considered a substantially more secure alternative.
  */
 
+#define MICROBIT_PERIDO_TEST_MODE               1
+
+// in test mode, we only transmit one packet
+#if MICROBIT_PERIDO_TEST_MODE == 1
+    #define MICROBIT_PERIDO_DEFAULT_TTL             1
+#else
+    #define MICROBIT_PERIDO_DEFAULT_TTL             2
+#endif
+
 #define MICROBIT_RADIO_STATUS_INITIALISED       0x0001
 #define MICROBIT_RADIO_DEFAULT_TX_POWER         6
 #define MICROBIT_RADIO_DEFAULT_FREQUENCY        7
-#define MICROBIT_RADIO_BASE_ADDRESS             0x75626975
+#define MICROBIT_RADIO_BASE_ADDRESS             0x75626974
+#define MICROBIT_PERIDO_RADIO_BASE_ADDRESS      0x75626975
 
 // Default configuration values
 #define MICROBIT_PERIDO_HEADER_SIZE             10
@@ -104,6 +114,17 @@ struct PeridoFrameBuffer
     uint8_t             payload[MICROBIT_PERIDO_MAX_PACKET_SIZE];    // User / higher layer protocol data
 } __attribute__((packed));
 
+
+#if MICROBIT_PERIDO_TEST_MODE == 1
+
+enum TestRole {
+  Transmitter,
+  Repeater,
+  Observer,
+  Collector
+};
+
+#endif
 
 class MicroBitPeridoRadio : public MicroBitComponent
 {
@@ -272,6 +293,12 @@ class MicroBitPeridoRadio : public MicroBitComponent
      * Generates an id based on historic information.
      **/
     uint16_t generateId(uint8_t app_id, uint8_t namespace_id);
+
+#if MICROBIT_PERIDO_TEST_MODE == 1
+    int setTestRole(TestRole t);
+
+    int sendTestResults(uint8_t* data, uint8_t length);
+#endif
 
 };
 
