@@ -333,6 +333,8 @@ uint32_t radio_pointer = 0;
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 
+PeridoFrameBuffer* testBuffer = NULL;
+
 uint32_t read_and_restart_wake()
 {
     uint32_t t =  MicroBitPeridoRadio::instance->timer.captureCounter(WAKE_UP_CHANNEL);
@@ -627,8 +629,11 @@ state_machine_start:
             HW_ASSERT(10, 33);
 
             MicroBitPeridoRadio::instance->timer.captureCounter(GO_TO_SLEEP_CHANNEL); // cancel sleep callback.
+#if MICROBIT_PERIDO_TEST_MODE == 1
+            PeridoFrameBuffer* p = testBuffer;
+#else
             PeridoFrameBuffer* p = MicroBitPeridoRadio::instance->getCurrentTxBuf();
-
+#endif
             PERIDO_UNSET_FLAGS(RADIO_STATUS_TX_RDY);
             PERIDO_SET_FLAGS(RADIO_STATUS_TX_END);
 
@@ -1174,7 +1179,9 @@ void timer_callback(uint8_t state)
 // #endif
 }
 
-void manual_poke(){
+void manual_poke(PeridoFrameBuffer* p)
+{
+    testBuffer = p;
     radio_status = (radio_status & (RADIO_STATUS_DISCOVERING | RADIO_STATUS_FIRST_PACKET)) | RADIO_STATUS_DISABLE | RADIO_STATUS_TX_EN | RADIO_STATUS_TRANSMIT;
     PERIDO_LOG_FLAGS(radio_status);
     radio_state_machine();
@@ -1526,12 +1533,14 @@ int MicroBitPeridoRadio::disable()
     // Disable interrupts and STOP any ongoing packet reception.
     NVIC_DisableIRQ(RADIO_IRQn);
 
+    NRF_RADIO->INTENCLR = 0xffffffff;
     NRF_RADIO->EVENTS_DISABLED = 0;
     NRF_RADIO->TASKS_DISABLE = 1;
-    while(NRF_RADIO->EVENTS_DISABLED == 0);
+    while (NRF_RADIO->EVENTS_DISABLED == 0);
 
     // record that the radio is now disabled
     status &= ~MICROBIT_RADIO_STATUS_INITIALISED;
+    radio_status = RADIO_STATUS_DISABLED;
 
     return MICROBIT_OK;
 }
@@ -1792,12 +1801,21 @@ int MicroBitPeridoRadio::sendTestResults(uint8_t* data, uint8_t length)
     NRF_RADIO->PACKETPTR = (uint32_t)buf;
 
     NRF_RADIO->EVENTS_END = 0;
+    NRF_RADIO->EVENTS_READY = 0;
+
     NRF_RADIO->TASKS_TXEN = 1;
+    while (NRF_RADIO->EVENTS_READY == 0);
+
+    NRF_RADIO->TASKS_START = 1;
     while (NRF_RADIO->EVENTS_END == 0);
 
     NRF_RADIO->EVENTS_END = 0;
 
     delete buf;
+
+    NRF_RADIO->TASKS_DISABLE = 1;
+    while(NRF_RADIO->EVENTS_DISABLED == 0);
+    NRF_RADIO->EVENTS_DISABLED = 0;
 
     return MICROBIT_OK;
 }
