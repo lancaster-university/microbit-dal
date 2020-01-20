@@ -190,6 +190,13 @@ extern void process_packet(PeridoFrameBuffer* p, bool);
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 
+volatile int hw_state = 0;
+#define HW_ASSERT(expected_state, panic_num) {\
+                                        hw_state = NRF_RADIO->STATE;\
+                                        if (hw_state != expected_state) \
+                                            microbit_panic(__LINE__);\
+                                        }\
+
 extern "C" void RADIO_IRQHandler(void)
 {
     NRF_RADIO->EVENTS_END = 0;
@@ -199,6 +206,10 @@ extern "C" void RADIO_IRQHandler(void)
     {
         radioState = RADIO_STATE_RECEIVE;
         NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
+        while(NRF_RADIO->EVENTS_DISABLED == 0);
+#if MICROBIT_PERIDO_TEST_MODE == 1
+        HW_ASSERT(0,0);
+#endif
         NRF_RADIO->TASKS_RXEN = 1;
         packets_forwarded++;
         return;
@@ -209,6 +220,7 @@ extern "C" void RADIO_IRQHandler(void)
     {
         if (testRole == Repeater)
         {
+            packets_received++;
             if(NRF_RADIO->CRCSTATUS == 1)
             {
                 if(p->ttl > 0)
@@ -216,8 +228,8 @@ extern "C" void RADIO_IRQHandler(void)
                     p->ttl--;
                     radioState = RADIO_STATE_FORWARD;
                     NRF_RADIO->PACKETPTR = (uint32_t)p;
+                    HW_ASSERT(0,0);
                     NRF_RADIO->TASKS_TXEN = 1;
-                    packets_received++;
                     return;
                 }
             }
@@ -225,8 +237,8 @@ extern "C" void RADIO_IRQHandler(void)
             {
                 crc_fail_count++;
             }
-            packets_received++;
             NRF_RADIO->PACKETPTR = (uint32_t)p;
+            HW_ASSERT(0,0);
             NRF_RADIO->TASKS_RXEN = 1;
         }
         else
@@ -236,6 +248,7 @@ extern "C" void RADIO_IRQHandler(void)
 
             packets_received++;
             NRF_RADIO->PACKETPTR = (uint32_t)p;
+            HW_ASSERT(0,0);
             NRF_RADIO->TASKS_RXEN = 1;
 
             process_packet(p, NRF_RADIO->CRCSTATUS == 1);
@@ -273,6 +286,9 @@ extern "C" void RADIO_IRQHandler(void)
     {
         radioState = RADIO_STATE_RECEIVE;
         NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
+#if MICROBIT_PERIDO_TEST_MODE == 1
+        HW_ASSERT(0,0);
+#endif
         NRF_RADIO->TASKS_RXEN = 1;
         packets_transmitted++;
         return;
@@ -333,7 +349,7 @@ MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, ui
     // 16 Mhz / 2^4 = 1 Mhz
     timer.setPrescaler(4);
 
-    timer.enable();
+    // timer.enable();
 
     microbit_seed_random();
 
