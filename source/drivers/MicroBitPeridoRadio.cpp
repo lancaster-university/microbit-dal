@@ -147,7 +147,7 @@ extern void set_user_placed_gpio(int);
 
 extern void packet_debug(PeridoFrameBuffer*);
 
-void process_packet(PeridoFrameBuffer* p, bool crc_ok);
+void process_packet(PeridoFrameBuffer* p, bool crc_ok, int rssi);
 extern void packet_missed(PeridoFrameBuffer *p);
 
 extern void valid_packet_received(PeridoFrameBuffer*);
@@ -497,7 +497,7 @@ state_machine_start:
 
                 packets_received++;
                 NRF_RADIO->PACKETPTR = (uint32_t)p;
-                process_packet(p, NRF_RADIO->CRCSTATUS == 1);
+                process_packet(p, NRF_RADIO->CRCSTATUS == 1,0);
             }
         }
     }
@@ -1270,7 +1270,18 @@ int MicroBitPeridoRadio::setFrequencyBand(int band)
     if (band < 0 || band > 100)
         return MICROBIT_INVALID_PARAMETER;
 
+    NRF_RADIO->TASKS_DISABLE = 1;
+    while(NRF_RADIO->EVENTS_DISABLED == 0);
+
     NRF_RADIO->FREQUENCY = (uint32_t)band;
+    NRF_RADIO->DATAWHITEIV = band;
+
+    radio_status = RADIO_STATUS_RECEIVE;
+    // radioState = RADIO_STATE_RECEIVE;
+
+    NRF_RADIO->EVENTS_READY = 0;
+    NRF_RADIO->EVENTS_END = 0;
+    NRF_RADIO->TASKS_RXEN = 1;
 
     return MICROBIT_OK;
 }
@@ -1439,17 +1450,17 @@ int MicroBitPeridoRadio::enable()
 
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
     NRF_RADIO->TXPOWER = (uint32_t)MICROBIT_BLE_POWER_LEVEL[6];
-    NRF_RADIO->FREQUENCY = 2;
+    NRF_RADIO->FREQUENCY = MICROBIT_RADIO_DEFAULT_FREQUENCY;
 
-    NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
-    NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
-    NRF_RADIO->OVERRIDE2 = NRF_FICR->BLE_1MBIT[2];
-    NRF_RADIO->OVERRIDE3 = NRF_FICR->BLE_1MBIT[3];
-    NRF_RADIO->OVERRIDE4 = 0x80000000 | NRF_FICR->BLE_1MBIT[4];
+    // NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
+    // NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
+    // NRF_RADIO->OVERRIDE2 = NRF_FICR->BLE_1MBIT[2];
+    // NRF_RADIO->OVERRIDE3 = NRF_FICR->BLE_1MBIT[3];
+    // NRF_RADIO->OVERRIDE4 = 0x80000000 | NRF_FICR->BLE_1MBIT[4];
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
-    NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit;
+    NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_1Mbit;
 
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
@@ -1492,7 +1503,7 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->CRCPOLY = 0x11021;
 
     // Set the start random value of the data whitening algorithm. This can be any non zero number.
-    NRF_RADIO->DATAWHITEIV = 37;
+    NRF_RADIO->DATAWHITEIV = MICROBIT_RADIO_DEFAULT_FREQUENCY;
 
     // Set up the RADIO module to read and write from our internal buffer.
     NRF_RADIO->PACKETPTR = (uint32_t)rxBuf;
