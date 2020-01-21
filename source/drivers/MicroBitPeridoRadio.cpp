@@ -580,15 +580,15 @@ int MicroBitPeridoRadio::enable()
     // setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
 
     // setFrequencyBand(MICROBIT_RADIO_DEFAULT_FREQUENCY);
-    NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
-    NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
-    NRF_RADIO->OVERRIDE2 = NRF_FICR->BLE_1MBIT[2];
-    NRF_RADIO->OVERRIDE3 = NRF_FICR->BLE_1MBIT[3];
-    NRF_RADIO->OVERRIDE4 = 0x80000000 | NRF_FICR->BLE_1MBIT[4];
+    // NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
+    // NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
+    // NRF_RADIO->OVERRIDE2 = NRF_FICR->BLE_1MBIT[2];
+    // NRF_RADIO->OVERRIDE3 = NRF_FICR->BLE_1MBIT[3];
+    // NRF_RADIO->OVERRIDE4 = 0x80000000 | NRF_FICR->BLE_1MBIT[4];
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
-    NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit;
+    NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_1Mbit;
 
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
