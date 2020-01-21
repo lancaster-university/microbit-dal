@@ -212,7 +212,7 @@ extern "C" void RADIO_IRQHandler(void)
         HW_ASSERT(0,0);
 #endif
         NRF_RADIO->TASKS_RXEN = 1;
-        volatile int i = 3200;
+        volatile int i = 250;
         while(i-- > 0);
         NRF_RADIO->TASKS_START = 1;
         packets_forwarded++;
@@ -234,7 +234,7 @@ extern "C" void RADIO_IRQHandler(void)
                     NRF_RADIO->PACKETPTR = (uint32_t)p;
                     HW_ASSERT(0,0);
                     NRF_RADIO->TASKS_TXEN = 1;
-                    volatile int i = 3200;
+                    volatile int i = 250;
                     while(i-- > 0);
                     NRF_RADIO->TASKS_START = 1;
                     return;
@@ -247,6 +247,10 @@ extern "C" void RADIO_IRQHandler(void)
             NRF_RADIO->PACKETPTR = (uint32_t)p;
             HW_ASSERT(0,0);
             NRF_RADIO->TASKS_RXEN = 1;
+
+            volatile int i = 250;
+            while(i-- > 0);
+            NRF_RADIO->TASKS_START = 1;
         }
         else
         {
@@ -260,6 +264,9 @@ extern "C" void RADIO_IRQHandler(void)
 
             process_packet(p, NRF_RADIO->CRCSTATUS == 1, NRF_RADIO->RSSISAMPLE);
             memset(p, sizeof(PeridoFrameBuffer), 0);
+            volatile int i = 250;
+            while(i-- > 0);
+            NRF_RADIO->TASKS_START = 1;
         }
         return;
     }
@@ -299,6 +306,10 @@ extern "C" void RADIO_IRQHandler(void)
 #endif
         NRF_RADIO->TASKS_RXEN = 1;
         packets_transmitted++;
+
+        volatile int i = 250;
+        while(i-- > 0);
+        NRF_RADIO->TASKS_START = 1;
         return;
     }
 }
@@ -315,7 +326,7 @@ void manual_poke(PeridoFrameBuffer* p)
     NRF_RADIO->PACKETPTR = (uint32_t)p;
     NRF_RADIO->TASKS_TXEN = 1;
 
-    volatile int i = 3200;
+    volatile int i = 250;
     while(i-- > 0);
     NRF_RADIO->TASKS_START = 1;
 }
@@ -663,7 +674,7 @@ int MicroBitPeridoRadio::enable()
 
     NRF_RADIO->TASKS_RXEN = 1;
 
-    volatile int i = 3200;
+    volatile int i = 250;
     while(i-- > 0);
     NRF_RADIO->TASKS_START = 1;
 
