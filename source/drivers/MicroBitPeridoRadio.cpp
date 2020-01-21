@@ -185,7 +185,7 @@ void timer_callback(uint8_t) {}
 
 
 extern void set_transmission_reception_gpio(int);
-extern void process_packet(PeridoFrameBuffer* p, bool);
+extern void process_packet(PeridoFrameBuffer* p, bool, int);
 
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
@@ -205,6 +205,7 @@ extern "C" void RADIO_IRQHandler(void)
     if (radioState == RADIO_STATE_FORWARD)
     {
         radioState = RADIO_STATE_RECEIVE;
+        memset(p, sizeof(PeridoFrameBuffer), 0);
         NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
         while(NRF_RADIO->EVENTS_DISABLED == 0);
 #if MICROBIT_PERIDO_TEST_MODE == 1
@@ -251,7 +252,8 @@ extern "C" void RADIO_IRQHandler(void)
             HW_ASSERT(0,0);
             NRF_RADIO->TASKS_RXEN = 1;
 
-            process_packet(p, NRF_RADIO->CRCSTATUS == 1);
+            process_packet(p, NRF_RADIO->CRCSTATUS == 1, NRF_RADIO->RSSISAMPLE);
+            memset(p, sizeof(PeridoFrameBuffer), 0);
         }
         return;
     }
@@ -391,7 +393,17 @@ int MicroBitPeridoRadio::setFrequencyBand(int band)
     if (band < 0 || band > 100)
         return MICROBIT_INVALID_PARAMETER;
 
+    NRF_RADIO->TASKS_DISABLE = 1;
+    while(NRF_RADIO->EVENTS_DISABLED == 0);
+
     NRF_RADIO->FREQUENCY = (uint32_t)band;
+    NRF_RADIO->DATAWHITEIV = band;
+
+    radioState = RADIO_STATE_RECEIVE;
+
+    NRF_RADIO->EVENTS_READY = 0;
+    NRF_RADIO->EVENTS_END = 0;
+    NRF_RADIO->TASKS_RXEN = 1;
 
     return MICROBIT_OK;
 }
@@ -562,7 +574,7 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->POWER = 1;
 
     NRF_RADIO->TXPOWER = (uint32_t)MICROBIT_BLE_POWER_LEVEL[6];
-    NRF_RADIO->FREQUENCY = 2;
+    NRF_RADIO->FREQUENCY = MICROBIT_RADIO_DEFAULT_FREQUENCY;
 
     // Bring up the nrf51822 RADIO module in Nordic's proprietary 1MBps packet radio mode.
     // setTransmitPower(MICROBIT_RADIO_DEFAULT_TX_POWER);
@@ -619,7 +631,7 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->CRCPOLY = 0x11021;
 
     // Set the start random value of the data whitening algorithm. This can be any non zero number.
-    NRF_RADIO->DATAWHITEIV = 37;
+    NRF_RADIO->DATAWHITEIV = MICROBIT_RADIO_DEFAULT_FREQUENCY;
 
     // Set up the RADIO module to read and write from our internal buffer.
     NRF_RADIO->PACKETPTR = (uint32_t)rxBuf;
@@ -628,7 +640,7 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->EVENTS_END = 0;
     // NRF_RADIO->TIFS = 300;
     NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
-    NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk; //| RADIO_SHORTS_ADDRESS_RSSISTART_Msk;
+    NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk | RADIO_SHORTS_ADDRESS_RSSISTART_Msk;
 
     radioState = RADIO_STATE_RECEIVE;
 
