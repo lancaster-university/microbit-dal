@@ -212,6 +212,9 @@ extern "C" void RADIO_IRQHandler(void)
         HW_ASSERT(0,0);
 #endif
         NRF_RADIO->TASKS_RXEN = 1;
+        volatile int i = 3200;
+        while(i-- > 0);
+        NRF_RADIO->TASKS_START = 1;
         packets_forwarded++;
         return;
     }
@@ -231,6 +234,9 @@ extern "C" void RADIO_IRQHandler(void)
                     NRF_RADIO->PACKETPTR = (uint32_t)p;
                     HW_ASSERT(0,0);
                     NRF_RADIO->TASKS_TXEN = 1;
+                    volatile int i = 3200;
+                    while(i-- > 0);
+                    NRF_RADIO->TASKS_START = 1;
                     return;
                 }
             }
@@ -308,6 +314,10 @@ void manual_poke(PeridoFrameBuffer* p)
     radioState = RADIO_STATE_TRANSMIT;
     NRF_RADIO->PACKETPTR = (uint32_t)p;
     NRF_RADIO->TASKS_TXEN = 1;
+
+    volatile int i = 3200;
+    while(i-- > 0);
+    NRF_RADIO->TASKS_START = 1;
 }
 
 #pragma GCC pop_options
@@ -640,7 +650,7 @@ int MicroBitPeridoRadio::enable()
     NRF_RADIO->EVENTS_END = 0;
     // NRF_RADIO->TIFS = 300;
     NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
-    NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk | RADIO_SHORTS_ADDRESS_RSSISTART_Msk;
+    NRF_RADIO->SHORTS = /*RADIO_SHORTS_READY_START_Msk |*/ RADIO_SHORTS_END_DISABLE_Msk | RADIO_SHORTS_ADDRESS_RSSISTART_Msk;
 
     radioState = RADIO_STATE_RECEIVE;
 
@@ -652,6 +662,10 @@ int MicroBitPeridoRadio::enable()
     NVIC_EnableIRQ(RADIO_IRQn);
 
     NRF_RADIO->TASKS_RXEN = 1;
+
+    volatile int i = 3200;
+    while(i-- > 0);
+    NRF_RADIO->TASKS_START = 1;
 
     // Done. Record that our RADIO is configured.
     status |= MICROBIT_RADIO_STATUS_INITIALISED;
