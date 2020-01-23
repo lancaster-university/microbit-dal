@@ -59,7 +59,7 @@ volatile uint32_t tx_packets[TX_PACKETS_SIZE] = { 0 };
 #define RADIO_STATE_DISCOVER  (4)
 
 
-\**
+/**
   * Driver configuration flags
   **/
 #define MICROBIT_PERIDO_ASSERT 1
