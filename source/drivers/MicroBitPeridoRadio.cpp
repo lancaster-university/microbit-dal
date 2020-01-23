@@ -46,8 +46,8 @@ volatile uint32_t packets_error = 0;
 volatile uint32_t packets_transmitted = 0;
 volatile uint32_t packets_forwarded = 0;
 
-volatile uint8_t last_seen_index = 0;
-volatile uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
+// volatile uint8_t last_seen_index = 0;
+// volatile uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
 
 volatile uint8_t  tx_packets_head = 0;
 volatile uint8_t  tx_packets_tail = 0;
@@ -92,7 +92,7 @@ extern "C" void RADIO_IRQHandler(void)
     if (radioState == RADIO_STATE_FORWARD)
     {
         radioState = RADIO_STATE_RECEIVE;
-        memset(p, sizeof(PeridoFrameBuffer), 0);
+        memset(p, 0, sizeof(PeridoFrameBuffer));
         NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
         while(NRF_RADIO->EVENTS_DISABLED == 0);
 #if MICROBIT_PERIDO_ASSERT == 1
@@ -132,7 +132,7 @@ extern "C" void RADIO_IRQHandler(void)
             }
             else
             {
-                crc_fail_count++;
+                packets_error++;
             }
             NRF_RADIO->PACKETPTR = (uint32_t)p;
 #if MICROBIT_PERIDO_ASSERT == 1
@@ -148,7 +148,7 @@ extern "C" void RADIO_IRQHandler(void)
         else
         {
             if(NRF_RADIO->CRCSTATUS == 0)
-                crc_fail_count++;
+                packets_error++;
 
             packets_received++;
             NRF_RADIO->PACKETPTR = (uint32_t)p;
@@ -159,7 +159,7 @@ extern "C" void RADIO_IRQHandler(void)
             NRF_RADIO->TASKS_RXEN = 1;
 
             process_packet(p, NRF_RADIO->CRCSTATUS == 1, NRF_RADIO->RSSISAMPLE);
-            memset(p, sizeof(PeridoFrameBuffer), 0);
+            memset(p, 0, sizeof(PeridoFrameBuffer));
             volatile int i = 250;
             while(i-- > 0);
             NRF_RADIO->TASKS_START = 1;
@@ -187,7 +187,7 @@ extern "C" void RADIO_IRQHandler(void)
         }
         else
         {
-            crc_fail_count++;
+            packets_error++;
         }
 
         packets_received++;
@@ -285,8 +285,6 @@ MicroBitPeridoRadio::MicroBitPeridoRadio(LowLevelTimer& timer, uint8_t appId, ui
     // timer.enable();
 
     microbit_seed_random();
-
-    this->periodIndex = PERIDO_DEFAULT_PERIOD_IDX;
 
     instance = this;
 }
@@ -489,12 +487,6 @@ int MicroBitPeridoRadio::enable()
     if (rxBuf == NULL)
         return MICROBIT_NO_RESOURCES;
 
-    keep_alive_count = 0;
-    keep_alive_match = 0;
-
-    while (keep_alive_match < 11)
-        keep_alive_match = microbit_random(256) % 40;
-
     // Enable the High Frequency clock on the processor. This is a pre-requisite for
     // the RADIO module. Without this clock, no communication is possible.
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
@@ -519,7 +511,7 @@ int MicroBitPeridoRadio::enable()
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
-    NRF_RADIO->MODE = 2;// RADIO_MODE_MODE_Nrf_250Kbit;
+    NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_1Mbit;
 
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
@@ -621,44 +613,6 @@ int MicroBitPeridoRadio::disable()
     status &= ~MICROBIT_RADIO_STATUS_INITIALISED;
 
     return MICROBIT_OK;
-}
-
-/**
-  * Set the current period in milliseconds broadcasted in the perido frame
-  *
-  * @param period_ms the new period, in milliseconds.
-  *
-  * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the period is too short.
-  */
-int MicroBitPeridoRadio::setPeriod(uint32_t period_ms)
-{
-    int index = -1;
-
-    for (int i = 0 ; i < PERIOD_COUNT; i++)
-    {
-        if (periods[i] < period_ms)
-            continue;
-
-        index = i;
-        break;
-    }
-
-    if (index == -1)
-        index = PERIOD_COUNT - 1;
-
-    periodIndex = index;
-
-    return MICROBIT_OK;
-}
-
-/**
-  * Retrieve the current period in milliseconds broadcasted in the perido frame
-  *
-  * @return the current period in milliseconds
-  */
-uint32_t MicroBitPeridoRadio::getPeriod()
-{
-    return periods[periodIndex];
 }
 
 int MicroBitPeridoRadio::setGroup(uint8_t id)
@@ -813,28 +767,28 @@ uint16_t MicroBitPeridoRadio::generateId(uint8_t app_id, uint8_t namespace_id)
     uint16_t new_id;
     bool seenBefore = true;
 
-    while (seenBefore)
-    {
-        seenBefore = false;
-        new_id = microbit_random(65535);
+    // while (seenBefore)
+    // {
+    //     seenBefore = false;
+    //     new_id = microbit_random(65535);
 
-        for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
-        {
-            if (last_seen[i] > 0)
-            {
-                uint8_t seen_namespace_id = last_seen[i];
-                uint8_t seen_app_id = last_seen[i] >> 8;
+    //     for (int i = 0; i < LAST_SEEN_BUFFER_SIZE; i++)
+    //     {
+    //         if (last_seen[i] > 0)
+    //         {
+    //             uint8_t seen_namespace_id = last_seen[i];
+    //             uint8_t seen_app_id = last_seen[i] >> 8;
 
-                // we can exit early here as if the namespaces don't match we're not interested.
-                if (namespace_id != seen_namespace_id || app_id != seen_app_id)
-                    continue;
+    //             // we can exit early here as if the namespaces don't match we're not interested.
+    //             if (namespace_id != seen_namespace_id || app_id != seen_app_id)
+    //                 continue;
 
-                uint16_t packet_id = (last_seen[i] >> 16);
-                if (packet_id == new_id)
-                    seenBefore = true;
-            }
-        }
-    }
+    //             uint16_t packet_id = (last_seen[i] >> 16);
+    //             if (packet_id == new_id)
+    //                 seenBefore = true;
+    //         }
+    //     }
+    // }
 
     return new_id;
 }

@@ -129,8 +129,7 @@ enum TestRole {
 class MicroBitPeridoRadio : public MicroBitComponent
 {
     public:
-    uint8_t                appId;
-    uint8_t                 periodIndex;
+    uint8_t                 appId;
     uint8_t                 rxQueueDepth; // The number of packets in the receiver queue.
     uint8_t                 txQueueDepth; // The number of packets in the tx queue.
 
@@ -233,22 +232,6 @@ class MicroBitPeridoRadio : public MicroBitComponent
       * @return MICROBIT_OK on success, or MICROBIT_NOT_SUPPORTED if the BLE stack is running.
       */
     int setGroup(uint8_t group);
-
-    /**
-      * Set the current period in milliseconds broadcasted in the perido frame
-      *
-      * @param period_ms the new period, in milliseconds.
-      *
-      * @return MICROBIT_OK on success, or MICROBIT_INVALID_PARAMETER if the period is too short.
-      */
-    int setPeriod(uint32_t period_ms);
-
-    /**
-      * Retrieve the current period in milliseconds broadcasted in the perido frame
-      *
-      * @return the current period in milliseconds
-      */
-    uint32_t getPeriod();
 
     /**
       * Determines the number of packets ready to be processed.
