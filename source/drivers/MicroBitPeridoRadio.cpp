@@ -36,130 +36,15 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitBLEManager.h"
 #include "MicroBitHeapAllocator.h"
 
-extern void inline
-__attribute__((__gnu_inline__,__always_inline__))
-accurate_delay_us(uint32_t volatile number_of_us)
-{
-    __ASM volatile (
-        "1:\tSUB %0, %0, #1\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "NOP\n\t"
-        "BNE 1b\n\t"
-        : "+r"(number_of_us)
-    );
-}
-
-/**
-  * Provides a simple broadcast radio abstraction, built upon the raw nrf51822 RADIO module.
-  *
-  * The nrf51822 RADIO module supports a number of proprietary modes of operation in addition to the typical BLE usage.
-  * This class uses one of these modes to enable simple, point to multipoint communication directly between micro:bits.
-  *
-  * TODO: The protocols implemented here do not currently perform any significant form of energy management,
-  * which means that they will consume far more energy than their BLE equivalent. Later versions of the protocol
-  * should look to address this through energy efficient broadcast techniques / sleep scheduling. In particular, the GLOSSY
-  * approach to efficient rebroadcast and network synchronisation would likely provide an effective future step.
-  *
-  * TODO: Meshing should also be considered - again a GLOSSY approach may be effective here, and highly complementary to
-  * the master/slave arachitecture of BLE.
-  *
-  * TODO: This implementation may only operated whilst the BLE stack is disabled. The nrf51822 provides a timeslot API to allow
-  * BLE to cohabit with other protocols. Future work to allow this colocation would be benefical, and would also allow for the
-  * creation of wireless BLE bridges.
-  *
-  * NOTE: This API does not contain any form of encryption, authentication or authorisation. Its purpose is solely for use as a
-  * teaching aid to demonstrate how simple communications operates, and to provide a sandpit through which learning can take place.
-  * For serious applications, BLE should be considered a substantially more secure alternative.
-  */
-
 MicroBitPeridoRadio* MicroBitPeridoRadio::instance = NULL;
 
-/**
- *  Timings for each event (us):
- *
- *  TX Enable               135
- *  TX (15 bytes)           166
- *  DISABLE                 10
- *  RX Enable               135
- **/
-#define DISCOVERY_TX_BACKOFF_TIME   40000
-#define DISCOVERY_BACKOFF_TIME      (DISCOVERY_TX_BACKOFF_TIME * 2)
-
-#define DISCOVERY_TX_BACKOFF_TIME_RUNNING   40000
-
-#define TX_BACKOFF_MIN              200
-#define TX_BACKOFF_TIME             (3000 - TX_BACKOFF_MIN)
-#define TX_TIME                     300         // includes tx time for a larger packet
-#define TX_ENABLE_TIME              350         // includes processing time overhead on reception for other nodes...
-#define RX_ENABLE_TIME              200
-#define RX_TX_DISABLE_TIME          30          // 10 us is pretty pointless for a timer callback.
-#define TX_ADDRESS_TIME             64
-
-#define TIME_TO_TRANSMIT_ADDR       RX_TX_DISABLE_TIME + TX_ENABLE_TIME + TX_ADDRESS_TIME
-
-#define FORWARD_POLL_TIME           2500
-#define ABSOLUTE_RESPONSE_TIME      10000
-#define PERIDO_DEFAULT_PERIOD_IDX   2
-
 #define TIME_TO_TRANSMIT_BYTE_1MB   8
-
-#define NO_RESPONSE_THRESHOLD       5
-#define LAST_SEEN_BUFFER_SIZE       10
-#define OUT_TIME_BUFFER_SIZE        6
-
-#define DISCOVERY_PACKET_THRESHOLD  TX_BACKOFF_TIME + TX_BACKOFF_MIN
-#define DISCOVERY_TIME_ARRAY_LEN    3
-
-#define PERIDO_WAKE_THRESHOLD_MAX   1000
-#define PERIDO_WAKE_THRESHOLD_MID   500
-
-#define PERIDO_WAKE_TOLERANCE       30
-
-#define CONSTANT_SYNC_OFFSET        110
-
-#define WAKE_UP_CHANNEL             0
-#define GO_TO_SLEEP_CHANNEL         1
-#define CHECK_TX_CHANNEL            2
-#define STATE_MACHINE_CHANNEL       3
-
-#define PERIOD_COUNT                13
-
-#define SPEED_THRESHOLD_MAX         5
-#define SPEED_THRESHOLD_MIN         -5
-
 #define TX_PACKETS_SIZE             (2 * MICROBIT_PERIDO_MAXIMUM_TX_BUFFERS)
 
-uint16_t periods[PERIOD_COUNT] = {10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960};
-
-// volatile uint32_t radio_status = 0;
-volatile uint32_t no_response_count = 0;
-
-volatile uint32_t discovery_tx_time = DISCOVERY_TX_BACKOFF_TIME;
-
-volatile int8_t speed = 0;
-volatile static uint8_t network_period_idx = PERIDO_DEFAULT_PERIOD_IDX;
-
-volatile uint32_t crc_fail_count = 0;
-volatile uint32_t packet_count = 0;
-volatile uint32_t retransmit_count = 0;
-
 volatile uint32_t packets_received = 0;
+volatile uint32_t packets_error = 0;
 volatile uint32_t packets_transmitted = 0;
 volatile uint32_t packets_forwarded = 0;
-
-volatile static uint32_t current_cc = 0;
-volatile static uint32_t period_start_cc = 0;
-volatile static uint32_t correction = 0;
 
 volatile uint8_t last_seen_index = 0;
 volatile uint32_t last_seen[LAST_SEEN_BUFFER_SIZE] = { 0 };
@@ -168,14 +53,16 @@ volatile uint8_t  tx_packets_head = 0;
 volatile uint8_t  tx_packets_tail = 0;
 volatile uint32_t tx_packets[TX_PACKETS_SIZE] = { 0 };
 
-// we maintain the number of wakes where we haven't seen a transmission, if we hit the match variable,
-//we queue a keep alive packet
-volatile static uint8_t keep_alive_count = 0;
-volatile static uint8_t keep_alive_match = 0;
-
 #define RADIO_STATE_RECEIVE  (1)
 #define RADIO_STATE_TRANSMIT  (2)
 #define RADIO_STATE_FORWARD  (3)
+#define RADIO_STATE_DISCOVER  (4)
+
+
+\**
+  * Driver configuration flags
+  **/
+#define MICROBIT_PERIDO_ASSERT 1
 
 volatile uint8_t radioState = RADIO_STATE_RECEIVE;
 
@@ -208,7 +95,7 @@ extern "C" void RADIO_IRQHandler(void)
         memset(p, sizeof(PeridoFrameBuffer), 0);
         NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
         while(NRF_RADIO->EVENTS_DISABLED == 0);
-#if MICROBIT_PERIDO_TEST_MODE == 1
+#if MICROBIT_PERIDO_ASSERT == 1
         HW_ASSERT(0,0);
 #endif
         NRF_RADIO->TASKS_RXEN = 1;
@@ -232,7 +119,10 @@ extern "C" void RADIO_IRQHandler(void)
                     p->ttl--;
                     radioState = RADIO_STATE_FORWARD;
                     NRF_RADIO->PACKETPTR = (uint32_t)p;
+#if MICROBIT_PERIDO_ASSERT == 1
                     HW_ASSERT(0,0);
+#endif
+                    NRF_RADIO->EVENTS_DISABLED = 0;
                     NRF_RADIO->TASKS_TXEN = 1;
                     volatile int i = 250;
                     while(i-- > 0);
@@ -245,7 +135,10 @@ extern "C" void RADIO_IRQHandler(void)
                 crc_fail_count++;
             }
             NRF_RADIO->PACKETPTR = (uint32_t)p;
+#if MICROBIT_PERIDO_ASSERT == 1
             HW_ASSERT(0,0);
+#endif
+            NRF_RADIO->EVENTS_DISABLED = 0;
             NRF_RADIO->TASKS_RXEN = 1;
 
             volatile int i = 250;
@@ -259,7 +152,10 @@ extern "C" void RADIO_IRQHandler(void)
 
             packets_received++;
             NRF_RADIO->PACKETPTR = (uint32_t)p;
+#if MICROBIT_PERIDO_ASSERT == 1
             HW_ASSERT(0,0);
+#endif
+            NRF_RADIO->EVENTS_DISABLED = 0;
             NRF_RADIO->TASKS_RXEN = 1;
 
             process_packet(p, NRF_RADIO->CRCSTATUS == 1, NRF_RADIO->RSSISAMPLE);
@@ -280,6 +176,10 @@ extern "C" void RADIO_IRQHandler(void)
                 p->ttl--;
                 radioState = RADIO_STATE_FORWARD;
                 NRF_RADIO->PACKETPTR = (uint32_t)p;
+#if MICROBIT_PERIDO_ASSERT == 1
+                HW_ASSERT(0,0);
+#endif
+                NRF_RADIO->EVENTS_DISABLED = 0;
                 NRF_RADIO->TASKS_TXEN = 1;
                 packets_received++;
                 return;
@@ -292,6 +192,10 @@ extern "C" void RADIO_IRQHandler(void)
 
         packets_received++;
         NRF_RADIO->PACKETPTR = (uint32_t)p;
+#if MICROBIT_PERIDO_ASSERT == 1
+        HW_ASSERT(0,0);
+#endif
+        NRF_RADIO->EVENTS_DISABLED = 0;
         NRF_RADIO->TASKS_RXEN = 1;
         return;
     }
@@ -301,9 +205,11 @@ extern "C" void RADIO_IRQHandler(void)
     {
         radioState = RADIO_STATE_RECEIVE;
         NRF_RADIO->PACKETPTR = (uint32_t)MicroBitPeridoRadio::instance->rxBuf;
+        while(NRF_RADIO->EVENTS_DISABLED == 0);
 #if MICROBIT_PERIDO_TEST_MODE == 1
         HW_ASSERT(0,0);
 #endif
+        NRF_RADIO->EVENTS_DISABLED = 0;
         NRF_RADIO->TASKS_RXEN = 1;
         packets_transmitted++;
 
@@ -321,6 +227,10 @@ void manual_poke(PeridoFrameBuffer* p)
     NRF_RADIO->TASKS_DISABLE = 1;
     while (NRF_RADIO->EVENTS_DISABLED == 0);
     NRF_RADIO->EVENTS_DISABLED = 0;
+
+#if MICROBIT_PERIDO_TEST_MODE == 1
+        HW_ASSERT(0,0);
+#endif
 
     radioState = RADIO_STATE_TRANSMIT;
     NRF_RADIO->PACKETPTR = (uint32_t)p;
@@ -609,7 +519,7 @@ int MicroBitPeridoRadio::enable()
 
     // Configure for 1Mbps throughput.
     // This may sound excessive, but running a high data rates reduces the chances of collisions...
-    NRF_RADIO->MODE = RADIO_MODE_MODE_Nrf_1Mbit;
+    NRF_RADIO->MODE = 2;// RADIO_MODE_MODE_Nrf_250Kbit;
 
     // Configure the addresses we use for this protocol. We run ANONYMOUSLY at the core.
     // A 40 bit addresses is used. The first 32 bits match the ASCII character code for "uBit".
