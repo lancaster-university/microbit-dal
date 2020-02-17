@@ -52,6 +52,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_HEAP_ALLOCTOR_H
 
 #include "MicroBitConfig.h"
+#include <new>
 
 // The maximum number of heap segments that can be created.
 #define MICROBIT_MAXIMUM_HEAPS          2
@@ -84,5 +85,28 @@ struct HeapDefinition
   */
 int microbit_create_heap(uint32_t start, uint32_t end);
 void microbit_heap_print();
+
+/**
+  * Attempt to allocate a given amount of memory from any of our configured heap areas.
+  *
+  * @param size The amount of memory, in bytes, to allocate.
+  *
+  * @return A pointer to the allocated memory, or NULL if insufficient memory is available.
+  */
+void *_microbit_malloc(size_t size);
+void* _microbit_calloc (size_t num, size_t size);
+void* _microbit_realloc (void* ptr, size_t size);
+
+/**
+  * Release a given area of memory from the heap.
+  *
+  * @param mem The memory area to release.
+  */
+void _microbit_free(void *mem);
+
+#define malloc _microbit_malloc
+#define free _microbit_free
+#define calloc _microbit_calloc
+#define realloc _microbit_realloc
 
 #endif
