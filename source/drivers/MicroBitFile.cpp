@@ -180,8 +180,8 @@ ManagedString MicroBitFile::read(int size)
   */
 int MicroBitFile::remove()
 {
-    if(fileHandle < 0)
-        return MICROBIT_NOT_SUPPORTED;
+    if ( fileHandle >= 0)
+        close();
 
     int ret = MicroBitFileSystem::defaultFileSystem->remove(fileName.toCharArray());
 
