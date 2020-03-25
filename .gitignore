@@ -1,5 +1,6 @@
 build
 .yotta.json
+.vscode
 yotta_modules
 yotta_targets
 *.swp

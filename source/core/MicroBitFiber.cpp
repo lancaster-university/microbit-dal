@@ -34,6 +34,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitFiber.h"
 #include "MicroBitSystemTimer.h"
+#include "ErrorNo.h"
+#include "MicroBitDevice.h"
 
 /*
  * Statically allocated values used to create and destroy Fibers.
@@ -64,6 +66,44 @@ static EventModel *messageBus = NULL;
 
 // Array of components which are iterated during idle thread execution.
 static MicroBitComponent* idleThreadComponents[MICROBIT_IDLE_COMPONENTS];
+
+static void get_fibers_from(Fiber ***dest, int *sum, Fiber *queue)
+{
+    if (queue && queue->prev)
+        microbit_panic(MICROBIT_HEAP_ERROR);
+    while (queue) {
+        if (*dest)
+            *(*dest)++ = queue;
+        (*sum)++;
+        queue = queue->next;
+    }
+}
+
+/**
+  * Return all current fibers.
+  *
+  * @param dest If non-null, it points to an array of pointers to fibers to store results in.
+  *
+  * @return the number of fibers (potentially) stored
+  */
+int list_fibers(Fiber **dest)
+{
+    int sum = 0;
+
+    // interrupts might move fibers between queues, but should not create new ones
+    __disable_irq();
+    get_fibers_from(&dest, &sum, runQueue);
+    get_fibers_from(&dest, &sum, sleepQueue);
+    get_fibers_from(&dest, &sum, waitQueue);
+    __enable_irq();
+
+    // idleFiber is used to start event handlers using invoke(),
+    // so it may in fact have the user_data set if in FOB context
+    if (dest)
+        *dest++ = idleFiber;
+    sum++;
+    return sum;
+}
 
 /**
   * Utility function to add the currenty running fiber to the given queue.
@@ -216,7 +256,7 @@ void scheduler_init(EventModel &_messageBus)
 
 	// Store a reference to the messageBus provided.
 	// This parameter will be NULL if we're being run without a message bus.
-	messageBus = &_messageBus;
+    messageBus = &_messageBus;
 
     // Create a new fiber context
     currentFiber = getFiberContext();
@@ -431,7 +471,7 @@ int fiber_wait_for_event(uint16_t id, uint16_t value)
     if(ret == MICROBIT_OK)
         schedule();
 
-	return ret;
+    return ret;
 }
 
 /**
@@ -480,6 +520,12 @@ int fiber_wake_on_event(uint16_t id, uint16_t value)
     // call schedule() as its next call to the scheduler.
     return MICROBIT_OK;
 }
+
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+#define HAS_THREAD_USER_DATA (currentFiber->user_data != NULL)
+#else
+#define HAS_THREAD_USER_DATA false
+#endif
 
 /**
   * Executes the given function asynchronously if necessary.
