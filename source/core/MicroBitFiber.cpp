@@ -67,44 +67,6 @@ static EventModel *messageBus = NULL;
 // Array of components which are iterated during idle thread execution.
 static MicroBitComponent* idleThreadComponents[MICROBIT_IDLE_COMPONENTS];
 
-static void get_fibers_from(Fiber ***dest, int *sum, Fiber *queue)
-{
-    if (queue && queue->prev)
-        microbit_panic(MICROBIT_HEAP_ERROR);
-    while (queue) {
-        if (*dest)
-            *(*dest)++ = queue;
-        (*sum)++;
-        queue = queue->next;
-    }
-}
-
-/**
-  * Return all current fibers.
-  *
-  * @param dest If non-null, it points to an array of pointers to fibers to store results in.
-  *
-  * @return the number of fibers (potentially) stored
-  */
-int list_fibers(Fiber **dest)
-{
-    int sum = 0;
-
-    // interrupts might move fibers between queues, but should not create new ones
-    __disable_irq();
-    get_fibers_from(&dest, &sum, runQueue);
-    get_fibers_from(&dest, &sum, sleepQueue);
-    get_fibers_from(&dest, &sum, waitQueue);
-    __enable_irq();
-
-    // idleFiber is used to start event handlers using invoke(),
-    // so it may in fact have the user_data set if in FOB context
-    if (dest)
-        *dest++ = idleFiber;
-    sum++;
-    return sum;
-}
-
 /**
   * Utility function to add the currenty running fiber to the given queue.
   *
