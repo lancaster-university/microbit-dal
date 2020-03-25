@@ -154,6 +154,11 @@ extern uint32_t __etext;
 #define MICROBIT_FIBER_USER_DATA                0
 #endif
 
+// Indicate get_fiber_list() API is supported
+#ifndef MICROBIT_GET_FIBER_LIST_SUPPORTED
+#define MICROBIT_GET_FIBER_LIST_SUPPORTED       1
+#endif
+
 // Maximum size of the FiberPool
 // Defines the size that the pool of unused Fiber contexts is permitted to grow to. After this point, memory
 // from unused Fiber contexts will be restored to the Heap Allocator.
