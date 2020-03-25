@@ -88,7 +88,7 @@ void queue_fiber(Fiber *f, Fiber **queue)
     // list, it results in fairer scheduling.
     if (*queue == NULL)
     {
-        f->next = NULL;
+        f->qnext = NULL;
         *queue = f;
     }
     else
@@ -97,11 +97,11 @@ void queue_fiber(Fiber *f, Fiber **queue)
         // We don't maintain a tail pointer to save RAM (queues are nrmally very short).
         Fiber *last = *queue;
 
-        while (last->next != NULL)
-            last = last->next;
+        while (last->qnext != NULL)
+            last = last->qnext;
 
-        last->next = f;
-        f->next = NULL;
+        last->qnext = f;
+        f->qnext = NULL;
     }
 
     __enable_irq();
@@ -123,22 +123,22 @@ void dequeue_fiber(Fiber *f)
     if (*(f->queue) == f)
     {
         // Remove the fiber from the head of the queue
-        *(f->queue) = f->next;
+        *(f->queue) = f->qnext;
     }
     else
     {
         Fiber *prev = *(f->queue);
 
         // Scan for the given fiber in its queue
-        while(prev->next != f)
-            prev = prev->next;
+        while(prev->qnext != f)
+            prev = prev->qnext;
 
         // Remove the fiber
-        prev->next = f->next;
+        prev->qnext = f->qnext;
     }
 
     // Ensure old linkage is cleared
-    f->next = NULL;
+    f->qnext = NULL;
     f->queue = NULL;
 
     __enable_irq();
@@ -192,7 +192,7 @@ Fiber *getFiberContext()
 
     // Add the new Fiber to the list of all fibers
     __disable_irq();
-    f->fiber_list_next = fiberList;
+    f->next = fiberList;
     fiberList = f;
     __enable_irq();
 
@@ -269,7 +269,7 @@ void scheduler_tick()
     // Check the sleep queue, and wake up any fibers as necessary.
     while (f != NULL)
     {
-        t = f->next;
+        t = f->qnext;
 
         if (system_timer_current_time() >= f->context)
         {
@@ -305,7 +305,7 @@ void scheduler_event(MicroBitEvent evt)
     // Check the wait queue, and wake up any fibers as necessary.
     while (f != NULL)
     {
-        t = f->next;
+        t = f->qnext;
 
         // extract the event data this fiber is blocked on.
         uint16_t id = f->context & 0xFFFF;
@@ -749,14 +749,14 @@ void release_fiber(void)
     dequeue_fiber(currentFiber);
 
     // Scan the FiberPool and release memory to the heap if it is full.
-    for (Fiber *p = fiberPool; p; p = p->next) 
+    for (Fiber *p = fiberPool; p; p = p->qnext) 
         fiberPoolSize++;
 
     while (fiberPoolSize > MICROBIT_FIBER_MAXIMUM_FIBER_POOL_SIZE)
     {
         // Release Fiber contexts from the head of the FiberPool.
         Fiber *p = fiberPool;
-        fiberPool = p->next;
+        fiberPool = p->qnext;
         free((void *)p->stack_bottom);
         free(p);
         fiberPoolSize--;
@@ -769,7 +769,7 @@ void release_fiber(void)
     __disable_irq();
     if (fiberList == currentFiber)
     {
-        fiberList = fiberList->fiber_list_next;
+        fiberList = fiberList->next;
     }
     else
     {
@@ -777,13 +777,13 @@ void release_fiber(void)
 
         while (p)
         {
-            if (p->fiber_list_next == currentFiber)
+            if (p->next == currentFiber)
             {
-                p->fiber_list_next = currentFiber->fiber_list_next;
+                p->next = currentFiber->next;
                 break;
             }
 
-            p = p->fiber_list_next;
+            p = p->next;
         }
     }
     __enable_irq();
@@ -902,7 +902,7 @@ void schedule()
 
     else if (currentFiber->queue == &runQueue)
         // If the current fiber is on the run queue, round robin.
-        currentFiber = currentFiber->next == NULL ? runQueue : currentFiber->next;
+        currentFiber = currentFiber->qnext == NULL ? runQueue : currentFiber->qnext;
 
     else
         // Otherwise, just pick the head of the run queue.

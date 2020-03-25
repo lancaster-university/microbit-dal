@@ -94,8 +94,8 @@ struct Fiber
     uint32_t context;                   // Context specific information.
     uint32_t flags;                     // Information about this fiber.
     Fiber **queue;                      // The queue this fiber is stored on.
-    Fiber *next;                        // Position of this Fiber on its queue.
-    Fiber *fiber_list_next;             // Position of this Fiber in the global list of fibers.
+    Fiber *qnext;                       // Position of this Fiber on its queue.
+    Fiber *next;                        // Position of this Fiber in the global list of fibers.
 
 #if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
     void *user_data;                            // Optional pointer to user defined data block.
