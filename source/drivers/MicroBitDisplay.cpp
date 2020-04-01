@@ -575,7 +575,7 @@ int MicroBitDisplay::printAsync(MicroBitImage i, int x, int y, int alpha, int de
         if(delay > 0)
         {
             animationDelay = delay;
-            animationTick = delay-1;
+            animationTick = 0;
             animationMode = ANIMATION_MODE_PRINT_CHARACTER;
         }
     }
