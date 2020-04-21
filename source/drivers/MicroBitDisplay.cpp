@@ -303,6 +303,7 @@ MicroBitDisplay::animationUpdate()
 
         if(animationMode == ANIMATION_MODE_PRINT_CHARACTER)
         {
+            image.print(' ');
             animationMode = ANIMATION_MODE_NONE;
             this->sendAnimationCompleteEvent();
         }
@@ -520,12 +521,12 @@ int MicroBitDisplay::printCharAsync(char c, int delay)
   */
 int MicroBitDisplay::printAsync(ManagedString s, int delay)
 {
-    if (s.length() == 1)
-        return printCharAsync(s.charAt(0));
-
     //sanitise this value
-    if (delay <= 0 )
+    if (delay < 0 || (delay == 0 && s.length() > 1))
         return MICROBIT_INVALID_PARAMETER;
+
+    if (s.length() == 1)
+        return printCharAsync(s.charAt(0), delay);
 
     if (animationMode == ANIMATION_MODE_NONE || animationMode == ANIMATION_MODE_STOPPED)
     {
@@ -543,6 +544,33 @@ int MicroBitDisplay::printAsync(ManagedString s, int delay)
 
     return MICROBIT_OK;
 }
+
+/**
+  * Prints the given ManagedString to the display, one character at a time.
+  * Returns immediately, and executes the animation asynchronously.
+  *
+  * If the string is greater than one charcter in length, the screen
+  * will be cleared after MICROBIT_DEFAULT_PRINT_SPEED milliseconds.
+  * Otherwise, that character will be left on the screen indefinitely.
+  *
+  * @param s The string to display.
+  *
+  * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+  *
+  * @code
+  * display.printAsync("abc123");
+  * @endcode
+  */
+int MicroBitDisplay::printAsync(ManagedString s)
+{
+    int delay = MICROBIT_DEFAULT_PRINT_SPEED;
+
+    if(s.length() == 1)
+        delay = 0;
+
+    return printAsync(s, delay);
+}
+
 
 /**
   * Prints the given image to the display, if the display is not in use.
@@ -646,7 +674,7 @@ int MicroBitDisplay::printChar(char c, int delay)
 int MicroBitDisplay::print(ManagedString s, int delay)
 {
     //sanitise this value
-    if(delay <= 0 )
+    if(delay < 0 || (delay == 0 && s.length() > 1))
         return MICROBIT_INVALID_PARAMETER;
 
     // If there's an ongoing animation, wait for our turn to display.
@@ -656,15 +684,11 @@ int MicroBitDisplay::print(ManagedString s, int delay)
     // If someone called stopAnimation(), then we simply skip...
     if (animationMode == ANIMATION_MODE_NONE)
     {
+        int ret = this->printAsync(s, delay);
         if (s.length() == 1)
-        {
-            return printCharAsync(s.charAt(0));
-        }
-        else
-        {
-            this->printAsync(s, delay);
-            fiberWait();
-        }
+            return ret;
+        
+        fiberWait();
     }
     else
     {
@@ -673,6 +697,34 @@ int MicroBitDisplay::print(ManagedString s, int delay)
 
     return MICROBIT_OK;
 }
+
+/**
+  * Prints the given string to the display, one character at a time.
+  *
+  * Blocks the calling thread until all the text has been displayed.
+  * 
+  * If the string is greater than one charcter in length, the screen
+  * will be cleared after MICROBIT_DEFAULT_PRINT_SPEED milliseconds.
+  * Otherwise, that character will be left on the screen indefinitely.
+  *
+  * @param s The string to display.
+  *
+  * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+  *
+  * @code
+  * display.print("abc123");
+  * @endcode
+  */
+int MicroBitDisplay::print(ManagedString s)
+{
+    int delay = MICROBIT_DEFAULT_PRINT_SPEED;
+
+    if(s.length() == 1)
+        delay = 0;
+
+    return print(s, delay);
+}
+
 
 /**
   * Prints the given image to the display.
