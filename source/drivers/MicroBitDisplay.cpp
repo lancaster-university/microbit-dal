@@ -303,7 +303,6 @@ MicroBitDisplay::animationUpdate()
 
         if(animationMode == ANIMATION_MODE_PRINT_CHARACTER)
         {
-            image.print(' ');
             animationMode = ANIMATION_MODE_NONE;
             this->sendAnimationCompleteEvent();
         }
