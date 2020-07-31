@@ -34,4 +34,7 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_SERIAL_EVT_TX_EMPTY        2
 #define MICROBIT_UART_S_EVT_TX_EMPTY        3
 
+// Any values after 1024 are available for application use
+#define MICROBIT_NOTIFY_USER_EVENT_BASE     1024
+
 #endif

@@ -180,4 +180,9 @@ class MicroBitMessageBus : public EventModel, public MicroBitComponent
     virtual void idleTick();
 };
 
+/**
+ * Allocate a NOTIFY event code dynamicaly, for generally purpose condition synchronisation.
+ */
+uint16_t allocateNotifyEvent();
+
 #endif

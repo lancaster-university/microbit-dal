@@ -51,6 +51,9 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitMessageBus.h"
 #include "MicroBitFiber.h"
 #include "ErrorNo.h"
+#include "NotifyEvents.h"
+
+static uint16_t userNotifyId = MICROBIT_NOTIFY_USER_EVENT_BASE;
 
 /**
   * Default constructor.
@@ -565,6 +568,14 @@ MicroBitListener* MicroBitMessageBus::elementAt(int n)
     }
 
     return l;
+}
+
+/**
+ * Allocate a NOTIFY event code dynamicaly, for generally purpose condition synchronisation.
+ */
+uint16_t allocateNotifyEvent()
+{
+    return userNotifyId++;
 }
 
 /**
