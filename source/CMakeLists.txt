@@ -14,6 +14,7 @@ set(YOTTA_AUTO_MICROBIT-DAL_CPP_FILES
     "core/MicroBitHeapAllocator.cpp"
     "core/MicroBitListener.cpp"
     "core/MicroBitSystemTimer.cpp"
+    "core/MicroBitTick64.cpp"
     "core/MicroBitUtil.cpp"
 
     "types/CoordinateSystem.cpp"
