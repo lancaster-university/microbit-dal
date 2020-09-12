@@ -149,6 +149,23 @@ extern uint32_t __etext;
 #define SYSTEM_TICK_PERIOD_MS                   6
 #endif
 
+// Enable used_data field in Fiber structure (for thread-local data)
+#ifndef MICROBIT_FIBER_USER_DATA
+#define MICROBIT_FIBER_USER_DATA                0
+#endif
+
+// Indicate get_fiber_list() API is supported
+#ifndef MICROBIT_GET_FIBER_LIST_SUPPORTED
+#define MICROBIT_GET_FIBER_LIST_SUPPORTED       1
+#endif
+
+// Maximum size of the FiberPool
+// Defines the size that the pool of unused Fiber contexts is permitted to grow to. After this point, memory
+// from unused Fiber contexts will be restored to the Heap Allocator.
+#ifndef MICROBIT_FIBER_MAXIMUM_FIBER_POOL_SIZE
+#define MICROBIT_FIBER_MAXIMUM_FIBER_POOL_SIZE  3
+#endif
+
 //
 // Message Bus:
 // Default behaviour for event handlers, if not specified in the listen() call
@@ -171,6 +188,21 @@ extern uint32_t __etext;
 #define MESSAGE_BUS_LISTENER_MAX_QUEUE_DEPTH    10
 #endif
 
+//
+// Define MESSAGE_BUS concurrency behaviour. 
+// Set to MESSAGE_BUS_CONCURRENT_LISTENERS to fire event handler 
+// concurrently when a given event is raised, and process events sequentially as they arrive (default micro:bit semantics). 
+// Set to MESSAGE_BUS_CONCURRENT_EVENTS to to fire event handlers sequentially for any given event, while still allowing 
+// concurrent processing of events.
+//
+//
+// Permissable values are:
+//   0: MESSAGE_BUS_CONCURRENT_LISTENERS
+//   1: MESSAGE_BUS_CONCURRENT_EVENTS
+//
+#ifndef MESSAGE_BUS_CONCURRENCY_MODE
+#define MESSAGE_BUS_CONCURRENCY_MODE            MESSAGE_BUS_CONCURRENT_LISTENERS
+#endif
 //
 // Core micro:bit services
 //

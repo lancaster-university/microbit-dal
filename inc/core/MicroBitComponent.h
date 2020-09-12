@@ -31,47 +31,44 @@ DEALINGS IN THE SOFTWARE.
 // Enumeration of core components.
 #define MICROBIT_ID_BUTTON_A            1
 #define MICROBIT_ID_BUTTON_B            2
-#define MICROBIT_ID_BUTTON_RESET        3
-#define MICROBIT_ID_ACCELEROMETER       4
-#define MICROBIT_ID_COMPASS             5
-#define MICROBIT_ID_DISPLAY             6
+#define MICROBIT_ID_BUTTON_AB           3           // Button A+B multibutton
+#define MICROBIT_ID_BUTTON_RESET        4
+#define MICROBIT_ID_ACCELEROMETER       5
+#define MICROBIT_ID_COMPASS             6
+#define MICROBIT_ID_DISPLAY             7
+#define MICROBIT_ID_THERMOMETER         8
+#define MICROBIT_ID_RADIO               9
+#define MICROBIT_ID_RADIO_DATA_READY    10
+#define MICROBIT_ID_MULTIBUTTON_ATTACH  11
+#define MICROBIT_ID_SERIAL              12
+#define MICROBIT_ID_GESTURE             13          // Gesture events
 
-//EDGE connector events
-#define MICROBIT_IO_PINS                20
+#define MICROBIT_ID_IO_P0               100         //P0 is the left most pad (ANALOG/DIGITAL)
+#define MICROBIT_ID_IO_P1               101         //P1 is the middle pad (ANALOG/DIGITAL)
+#define MICROBIT_ID_IO_P2               102         //P2 is the right most pad (ANALOG/DIGITAL)
+#define MICROBIT_ID_IO_P3               103         //COL1 (ANALOG/DIGITAL)
+#define MICROBIT_ID_IO_P4               104         //BTN_A
+#define MICROBIT_ID_IO_P5               105         //COL2 (ANALOG/DIGITAL)
+#define MICROBIT_ID_IO_P6               106         //ROW2
+#define MICROBIT_ID_IO_P7               107         //ROW1
+#define MICROBIT_ID_IO_P8               108         //PIN 18
+#define MICROBIT_ID_IO_P9               109         //ROW3
+#define MICROBIT_ID_IO_P10              110         //COL3 (ANALOG/DIGITAL)
+#define MICROBIT_ID_IO_P11              111         //BTN_B
+#define MICROBIT_ID_IO_P12              112         //PIN 20
+#define MICROBIT_ID_IO_P13              113         //SCK
+#define MICROBIT_ID_IO_P14              114         //MISO
+#define MICROBIT_ID_IO_P15              115         //MOSI
+#define MICROBIT_ID_IO_P16              116         //PIN 16
+#define MICROBIT_ID_IO_P19              119         //SCL
+#define MICROBIT_ID_IO_P20              120         //SDA
 
-#define MICROBIT_ID_IO_P0               7           //P0 is the left most pad (ANALOG/DIGITAL)
-#define MICROBIT_ID_IO_P1               8           //P1 is the middle pad (ANALOG/DIGITAL)
-#define MICROBIT_ID_IO_P2               9           //P2 is the right most pad (ANALOG/DIGITAL)
-#define MICROBIT_ID_IO_P3               10          //COL1 (ANALOG/DIGITAL)
-#define MICROBIT_ID_IO_P4               11          //BTN_A
-#define MICROBIT_ID_IO_P5               12          //COL2 (ANALOG/DIGITAL)
-#define MICROBIT_ID_IO_P6               13          //ROW2
-#define MICROBIT_ID_IO_P7               14          //ROW1
-#define MICROBIT_ID_IO_P8               15          //PIN 18
-#define MICROBIT_ID_IO_P9               16          //ROW3
-#define MICROBIT_ID_IO_P10              17          //COL3 (ANALOG/DIGITAL)
-#define MICROBIT_ID_IO_P11              18          //BTN_B
-#define MICROBIT_ID_IO_P12              19          //PIN 20
-#define MICROBIT_ID_IO_P13              20          //SCK
-#define MICROBIT_ID_IO_P14              21          //MISO
-#define MICROBIT_ID_IO_P15              22          //MOSI
-#define MICROBIT_ID_IO_P16              23          //PIN 16
-#define MICROBIT_ID_IO_P19              24          //SCL
-#define MICROBIT_ID_IO_P20              25          //SDA
+#define MICROBIT_ID_IO_INT1             130         //INT1
+#define MICROBIT_ID_IO_INT2             131         //INT2
+#define MICROBIT_ID_IO_INT3             132         //INT3
 
-#define MICROBIT_ID_BUTTON_AB           26          // Button A+B multibutton
-#define MICROBIT_ID_GESTURE             27          // Gesture events
-
-#define MICROBIT_ID_THERMOMETER         28
-#define MICROBIT_ID_RADIO               29
-#define MICROBIT_ID_RADIO_DATA_READY    30
-#define MICROBIT_ID_MULTIBUTTON_ATTACH  31
-#define MICROBIT_ID_SERIAL              32
-
-#define MICROBIT_ID_IO_INT1             33          //INT1
-#define MICROBIT_ID_IO_INT2             34          //INT2
-#define MICROBIT_ID_IO_INT3             35          //INT3
-#define MICROBIT_ID_PARTIAL_FLASHING    36
+// System Softwarre components
+#define MICROBIT_ID_PARTIAL_FLASHING                200
 
 #define MICROBIT_ID_MESSAGE_BUS_LISTENER            1021          // Message bus indication that a handler for a given ID has been registered.
 #define MICROBIT_ID_NOTIFY_ONE                      1022          // Notfication channel, for general purpose synchronisation

@@ -23,18 +23,44 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef NOTIFY_EVENTS_H
-#define NOTIFY_EVENTS_H
-
 /**
-  * This file contains events used on the general purpose Eventing channel
-  * MICROBIT_ID_NOTIFY, new events should be added here, to prevent duplication.
-  */
-#define MICROBIT_DISPLAY_EVT_FREE           1
-#define MICROBIT_SERIAL_EVT_TX_EMPTY        2
-#define MICROBIT_UART_S_EVT_TX_EMPTY        3
+ * A simple lock, mostly used for mutual exclusion.
+ */
 
-// Any values after 1024 are available for application use
-#define MICROBIT_NOTIFY_USER_EVENT_BASE     1024
+#ifndef MICROBIT_LOCK_H
+#define MICROBIT_LOCK_H
+
+#include "MicroBitConfig.h"
+
+class Fiber;
+
+class MicroBitLock
+{
+    private:
+    bool    locked;
+    Fiber   *queue;
+
+    public:
+
+    /**
+     * Create a new lock that can be used for mutual exclusion and condition synchronisation.
+     */
+    MicroBitLock();
+
+    /**
+     * Block the calling fiber until the lock is available
+     **/
+    void wait();
+
+    /**
+     * Release the lock, and signal to one waiting fiber to continue
+     */
+    void notify();
+
+    /**
+     * Release the lock, and signal to all waiting fibers to continue
+     */
+    void notifyAll();
+};
 
 #endif

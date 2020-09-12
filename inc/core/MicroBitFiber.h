@@ -51,6 +51,12 @@ DEALINGS IN THE SOFTWARE.
 #define MICROBIT_FIBER_FLAG_CHILD           0x04
 #define MICROBIT_FIBER_FLAG_DO_NOT_PAGE     0x08
 
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+#define HAS_THREAD_USER_DATA (currentFiber->user_data != NULL)
+#else
+#define HAS_THREAD_USER_DATA false
+#endif
+
 /**
   *  Thread Context for an ARM Cortex M0 core.
   *
@@ -88,7 +94,12 @@ struct Fiber
     uint32_t context;                   // Context specific information.
     uint32_t flags;                     // Information about this fiber.
     Fiber **queue;                      // The queue this fiber is stored on.
-    Fiber *next, *prev;                 // Position of this Fiber on the run queue.
+    Fiber *qnext;                       // Position of this Fiber on its queue.
+    Fiber *next;                        // Position of this Fiber in the global list of fibers.
+
+#if CONFIG_ENABLED(MICROBIT_FIBER_USER_DATA)
+    void *user_data;                            // Optional pointer to user defined data block.
+#endif
 };
 
 extern Fiber *currentFiber;
@@ -110,6 +121,13 @@ void scheduler_init(EventModel &_messageBus);
   * @return 1 if the fber scheduler is running, 0 otherwise.
   */
 int fiber_scheduler_running();
+
+/**
+  * Provides a list of all active fibers.
+  * 
+  * @return A pointer to the head of the list of all active fibers.
+  */
+Fiber* get_fiber_list();
 
 /**
   * Exit point for all fibers.
@@ -363,6 +381,16 @@ inline int inInterruptContext()
 {
     return (((int)__get_IPSR()) & 0x003F) > 0;
 }
+
+/**
+ * Return all current fibers.
+ * 
+ * @param dest If non-null, it points to an array of pointers to fibers to store results in.
+ * 
+ * @return the number of fibers (potentially) stored
+ */
+int list_fibers(Fiber **dest);
+
 
 /**
   * Assembler Context switch routing.

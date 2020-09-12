@@ -28,9 +28,9 @@ DEALINGS IN THE SOFTWARE.
 
 #include "mbed.h"
 #include "MicroBitConfig.h"
+#include "MicroBitLock.h"
 #include "MicroBitEvent.h"
 #include "MemberFunctionCallback.h"
-#include "MicroBitConfig.h"
 
 // MicroBitListener flags...
 #define MESSAGE_BUS_LISTENER_PARAMETERISED          0x0001
@@ -67,7 +67,7 @@ struct MicroBitListener
 
 	MicroBitEvent 	            evt;
 	MicroBitEventQueueItem 	    *evt_queue;
-
+    MicroBitLock                lock;
 	MicroBitListener *next;
 
 	/**
