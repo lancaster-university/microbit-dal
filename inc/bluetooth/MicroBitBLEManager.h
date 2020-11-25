@@ -95,7 +95,7 @@ struct BLESysAttributeStore
   * Class definition for the MicroBitBLEManager.
   *
   */
-class MicroBitBLEManager : MicroBitComponent
+class MicroBitBLEManager : public MicroBitComponent
 {
   public:
     static MicroBitBLEManager *manager;
