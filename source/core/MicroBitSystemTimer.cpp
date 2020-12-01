@@ -38,11 +38,21 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitSystemTimer.h"
 #include "ErrorNo.h"
 
+
+#if CONFIG_ENABLED( MICROBIT_TICK64)
+
+#include "MicroBitTick64.h"
+
+#else // CONFIG_ENABLED( MICROBIT_TICK64)
+
 /*
  * Time since power on. Measured in milliseconds.
  * When stored as an unsigned long, this gives us approx 50 days between rollover, which is ample. :-)
  */
 static uint64_t time_us = 0;
+
+#endif //CONFIG_ENABLED( MICROBIT_TICK64)
+
 static unsigned int tick_period = 0;
 
 // Array of components which are iterated during a system tick
@@ -51,9 +61,13 @@ static MicroBitComponent* systemTickComponents[MICROBIT_SYSTEM_COMPONENTS];
 // Periodic callback interrupt
 static Ticker *ticker = NULL;
 
+#if CONFIG_ENABLED( MICROBIT_TICK64)
+#else // CONFIG_ENABLED( MICROBIT_TICK64)
+
 // System timer.
 static Timer *timer = NULL;
 
+#endif //CONFIG_ENABLED( MICROBIT_TICK64)
 
 /**
   * Initialises a system wide timer, used to drive the various components used in the runtime.
@@ -66,6 +80,13 @@ static Timer *timer = NULL;
   */
 int system_timer_init(int period)
 {
+#if CONFIG_ENABLED( MICROBIT_TICK64)
+    if ( ticker == NULL)
+    {
+        ticker = new Ticker();
+        microbit_tick64_initialise();
+    }
+#else
     if (ticker == NULL)
         ticker = new Ticker();
 
@@ -74,6 +95,7 @@ int system_timer_init(int period)
         timer = new Timer();
         timer->start();
     }
+#endif
 
     return system_timer_set_period(period);
 }
@@ -119,12 +141,19 @@ int system_timer_get_period()
   */
 void update_time()
 {
+#if CONFIG_ENABLED( MICROBIT_TICK64)
+    if ( ticker == NULL)
+        system_timer_init(SYSTEM_TICK_PERIOD_MS);
+    else
+        microbit_tick64_update();
+#else
     // If we haven't been initialized, bring up the timer with the default period.
     if (timer == NULL || ticker == NULL)
         system_timer_init(SYSTEM_TICK_PERIOD_MS);
 
     time_us += timer->read_us();
     timer->reset();
+#endif
 }
 
 /**
@@ -144,8 +173,15 @@ uint64_t system_timer_current_time()
   */
 uint64_t system_timer_current_time_us()
 {
+#if CONFIG_ENABLED( MICROBIT_TICK64)
+    if ( ticker == NULL)
+        system_timer_init(SYSTEM_TICK_PERIOD_MS);
+
+    return microbit_tick64_microseconds();
+#else
     update_time();
     return time_us;
+#endif
 }
 
 /**
@@ -179,7 +215,11 @@ int system_timer_add_component(MicroBitComponent *component)
     int i = 0;
 
     // If we haven't been initialized, bring up the timer with the default period.
+#if CONFIG_ENABLED( MICROBIT_TICK64)
+    if ( ticker == NULL)
+#else
     if (timer == NULL || ticker == NULL)
+#endif
         system_timer_init(SYSTEM_TICK_PERIOD_MS);
 
     while(systemTickComponents[i] != NULL && i < MICROBIT_SYSTEM_COMPONENTS)
