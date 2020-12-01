@@ -221,6 +221,12 @@ extern uint32_t __etext;
 #define MICROBIT_IDLE_COMPONENTS                6
 #endif
 
+// Use MicroBitTick64 to fix slow running of system_timer_current_time
+// Default is zero because existing code may have workarounds that would be broken by this fix
+#ifndef MICROBIT_TICK64
+#define MICROBIT_TICK64 0
+#endif
+
 //
 // BLE options
 //
