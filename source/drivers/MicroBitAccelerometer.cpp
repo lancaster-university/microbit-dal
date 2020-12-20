@@ -608,6 +608,7 @@ void MicroBitAccelerometer::recalculatePitchRoll()
   */
 uint16_t MicroBitAccelerometer::getGesture()
 {
+    requestUpdate();
     return lastGesture;
 }
 
