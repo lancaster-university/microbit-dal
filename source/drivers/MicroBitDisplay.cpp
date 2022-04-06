@@ -392,7 +392,10 @@ void MicroBitDisplay::updateScrollImage()
 void MicroBitDisplay::updateAnimateImage()
 {
     //wait until we have rendered the last position to give a continuous animation.
-    if (scrollingImagePosition <= -scrollingImage.getWidth() + (MICROBIT_DISPLAY_WIDTH + scrollingImageStride) && scrollingImageRendered)
+    if ( ( scrollingImageStride <= 0
+          ? scrollingImagePosition <= -scrollingImage.getWidth() + (MICROBIT_DISPLAY_WIDTH + scrollingImageStride)
+          : scrollingImagePosition >= scrollingImageStride)
+        && scrollingImageRendered)
     {
         if (animationMode == ANIMATION_MODE_ANIMATE_IMAGE_WITH_CLEAR)
             this->clear();
@@ -403,8 +406,16 @@ void MicroBitDisplay::updateAnimateImage()
         return;
     }
 
-    if(scrollingImagePosition > 0)
-        image.shiftLeft(-scrollingImageStride);
+    if ( scrollingImageStride <= 0)
+    {
+        if(scrollingImagePosition > 0)
+            image.shiftLeft(-scrollingImageStride);
+    }
+    else
+    {
+        if ( scrollingImagePosition + scrollingImage.getWidth() < MICROBIT_DISPLAY_WIDTH)
+            image.shiftRight( scrollingImageStride);
+    }
 
     image.paste(scrollingImage, scrollingImagePosition, 0, 0);
 
@@ -981,7 +992,10 @@ int MicroBitDisplay::animateAsync(MicroBitImage image, int delay, int stride, in
         stride = -stride;
 
         //calculate starting position which is offset by the stride
-        scrollingImagePosition = (startingPosition == MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS) ? MICROBIT_DISPLAY_WIDTH + stride : startingPosition;
+        if ( stride <= 0)
+            scrollingImagePosition = (startingPosition == MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS) ? MICROBIT_DISPLAY_WIDTH + stride : startingPosition;
+        else
+            scrollingImagePosition = (startingPosition == MICROBIT_DISPLAY_ANIMATE_DEFAULT_POS) ? stride - image.getWidth() : startingPosition - image.getWidth() + 1;
         scrollingImageStride = stride;
         scrollingImage = image;
         scrollingImageRendered = false;
