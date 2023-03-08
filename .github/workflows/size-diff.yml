@@ -1,0 +1,178 @@
+name: Bloaty size diff
+
+on:
+  pull_request:
+    branches: '*'
+  push:
+    branches: '*'
+  workflow_dispatch:
+    inputs:
+      old-commit:
+        description: 'Base/old commit to compare against the branch HEAD or new-commit below'
+        required: true
+      new-commit:
+        description: '(Optional) New commit to use instead of branch HEAD'
+        required: false
+        default: ''
+
+jobs:
+  size-diff:
+    name: Run Bloaty
+    runs-on: ubuntu-latest
+    steps:
+      #########################
+      # Install the toolchain #
+      #########################
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+      - name: Setup arm-none-eabi-gcc 10.3
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: 10.3-2021.10
+      # MarkupSafe < 2.0 needed for Yotta
+      - name: Install Yotta, Ninja v1.10 & CMake v3.22 via PyPI
+        run: sudo -H env "PATH=$PATH" python3.7 -m pip install MarkupSafe==1.1.1 ninja==1.10.2.2 cmake==3.22.1 yotta
+      - name: Install srecord
+        run: |
+          sudo apt update
+          sudo apt install srecord
+
+      #######################################
+      # Set up the DAL project and build it #
+      #######################################
+      - name: Clone this microbit-dal repository in a subdirectory
+        uses: actions/checkout@v3
+        with:
+          path: 'microbit-dal'
+          fetch-depth: '0'
+          # Unless manually triggered via workflow_dispatch this will be an empty
+          # string, checking out the default commit for the commit/branch/PR
+          ref: ${{ github.event.inputs.new-commit }}
+      - name: Clone the microbit-samples repository in another subdirectory
+        uses: actions/checkout@v3
+        with:
+          repository: 'lancaster-university/microbit-samples'
+          path: 'microbit-samples'
+      - name: Link this microbit-dal clone to use inside microbit-samples
+        run: |
+          cd microbit-dal
+          sudo -H env "PATH=$PATH" yotta link
+          cd ../microbit-samples
+          yotta link microbit-dal
+      - name: Modify samples example source file and config to use BLE
+        working-directory: 'microbit-samples'
+        run: |
+          mv source/examples/bluetooth-services/main.cpp source/main.cpp
+          mv source/examples/bluetooth-services/config.json config.json
+      - run: yotta up
+        working-directory: 'microbit-samples'
+        env:
+          YOTTA_GITHUB_AUTHTOKEN: ${{ secrets.YOTTA_GITHUB_AUTHTOKEN }}
+      - run: yotta ls
+        working-directory: 'microbit-samples'
+      - run: yotta build
+        working-directory: 'microbit-samples'
+        env:
+          YOTTA_GITHUB_AUTHTOKEN: ${{ secrets.YOTTA_GITHUB_AUTHTOKEN }}
+      - name: Save ELF file in a new folder
+        run: |
+          mkdir builds
+          mv microbit-samples/build/bbc-microbit-classic-gcc/source/microbit-samples builds/newer-commit.elf
+      - name: Clean project
+        working-directory: 'microbit-samples'
+        run: rm -rf build/ yotta_modules/ yotta_targets/
+
+      ###############################################################
+      # Set up microbit-dal to a parent/base commit and build again #
+      ###############################################################
+      - name: "PR only: Get base commit SHA"
+        if: ${{ github.event.pull_request.base.sha }}
+        run: |
+          echo "GIT_BASE_SHA=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+          echo "# Bloaty comparison with PR base commit" >> $GITHUB_STEP_SUMMARY
+          echo "Base commit: [${{ github.event.pull_request.base.sha }}](https://github.com/${GITHUB_REPOSITORY}/commit/${{ github.event.pull_request.base.sha }})" >> $GITHUB_STEP_SUMMARY
+      - name: "Manual trigger only: Get input commits"
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "GIT_BASE_SHA=${{ github.event.inputs.old-commit }}" >> $GITHUB_ENV
+          echo "# Bloaty comparison with input commit(s)" >> $GITHUB_STEP_SUMMARY
+          echo "Old commit: [${{ github.event.inputs.old-commit }}](https://github.com/${GITHUB_REPOSITORY}/commit/${{ github.event.inputs.old-commit }})" >> $GITHUB_STEP_SUMMARY
+          echo "New commit: [${{ github.event.inputs.new-commit || github.sha }}](https://github.com/${GITHUB_REPOSITORY}/commit/${{ github.event.inputs.new-commit || github.sha}})" >> $GITHUB_STEP_SUMMARY
+          echo "Full diff: https://github.com/${GITHUB_REPOSITORY}/compare/${{ github.event.inputs.old-commit }}...${{ github.event.inputs.new-commit || github.sha}}" >> $GITHUB_STEP_SUMMARY
+      - name: "Commit only: Get parent commit SHA"
+        if: ${{ ! github.event.pull_request.base.sha && github.event_name != 'workflow_dispatch'}}
+        run: |
+          cd microbit-dal
+          echo "GIT_BASE_SHA=$(git log --pretty=%P -n 1 HEAD^0)" >> $GITHUB_ENV
+          echo "# Bloaty comparison with parent commit" >> $GITHUB_STEP_SUMMARY
+          echo "Parent commit: [$(git log --pretty=%P -n 1 HEAD^0)](https://github.com/${GITHUB_REPOSITORY}/commit/$(git log --pretty=%P -n 1 HEAD^0))" >> $GITHUB_STEP_SUMMARY
+      - name: Checkout base/parent microbit-dal older-commit
+        working-directory: 'microbit-dal'
+        run: git checkout ${GIT_BASE_SHA}
+      - name: Link again this microbit-dal in microbit-samples
+        run: |
+          cd microbit-dal
+          sudo -H env "PATH=$PATH" yotta link
+          cd ../microbit-samples
+          yotta link microbit-dal
+      - run: yotta up
+        working-directory: 'microbit-samples'
+        env:
+          YOTTA_GITHUB_AUTHTOKEN: ${{ secrets.YOTTA_GITHUB_AUTHTOKEN }}
+      - run: yotta ls
+        working-directory: 'microbit-samples'
+      - run: yotta build
+        working-directory: 'microbit-samples'
+        env:
+          YOTTA_GITHUB_AUTHTOKEN: ${{ secrets.YOTTA_GITHUB_AUTHTOKEN }}
+      - name: Save ELF file in a different directory
+        working-directory: 'microbit-samples'
+        run: mv build/bbc-microbit-classic-gcc/source/microbit-samples ../builds/older-commit.elf
+
+      #######################################
+      # Run the Bloaty McBloatface analysis #
+      #######################################
+      # 1st run the bloaty diff so that it's added to the top of the summary page
+      - name: Run Bloaty to compare before and after ELF files
+        id: bloaty-comparison
+        uses: carlosperate/bloaty-action@v1
+        with:
+          bloaty-args: -d compileunits --domain=vm builds/newer-commit.elf -- builds/older-commit.elf
+          output-to-summary: true
+          summary-title: "Bloaty diff between the two commits"
+      # Show total memory consumption of the main memory sections
+      - name: Show memory usage in summary using size
+        run: |
+          echo '# This commit total memory usage' >> $GITHUB_STEP_SUMMARY
+          echo '## GNU size' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '$ arm-none-eabi-size builds/newer-commit.elf' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          arm-none-eabi-size builds/newer-commit.elf >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      # Show memory consumption of top 30 components for this build
+      - name: Run Bloaty to view ELF file full info
+        uses: carlosperate/bloaty-action@v1
+        with:
+          bloaty-args: -d compileunits --domain=vm -n 30 builds/newer-commit.elf
+          output-to-summary: true
+      - name: "PR only: Add comment to PR with the bloaty diff"
+        if: ${{ github.event.pull_request }}
+        continue-on-error: true
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let prComment = '## Build diff\n' +
+              'Base commit: [${{ env.GIT_BASE_SHA }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ env.GIT_BASE_SHA }})\n' +
+              'Action run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n' +
+              '```\n' +
+              '${{ steps.bloaty-comparison.outputs.bloaty-output-encoded }}' +
+              '```\n'
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: prComment
+            })
