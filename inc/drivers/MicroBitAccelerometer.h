@@ -100,9 +100,11 @@ struct ShakeHistory
 class MicroBitAccelerometer : public MicroBitComponent
 {
     protected:
-
+        MicroBitI2C&    i2c;                // The I2C interface to use.
+        uint16_t        address;            // I2C address of this compass.
         uint16_t        samplePeriod;       // The time between samples, in milliseconds.
         uint8_t         sampleRange;        // The sample range of the accelerometer in g.
+        uint8_t         storageAddress;     // Address of a single byte register inside the accelerometer that can be used for general purpose, volatile storage. Zero if unavailable.
         Sample3D        sample;             // The last sample read, in the coordinate system specified by the coordinateSpace variable.
         Sample3D        sampleENU;          // The last sample read, in raw ENU format (stored in case requests are made for data in other coordinate spaces)
         CoordinateSpace &coordinateSpace;   // The coordinate space transform (if any) to apply to the raw data from the hardware.
@@ -128,7 +130,7 @@ class MicroBitAccelerometer : public MicroBitComponent
          * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
          *
          */
-        MicroBitAccelerometer(CoordinateSpace &coordinateSpace, uint16_t id = MICROBIT_ID_ACCELEROMETER);
+        MicroBitAccelerometer(CoordinateSpace &coordinateSpace, uint16_t id = MICROBIT_ID_ACCELEROMETER, MicroBitI2C &_i2c = *((MicroBitI2C *)NULL));
 
         /**
          * Device autodetection. Scans the given I2C bus for supported accelerometer devices.
@@ -323,6 +325,18 @@ class MicroBitAccelerometer : public MicroBitComponent
         {
             getSample();
         }
+
+        /**
+         * Updates the RAM storage variable of this accelerometer (if available) to the value specified.
+         */
+        void updateStorage(uint8_t value);
+
+        /**
+         * Retrieves the RAM storage variable of this accelerometer (if available) to the value specified.
+         * @return the storage value read, or MICROBIT_NOT_SUPPORTED if this facility is not available.
+         */
+        int getStorage();
+
 
         /**
          * Destructor.

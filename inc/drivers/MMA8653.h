@@ -67,7 +67,6 @@ DEALINGS IN THE SOFTWARE.
  */
 class MMA8653 : public MicroBitAccelerometer
 {
-    MicroBitI2C&            i2c;                    // The I2C interface to use.
     MicroBitPin             int1;                   // Data ready interrupt.
     uint16_t                address;                // I2C address of this accelerometer.
 

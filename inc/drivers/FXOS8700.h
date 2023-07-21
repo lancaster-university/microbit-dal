@@ -175,9 +175,7 @@ DEALINGS IN THE SOFTWARE.
  */
 class FXOS8700 : public MicroBitAccelerometer, public MicroBitCompass
 {
-    MicroBitI2C&            i2c;                    // The I2C interface to use.
     MicroBitPin             int1;                   // Data ready interrupt.
-    uint16_t                address;                // I2C address of this accelerometer.
 
     public:
 

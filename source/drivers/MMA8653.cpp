@@ -71,11 +71,12 @@ CREATE_KEY_VALUE_TABLE(accelerometerPeriod, accelerometerPeriodData);
  * @param id The unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
  *
  */
-MMA8653::MMA8653(MicroBitI2C& _i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t id) : MicroBitAccelerometer(coordinateSpace, id), i2c(_i2c), int1(_int1)
+MMA8653::MMA8653(MicroBitI2C& _i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t id) : MicroBitAccelerometer(coordinateSpace, id, _i2c), int1(_int1)
 {
     // Store our identifiers.
     this->status = 0;
     this->address = address;
+    this->storageAddress = 0x17;
 
     // Configure and enable the accelerometer.
     configure();

@@ -476,6 +476,14 @@ extern uint32_t __etext;
 #endif
 
 //
+// Define the default behaviour for the TRIPLE_TAP_TO_PAIR compile time option.
+// Valid options ar 0 or 1.
+//
+#ifndef DEVICE_TRIPLE_RESET_TO_PAIR
+#define DEVICE_TRIPLE_RESET_TO_PAIR             1
+#endif
+
+//
 // Panic options
 //
 

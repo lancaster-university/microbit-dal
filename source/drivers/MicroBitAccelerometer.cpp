@@ -43,7 +43,7 @@ DEALINGS IN THE SOFTWARE.
   * @param address the default I2C address of the accelerometer. Defaults to: FXS8700_DEFAULT_ADDR.
   *
  */
-MicroBitAccelerometer::MicroBitAccelerometer(CoordinateSpace &cspace, uint16_t id) : sample(), sampleENU(), coordinateSpace(cspace)
+MicroBitAccelerometer::MicroBitAccelerometer(CoordinateSpace &cspace, uint16_t id, MicroBitI2C &_i2c) : i2c(_i2c), sample(), sampleENU(), coordinateSpace(cspace)
 {
     // Store our identifiers.
     this->id = id;
@@ -609,6 +609,24 @@ void MicroBitAccelerometer::recalculatePitchRoll()
 uint16_t MicroBitAccelerometer::getGesture()
 {
     return lastGesture;
+}
+
+/**
+  * Updates the RAM storage variable of this accelerometer (if available) to the value specified.
+  */
+void MicroBitAccelerometer::updateStorage(uint8_t value)
+{
+    if (storageAddress)
+        i2c.writeRegister(address, storageAddress, value);
+}
+
+/**
+ * Retrieves the RAM storage variable of this accelerometer (if available) to the value specified.
+ * @return the storage value read, or MICROBIT_NOT_SUPPORTED if this facility is not available.
+ */
+int MicroBitAccelerometer::getStorage()
+{
+    return storageAddress ? i2c.readRegister(address, storageAddress) : MICROBIT_NOT_SUPPORTED;
 }
 
 /**

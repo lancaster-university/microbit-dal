@@ -150,12 +150,13 @@ int FXOS8700::configure()
   *
  */
 FXOS8700::FXOS8700(MicroBitI2C &_i2c, MicroBitPin _int1, CoordinateSpace &coordinateSpace, uint16_t address, uint16_t aid, uint16_t cid) : 
-    MicroBitAccelerometer(coordinateSpace, aid),
+    MicroBitAccelerometer(coordinateSpace, aid, _i2c),
     MicroBitCompass(coordinateSpace, cid),
-    i2c(_i2c), int1(_int1)
+    int1(_int1)
 {
     // Store our identifiers.
     this->address = address;
+    this->storageAddress = 0x17;
 
     // Enable pullup on the interrupt line
     int1.setPull(PullUp);
