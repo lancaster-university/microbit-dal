@@ -33,6 +33,9 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitListener.h"
 #include "EventModel.h"
 
+#define MESSAGE_BUS_CONCURRENT_LISTENERS        0
+#define MESSAGE_BUS_CONCURRENT_EVENTS           1
+
 /**
   * Class definition for the MicroBitMessageBus.
   *
@@ -105,7 +108,7 @@ class MicroBitMessageBus : public EventModel, public MicroBitComponent
       * @note It is recommended that all external code uses the send() function instead of this function,
       *       or the constructors provided by MicrobitEvent.
       */
-	int process(MicroBitEvent &evt, bool urgent = false);
+	int process(MicroBitEvent evt, bool urgent = false);
 
     /**
       * Returns the microBitListener with the given position in our list.
@@ -144,7 +147,6 @@ class MicroBitMessageBus : public EventModel, public MicroBitComponent
     MicroBitListener            *listeners;		    // Chain of active listeners.
     MicroBitEventQueueItem      *evt_queue_head;    // Head of queued events to be processed.
     MicroBitEventQueueItem      *evt_queue_tail;    // Tail of queued events to be processed.
-    uint16_t                    nonce_val;          // The last nonce issued.
     uint16_t                    queueLength;        // The number of events currently waiting to be processed.
 
     /**
@@ -177,5 +179,10 @@ class MicroBitMessageBus : public EventModel, public MicroBitComponent
       */
     virtual void idleTick();
 };
+
+/**
+ * Allocate a NOTIFY event code dynamicaly, for generally purpose condition synchronisation.
+ */
+uint16_t allocateNotifyEvent();
 
 #endif

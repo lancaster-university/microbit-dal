@@ -288,7 +288,6 @@ public:
       * @param s The string to display.
       *
       * @param delay The time to delay between characters, in milliseconds. Must be > 0.
-      *              Defaults to: MICROBIT_DEFAULT_PRINT_SPEED.
       *
       * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
       *
@@ -296,7 +295,26 @@ public:
       * display.printAsync("abc123",400);
       * @endcode
       */
-    int printAsync(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+    int printAsync(ManagedString s, int delay);
+
+    /**
+      * Prints the given ManagedString to the display, one character at a time.
+      * Returns immediately, and executes the animation asynchronously.
+      *
+      * If the string is greater than one charcter in length, the screen
+      * will be cleared after MICROBIT_DEFAULT_PRINT_SPEED milliseconds.
+      * Otherwise, that character will be left on the screen indefinitely.
+      *
+      * @param s The string to display.
+      *
+      * @return MICROBIT_OK, or MICROBIT_INVALID_PARAMETER.
+      *
+      * @code
+      * display.printAsync("abc123");
+      * @endcode
+      */
+    int printAsync(ManagedString s);
+
 
     /**
       * Prints the given image to the display, if the display is not in use.
@@ -352,7 +370,27 @@ public:
       * display.print("abc123",400);
       * @endcode
       */
-    int print(ManagedString s, int delay = MICROBIT_DEFAULT_PRINT_SPEED);
+    int print(ManagedString s, int delay);
+
+    /**
+      * Prints the given string to the display, one character at a time.
+      *
+      * Blocks the calling thread until all the text has been displayed.
+      *
+      * If the string is greater than one charcter in length, the screen
+      * will be cleared after MICROBIT_DEFAULT_PRINT_SPEED milliseconds.
+      * Otherwise, that character will be left on the screen indefinitely.
+      *
+      * @param s The string to display.
+      *
+      * @return MICROBIT_OK, MICROBIT_CANCELLED or MICROBIT_INVALID_PARAMETER.
+      *
+      * @code
+      * display.print("abc123");
+      * @endcode
+      */
+    int print(ManagedString s);
+
 
     /**
       * Prints the given image to the display.
