@@ -215,7 +215,7 @@ void MicroBitIOPinService::onDataWritten(const GattWriteCallbackParams *params)
         }
 
         bool is_valid_length = len % 7 == 0;
-	    if (is_valid_length) {
+        if (is_valid_length) {
             uint8_t field_count = len / 7;
             for (int i=0;i<field_count;i++) {
                 uint8_t  pin    = pwm_data[i].pin;
