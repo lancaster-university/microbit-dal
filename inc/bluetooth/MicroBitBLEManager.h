@@ -95,7 +95,7 @@ struct BLESysAttributeStore
   * Class definition for the MicroBitBLEManager.
   *
   */
-class MicroBitBLEManager : MicroBitComponent
+class MicroBitBLEManager : public MicroBitComponent
 {
   public:
     static MicroBitBLEManager *manager;
@@ -150,7 +150,7 @@ class MicroBitBLEManager : MicroBitComponent
       * bleManager.init(uBit.getName(), uBit.getSerial(), uBit.messageBus, true);
       * @endcode
       */
-    void init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding);
+    void init(ManagedString deviceName, ManagedString serialNumber, EventModel &messageBus, bool enableBonding, ManagedString microbitModel = ManagedString("BBC micro:bit"));
 
     /**
      * Change the output power level of the transmitter to the given value.
@@ -282,12 +282,6 @@ class MicroBitBLEManager : MicroBitComponent
     int advertiseEddystoneUid(const char* uid_namespace, const char* uid_instance, int8_t calibratedPower = MICROBIT_BLE_EDDYSTONE_DEFAULT_POWER, bool connectable = true, uint16_t interval = MICROBIT_BLE_EDDYSTONE_ADV_INTERVAL);
 #endif
 
-  /**
-   * Restarts in BLE Mode
-   *
-   */
-   void restartInBLEMode();
-
    /**
     * Get current BLE mode; application, pairing
     * #define MICROBIT_MODE_PAIRING     0x00
@@ -323,6 +317,8 @@ class MicroBitBLEManager : MicroBitComponent
      * This variable will be set to MICROBIT_MODE_PAIRING if pairingMode() is executed.
      */
     uint8_t currentMode = MICROBIT_MODE_APPLICATION;
+
+    char* getMicrobitModel();
 
 };
 

@@ -913,6 +913,19 @@ int fiber_remove_idle_component(MicroBitComponent *component)
     return MICROBIT_OK;
 }
 
+ /**
+  * Check if fiber is idle
+  */
+bool fiber_is_idle_component(MicroBitComponent *component)
+{
+    for ( int i = 0; i < MICROBIT_IDLE_COMPONENTS; i++)
+    {
+      if ( idleThreadComponents[i] == component)
+        return true;
+    }
+    return false;
+}
+
 /**
   * Set of tasks to perform when idle.
   * Service any background tasks that are required, and attempt a power efficient sleep.
