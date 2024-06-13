@@ -286,8 +286,8 @@ void scheduler_event(MicroBitEvent evt)
         uint16_t id = f->context & 0xFFFF;
         uint16_t value = (f->context & 0xFFFF0000) >> 16;
 
-        // Special case for the NOTIFY_ONE channel...
-        if ((evt.source == MICROBIT_ID_NOTIFY_ONE && id == MICROBIT_ID_NOTIFY) && (value == MICROBIT_EVT_ANY || value == evt.value))
+        // Special case for the NOTIFY_ONE channel...   ignore MICROBIT_EVT_ANY here unless (value == MICROBIT_EVT_ANY == evt.value) 
+        if ((evt.source == MICROBIT_ID_NOTIFY_ONE) && (id == MICROBIT_ID_NOTIFY) && (value == evt.value)) 
         {
             if (!notifyOneComplete)
             {
@@ -298,8 +298,8 @@ void scheduler_event(MicroBitEvent evt)
             }
         }
 
-        // Normal case.
-        else if ((id == MICROBIT_ID_ANY || id == evt.source) && (value == MICROBIT_EVT_ANY || value == evt.value))
+        // Normal case.  ignore MICROBIT_ID_NOTIFY_ONE as we handled this above
+        else if ((evt.source != MICROBIT_ID_NOTIFY_ONE) && (id == MICROBIT_ID_ANY || id == evt.source) && (value == MICROBIT_EVT_ANY || value == evt.value))
         {
             // Wakey wakey!
             dequeue_fiber(f);
@@ -372,7 +372,7 @@ void fiber_sleep(unsigned long t)
   *
   * @param value The value of the event to listen for (e.g. MICROBIT_BUTTON_EVT_CLICK)
   *
-  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel.
+  * @return MICROBIT_OK, or MICROBIT_NOT_SUPPORTED if the fiber scheduler is not running, or associated with an EventModel or if id == MICROBIT_ID_NOTIFY_ONE
   *
   * @code
   * fiber_wait_for_event(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK);
@@ -383,6 +383,8 @@ void fiber_sleep(unsigned long t)
   */
 int fiber_wait_for_event(uint16_t id, uint16_t value)
 {
+	if (id == MICROBIT_ID_NOTIFY_ONE) 
+		return MICROBIT_NOT_SUPPORTED;
     int ret = fiber_wake_on_event(id, value);
 
     if(ret == MICROBIT_OK)
