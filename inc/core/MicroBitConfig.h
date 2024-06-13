@@ -149,6 +149,11 @@ extern uint32_t __etext;
 #define SYSTEM_TICK_PERIOD_MS                   6
 #endif
 
+// Enable used_data field in Fiber structure (for thread-local data)
+#ifndef MICROBIT_FIBER_USER_DATA
+#define MICROBIT_FIBER_USER_DATA                0
+#endif
+
 //
 // Message Bus:
 // Default behaviour for event handlers, if not specified in the listen() call
