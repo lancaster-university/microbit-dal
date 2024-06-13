@@ -70,8 +70,8 @@ struct MatrixMap
  */
 #define MICROBIT_DISPLAY_WIDTH                  5
 #define MICROBIT_DISPLAY_HEIGHT                 5
-#define MICROBIT_DISPLAY_ROW1                   p13
-#define MICROBIT_DISPLAY_COL1                   p4
+#define MICROBIT_DISPLAY_ROW1                   P0_13
+#define MICROBIT_DISPLAY_COL1                   P0_4
 
 
 #if MICROBIT_DISPLAY_TYPE == MICROBUG_REFERENCE_DEVICE
