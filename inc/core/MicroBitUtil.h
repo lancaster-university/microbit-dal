@@ -32,7 +32,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitConfig.h"
 
-#define CREATE_KEY_VALUE_TABLE(NAME, PAIRS) const KeyValueTable NAME { PAIRS, sizeof(PAIRS) / sizeof(KeyValueTableEntry) };
+#define CREATE_KEY_VALUE_TABLE(NAME, PAIRS) const KeyValueTable NAME = { PAIRS, sizeof(PAIRS) / sizeof(KeyValueTableEntry) };
 
 /**
  * Provides a simple key/value pair lookup table with range lookup support.

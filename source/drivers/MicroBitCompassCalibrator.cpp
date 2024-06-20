@@ -226,8 +226,8 @@ CompassCalibration MicroBitCompassCalibrator::spherify(Sample3D centre, Sample3D
 Sample3D MicroBitCompassCalibrator::approximateCentre(Sample3D *data, int samples)
 {
     Sample3D c,t;
-    Sample3D centre = { 0,0,0 };
-    Sample3D best = { 0,0,0 };
+    Sample3D centre;
+    Sample3D best;
 
     float score;
 

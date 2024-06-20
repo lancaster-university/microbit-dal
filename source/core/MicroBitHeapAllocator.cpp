@@ -59,7 +59,13 @@ DEALINGS IN THE SOFTWARE.
 // A list of all active heap regions, and their dimensions in memory.
 HeapDefinition heap[MICROBIT_MAXIMUM_HEAPS] = { };
 uint8_t heap_count = 0;
-extern "C" int __end__;
+#if defined __CC_ARM || defined __ARMCC_VERSION
+#define HEAP_START Image$$RW_IRAM1$$ZI$$Limit
+#else
+#define HEAP_START __end__
+#endif
+
+extern "C" int HEAP_START;
 
 #if CONFIG_ENABLED(MICROBIT_DBG) && CONFIG_ENABLED(MICROBIT_HEAP_DBG)
 // Diplays a usage summary about a given heap...
@@ -271,7 +277,7 @@ void *microbit_malloc(size_t size, HeapDefinition &heap)
   *
   * @return A pointer to the allocated memory, or NULL if insufficient memory is available.
   */
-void *malloc(size_t size)
+void *_microbit_malloc(size_t size)
 {
     static uint8_t initialised = 0;
     void *p;
@@ -280,7 +286,7 @@ void *malloc(size_t size)
     {
         heap_count = 0;
 
-        if(microbit_create_heap((uint32_t)(&__end__), (uint32_t)(MICROBIT_HEAP_END)) == MICROBIT_INVALID_PARAMETER)
+        if(microbit_create_heap((uint32_t)(&HEAP_START), (uint32_t)(MICROBIT_HEAP_END)) == MICROBIT_INVALID_PARAMETER)
             microbit_panic(MICROBIT_HEAP_ERROR);
 
         initialised = 1;
@@ -319,7 +325,7 @@ void *malloc(size_t size)
   *
   * @param mem The memory area to release.
   */
-void free(void *mem)
+void _microbit_free(void *mem)
 {
 	uint32_t	*memory = (uint32_t *)mem;
 	uint32_t	*cb = memory-1;
@@ -351,7 +357,7 @@ void free(void *mem)
     microbit_panic(MICROBIT_HEAP_ERROR);
 }
 
-void* calloc (size_t num, size_t size)
+void* _microbit_calloc (size_t num, size_t size)
 {
     void *mem = malloc(num*size);
 
@@ -361,7 +367,7 @@ void* calloc (size_t num, size_t size)
     return mem;
 }
 
-void* realloc (void* ptr, size_t size)
+void* _microbit_realloc (void* ptr, size_t size)
 {
     void *mem = malloc(size);
 
